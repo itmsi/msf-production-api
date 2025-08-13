@@ -27,8 +27,8 @@ export class Roles {
   name: string;
 
   @Expose()
-  @Column({ name: 'role_parent' })
-  role_parent: number;
+  @Column({ name: 'role_parent', nullable: true })
+  role_parent: string;
 
   @Expose()
   @ManyToOne(() => Roles, (role) => role.children, { nullable: true })

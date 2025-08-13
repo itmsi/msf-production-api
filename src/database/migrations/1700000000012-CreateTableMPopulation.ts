@@ -38,6 +38,12 @@ export class CreateTableMPopulation1700000000012 implements MigrationInterface {
             isNullable: true,
           },
           {
+            name: 'vin_number',
+            type: 'varchar',
+            length: '100',
+            isNullable: true,
+          },
+          {
             name: 'date_arrive',
             type: 'date',
             isNullable: true,
@@ -49,7 +55,7 @@ export class CreateTableMPopulation1700000000012 implements MigrationInterface {
             default: "'active'",
           },
           {
-            name: 'variant_id',
+            name: 'unit_type_id',
             type: 'int',
             isNullable: true,
           },
@@ -122,9 +128,9 @@ export class CreateTableMPopulation1700000000012 implements MigrationInterface {
     await queryRunner.createForeignKey(
       'm_population',
       new TableForeignKey({
-        columnNames: ['variant_id'],
+        columnNames: ['unit_type_id'],
         referencedColumnNames: ['id'],
-        referencedTableName: 'm_unit_variant',
+        referencedTableName: 'm_unit_type',
         onDelete: 'SET NULL',
         onUpdate: 'CASCADE',
       }),
@@ -177,9 +183,6 @@ export class CreateTableMPopulation1700000000012 implements MigrationInterface {
     
     // Hapus ENUM types
     await queryRunner.query(`DROP TYPE IF EXISTS enum_population_status`);
-    await queryRunner.query(`DROP TYPE IF EXISTS enum_population_brand`);
-    await queryRunner.query(`DROP TYPE IF EXISTS enum_population_model`);
-    await queryRunner.query(`DROP TYPE IF EXISTS enum_population_engine_brand`);
     await queryRunner.query(`DROP TYPE IF EXISTS enum_last_unit_no`);
     await queryRunner.query(`DROP TYPE IF EXISTS enum_tyre_type`);
   }

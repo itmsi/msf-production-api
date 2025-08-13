@@ -28,10 +28,6 @@ export class CreateUserDto {
   @MinLength(6)
   password: string;
 
-  @ApiProperty({ example: 'User Example' })
-  @IsString()
-  name: string;
-
   @ApiProperty({ example: 'john@example.com' })
   @IsEmail()
   @IsNotEmpty()
@@ -59,7 +55,6 @@ export class CreateUserDto {
 export class UserResponseDto {
   id: number;
   username: string;
-  name: string;
   email: string;
   roleId: number;
   employee_id: number;
@@ -85,11 +80,6 @@ export class GetUsersQueryDto {
 }
 
 export class UpdateUserDto {
-  @ApiProperty({ example: 'usertest' })
-  @IsString()
-  @IsNotEmpty()
-  name: string;
-
   @ApiProperty({ example: 'john@example.com' })
   @IsEmail()
   @IsNotEmpty()

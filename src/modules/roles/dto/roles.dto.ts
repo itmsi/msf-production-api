@@ -19,16 +19,16 @@ export class CreateRolesDto {
   @IsNotEmpty()
   name: string;
 
-  @Type(() => Number)
-  @IsNumber()
-  role_parent: number;
+  @IsString()
+  @IsOptional()
+  role_parent: string;
 }
 
 export class RolesResponseDto {
   id: number;
   roleCode: string;
   name: string;
-  role_parent: number;
+  role_parent: string;
   meta?: any;
 }
 
@@ -54,9 +54,9 @@ export class UpdateRolesDto {
   @IsNotEmpty()
   name: string;
 
-  @Type(() => Number)
-  @IsNumber()
-  role_parent: number;
+  @IsString()
+  @IsOptional()
+  role_parent: string;
 }
 
 // export class DeleteUserDto {

@@ -12,7 +12,6 @@ describe('UsersController', () => {
 
   const userEntity: Users = {
     id: 1,
-    name: 'Test User',
     username: 'testuser',
     email: 'test@example.com',
     password: 'hashedPassword',
@@ -26,7 +25,6 @@ describe('UsersController', () => {
 
   const userDto: UserResponseDto = {
     id: 1,
-    name: 'Test User',
     username: 'testuser',
     email: 'test@example.com',
     roleId: 1,
@@ -89,7 +87,6 @@ describe('UsersController', () => {
     const createDto: CreateUserDto = {
       username: 'newuser',
       password: 'password123',
-      name: 'New User',
       email: 'newuser@example.com',
       roleId: 1,
       employee_id: 1,

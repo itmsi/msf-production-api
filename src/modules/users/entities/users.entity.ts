@@ -29,10 +29,6 @@ export class Users {
 
   @Expose()
   @Column()
-  name: string;
-
-  @Expose()
-  @Column()
   roleId: number;
 
   @Expose()
@@ -59,12 +55,6 @@ export class Users {
 
   @DeleteDateColumn()
   deletedAt?: Date | null;
-
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  reset_password_token?: string | null;
-
-  @Column({ type: 'timestamp', nullable: true })
-  reset_password_expires?: Date | null;
 
   @Expose()
   @ManyToOne(() => Roles, (role) => role.users)

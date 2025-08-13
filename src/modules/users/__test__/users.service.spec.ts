@@ -15,7 +15,6 @@ import { plainToInstance } from 'class-transformer';
 const mockUser: Users = {
   id: 1,
   username: 'testuser',
-  name: 'Test User',
   email: 'test@example.com',
   password: 'hashedPassword',
   roleId: 1,
@@ -24,8 +23,6 @@ const mockUser: Users = {
   isActive: true,
   deletedAt: null,
   createdAt: new Date(),
-  reset_password_token: null,
-  reset_password_expires: null,
 } as Users;
 
 describe('UsersService', () => {
@@ -169,19 +166,6 @@ describe('UsersService', () => {
     });
   });
 
-  describe('findByResetPasswordToken', () => {
-    it('should return user if token is valid', async () => {
-      repository.findOne.mockResolvedValueOnce(mockUser);
-
-      const result = await service.findByPassword('abc');
-      expect(result).toMatchObject({
-        username: 'testuser',
-        name: 'Test User',
-        email: 'test@example.com',
-      });
-    });
-  });
-
   describe('findAll', () => {
     it('should return paginated users', async () => {
       const query: GetUsersQueryDto = { page: '1', limit: '10', search: '' };
@@ -213,7 +197,6 @@ describe('UsersService', () => {
     const dto: CreateUserDto = {
       username: 'newuser',
       password: 'password123',
-      name: 'New User',
       email: 'newuser@example.com',
       roleId: 1,
       employee_id: 1,
@@ -224,7 +207,6 @@ describe('UsersService', () => {
       const mockNewUser = {
         ...mockUser,
         username: 'newuser',
-        name: 'New User',
         email: 'newuser@example.com',
       };
       
@@ -256,7 +238,6 @@ describe('UsersService', () => {
 
   describe('update', () => {
     const dto: UpdateUserDto = {
-      name: 'Updated Name',
       email: 'updated@example.com',
     };
 
@@ -266,7 +247,7 @@ describe('UsersService', () => {
       repository.save.mockResolvedValueOnce({ ...mockUser, ...dto });
 
       const result = await service.update(1, dto);
-      expect(result.data?.name).toBe(dto.name);
+      expect(result.data?.email).toBe(dto.email);
     });
 
     it('should throw not found if user missing', async () => {
@@ -305,35 +286,6 @@ describe('UsersService', () => {
       await expect(service.remove(1)).rejects.toThrow(
         InternalServerErrorException,
       );
-    });
-  });
-
-  describe('sendResetPasswordEmail', () => {
-    it('should send reset email if user exists', async () => {
-      repository.findOne.mockResolvedValueOnce(mockUser);
-      repository.save.mockResolvedValueOnce({
-        ...mockUser,
-        reset_password_token: 'abc',
-      });
-      const result = await service.sendResetPasswordEmail(mockUser.email);
-
-      expect(mailService.sendMail).toHaveBeenCalled();
-      expect(result?.message).toContain('reset link');
-    });
-
-    it('should still respond success even if user not found', async () => {
-      repository.findOne.mockResolvedValueOnce(null);
-      const result = await service.sendResetPasswordEmail('nouser@example.com');
-
-      expect(result?.message).toContain('If your email is registered');
-    });
-
-    it('should throw 500 on failure', async () => {
-      repository.findOne.mockRejectedValueOnce(new Error('DB error'));
-
-      await expect(
-        service.sendResetPasswordEmail(mockUser.email),
-      ).rejects.toThrow(HttpException);
     });
   });
 });

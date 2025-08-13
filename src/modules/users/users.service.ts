@@ -46,17 +46,6 @@ export class UsersService {
     });
   }
 
-  async findByPassword(token: string): Promise<Users | null> {
-    return this.userRepository.findOne({
-      where: {
-        reset_password_token: token,
-        isActive: true,
-      },
-      withDeleted: false,
-      relations: ['roles', 'employees', 'sites'],
-    });
-  }
-
   async findByEmail(email: string): Promise<Users | null> {
     return this.userRepository.findOne({
       where: {
@@ -161,7 +150,6 @@ export class UsersService {
       const response: UserResponseDto = {
         id: result.id,
         username: result.username,
-        name: result.name,
         email: result.email,
         roleId: result.roleId,
         employee_id: result.employee_id,
@@ -212,7 +200,6 @@ export class UsersService {
       const response: any = {
         id: result.id,
         username: result.username,
-        name: result.name,
         email: result.email,
         roleId: result.roleId,
         sites_id: result.sites_id,
@@ -241,35 +228,6 @@ export class UsersService {
         throw error;
       }
       throw new InternalServerErrorException('Failed to delete user');
-    }
-  }
-
-  async sendResetPasswordEmail(email: string) {
-    try {
-      const user = await this.findByEmail(email);
-
-      if (user) {
-        const token = randomBytes(32).toString('hex');
-        const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-
-        user.reset_password_token = token;
-        user.reset_password_expires = expires;
-        await this.userRepository.save(user);
-        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-
-        await this.mailService.sendMail(
-          email,
-          'Reset Password',
-          `Click here to reset your password: ${resetLink}`,
-        );
-      }
-
-      return {
-        message:
-          'If your email is registered, we have sent you a password reset link.',
-      };
-    } catch (error) {
-      throwError('Something went wrong. Please try again later.', 500);
     }
   }
 }
