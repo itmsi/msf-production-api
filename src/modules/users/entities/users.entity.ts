@@ -67,7 +67,7 @@ export class Users {
   employees?: Employee;
 
   @Expose()
-  @ManyToOne(() => Sites, (sites) => sites.users)
+  @ManyToOne(() => Sites, (sites) => sites.operator_points)
   @JoinColumn({ name: 'sites_id' })
   sites?: Sites;
 }

@@ -1,5 +1,4 @@
 import { Expose, Exclude } from 'class-transformer';
-import { Users } from '../../../modules/users/entities/users.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -9,6 +8,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
+import { OperationPoints } from '../../operation-points/entities/operation-points.entity';
 
 @Entity('m_sites')
 export class Sites {
@@ -41,6 +41,6 @@ export class Sites {
   @DeleteDateColumn()
   deletedAt?: Date | null;
 
-  @OneToMany(() => Users, (user) => user.sites)
-  users?: Users[];
+  @OneToMany(() => OperationPoints, (op) => op.site)
+  operator_points?: OperationPoints[];
 }
