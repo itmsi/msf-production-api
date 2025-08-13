@@ -15,6 +15,7 @@ interface UserPayload {
   roleId: number;
   isActive: boolean;
   roles: { name: string };
+  sites_id: number;
 }
 
 @Injectable()
@@ -40,6 +41,7 @@ export class AuthService {
       roleId: user.roleId,
       isActive: user.isActive,
       roles: user.roles.name,
+      sites_id: user.sites_id,
     };
     return {
       access_token: this.jwtService.sign(payload),

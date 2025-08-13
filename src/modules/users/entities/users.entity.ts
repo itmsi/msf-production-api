@@ -11,8 +11,9 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Employee } from '../../../master/employee/entities/employee.entity';
+import { Sites } from '../../../master/sites/entities/sites.entity';
 
-@Entity()
+@Entity('m_user')
 export class Users {
   @Expose()
   @PrimaryGeneratedColumn()
@@ -46,6 +47,10 @@ export class Users {
   @Column()
   employee_id: number;
 
+  @Expose()
+  @Column()
+  sites_id: number;
+
   @CreateDateColumn()
   createdAt: Date;
 
@@ -70,4 +75,9 @@ export class Users {
   @ManyToOne(() => Employee, (employee) => employee.users)
   @JoinColumn({ name: 'employee_id' })
   employees?: Employee;
+
+  @Expose()
+  @ManyToOne(() => Sites, (sites) => sites.users)
+  @JoinColumn({ name: 'sites_id' })
+  sites?: Sites;
 }

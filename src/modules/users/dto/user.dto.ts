@@ -48,6 +48,12 @@ export class CreateUserDto {
   @IsNumber()
   @IsOptional()
   employee_id: number;
+
+  @ApiProperty({ example: 1 })
+  @Type(() => Number)
+  @IsNumber()
+  @IsNotEmpty()
+  sites_id: number;
 }
 
 export class UserResponseDto {
@@ -57,6 +63,7 @@ export class UserResponseDto {
   email: string;
   roleId: number;
   employee_id: number;
+  sites_id: number;
   roles?: any;
   meta?: any;
 }
@@ -100,6 +107,14 @@ export class UpdateUserDto {
   @Type(() => Number)
   @IsNumber()
   employee_id?: number;
+
+  @ApiProperty({
+    example: 1,
+    description: 'ID unik dari sites.',
+  })
+  @Type(() => Number)
+  @IsNumber()
+  sites_id?: number;
 
   @IsString()
   @IsOptional()

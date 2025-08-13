@@ -66,6 +66,7 @@ describe('AuthService', () => {
         roles: { name: 'admin' },
         roleId: 1,
         isActive: true,
+        sites_id: 1,
       };
       jwtService.sign.mockReturnValue('signed-token');
       const result = service.login(mockUser);

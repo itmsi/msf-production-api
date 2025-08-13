@@ -4,6 +4,8 @@ import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { RolesModule } from './modules/roles/roles.module';
+import { SitesModule } from './master/sites/sites.module';
+import { EmployeeModule } from './master/employee/employee.module';
 
 @Module({
   imports: [
@@ -18,13 +20,15 @@ import { RolesModule } from './modules/roles/roles.module';
         username: process.env.POSTGRES_USER,
         password: process.env.POSTGRES_PASSWORD,
         database: process.env.POSTGRES_DB,
-        entities: [__dirname + '/modules/**/entities/*.entity{.ts,.js}'],
+        entities: [__dirname + '/modules/**/entities/*.entity{.ts,.js}', __dirname + '/master/**/entities/*.entity{.ts,.js}'],
         synchronize: false,
       }),
     }),
     AuthModule,
     UsersModule,
     RolesModule,
+    SitesModule,
+    EmployeeModule,
   ],
 })
 export class AppModule {}

@@ -42,7 +42,7 @@ export class UsersService {
         isActive: true,
       },
       withDeleted: false,
-      relations: ['roles'],
+      relations: ['roles', 'employees', 'sites'],
     });
   }
 
@@ -53,7 +53,7 @@ export class UsersService {
         isActive: true,
       },
       withDeleted: false,
-      relations: ['roles'],
+      relations: ['roles', 'employees', 'sites'],
     });
   }
 
@@ -64,14 +64,14 @@ export class UsersService {
         isActive: true,
       },
       withDeleted: false,
-      relations: ['roles'],
+      relations: ['roles', 'employees', 'sites'],
     });
   }
 
   async findByIdWithRole(id: number) {
     return this.userRepository.findOne({
       where: { id },
-      relations: ['roles'],
+      relations: ['roles', 'employees', 'sites'],
     });
   }
 
@@ -105,7 +105,8 @@ export class UsersService {
       const qb = this.userRepository
         .createQueryBuilder('user')
         .leftJoinAndSelect('user.employees', 'employees')
-        .leftJoinAndSelect('user.roles', 'roles');
+        .leftJoinAndSelect('user.roles', 'roles')
+        .leftJoinAndSelect('user.sites', 'sites');
 
       if (search) {
         qb.where('user.username ILIKE :search', {
@@ -164,6 +165,7 @@ export class UsersService {
         email: result.email,
         roleId: result.roleId,
         employee_id: result.employee_id,
+        sites_id: result.sites_id,
       };
 
       return successResponse(response);
@@ -213,6 +215,7 @@ export class UsersService {
         name: result.name,
         email: result.email,
         roleId: result.roleId,
+        sites_id: result.sites_id,
       };
       return successResponse(response, 'User updated successfully');
     } catch (error) {

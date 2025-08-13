@@ -17,15 +17,16 @@ const mockUser: Users = {
   username: 'testuser',
   name: 'Test User',
   email: 'test@example.com',
-  password: 'hashedpassword',
+  password: 'hashedPassword',
   roleId: 1,
   employee_id: 1,
+  sites_id: 1,
   isActive: true,
   deletedAt: null,
   createdAt: new Date(),
   reset_password_token: null,
   reset_password_expires: null,
-};
+} as Users;
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -111,7 +112,7 @@ describe('UsersService', () => {
 
       expect(repository.findOne).toHaveBeenCalledWith({
         where: { id: 1 },
-        relations: ['roles'],
+        relations: ['roles', 'employees', 'sites'],
       });
 
       expect(result).toEqual(mockUserWithRole);
@@ -124,7 +125,7 @@ describe('UsersService', () => {
 
       expect(repository.findOne).toHaveBeenCalledWith({
         where: { id: 999 },
-        relations: ['roles'],
+        relations: ['roles', 'employees', 'sites'],
       });
 
       expect(result).toBeNull();
@@ -140,9 +141,10 @@ describe('UsersService', () => {
         username: 'testuser',
         name: 'Test User',
         email: 'test@example.com',
-        password: 'hashedpassword',
+        password: 'hashedPassword',
         roleId: 1,
         employee_id: 1,
+        sites_id: 1,
         isActive: true,
         reset_password_token: null,
         reset_password_expires: null,
@@ -209,18 +211,26 @@ describe('UsersService', () => {
 
   describe('create', () => {
     const dto: CreateUserDto = {
-      username: 'testuser',
+      username: 'newuser',
       password: 'password123',
-      name: 'Test User',
-      email: 'test@example.com',
+      name: 'New User',
+      email: 'newuser@example.com',
       roleId: 1,
       employee_id: 1,
+      sites_id: 1,
     };
 
     it('should create a new user', async () => {
+      const mockNewUser = {
+        ...mockUser,
+        username: 'newuser',
+        name: 'New User',
+        email: 'newuser@example.com',
+      };
+      
       repository.findOne.mockResolvedValueOnce(null); // no duplicate
-      repository.create.mockReturnValue(mockUser);
-      repository.save.mockResolvedValueOnce(mockUser);
+      repository.create.mockReturnValue(mockNewUser);
+      repository.save.mockResolvedValueOnce(mockNewUser);
       // jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashedpassword');
 
       const result = await service.create(dto);

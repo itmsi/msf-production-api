@@ -4,6 +4,7 @@ import { UsersService } from '../users.service';
 import { UserResponseDto } from '../dto/user.dto';
 import { ApiResponse } from '@/common/helpers/response.helper';
 import { Users } from '../entities/users.entity';
+import { CreateUserDto } from '../dto/user.dto';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -11,23 +12,26 @@ describe('UsersController', () => {
 
   const userEntity: Users = {
     id: 1,
-    name: 'John Doe',
-    username: 'johndoe',
-    email: 'john@example.com',
-    password: 'hashed-password',
-    roleId: 2,
+    name: 'Test User',
+    username: 'testuser',
+    email: 'test@example.com',
+    password: 'hashedPassword',
+    roleId: 1,
     employee_id: 1,
+    sites_id: 1,
     isActive: true,
     createdAt: new Date(),
     deletedAt: null,
-  };
+  } as Users;
+
   const userDto: UserResponseDto = {
     id: 1,
-    name: 'John Doe',
-    username: 'johndoe',
-    email: 'john@example.com',
-    roleId: 2,
+    name: 'Test User',
+    username: 'testuser',
+    email: 'test@example.com',
+    roleId: 1,
     employee_id: 1,
+    sites_id: 1,
   };
 
   beforeEach(async () => {
@@ -82,13 +86,14 @@ describe('UsersController', () => {
 
     jest.spyOn(service, 'create').mockResolvedValue(result);
 
-    const createDto = {
-      username: 'johndoe',
+    const createDto: CreateUserDto = {
+      username: 'newuser',
       password: 'password123',
-      name: 'John Doe',
-      email: 'john@example.com',
-      roleId: 2,
+      name: 'New User',
+      email: 'newuser@example.com',
+      roleId: 1,
       employee_id: 1,
+      sites_id: 1,
     };
 
     expect(await controller.create(createDto)).toEqual(result);

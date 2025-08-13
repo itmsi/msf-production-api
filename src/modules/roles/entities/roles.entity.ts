@@ -12,22 +12,22 @@ import {
   JoinColumn,
 } from 'typeorm';
 
-@Entity()
+@Entity('m_role')
 export class Roles {
   @Expose()
   @PrimaryGeneratedColumn()
   id: number;
 
   @Expose()
-  @Column({ unique: true })
+  @Column({ name: 'role_code' })
   roleCode: string;
 
   @Expose()
-  @Column()
+  @Column({ name: 'position_name' })
   name: string;
 
   @Expose()
-  @Column()
+  @Column({ name: 'role_parent' })
   role_parent: number;
 
   @Expose()

@@ -29,32 +29,42 @@ describe('JwtStrategy', () => {
       sub: 1,
       username: 'admin',
       roles: ['admin'],
+      roleId: 1,
       isActive: true,
+      sites_id: 1,
     };
 
     const result = jwtStrategy.validate(payload);
+
     expect(result).toEqual({
       id: 1,
       username: 'admin',
       roles: ['admin'],
-      isActive: 'active',
+      roleId: 1,
+      isActive: true,
+      sites_id: 1,
     });
   });
 
-  it('should return isActive as "inactive" if false', () => {
+  it('should return isActive as false if false', () => {
     const payload = {
       sub: 2,
       username: 'user',
       roles: ['user'],
+      roleId: 2,
       isActive: false,
+      sites_id: 1,
     };
 
     const result = jwtStrategy.validate(payload);
+
     expect(result).toEqual({
       id: 2,
       username: 'user',
       roles: ['user'],
-      isActive: 'inactive',
+      roleId: 2,
+      isActive: false,
+      sites_id: 1,
     });
   });
 });
