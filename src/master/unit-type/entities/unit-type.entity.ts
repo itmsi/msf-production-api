@@ -6,16 +6,16 @@ export class UnitType {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'int', nullable: true })
+  @Column({ type: 'int', nullable: false })
   brand_id: number;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: false })
   unit_name: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: false })
   type_name: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: false })
   model_name: string;
 
   @CreateDateColumn()
@@ -27,7 +27,7 @@ export class UnitType {
   @DeleteDateColumn()
   deletedAt: Date;
 
-  @ManyToOne(() => Brand, { onDelete: 'SET NULL', onUpdate: 'CASCADE' })
+  @ManyToOne(() => Brand, { eager: true })
   @JoinColumn({ name: 'brand_id' })
   brand: Brand;
 }

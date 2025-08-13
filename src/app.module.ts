@@ -7,6 +7,7 @@ import { RolesModule } from './modules/roles/roles.module';
 import { SitesModule } from './master/sites/sites.module';
 import { EmployeeModule } from './master/employee/employee.module';
 import { BrandModule } from './master/brand/brand.module';
+import { UnitTypeModule } from './master/unit-type/unit-type.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { BrandModule } from './master/brand/brand.module';
     SitesModule,
     EmployeeModule,
     BrandModule,
+    UnitTypeModule,
   ],
 })
 export class AppModule {}
