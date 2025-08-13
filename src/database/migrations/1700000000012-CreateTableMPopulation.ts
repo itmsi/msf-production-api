@@ -13,7 +13,7 @@ export class CreateTableMPopulation1700000000012 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TYPE enum_last_unit_no AS ENUM (null, 'new-unit', 'second-unit')
+      CREATE TYPE enum_last_unit_no AS ENUM ('none', 'new-unit', 'second-unit')
     `);
 
     await queryRunner.query(`
@@ -82,7 +82,7 @@ export class CreateTableMPopulation1700000000012 implements MigrationInterface {
           {
             name: 'last_unit_number',
             type: 'enum',
-            enum: ['null', 'new-unit', 'second-unit'],
+            enum: ['none', 'new-unit', 'second-unit'],
             isNullable: true,
           },
           {

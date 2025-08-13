@@ -9,7 +9,7 @@ export class CreateTableRFuel1700000000013 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Buat ENUM type untuk uom
     await queryRunner.query(`
-      CREATE TYPE enum_fuel_uom AS ENUM (NULL, 'liter')
+      CREATE TYPE enum_fuel_uom AS ENUM ('none', 'liter')
     `);
 
     await queryRunner.createTable(
@@ -90,7 +90,7 @@ export class CreateTableRFuel1700000000013 implements MigrationInterface {
           {
             name: 'uom',
             type: 'enum',
-            enum: ['liter'],
+            enum: ['none', 'liter'],
             isNullable: false,
           },
           {

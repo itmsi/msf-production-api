@@ -7,6 +7,10 @@ import {
 
 export class CreateTableMUnitVariant1700000000011 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
+      CREATE TYPE enum_unit_variant_tyre_type AS ENUM ('6x4', '8x4')
+    `);
+
     await queryRunner.createTable(
       new Table({
         name: 'm_unit_variant',
@@ -24,9 +28,21 @@ export class CreateTableMUnitVariant1700000000011 implements MigrationInterface 
             isNullable: false,
           },
           {
-            name: 'name',
+            name: 'no_unit',
             type: 'varchar',
             length: '255',
+            isNullable: true,
+          },
+          {
+            name: 'vin_number',
+            type: 'varchar',
+            length: '255',
+            isNullable: true,
+          },
+          {
+            name: 'tyre_type',
+            type: 'enum',
+            enum: ['6x4', '8x4'],
             isNullable: true,
           },
           {
@@ -73,5 +89,7 @@ export class CreateTableMUnitVariant1700000000011 implements MigrationInterface 
     }
 
     await queryRunner.dropTable('m_unit_variant');
+
+    await queryRunner.query(`DROP TYPE IF EXISTS enum_unit_variant_tyre_type`);
   }
 } 
