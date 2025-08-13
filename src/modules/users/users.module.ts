@@ -14,7 +14,7 @@ import { S3Module } from '../../integrations/s3/s3.module';
     S3Module,
     MailModule,
   ], // sample import RMQ & S3
-  providers: [UsersService, RabbitmqModule, MailModule],
+  providers: [UsersService],
   controllers: [UsersController],
   exports: [UsersService],
 })

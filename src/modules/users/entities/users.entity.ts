@@ -10,7 +10,7 @@ import {
   JoinColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Employee } from '../../master/employee/entities/employee.entity';
+import { Employee } from '../../../master/employee/entities/employee.entity';
 
 @Entity()
 export class Users {

@@ -13,19 +13,7 @@ export class CreateTableMPopulation1700000000012 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TYPE enum_population_brand AS ENUM ('motorsights', 'shacman')
-    `);
-
-    await queryRunner.query(`
-      CREATE TYPE enum_population_model AS ENUM ('F3000', 'X3000', 'MS700', 'F2000', 'toyota-hilux')
-    `);
-
-    await queryRunner.query(`
-      CREATE TYPE enum_population_engine_brand AS ENUM (NULL, 'cummins', 'weichai')
-    `);
-
-    await queryRunner.query(`
-      CREATE TYPE enum_last_unit_no AS ENUM (NULL, 'null-number', 'new-unit')
+      CREATE TYPE enum_last_unit_no AS ENUM (null, 'new-unit', 'second-unit')
     `);
 
     await queryRunner.query(`
@@ -61,12 +49,6 @@ export class CreateTableMPopulation1700000000012 implements MigrationInterface {
             default: "'active'",
           },
           {
-            name: 'brand',
-            type: 'enum',
-            enum: ['motorsights', 'shacman'],
-            isNullable: true,
-          },
-          {
             name: 'variant_id',
             type: 'int',
             isNullable: true,
@@ -78,27 +60,8 @@ export class CreateTableMPopulation1700000000012 implements MigrationInterface {
             isNullable: true,
           },
           {
-            name: 'model',
-            type: 'enum',
-            enum: ['F3000', 'X3000', 'MS700', 'F2000', 'toyota-hilux'],
-            isNullable: true,
-          },
-          {
-            name: 'vin_number',
-            type: 'varchar',
-            length: '100',
-            isNullable: true,
-          },
-          {
-            name: 'engine_brand',
-            type: 'enum',
-            enum: [null, 'cummins', 'weichai'],
-            isNullable: true,
-          },
-          {
-            name: 'engine_number',
-            type: 'varchar',
-            length: '100',
+            name: 'engine_brand_id',
+            type: 'int',
             isNullable: true,
           },
           {
@@ -119,7 +82,7 @@ export class CreateTableMPopulation1700000000012 implements MigrationInterface {
           {
             name: 'last_unit_number',
             type: 'enum',
-            enum: [null, 'null-number', 'new-unit'],
+            enum: ['null', 'new-unit', 'second-unit'],
             isNullable: true,
           },
           {
@@ -184,6 +147,17 @@ export class CreateTableMPopulation1700000000012 implements MigrationInterface {
         columnNames: ['site_id'],
         referencedColumnNames: ['id'],
         referencedTableName: 'm_sites',
+        onDelete: 'SET NULL',
+        onUpdate: 'CASCADE',
+      }),
+    );
+
+    await queryRunner.createForeignKey(
+      'm_population',
+      new TableForeignKey({
+        columnNames: ['engine_brand_id'],
+        referencedColumnNames: ['id'],
+        referencedTableName: 'm_engine_brand',
         onDelete: 'SET NULL',
         onUpdate: 'CASCADE',
       }),

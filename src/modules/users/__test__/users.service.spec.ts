@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from '../users.service';
-import { Repository, Timestamp } from 'typeorm';
+import { Repository, Timestamp, DataSource } from 'typeorm';
 import { Users } from '../entities/users.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { MailService } from '../../../integrations/mail/mail.service';
@@ -19,6 +19,7 @@ const mockUser: Users = {
   email: 'test@example.com',
   password: 'hashedpassword',
   roleId: 1,
+  employee_id: 1,
   isActive: true,
   deletedAt: null,
   createdAt: new Date(),
@@ -44,12 +45,28 @@ describe('UsersService', () => {
             save: jest.fn(),
             merge: jest.fn(),
             softRemove: jest.fn(),
+            createQueryBuilder: jest.fn(() => ({
+              leftJoinAndSelect: jest.fn().mockReturnThis(),
+              where: jest.fn().mockReturnThis(),
+              orWhere: jest.fn().mockReturnThis(),
+              andWhere: jest.fn().mockReturnThis(),
+              orderBy: jest.fn().mockReturnThis(),
+              skip: jest.fn().mockReturnThis(),
+              take: jest.fn().mockReturnThis(),
+              getManyAndCount: jest.fn().mockResolvedValue([[mockUser], 1]),
+            })),
           },
         },
         {
           provide: MailService,
           useValue: {
-            sendEmail: jest.fn(),
+            sendMail: jest.fn(),
+          },
+        },
+        {
+          provide: DataSource,
+          useValue: {
+            createQueryRunner: jest.fn(),
           },
         },
       ],
@@ -68,6 +85,7 @@ describe('UsersService', () => {
         email: 'test@example.com',
         password: 'hashedpassword',
         roleId: 1,
+        employee_id: 1,
         isActive: true,
         reset_password_token: null,
         reset_password_expires: null,
@@ -124,6 +142,7 @@ describe('UsersService', () => {
         email: 'test@example.com',
         password: 'hashedpassword',
         roleId: 1,
+        employee_id: 1,
         isActive: true,
         reset_password_token: null,
         reset_password_expires: null,
@@ -171,7 +190,16 @@ describe('UsersService', () => {
     });
 
     it('should throw InternalServerErrorException on error', async () => {
-      repository.findAndCount.mockRejectedValueOnce(new Error('DB error'));
+      repository.createQueryBuilder.mockImplementationOnce(() => ({
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        orWhere: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockRejectedValue(new Error('DB error')),
+      } as any));
 
       await expect(service.findAll({ page: '1', limit: '10' })).rejects.toThrow(
         InternalServerErrorException,
@@ -186,6 +214,7 @@ describe('UsersService', () => {
       name: 'Test User',
       email: 'test@example.com',
       roleId: 1,
+      employee_id: 1,
     };
 
     it('should create a new user', async () => {
@@ -278,7 +307,7 @@ describe('UsersService', () => {
       });
       const result = await service.sendResetPasswordEmail(mockUser.email);
 
-      expect(mailService.sendEmail).toHaveBeenCalled();
+      expect(mailService.sendMail).toHaveBeenCalled();
       expect(result?.message).toContain('reset link');
     });
 

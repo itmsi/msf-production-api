@@ -254,7 +254,7 @@ export class UsersService {
         await this.userRepository.save(user);
         const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
-        await this.mailService.sendEmail(
+        await this.mailService.sendMail(
           email,
           'Reset Password',
           `Click here to reset your password: ${resetLink}`,

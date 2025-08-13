@@ -16,6 +16,7 @@ describe('UsersController', () => {
     email: 'john@example.com',
     password: 'hashed-password',
     roleId: 2,
+    employee_id: 1,
     isActive: true,
     createdAt: new Date(),
     deletedAt: null,
@@ -26,6 +27,7 @@ describe('UsersController', () => {
     username: 'johndoe',
     email: 'john@example.com',
     roleId: 2,
+    employee_id: 1,
   };
 
   beforeEach(async () => {
@@ -86,6 +88,7 @@ describe('UsersController', () => {
       name: 'John Doe',
       email: 'john@example.com',
       roleId: 2,
+      employee_id: 1,
     };
 
     expect(await controller.create(createDto)).toEqual(result);

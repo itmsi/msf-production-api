@@ -90,7 +90,7 @@ export class CreateTableRFuel1700000000013 implements MigrationInterface {
           {
             name: 'uom',
             type: 'enum',
-            enum: [null, 'liter'],
+            enum: ['liter'],
             isNullable: false,
           },
           {
