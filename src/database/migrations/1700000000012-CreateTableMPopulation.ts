@@ -13,7 +13,11 @@ export class CreateTableMPopulation1700000000012 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TYPE enum_last_unit_no AS ENUM ('none', 'new-unit', 'second-unit')
+      CREATE TYPE enum_population_engine_brand AS ENUM ('cummins', 'weichai')
+    `);
+
+    await queryRunner.query(`
+      CREATE TYPE enum_note AS ENUM ('RFU', 'BD')
     `);
 
     await queryRunner.query(`
@@ -32,18 +36,6 @@ export class CreateTableMPopulation1700000000012 implements MigrationInterface {
             generationStrategy: 'increment',
           },
           {
-            name: 'no_unit',
-            type: 'varchar',
-            length: '100',
-            isNullable: true,
-          },
-          {
-            name: 'vin_number',
-            type: 'varchar',
-            length: '100',
-            isNullable: true,
-          },
-          {
             name: 'date_arrive',
             type: 'date',
             isNullable: true,
@@ -60,14 +52,33 @@ export class CreateTableMPopulation1700000000012 implements MigrationInterface {
             isNullable: true,
           },
           {
+            name: 'no_unit',
+            type: 'varchar',
+            length: '100',
+            isNullable: true,
+          },
+          {
+            name: 'vin_number',
+            type: 'varchar',
+            length: '100',
+            isNullable: true,
+          },
+          {
             name: 'no_unit_system',
             type: 'varchar',
             length: '100',
             isNullable: true,
           },
           {
-            name: 'engine_brand_id',
-            type: 'int',
+            name: 'engine_brand',
+            type: 'enum',
+            enum: ['cummins', 'weichai'],
+            isNullable: true,
+          },
+          {
+            name: 'serial_engine',
+            type: 'varchar',
+            length: '100',
             isNullable: true,
           },
           {
@@ -76,8 +87,15 @@ export class CreateTableMPopulation1700000000012 implements MigrationInterface {
             isNullable: true,
           },
           {
+            name: 'site_origin',
+            type: 'varchar',
+            length: '255',
+            isNullable: true,
+          },
+          {
             name: 'remarks',
-            type: 'text',
+            type: 'enum',
+            enum: ['RFU', 'BD'],
             isNullable: true,
           },
           {
@@ -86,21 +104,15 @@ export class CreateTableMPopulation1700000000012 implements MigrationInterface {
             isNullable: true,
           },
           {
-            name: 'last_unit_number',
-            type: 'enum',
-            enum: ['none', 'new-unit', 'second-unit'],
+            name: 'company',
+            type: 'varchar',
+            length: '255',
             isNullable: true,
           },
           {
             name: 'tyre_type',
             type: 'enum',
             enum: ['6x4', '8x4'],
-            isNullable: true,
-          },
-          {
-            name: 'company',
-            type: 'varchar',
-            length: '255',
             isNullable: true,
           },
           {
@@ -157,17 +169,6 @@ export class CreateTableMPopulation1700000000012 implements MigrationInterface {
         onUpdate: 'CASCADE',
       }),
     );
-
-    await queryRunner.createForeignKey(
-      'm_population',
-      new TableForeignKey({
-        columnNames: ['engine_brand_id'],
-        referencedColumnNames: ['id'],
-        referencedTableName: 'm_engine_brand',
-        onDelete: 'SET NULL',
-        onUpdate: 'CASCADE',
-      }),
-    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
@@ -183,7 +184,8 @@ export class CreateTableMPopulation1700000000012 implements MigrationInterface {
     
     // Hapus ENUM types
     await queryRunner.query(`DROP TYPE IF EXISTS enum_population_status`);
-    await queryRunner.query(`DROP TYPE IF EXISTS enum_last_unit_no`);
+    await queryRunner.query(`DROP TYPE IF EXISTS enum_population_engine_brand`);
+    await queryRunner.query(`DROP TYPE IF EXISTS enum_note`);
     await queryRunner.query(`DROP TYPE IF EXISTS enum_tyre_type`);
   }
 } 

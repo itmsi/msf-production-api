@@ -10,7 +10,6 @@ import { ActivitiesSeeder } from './activities.seeder';
 import { OperationPointsSeeder } from './operation-points.seeder';
 import { BargeSeeder } from './barge.seeder';
 import { PopulationSeeder } from './population.seeder';
-import { EngineBrandSeeder } from './engine-brand.seeder';
 
 export class MainSeeder {
   constructor(private dataSource: DataSource) {}
@@ -55,31 +54,25 @@ export class MainSeeder {
       await unitTypeSeeder.run();
       console.log('✅ Unit Types seeding completed\n');
 
-      // 7. Seed Engine Brands (no dependencies)
-      console.log('🔧 Seeding Engine Brands...');
-      const engineBrandSeeder = new EngineBrandSeeder(this.dataSource);
-      await engineBrandSeeder.run();
-      console.log('✅ Engine Brands seeding completed\n');
-
-      // 8. Seed Activities (no dependencies)
+      // 7. Seed Activities (no dependencies)
       console.log('📋 Seeding Activities...');
       const activitiesSeeder = new ActivitiesSeeder(this.dataSource);
       await activitiesSeeder.run();
       console.log('✅ Activities seeding completed\n');
 
-      // 9. Seed Operation Points (depends on Sites)
+      // 8. Seed Operation Points (depends on Sites)
       console.log('📍 Seeding Operation Points...');
       const operationPointsSeeder = new OperationPointsSeeder(this.dataSource);
       await operationPointsSeeder.run();
       console.log('✅ Operation Points seeding completed\n');
 
-      // 10. Seed Barge (depends on Sites)
+      // 9. Seed Barge (depends on Sites)
       console.log('🚢 Seeding Barge...');
       const bargeSeeder = new BargeSeeder(this.dataSource);
       await bargeSeeder.run();
       console.log('✅ Barge seeding completed\n');
 
-      // 11. Seed Population (depends on Unit Types, Activities, Sites, Engine Brands)
+      // 10. Seed Population (depends on Unit Types, Activities, Sites)
       console.log('👥 Seeding Population...');
       const populationSeeder = new PopulationSeeder(this.dataSource);
       await populationSeeder.run();
@@ -93,7 +86,6 @@ export class MainSeeder {
       console.log('   • 7 Users (with passwords)');
       console.log('   • 5 Brands');
       console.log('   • 10 Unit Types');
-      console.log('   • 5 Engine Brands');
       console.log('   • 8 Activities');
       console.log('   • 10 Operation Points');
       console.log('   • 5 Barge');

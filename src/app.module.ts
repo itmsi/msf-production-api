@@ -6,6 +6,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { SitesModule } from './master/sites/sites.module';
 import { EmployeeModule } from './master/employee/employee.module';
+import { BrandModule } from './master/brand/brand.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { EmployeeModule } from './master/employee/employee.module';
     RolesModule,
     SitesModule,
     EmployeeModule,
+    BrandModule,
   ],
 })
 export class AppModule {}

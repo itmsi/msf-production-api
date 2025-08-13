@@ -2,7 +2,6 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { UnitType } from '../../unit-type/entities/unit-type.entity';
 import { Activities } from '../../activities/entities/activities.entity';
 import { Sites } from '../../sites/entities/sites.entity';
-import { EngineBrand } from '../../engine-brand/entities/engine-brand.entity';
 
 @Entity('m_population')
 export class Population {
@@ -27,20 +26,17 @@ export class Population {
   @Column({ type: 'varchar', length: 100, nullable: true })
   no_unit_system: string;
 
-  @Column({ type: 'int', nullable: true })
-  engine_brand_id: number;
+  @Column({ type: 'enum', enum: ['cummins', 'weichai'], nullable: true })
+  engine_brand: string;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  serial_engine: string;
 
   @Column({ type: 'int', nullable: true })
   activities_id: number;
 
-  @Column({ type: 'text', nullable: true })
-  remarks: string;
-
   @Column({ type: 'int', nullable: true })
   site_id: number;
-
-  @Column({ type: 'enum', enum: ['none', 'new-unit', 'second-unit'], nullable: true })
-  last_unit_number: string;
 
   @Column({ type: 'enum', enum: ['6x4', '8x4'], nullable: true })
   tyre_type: string;
@@ -69,7 +65,5 @@ export class Population {
   @JoinColumn({ name: 'site_id' })
   site: Sites;
 
-  @ManyToOne(() => EngineBrand, { onDelete: 'SET NULL', onUpdate: 'CASCADE' })
-  @JoinColumn({ name: 'engine_brand_id' })
-  engineBrand: EngineBrand;
+
 }
