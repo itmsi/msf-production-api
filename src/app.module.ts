@@ -8,6 +8,7 @@ import { SitesModule } from './master/sites/sites.module';
 import { EmployeeModule } from './master/employee/employee.module';
 import { BrandModule } from './master/brand/brand.module';
 import { UnitTypeModule } from './master/unit-type/unit-type.module';
+import { ActivitiesModule } from './master/activities/activities.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { UnitTypeModule } from './master/unit-type/unit-type.module';
     EmployeeModule,
     BrandModule,
     UnitTypeModule,
+    ActivitiesModule,
   ],
 })
 export class AppModule {}

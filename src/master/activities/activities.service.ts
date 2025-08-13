@@ -1,0 +1,203 @@
+import {
+  Injectable,
+  InternalServerErrorException,
+  HttpException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Activities } from './entities/activities.entity';
+import { Repository, Not } from 'typeorm';
+import {
+  ApiResponse,
+  successResponse,
+  throwError,
+} from '../../common/helpers/response.helper';
+import { paginateResponse } from '../../common/helpers/public.helper';
+import {
+  CreateActivitiesDto,
+  ActivitiesResponseDto,
+  GetActivitiesQueryDto,
+  UpdateActivitiesDto,
+} from './dto/activities.dto';
+
+@Injectable()
+export class ActivitiesService {
+  constructor(
+    @InjectRepository(Activities)
+    private activitiesRepository: Repository<Activities>,
+  ) {}
+
+  async findById(id: number): Promise<ApiResponse<ActivitiesResponseDto>> {
+    const result = await this.activitiesRepository.findOne({
+      where: { id },
+    });
+    
+    if (!result) {
+      throwError('Aktivitas tidak ditemukan', 404);
+    }
+    
+    return successResponse(result as ActivitiesResponseDto);
+  }
+
+  async findAll(
+    query: GetActivitiesQueryDto,
+  ): Promise<ApiResponse<ActivitiesResponseDto[]>> {
+    try {
+      const page = parseInt(query.page ?? '1', 10);
+      const limit = parseInt(query.limit ?? '10', 10);
+      const skip = (page - 1) * limit;
+      const search = query.search?.toLowerCase() ?? '';
+      const name = query.name?.toLowerCase() ?? '';
+      const status = query.status?.toLowerCase() ?? '';
+      const sortBy = query.sortBy ?? 'id';
+      const sortOrder = query.sortOrder ?? 'DESC';
+
+      const qb = this.activitiesRepository
+        .createQueryBuilder('activities')
+        .where('activities.deletedAt IS NULL'); // Exclude soft deleted records
+
+      // Search filter (mencari di semua field yang relevan)
+      if (search) {
+        qb.andWhere('(activities.name ILIKE :search OR activities.status ILIKE :search)', {
+          search: `%${search}%`,
+        });
+      }
+
+      // Filter by name (exact match atau partial match)
+      if (name) {
+        qb.andWhere('activities.name ILIKE :name', {
+          name: `%${name}%`,
+        });
+      }
+
+      // Filter by status
+      if (status) {
+        qb.andWhere('activities.status ILIKE :status', {
+          status: `%${status}%`,
+        });
+      }
+
+      // Validate sortBy field to prevent SQL injection
+      const allowedSortFields = ['id', 'name', 'status', 'createdAt', 'updatedAt'];
+      const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
+      const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
+      qb.orderBy(`activities.${validSortBy}`, validSortOrder)
+        .skip(skip)
+        .take(limit);
+
+      const [result, total] = await qb.getManyAndCount();
+
+      // Transform result to DTO format without using plainToInstance
+      const transformedResult = result.map(activity => ({
+        id: activity.id,
+        name: activity.name,
+        status: activity.status,
+        createdAt: activity.createdAt,
+        updatedAt: activity.updatedAt
+      }));
+
+      const response = paginateResponse(
+        transformedResult,
+        total,
+        page,
+        limit,
+        'Data aktivitas berhasil diambil',
+      );
+      
+      return {
+        statusCode: response.statusCode,
+        message: response.message,
+        data: response.data,
+        meta: {
+          total,
+          page,
+          limit,
+        },
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException('Gagal mengambil data aktivitas');
+    }
+  }
+
+  async create(data: CreateActivitiesDto): Promise<ApiResponse<ActivitiesResponseDto>> {
+    try {
+      const existing = await this.activitiesRepository.findOne({
+        where: { name: data.name },
+      });
+      
+      if (existing) {
+        throwError('Nama aktivitas sudah terdaftar', 409);
+      }
+
+      const newActivity = this.activitiesRepository.create(data);
+      const result = await this.activitiesRepository.save(newActivity);
+      
+      return successResponse(result, 'Aktivitas berhasil dibuat');
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Gagal membuat aktivitas');
+    }
+  }
+
+  async update(
+    id: number,
+    updateDto: UpdateActivitiesDto,
+  ): Promise<ApiResponse<ActivitiesResponseDto>> {
+    try {
+      const activity = await this.activitiesRepository.findOne({ where: { id } });
+
+      if (!activity) {
+        throwError('Aktivitas tidak ditemukan', 404);
+      }
+
+      // Check if name already exists for other activities
+      if (updateDto.name) {
+        const existingActivity = await this.activitiesRepository.findOne({
+          where: {
+            name: updateDto.name,
+            id: Not(id),
+          },
+        });
+        
+        if (existingActivity) {
+          throwError(
+            `Nama aktivitas ${updateDto.name} sudah digunakan oleh aktivitas lain`,
+            409,
+          );
+        }
+      }
+
+      const updatedActivity = this.activitiesRepository.merge(activity!, updateDto);
+      const result = await this.activitiesRepository.save(updatedActivity);
+      
+      return successResponse(result, 'Aktivitas berhasil diupdate');
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Gagal mengupdate aktivitas');
+    }
+  }
+
+  async remove(id: number): Promise<ApiResponse<null>> {
+    try {
+      const activity = await this.activitiesRepository.findOne({ where: { id } });
+
+      if (!activity) {
+        throwError('Aktivitas tidak ditemukan', 404);
+      }
+      
+      await this.activitiesRepository.softRemove(activity!);
+
+      return successResponse(null, 'Aktivitas berhasil dihapus');
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Gagal menghapus aktivitas');
+    }
+  }
+}
