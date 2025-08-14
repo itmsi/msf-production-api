@@ -6,8 +6,7 @@ export class Barge {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'int', nullable: true })
-  sites_id: number;
+  // sites_id removed - not in migration
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   shipment: string;
@@ -27,7 +26,5 @@ export class Barge {
   @DeleteDateColumn()
   deletedAt: Date;
 
-  @ManyToOne(() => Sites, { onDelete: 'SET NULL', onUpdate: 'CASCADE' })
-  @JoinColumn({ name: 'sites_id' })
-  site: Sites;
+  // site relationship removed - not in migration
 }

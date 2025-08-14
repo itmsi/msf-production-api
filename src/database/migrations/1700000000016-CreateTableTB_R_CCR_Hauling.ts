@@ -31,12 +31,6 @@ export class CreateTableTB_R_CCR_Hauling1700000000016 implements MigrationInterf
             isNullable: false,
           },
           {
-            name: 'time_range',
-            type: 'varchar',
-            length: '100',
-            isNullable: true,
-          },
-          {
             name: 'unit_loading_id',
             type: 'int',
             isNullable: false,
@@ -78,14 +72,29 @@ export class CreateTableTB_R_CCR_Hauling1700000000016 implements MigrationInterf
             default: 'CURRENT_TIMESTAMP',
           },
           {
+            name: 'createdBy',
+            type: 'int',
+            isNullable: true,
+          },
+          {
             name: 'updatedAt',
             type: 'timestamp',
             default: 'CURRENT_TIMESTAMP',
             onUpdate: 'CURRENT_TIMESTAMP',
           },
           {
+            name: 'updatedBy',
+            type: 'int',
+            isNullable: true,
+          },
+          {
             name: 'deletedAt',
             type: 'timestamp',
+            isNullable: true,
+          },
+          {
+            name: 'deletedBy',
+            type: 'int',
             isNullable: true,
           },
         ],

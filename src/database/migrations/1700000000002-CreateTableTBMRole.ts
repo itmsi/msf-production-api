@@ -1,15 +1,10 @@
-import {
-  MigrationInterface,
-  QueryRunner,
-  Table,
-  TableForeignKey,
-} from 'typeorm';
+import { MigrationInterface, QueryRunner, Table, TableForeignKey } from 'typeorm';
 
-export class CreateTableMOperationPoints1700000000004 implements MigrationInterface {
+export class CreateTableTBMRole1700000000002 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: 'm_operation_points',
+        name: 'm_role',
         columns: [
           {
             name: 'id',
@@ -24,25 +19,21 @@ export class CreateTableMOperationPoints1700000000004 implements MigrationInterf
             isNullable: false,
           },
           {
-            name: 'type',
+            name: 'role_code',
             type: 'varchar',
             length: '100',
-            isNullable: true,
+            isNullable: false,
           },
           {
-            name: 'name',
+            name: 'position_name',
             type: 'varchar',
-            length: '255',
-            isNullable: true,
+            length: '100',
+            isNullable: false,
           },
           {
-            name: 'longitude',
-            type: 'float',
-            isNullable: true,
-          },
-          {
-            name: 'latitude',
-            type: 'float',
+            name: 'role_parent',
+            type: 'varchar',
+            length: '100',
             isNullable: true,
           },
           {
@@ -81,9 +72,8 @@ export class CreateTableMOperationPoints1700000000004 implements MigrationInterf
       true,
     );
 
-    // Tambahkan foreign key constraint
     await queryRunner.createForeignKey(
-      'm_operation_points',
+      'm_role',
       new TableForeignKey({
         columnNames: ['sites_id'],
         referencedColumnNames: ['id'],
@@ -95,14 +85,6 @@ export class CreateTableMOperationPoints1700000000004 implements MigrationInterf
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // Hapus foreign key constraint terlebih dahulu
-    const table = await queryRunner.getTable('m_operation_points');
-    const foreignKeys = table?.foreignKeys;
-
-    for (const foreignKey of foreignKeys || []) {
-      await queryRunner.dropForeignKey('m_operation_points', foreignKey);
-    }
-
-    await queryRunner.dropTable('m_operation_points');
+    await queryRunner.dropTable('m_role');
   }
-} 
+}

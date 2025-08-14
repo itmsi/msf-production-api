@@ -10,6 +10,11 @@ import { ActivitiesSeeder } from './activities.seeder';
 import { OperationPointsSeeder } from './operation-points.seeder';
 import { BargeSeeder } from './barge.seeder';
 import { PopulationSeeder } from './population.seeder';
+import { PermissionSeeder } from './permission.seeder';
+import { MenuSeeder } from './menu.seeder';
+import { MenuHasPermissionSeeder } from './menu-has-permission.seeder';
+import { RoleHasPermissionSeeder } from './role-has-permission.seeder';
+import { UserRoleSeeder } from './user-role.seeder';
 
 export class MainSeeder {
   constructor(private dataSource: DataSource) {}
@@ -78,6 +83,36 @@ export class MainSeeder {
       await populationSeeder.run();
       console.log('✅ Population seeding completed\n');
 
+      // 11. Seed Permissions (no dependencies)
+      console.log('🔐 Seeding Permissions...');
+      const permissionSeeder = new PermissionSeeder(this.dataSource);
+      await permissionSeeder.run();
+      console.log('✅ Permissions seeding completed\n');
+
+      // 12. Seed Menus (no dependencies)
+      console.log('📋 Seeding Menus...');
+      const menuSeeder = new MenuSeeder(this.dataSource);
+      await menuSeeder.run();
+      console.log('✅ Menus seeding completed\n');
+
+      // 13. Seed Menu-Permission relationships (depends on Menus and Permissions)
+      console.log('🔗 Seeding Menu-Permission relationships...');
+      const menuHasPermissionSeeder = new MenuHasPermissionSeeder(this.dataSource);
+      await menuHasPermissionSeeder.run();
+      console.log('✅ Menu-Permission relationships seeding completed\n');
+
+      // 14. Seed Role-Permission relationships (depends on Roles, Menu-Permissions, and Permissions)
+      console.log('🔗 Seeding Role-Permission relationships...');
+      const roleHasPermissionSeeder = new RoleHasPermissionSeeder(this.dataSource);
+      await roleHasPermissionSeeder.run();
+      console.log('✅ Role-Permission relationships seeding completed\n');
+
+      // 15. Seed User-Role relationships (depends on Users and Roles)
+      console.log('🔗 Seeding User-Role relationships...');
+      const userRoleSeeder = new UserRoleSeeder(this.dataSource);
+      await userRoleSeeder.run();
+      console.log('✅ User-Role relationships seeding completed\n');
+
       console.log('🎉 All database seeding completed successfully!');
       console.log('\n📋 Summary of seeded data:');
       console.log('   • 5 Sites');
@@ -90,6 +125,11 @@ export class MainSeeder {
       console.log('   • 10 Operation Points');
       console.log('   • 5 Barge');
       console.log('   • 15 Population Units');
+      console.log('   • 30+ Permissions');
+      console.log('   • 40+ Menu Items');
+      console.log('   • Menu-Permission relationships');
+      console.log('   • Role-Permission relationships');
+      console.log('   • User-Role relationships');
 
       console.log('\n🔑 Default User Credentials:');
       console.log('   • superadmin / superadmin123');

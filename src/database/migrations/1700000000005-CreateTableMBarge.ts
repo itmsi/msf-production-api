@@ -19,11 +19,6 @@ export class CreateTableMBarge1700000000005 implements MigrationInterface {
             generationStrategy: 'increment',
           },
           {
-            name: 'sites_id',
-            type: 'int',
-            isNullable: true,
-          },
-          {
             name: 'shipment',
             type: 'varchar',
             length: '255',
@@ -36,9 +31,13 @@ export class CreateTableMBarge1700000000005 implements MigrationInterface {
             isNullable: true,
           },
           {
+            name: 'capacity',
+            type: 'int',
+            isNullable: true,
+          },
+          {
             name: 'remarks',
-            type: 'varchar',
-            length: '500',
+            type: 'text',
             isNullable: true,
           },
           {
@@ -47,43 +46,38 @@ export class CreateTableMBarge1700000000005 implements MigrationInterface {
             default: 'CURRENT_TIMESTAMP',
           },
           {
+            name: 'createdBy',
+            type: 'int',
+            isNullable: true,
+          },
+          {
             name: 'updatedAt',
             type: 'timestamp',
             default: 'CURRENT_TIMESTAMP',
             onUpdate: 'CURRENT_TIMESTAMP',
           },
           {
+            name: 'updatedBy',
+            type: 'int',
+            isNullable: true,
+          },
+          {
             name: 'deletedAt',
             type: 'timestamp',
+            isNullable: true,
+          },
+          {
+            name: 'deletedBy',
+            type: 'int',
             isNullable: true,
           },
         ],
       }),
       true,
     );
-
-    // Tambahkan foreign key constraint
-    await queryRunner.createForeignKey(
-      'm_barge',
-      new TableForeignKey({
-        columnNames: ['sites_id'],
-        referencedColumnNames: ['id'],
-        referencedTableName: 'm_sites',
-        onDelete: 'SET NULL',
-        onUpdate: 'CASCADE',
-      }),
-    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // Hapus foreign key constraint terlebih dahulu
-    const table = await queryRunner.getTable('m_barge');
-    const foreignKeys = table?.foreignKeys;
-
-    for (const foreignKey of foreignKeys || []) {
-      await queryRunner.dropForeignKey('m_barge', foreignKey);
-    }
-
     await queryRunner.dropTable('m_barge');
   }
 } 

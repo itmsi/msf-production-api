@@ -5,11 +5,11 @@ import {
   TableForeignKey,
 } from 'typeorm';
 
-export class CreateTableMOperationPoints1700000000004 implements MigrationInterface {
+export class CreateTableTB_R_Menu_Has_Permission1700000000023 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: 'm_operation_points',
+        name: 'r_menu_has_permission',
         columns: [
           {
             name: 'id',
@@ -19,31 +19,14 @@ export class CreateTableMOperationPoints1700000000004 implements MigrationInterf
             generationStrategy: 'increment',
           },
           {
-            name: 'sites_id',
+            name: 'menu_id',
             type: 'int',
             isNullable: false,
           },
           {
-            name: 'type',
-            type: 'varchar',
-            length: '100',
-            isNullable: true,
-          },
-          {
-            name: 'name',
-            type: 'varchar',
-            length: '255',
-            isNullable: true,
-          },
-          {
-            name: 'longitude',
-            type: 'float',
-            isNullable: true,
-          },
-          {
-            name: 'latitude',
-            type: 'float',
-            isNullable: true,
+            name: 'permission_id',
+            type: 'int',
+            isNullable: false,
           },
           {
             name: 'createdAt',
@@ -66,43 +49,50 @@ export class CreateTableMOperationPoints1700000000004 implements MigrationInterf
             type: 'int',
             isNullable: true,
           },
-          {
-            name: 'deletedAt',
-            type: 'timestamp',
-            isNullable: true,
-          },
-          {
-            name: 'deletedBy',
-            type: 'int',
-            isNullable: true,
-          },
         ],
       }),
       true,
     );
 
-    // Tambahkan foreign key constraint
+    // Tambahkan foreign key constraints
     await queryRunner.createForeignKey(
-      'm_operation_points',
+      'r_menu_has_permission',
       new TableForeignKey({
-        columnNames: ['sites_id'],
+        columnNames: ['menu_id'],
         referencedColumnNames: ['id'],
-        referencedTableName: 'm_sites',
+        referencedTableName: 'm_menu',
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
       }),
     );
+
+    await queryRunner.createForeignKey(
+      'r_menu_has_permission',
+      new TableForeignKey({
+        columnNames: ['permission_id'],
+        referencedColumnNames: ['id'],
+        referencedTableName: 'm_permission',
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE',
+      }),
+    );
+
+    // Tambahkan unique constraint untuk mencegah duplikasi
+    await queryRunner.query(`
+      ALTER TABLE r_menu_has_permission 
+      ADD CONSTRAINT unique_menu_permission UNIQUE (menu_id, permission_id)
+    `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // Hapus foreign key constraint terlebih dahulu
-    const table = await queryRunner.getTable('m_operation_points');
+    // Hapus foreign key constraints terlebih dahulu
+    const table = await queryRunner.getTable('r_menu_has_permission');
     const foreignKeys = table?.foreignKeys;
 
     for (const foreignKey of foreignKeys || []) {
-      await queryRunner.dropForeignKey('m_operation_points', foreignKey);
+      await queryRunner.dropForeignKey('r_menu_has_permission', foreignKey);
     }
 
-    await queryRunner.dropTable('m_operation_points');
+    await queryRunner.dropTable('r_menu_has_permission');
   }
-} 
+}

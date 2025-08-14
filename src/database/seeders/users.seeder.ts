@@ -45,63 +45,56 @@ export class UsersSeeder {
         username: 'superadmin',
         password: 'superadmin123',
         email: 'superadmin@msf.com',
-        roleId: superAdminRole.id,
+        // roleId removed - will be handled by user-role seeder
         employee_id: employees[0].id,
-        sites_id: siteJakarta.id,
         isActive: true,
       },
       {
         username: 'admin',
         password: 'admin123',
         email: 'admin@msf.com',
-        roleId: adminRole.id,
+        // roleId removed - will be handled by user-role seeder
         employee_id: employees[1].id,
-        sites_id: siteJakarta.id,
         isActive: true,
       },
       {
         username: 'manager',
         password: 'manager123',
         email: 'manager@msf.com',
-        roleId: managerRole.id,
+        // roleId removed - will be handled by user-role seeder
         employee_id: employees[2].id,
-        sites_id: siteSurabaya.id,
         isActive: true,
       },
       {
         username: 'staff1',
         password: 'staff123',
         email: 'staff1@msf.com',
-        roleId: staffRole.id,
+        // roleId removed - will be handled by user-role seeder
         employee_id: employees[3].id,
-        sites_id: siteJakarta.id,
         isActive: true,
       },
       {
         username: 'staff2',
         password: 'staff123',
         email: 'staff2@msf.com',
-        roleId: staffRole.id,
+        // roleId removed - will be handled by user-role seeder
         employee_id: employees[4].id,
-        sites_id: siteSurabaya.id,
         isActive: true,
       },
       {
         username: 'operator1',
         password: 'operator123',
         email: 'operator1@msf.com',
-        roleId: staffRole.id,
+        // roleId removed - will be handled by user-role seeder
         employee_id: employees[5].id,
-        sites_id: siteJakarta.id,
         isActive: true,
       },
       {
         username: 'viewer1',
         password: 'viewer123',
         email: 'viewer1@msf.com',
-        roleId: staffRole.id,
+        // roleId removed - will be handled by user-role seeder
         employee_id: employees[6].id,
-        sites_id: siteSurabaya.id,
         isActive: true,
       },
     ];

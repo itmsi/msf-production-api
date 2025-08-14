@@ -5,7 +5,7 @@ import {
   TableForeignKey,
 } from 'typeorm';
 
-export class CreateTableRLossTime1700000000009 implements MigrationInterface {
+export class CreateTableRLossTime1700000000013 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Buat ENUM types terlebih dahulu
     await queryRunner.query(`
@@ -45,25 +45,13 @@ export class CreateTableRLossTime1700000000009 implements MigrationInterface {
             default: "'DS'",
           },
           {
-            name: 'unit_id',
+            name: 'population_id',
             type: 'int',
-            isNullable: true,
-          },
-          {
-            name: 'category',
-            type: 'varchar',
-            length: '100',
             isNullable: true,
           },
           {
             name: 'activities_id',
             type: 'int',
-            isNullable: true,
-          },
-          {
-            name: 'problem',
-            type: 'varchar',
-            length: '100',
             isNullable: true,
           },
           {
@@ -93,14 +81,29 @@ export class CreateTableRLossTime1700000000009 implements MigrationInterface {
             default: 'CURRENT_TIMESTAMP',
           },
           {
+            name: 'createdBy',
+            type: 'int',
+            isNullable: true,
+          },
+          {
             name: 'updatedAt',
             type: 'timestamp',
             default: 'CURRENT_TIMESTAMP',
             onUpdate: 'CURRENT_TIMESTAMP',
           },
           {
+            name: 'updatedBy',
+            type: 'int',
+            isNullable: true,
+          },
+          {
             name: 'deletedAt',
             type: 'timestamp',
+            isNullable: true,
+          },
+          {
+            name: 'deletedBy',
+            type: 'int',
             isNullable: true,
           },
         ],
@@ -115,6 +118,17 @@ export class CreateTableRLossTime1700000000009 implements MigrationInterface {
         columnNames: ['activities_id'],
         referencedColumnNames: ['id'],
         referencedTableName: 'm_activities',
+        onDelete: 'SET NULL',
+        onUpdate: 'CASCADE',
+      }),
+    );
+
+    await queryRunner.createForeignKey(
+      'r_loss_time',
+      new TableForeignKey({
+        columnNames: ['population_id'],
+        referencedColumnNames: ['id'],
+        referencedTableName: 'm_population',
         onDelete: 'SET NULL',
         onUpdate: 'CASCADE',
       }),

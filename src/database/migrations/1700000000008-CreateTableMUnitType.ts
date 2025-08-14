@@ -1,6 +1,6 @@
 import { MigrationInterface, QueryRunner, Table, TableForeignKey } from 'typeorm';
 
-export class CreateTableMUnitType1700000000010 implements MigrationInterface {
+export class CreateTableMUnitType1700000000008 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
 
     await queryRunner.createTable(
@@ -43,14 +43,29 @@ export class CreateTableMUnitType1700000000010 implements MigrationInterface {
             default: 'CURRENT_TIMESTAMP',
           },
           {
+            name: 'createdBy',
+            type: 'int',
+            isNullable: true,
+          },
+          {
             name: 'updatedAt',
             type: 'timestamp',
             default: 'CURRENT_TIMESTAMP',
             onUpdate: 'CURRENT_TIMESTAMP',
           },
           {
+            name: 'updatedBy',
+            type: 'int',
+            isNullable: true,
+          },
+          {
             name: 'deletedAt',
             type: 'timestamp',
+            isNullable: true,
+          },
+          {
+            name: 'deletedBy',
+            type: 'int',
             isNullable: true,
           },
         ],

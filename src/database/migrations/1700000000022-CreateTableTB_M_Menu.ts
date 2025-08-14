@@ -5,11 +5,16 @@ import {
   TableForeignKey,
 } from 'typeorm';
 
-export class CreateTableRInputBarge1700000000006 implements MigrationInterface {
+export class CreateTableTB_M_Menu1700000000022 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
+    // Buat ENUM type terlebih dahulu
+    await queryRunner.query(`
+      CREATE TYPE enum_menu_status AS ENUM ('active', 'inactive')
+    `);
+
     await queryRunner.createTable(
       new Table({
-        name: 'r_input_barge',
+        name: 'm_menu',
         columns: [
           {
             name: 'id',
@@ -19,51 +24,52 @@ export class CreateTableRInputBarge1700000000006 implements MigrationInterface {
             generationStrategy: 'increment',
           },
           {
-            name: 'barge_id',
+            name: 'parent_id',
             type: 'int',
+            isNullable: true,
+          },
+          {
+            name: 'menu_name',
+            type: 'varchar',
+            length: '100',
             isNullable: false,
           },
           {
-            name: 'site_id',
-            type: 'int',
+            name: 'menu_code',
+            type: 'varchar',
+            length: '50',
+            isNullable: false,
+            isUnique: true,
+          },
+          {
+            name: 'icon',
+            type: 'varchar',
+            length: '100',
+            isNullable: true,
+          },
+          {
+            name: 'url',
+            type: 'varchar',
+            length: '255',
+            isNullable: true,
+          },
+          {
+            name: 'is_parent',
+            type: 'boolean',
+            default: false,
             isNullable: false,
           },
           {
-            name: 'start_loading',
-            type: 'date',
-            isNullable: true,
+            name: 'sort_order',
+            type: 'int',
+            default: 0,
+            isNullable: false,
           },
           {
-            name: 'end_loading',
-            type: 'date',
-            isNullable: true,
-          },
-          {
-            name: 'total_vessel',
-            type: 'float',
-            isNullable: true,
-          },
-          {
-            name: 'vol_by_survey',
-            type: 'float',
-            isNullable: true,
-          },
-          {
-            name: 'capacity_per_dt',
-            type: 'float',
-            isNullable: true,
-            comment: 'Calculated: (vol_by_survey / total_vessel)',
-          },
-          {
-            name: 'achievment',
-            type: 'float',
-            isNullable: true,
-            comment: 'Calculated: (vol_by_survey / capacity)',
-          },
-          {
-            name: 'remarks',
-            type: 'text',
-            isNullable: true,
+            name: 'status',
+            type: 'enum',
+            enum: ['active', 'inactive'],
+            default: "'active'",
           },
           {
             name: 'createdAt',
@@ -101,39 +107,30 @@ export class CreateTableRInputBarge1700000000006 implements MigrationInterface {
       true,
     );
 
-    // Tambahkan foreign key constraint
+    // Tambahkan self-referencing foreign key untuk parent_id
     await queryRunner.createForeignKey(
-      'r_input_barge',
+      'm_menu',
       new TableForeignKey({
-        columnNames: ['barge_id'],
+        columnNames: ['parent_id'],
         referencedColumnNames: ['id'],
-        referencedTableName: 'm_barge',
-        onDelete: 'CASCADE',
-        onUpdate: 'CASCADE',
-      }),
-    );
-
-    await queryRunner.createForeignKey(
-      'r_input_barge',
-      new TableForeignKey({
-        columnNames: ['site_id'],
-        referencedColumnNames: ['id'],
-        referencedTableName: 'm_sites',
-        onDelete: 'CASCADE',
+        referencedTableName: 'm_menu',
+        onDelete: 'SET NULL',
         onUpdate: 'CASCADE',
       }),
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // Hapus foreign key constraint terlebih dahulu
-    const table = await queryRunner.getTable('r_input_barge');
+    // Hapus foreign key constraints terlebih dahulu
+    const table = await queryRunner.getTable('m_menu');
     const foreignKeys = table?.foreignKeys;
 
     for (const foreignKey of foreignKeys || []) {
-      await queryRunner.dropForeignKey('r_input_barge', foreignKey);
+      await queryRunner.dropForeignKey('m_menu', foreignKey);
     }
 
-    await queryRunner.dropTable('r_input_barge');
+    await queryRunner.dropTable('m_menu');
+    // Hapus ENUM type
+    await queryRunner.query(`DROP TYPE IF EXISTS enum_menu_status`);
   }
-} 
+}

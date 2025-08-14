@@ -31,10 +31,9 @@ export class CreateTableTB_R_CCR_Barging1700000000018 implements MigrationInterf
             isNullable: false,
           },
           {
-            name: 'time_range',
-            type: 'varchar',
-            length: '100',
-            isNullable: true,
+            name: 'unit_hauler_id',
+            type: 'int',
+            isNullable: false,
           },
           {
             name: 'barge_id',
@@ -49,7 +48,7 @@ export class CreateTableTB_R_CCR_Barging1700000000018 implements MigrationInterf
           {
             name: 'vessel',
             type: 'int',
-            isNullable: true,
+            isNullable: false,
           },
           {
             name: 'total_tonnage',
@@ -62,14 +61,29 @@ export class CreateTableTB_R_CCR_Barging1700000000018 implements MigrationInterf
             default: 'CURRENT_TIMESTAMP',
           },
           {
+            name: 'createdBy',
+            type: 'int',
+            isNullable: true,
+          },
+          {
             name: 'updatedAt',
             type: 'timestamp',
             default: 'CURRENT_TIMESTAMP',
             onUpdate: 'CURRENT_TIMESTAMP',
           },
           {
+            name: 'updatedBy',
+            type: 'int',
+            isNullable: true,
+          },
+          {
             name: 'deletedAt',
             type: 'timestamp',
+            isNullable: true,
+          },
+          {
+            name: 'deletedBy',
+            type: 'int',
             isNullable: true,
           },
         ],
@@ -95,6 +109,17 @@ export class CreateTableTB_R_CCR_Barging1700000000018 implements MigrationInterf
         columnNames: ['dumping_point_id'],
         referencedColumnNames: ['id'],
         referencedTableName: 'm_operation_points',
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE',
+      }),
+    );
+
+    await queryRunner.createForeignKey(
+      'r_ccr_barging',
+      new TableForeignKey({
+        columnNames: ['unit_hauler_id'],
+        referencedColumnNames: ['id'],
+        referencedTableName: 'r_ccr_hauling',
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
       }),

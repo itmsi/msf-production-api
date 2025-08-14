@@ -5,11 +5,11 @@ import {
   TableForeignKey,
 } from 'typeorm';
 
-export class CreateTableTBMUser1700000000003 implements MigrationInterface {
+export class CreateTableTB_R_Role_Has_Permission1700000000024 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: 'm_user',
+        name: 'r_role_has_permission',
         columns: [
           {
             name: 'id',
@@ -19,39 +19,18 @@ export class CreateTableTBMUser1700000000003 implements MigrationInterface {
             generationStrategy: 'increment',
           },
           {
-            name: 'employee_id',
+            name: 'role_id',
             type: 'int',
             isNullable: false,
           },
           {
-            name: 'username',
-            type: 'varchar',
-            length: '100',
-            isNullable: false,
-            isUnique: true,
-          },
-          {
-            name: 'email',
-            type: 'varchar',
-            length: '255',
-            isNullable: false,
-            isUnique: true,
-          },
-          {
-            name: 'password',
-            type: 'varchar',
-            length: '255',
-            isNullable: false,
-          },
-          {
-            name: 'roleId',
+            name: 'mhp_id',
             type: 'int',
             isNullable: false,
           },
           {
-            name: 'isActive',
-            type: 'boolean',
-            default: true,
+            name: 'permission_id',
+            type: 'int',
             isNullable: false,
           },
           {
@@ -75,16 +54,6 @@ export class CreateTableTBMUser1700000000003 implements MigrationInterface {
             type: 'int',
             isNullable: true,
           },
-          {
-            name: 'deletedAt',
-            type: 'timestamp',
-            isNullable: true,
-          },
-          {
-            name: 'deletedBy',
-            type: 'int',
-            isNullable: true,
-          },
         ],
       }),
       true,
@@ -92,37 +61,54 @@ export class CreateTableTBMUser1700000000003 implements MigrationInterface {
 
     // Tambahkan foreign key constraints
     await queryRunner.createForeignKey(
-      'm_user',
+      'r_role_has_permission',
       new TableForeignKey({
-        columnNames: ['employee_id'],
-        referencedColumnNames: ['id'],
-        referencedTableName: 'm_employee',
-        onDelete: 'CASCADE',
-        onUpdate: 'CASCADE',
-      }),
-    );
-
-    await queryRunner.createForeignKey(
-      'm_user',
-      new TableForeignKey({
-        columnNames: ['roleId'],
+        columnNames: ['role_id'],
         referencedColumnNames: ['id'],
         referencedTableName: 'm_role',
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
       }),
     );
+
+    await queryRunner.createForeignKey(
+      'r_role_has_permission',
+      new TableForeignKey({
+        columnNames: ['mhp_id'],
+        referencedColumnNames: ['id'],
+        referencedTableName: 'r_menu_has_permission',
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE',
+      }),
+    );
+
+    await queryRunner.createForeignKey(
+      'r_role_has_permission',
+      new TableForeignKey({
+        columnNames: ['permission_id'],
+        referencedColumnNames: ['id'],
+        referencedTableName: 'm_permission',
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE',
+      }),
+    );
+
+    // Tambahkan unique constraint untuk mencegah duplikasi
+    await queryRunner.query(`
+      ALTER TABLE r_role_has_permission 
+      ADD CONSTRAINT unique_role_mhp_permission UNIQUE (role_id, mhp_id, permission_id)
+    `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Hapus foreign key constraints terlebih dahulu
-    const table = await queryRunner.getTable('m_user');
+    const table = await queryRunner.getTable('r_role_has_permission');
     const foreignKeys = table?.foreignKeys;
 
     for (const foreignKey of foreignKeys || []) {
-      await queryRunner.dropForeignKey('m_user', foreignKey);
+      await queryRunner.dropForeignKey('r_role_has_permission', foreignKey);
     }
 
-    await queryRunner.dropTable('m_user');
+    await queryRunner.dropTable('r_role_has_permission');
   }
 }

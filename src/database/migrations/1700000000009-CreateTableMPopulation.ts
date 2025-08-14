@@ -5,7 +5,7 @@ import {
   TableForeignKey,
 } from 'typeorm';
 
-export class CreateTableMPopulation1700000000012 implements MigrationInterface {
+export class CreateTableMPopulation1700000000009 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Buat ENUM types terlebih dahulu
     await queryRunner.query(`
@@ -87,6 +87,12 @@ export class CreateTableMPopulation1700000000012 implements MigrationInterface {
             isNullable: true,
           },
           {
+            name: 'user_site',
+            type: 'varchar',
+            length: '100',
+            isNullable: true,
+          },
+          {
             name: 'site_origin',
             type: 'varchar',
             length: '255',
@@ -121,14 +127,29 @@ export class CreateTableMPopulation1700000000012 implements MigrationInterface {
             default: 'CURRENT_TIMESTAMP',
           },
           {
+            name: 'createdBy',
+            type: 'int',
+            isNullable: true,
+          },
+          {
             name: 'updatedAt',
             type: 'timestamp',
             default: 'CURRENT_TIMESTAMP',
             onUpdate: 'CURRENT_TIMESTAMP',
           },
+          { 
+            name: 'updatedBy',
+            type: 'int',
+            isNullable: true,
+          },
           {
             name: 'deletedAt',
             type: 'timestamp',
+            isNullable: true,
+          },
+          {
+            name: 'deletedBy',
+            type: 'int',
             isNullable: true,
           },
         ],

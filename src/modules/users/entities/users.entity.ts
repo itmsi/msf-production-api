@@ -27,9 +27,7 @@ export class Users {
   @Column()
   password: string;
 
-  @Expose()
-  @Column()
-  roleId: number;
+  // roleId removed - using junction table r_user_role instead
 
   @Expose()
   @Column()
@@ -43,9 +41,7 @@ export class Users {
   @Column()
   employee_id: number;
 
-  @Expose()
-  @Column()
-  sites_id: number;
+  // sites_id removed - not needed in user entity
 
   @CreateDateColumn()
   createdAt: Date;
@@ -56,18 +52,12 @@ export class Users {
   @DeleteDateColumn()
   deletedAt?: Date | null;
 
-  @Expose()
-  @ManyToOne(() => Roles, (role) => role.users)
-  @JoinColumn({ name: 'roleId' })
-  roles?: Roles;
+  // roles relationship removed - using junction table r_user_role instead
 
   @Expose()
   @ManyToOne(() => Employee, (employee) => employee.users)
   @JoinColumn({ name: 'employee_id' })
   employees?: Employee;
 
-  @Expose()
-  @ManyToOne(() => Sites, (sites) => sites.operator_points)
-  @JoinColumn({ name: 'sites_id' })
-  sites?: Sites;
+  // sites relationship removed - not needed in user entity
 }

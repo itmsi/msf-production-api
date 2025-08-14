@@ -40,12 +40,6 @@ export class CreateTableRFuel1700000000013 implements MigrationInterface {
             isNullable: false,
           },
           {
-            name: 'site',
-            type: 'varchar',
-            length: '255',
-            isNullable: false,
-          },
-          {
             name: 'operator_id',
             type: 'int',
             isNullable: true,
@@ -127,14 +121,29 @@ export class CreateTableRFuel1700000000013 implements MigrationInterface {
             default: 'CURRENT_TIMESTAMP',
           },
           {
+            name: 'createdBy',
+            type: 'int',
+            isNullable: true,
+          },
+          {
             name: 'updatedAt',
             type: 'timestamp',
             default: 'CURRENT_TIMESTAMP',
             onUpdate: 'CURRENT_TIMESTAMP',
           },
           {
+            name: 'updatedBy',
+            type: 'int',
+            isNullable: true,
+          },
+          {
             name: 'deletedAt',
             type: 'timestamp',
+            isNullable: true,
+          },
+          {
+            name: 'deletedBy',
+            type: 'int',
             isNullable: true,
           },
         ],

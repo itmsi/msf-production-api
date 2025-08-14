@@ -1,10 +1,10 @@
 import { MigrationInterface, QueryRunner, Table } from 'typeorm';
 
-export class CreateTableTBMRole1700000000000 implements MigrationInterface {
+export class CreateTableTB_M_Permission1700000000021 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: 'm_role',
+        name: 'm_permission',
         columns: [
           {
             name: 'id',
@@ -14,21 +14,21 @@ export class CreateTableTBMRole1700000000000 implements MigrationInterface {
             generationStrategy: 'increment',
           },
           {
-            name: 'role_code',
+            name: 'permission_name',
             type: 'varchar',
             length: '100',
             isNullable: false,
           },
           {
-            name: 'position_name',
+            name: 'permission_code',
             type: 'varchar',
-            length: '100',
+            length: '50',
             isNullable: false,
+            isUnique: true,
           },
           {
-            name: 'role_parent',
-            type: 'varchar',
-            length: '100',
+            name: 'description',
+            type: 'text',
             isNullable: true,
           },
           {
@@ -37,14 +37,29 @@ export class CreateTableTBMRole1700000000000 implements MigrationInterface {
             default: 'CURRENT_TIMESTAMP',
           },
           {
+            name: 'createdBy',
+            type: 'int',
+            isNullable: true,
+          },
+          {
             name: 'updatedAt',
             type: 'timestamp',
             default: 'CURRENT_TIMESTAMP',
             onUpdate: 'CURRENT_TIMESTAMP',
           },
           {
+            name: 'updatedBy',
+            type: 'int',
+            isNullable: true,
+          },
+          {
             name: 'deletedAt',
             type: 'timestamp',
+            isNullable: true,
+          },
+          {
+            name: 'deletedBy',
+            type: 'int',
             isNullable: true,
           },
         ],
@@ -54,6 +69,6 @@ export class CreateTableTBMRole1700000000000 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('m_role');
+    await queryRunner.dropTable('m_permission');
   }
 }

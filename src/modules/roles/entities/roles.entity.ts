@@ -19,6 +19,10 @@ export class Roles {
   id: number;
 
   @Expose()
+  @Column({ name: 'sites_id' })
+  sites_id: number;
+
+  @Expose()
   @Column({ name: 'role_code' })
   roleCode: string;
 
@@ -48,6 +52,5 @@ export class Roles {
   @DeleteDateColumn()
   deletedAt?: Date | null;
 
-  @OneToMany(() => Users, (user) => user.roles)
-  users?: Users[];
+  // users relationship removed - using junction table r_user_role instead
 }
