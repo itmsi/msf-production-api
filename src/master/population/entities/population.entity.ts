@@ -35,6 +35,12 @@ export class Population {
   @Column({ type: 'int', nullable: true })
   activities_id: number;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  site_origin: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  remarks: string;
+
   @Column({ type: 'int', nullable: true })
   site_id: number;
 
@@ -53,15 +59,15 @@ export class Population {
   @DeleteDateColumn()
   deletedAt: Date;
 
-  @ManyToOne(() => UnitType, { onDelete: 'SET NULL', onUpdate: 'CASCADE' })
+  @ManyToOne(() => UnitType, { onDelete: 'SET NULL', onUpdate: 'CASCADE', eager: true })
   @JoinColumn({ name: 'unit_type_id' })
   unitType: UnitType;
 
-  @ManyToOne(() => Activities, { onDelete: 'SET NULL', onUpdate: 'CASCADE' })
+  @ManyToOne(() => Activities, { onDelete: 'SET NULL', onUpdate: 'CASCADE', eager: true })
   @JoinColumn({ name: 'activities_id' })
   activities: Activities;
 
-  @ManyToOne(() => Sites, { onDelete: 'SET NULL', onUpdate: 'CASCADE' })
+  @ManyToOne(() => Sites, { onDelete: 'SET NULL', onUpdate: 'CASCADE', eager: true })
   @JoinColumn({ name: 'site_id' })
   site: Sites;
 

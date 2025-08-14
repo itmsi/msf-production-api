@@ -9,6 +9,7 @@ import { EmployeeModule } from './master/employee/employee.module';
 import { BrandModule } from './master/brand/brand.module';
 import { UnitTypeModule } from './master/unit-type/unit-type.module';
 import { ActivitiesModule } from './master/activities/activities.module';
+import { PopulationModule } from './master/population/population.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { ActivitiesModule } from './master/activities/activities.module';
     BrandModule,
     UnitTypeModule,
     ActivitiesModule,
+    PopulationModule,
   ],
 })
 export class AppModule {}
