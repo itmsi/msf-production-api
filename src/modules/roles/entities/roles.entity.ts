@@ -11,6 +11,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+import { UserRole } from '../../users/entities/user-role.entity';
 
 @Entity('m_role')
 export class Roles {
@@ -52,5 +53,6 @@ export class Roles {
   @DeleteDateColumn()
   deletedAt?: Date | null;
 
-  // users relationship removed - using junction table r_user_role instead
+  @OneToMany(() => UserRole, (userRole) => userRole.role)
+  userRoles?: UserRole[];
 }

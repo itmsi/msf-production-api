@@ -1,120 +1,59 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  HttpException,
-} from '@nestjs/common';
+import { Injectable, HttpException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, SelectQueryBuilder, Not } from 'typeorm';
 import { Users } from './entities/users.entity';
-import { FindOneOptions, ILike, Not, Repository } from 'typeorm';
-import { RabbitmqService } from '../../integrations/rabbitmq/rabbitmq.service';
-import {
-  ApiResponse,
-  successResponse,
-  throwError,
-} from '../../common/helpers/response.helper';
+import { CreateUserDto, UpdateUserDto, UserResponseDto } from './dto/user.dto';
+import { ApiResponse, successResponse, throwError } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
-import * as bcrypt from 'bcrypt';
-import {
-  CreateUserDto,
-  UserResponseDto,
-  GetUsersQueryDto,
-  UpdateUserDto,
-  ForgotPassDto,
-} from './dto/user.dto';
 import { plainToInstance } from 'class-transformer';
-import { randomBytes } from 'crypto';
-import { MailService } from '../../integrations/mail/mail.service';
-import { DataSource } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { UserRole } from './entities/user-role.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(Users)
     private userRepository: Repository<Users>,
-    private readonly mailService: MailService,
-    private readonly dataSource: DataSource,
+    @InjectRepository(UserRole)
+    private userRoleRepository: Repository<UserRole>,
   ) {}
 
-  async findByUsername(username: string): Promise<Users | null> {
-    return this.userRepository.findOne({
-      where: {
-        username,
-        isActive: true,
-      },
-      withDeleted: false,
-      relations: ['roles', 'employees', 'sites'],
-    });
-  }
-
-  async findByEmail(email: string): Promise<Users | null> {
-    return this.userRepository.findOne({
-      where: {
-        email,
-        isActive: true,
-      },
-      withDeleted: false,
-      relations: ['roles', 'employees', 'sites'],
-    });
-  }
-
-  async findByIdWithRole(id: number) {
-    return this.userRepository.findOne({
-      where: { id },
-      relations: ['roles', 'employees', 'sites'],
-    });
-  }
-
-  async findById(id: number): Promise<ApiResponse<any>> {
-    const result: any = await this.userRepository.findOne({
-      where: { id },
-      relations: ['employees', 'roles'],
-    });
-    if (!result) {
-      throwError('User not found', 404);
-    }
-    const response: any = {
-      id: result.id,
-      username: result.username,
-      name: result.name,
-      roleId: result.roleId,
-    };
-    return successResponse(result);
-  }
-
   async findAll(
-    query: GetUsersQueryDto,
+    page: number = 1,
+    limit: number = 10,
+    search?: string,
+    role?: string,
   ): Promise<ApiResponse<UserResponseDto[]>> {
     try {
-      const page = parseInt(query.page ?? '1', 10);
-      const limit = parseInt(query.limit ?? '10', 10);
       const skip = (page - 1) * limit;
-      const search = query.search?.toLowerCase() ?? '';
-      const role = query.role?.toLowerCase() ?? '';
-
-      const qb = this.userRepository
+      const qb: SelectQueryBuilder<Users> = this.userRepository
         .createQueryBuilder('user')
-        .leftJoinAndSelect('user.employees', 'employees')
-        .leftJoinAndSelect('user.roles', 'roles')
-        .leftJoinAndSelect('user.sites', 'sites');
+        .leftJoinAndSelect('user.employees', 'employee')
+        .leftJoinAndSelect('user.userRoles', 'userRole')
+        .leftJoinAndSelect('userRole.role', 'role');
 
       if (search) {
-        qb.where('user.username ILIKE :search', {
-          search: `%${search}%`,
-        }).orWhere('user.name ILIKE :search', {
-          search: `%${search}%`,
-        });
+        qb.andWhere(
+          '(user.username ILIKE :search OR user.email ILIKE :search OR employee.name ILIKE :search)',
+          { search: `%${search}%` },
+        );
       }
+
       if (role) {
-        qb.andWhere('roles.name ILIKE :role', { role: `%${role}%` });
+        qb.andWhere('role.roleCode = :role', { role });
       }
 
       qb.orderBy('user.id', 'DESC').skip(skip).take(limit);
 
       const [result, total] = await qb.getManyAndCount();
 
-      const transformedResult = plainToInstance(Users, result, {
-        excludeExtraneousValues: true,
-      });
+      const transformedResult = result.map(user => ({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        employee_id: user.employee_id,
+        roles: user.userRoles?.map(ur => ur.role) || [],
+      }));
 
       return paginateResponse(
         transformedResult,
@@ -143,17 +82,29 @@ export class UsersService {
 
       const hashedPassword = await bcrypt.hash(data.password, 10);
       const newUser = this.userRepository.create({
-        ...data,
+        username: data.username,
         password: hashedPassword,
+        email: data.email,
+        employee_id: data.employee_id,
+        isActive: true,
       });
+      
       const result = await this.userRepository.save(newUser);
+
+      // Create user-role relationship
+      if (data.roleId) {
+        const userRole = this.userRoleRepository.create({
+          user_id: result.id,
+          role_id: data.roleId,
+        });
+        await this.userRoleRepository.save(userRole);
+      }
+
       const response: UserResponseDto = {
         id: result.id,
         username: result.username,
         email: result.email,
-        roleId: result.roleId,
         employee_id: result.employee_id,
-        sites_id: result.sites_id,
       };
 
       return successResponse(response);
@@ -197,12 +148,25 @@ export class UsersService {
 
       const updatedUser = this.userRepository.merge(user!, updateDto);
       const result = await this.userRepository.save(updatedUser);
+
+      // Update user-role relationship if roleId is provided
+      if (updateDto.roleId) {
+        // Remove existing user-role relationships
+        await this.userRoleRepository.delete({ user_id: id });
+        
+        // Create new user-role relationship
+        const userRole = this.userRoleRepository.create({
+          user_id: id,
+          role_id: updateDto.roleId,
+        });
+        await this.userRoleRepository.save(userRole);
+      }
+
       const response: any = {
         id: result.id,
         username: result.username,
         email: result.email,
-        roleId: result.roleId,
-        sites_id: result.sites_id,
+        employee_id: result.employee_id,
       };
       return successResponse(response, 'User updated successfully');
     } catch (error) {
@@ -213,14 +177,36 @@ export class UsersService {
     }
   }
 
+  async findOne(id: number): Promise<Users> {
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: ['employees', 'userRoles', 'userRoles.role'],
+    });
+
+    if (!user) {
+      throwError('User not found', 404);
+    }
+
+    return user!;
+  }
+
+  async findByUsername(username: string): Promise<Users | null> {
+    return this.userRepository.findOne({ where: { username } });
+  }
+
+  async findByEmail(email: string): Promise<Users | null> {
+    return this.userRepository.findOne({ where: { email } });
+  }
+
   async remove(id: number): Promise<ApiResponse<null>> {
     try {
-      const user = await this.userRepository.findOne({ where: { id } });
+      const user = await this.findOne(id);
 
-      if (!user) {
-        throwError('User not found', 404);
-      }
-      await this.userRepository.softRemove(user!);
+      // Remove user-role relationships first
+      await this.userRoleRepository.delete({ user_id: id });
+
+      // Remove user
+      await this.userRepository.softDelete(id);
 
       return successResponse(null, 'User deleted successfully');
     } catch (error) {

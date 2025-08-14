@@ -10,7 +10,6 @@ import {
   IsNumberString,
   Matches,
 } from 'class-validator';
-import { JoinColumn, ManyToOne } from 'typeorm';
 
 export class CreateUserDto {
   @ApiProperty({ example: 'usertest' })
@@ -44,21 +43,13 @@ export class CreateUserDto {
   @IsNumber()
   @IsOptional()
   employee_id: number;
-
-  @ApiProperty({ example: 1 })
-  @Type(() => Number)
-  @IsNumber()
-  @IsNotEmpty()
-  sites_id: number;
 }
 
 export class UserResponseDto {
   id: number;
   username: string;
   email: string;
-  roleId: number;
   employee_id: number;
-  sites_id: number;
   roles?: any;
   meta?: any;
 }
@@ -98,14 +89,6 @@ export class UpdateUserDto {
   @IsNumber()
   employee_id?: number;
 
-  @ApiProperty({
-    example: 1,
-    description: 'ID unik dari sites.',
-  })
-  @Type(() => Number)
-  @IsNumber()
-  sites_id?: number;
-
   @IsString()
   @IsOptional()
   reset_password_token?: string | null;
@@ -114,6 +97,7 @@ export class UpdateUserDto {
   @IsOptional()
   reset_password_expires?: Date | null;
 }
+
 export class ForgotPassDto {
   @IsString()
   @IsNotEmpty()

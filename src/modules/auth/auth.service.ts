@@ -12,10 +12,8 @@ import { getResetCountdown } from '../../common/helpers/public.helper';
 interface UserPayload {
   id: number;
   username: string;
-  roleId: number;
   isActive: boolean;
-  roles: { name: string };
-  sites_id: number;
+  roles?: any[];
 }
 
 @Injectable()
@@ -38,10 +36,8 @@ export class AuthService {
     const payload = {
       username: user.username,
       sub: user.id,
-      roleId: user.roleId,
       isActive: user.isActive,
-      roles: user.roles.name,
-      sites_id: user.sites_id,
+      roles: user.roles,
     };
     return {
       access_token: this.jwtService.sign(payload),
@@ -49,9 +45,9 @@ export class AuthService {
   }
 
   async getProfileWithRole(userId: number) {
-    const user = await this.usersService.findByIdWithRole(userId);
+    const user = await this.usersService.findOne(userId);
     if (!user) throwError('User not found', 404);
-    const { password, ...result } = user ?? {};
+    const { password, ...result } = user;
     return result;
   }
 }

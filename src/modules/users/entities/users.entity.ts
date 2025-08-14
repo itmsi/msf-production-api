@@ -9,9 +9,11 @@ import {
   ManyToOne,
   JoinColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
 import { Employee } from '../../employee/entities/employee.entity';
 import { Sites } from '../../sites/entities/sites.entity';
+import { UserRole } from './user-role.entity';
 
 @Entity('m_user')
 export class Users {
@@ -27,8 +29,6 @@ export class Users {
   @Column()
   password: string;
 
-  // roleId removed - using junction table r_user_role instead
-
   @Expose()
   @Column()
   email: string;
@@ -41,8 +41,6 @@ export class Users {
   @Column()
   employee_id: number;
 
-  // sites_id removed - not needed in user entity
-
   @CreateDateColumn()
   createdAt: Date;
 
@@ -52,12 +50,11 @@ export class Users {
   @DeleteDateColumn()
   deletedAt?: Date | null;
 
-  // roles relationship removed - using junction table r_user_role instead
-
   @Expose()
   @ManyToOne(() => Employee, (employee) => employee.users)
   @JoinColumn({ name: 'employee_id' })
   employees?: Employee;
 
-  // sites relationship removed - not needed in user entity
+  @OneToMany(() => UserRole, (userRole) => userRole.user)
+  userRoles?: UserRole[];
 }
