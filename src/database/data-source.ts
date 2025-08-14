@@ -12,8 +12,7 @@ export const AppDataSource = new DataSource({
   password: process.env.POSTGRES_PASSWORD,
   database: process.env.POSTGRES_DB,
   entities: [
-    join(__dirname, '../modules/**/entities/*.entity{.ts,.js}'),
-    join(__dirname, '../master/**/entities/*.entity{.ts,.js}')
+    join(__dirname, '../modules/**/entities/*.entity{.ts,.js}')
   ],
   migrations: [join(__dirname, 'migrations/*{.ts,.js}')],
   synchronize: false,

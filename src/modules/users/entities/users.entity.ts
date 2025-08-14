@@ -10,8 +10,8 @@ import {
   JoinColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Employee } from '../../../master/employee/entities/employee.entity';
-import { Sites } from '../../../master/sites/entities/sites.entity';
+import { Employee } from '../../employee/entities/employee.entity';
+import { Sites } from '../../sites/entities/sites.entity';
 
 @Entity('m_user')
 export class Users {

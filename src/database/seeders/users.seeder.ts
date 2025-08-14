@@ -1,8 +1,8 @@
 import { DataSource } from 'typeorm';
 import { Users } from '../../modules/users/entities/users.entity';
 import { Roles } from '../../modules/roles/entities/roles.entity';
-import { Employee } from '../../master/employee/entities/employee.entity';
-import { Sites } from '../../master/sites/entities/sites.entity';
+import { Employee } from '../../modules/employee/entities/employee.entity';
+import { Sites } from '../../modules/sites/entities/sites.entity';
 import * as bcrypt from 'bcrypt';
 
 export class UsersSeeder {

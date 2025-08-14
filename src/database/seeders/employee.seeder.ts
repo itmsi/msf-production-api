@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { Employee } from '../../master/employee/entities/employee.entity';
+import { Employee } from '../../modules/employee/entities/employee.entity';
 
 export class EmployeeSeeder {
   constructor(private dataSource: DataSource) {}

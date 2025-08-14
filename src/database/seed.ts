@@ -15,7 +15,6 @@ async function seed() {
     database: process.env.POSTGRES_DB,
     entities: [
       __dirname + '/../modules/**/entities/*.entity{.ts,.js}',
-      __dirname + '/../master/**/entities/*.entity{.ts,.js}',
     ],
     synchronize: false,
     logging: false,

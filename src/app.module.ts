@@ -4,12 +4,12 @@ import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { RolesModule } from './modules/roles/roles.module';
-import { SitesModule } from './master/sites/sites.module';
-import { EmployeeModule } from './master/employee/employee.module';
-import { BrandModule } from './master/brand/brand.module';
-import { UnitTypeModule } from './master/unit-type/unit-type.module';
-import { ActivitiesModule } from './master/activities/activities.module';
-import { PopulationModule } from './master/population/population.module';
+import { SitesModule } from './modules/sites/sites.module';
+import { EmployeeModule } from './modules/employee/employee.module';
+import { BrandModule } from './modules/brand/brand.module';
+import { UnitTypeModule } from './modules/unit-type/unit-type.module';
+import { ActivitiesModule } from './modules/activities/activities.module';
+import { PopulationModule } from './modules/population/population.module';
 
 @Module({
   imports: [
@@ -24,7 +24,7 @@ import { PopulationModule } from './master/population/population.module';
         username: process.env.POSTGRES_USER,
         password: process.env.POSTGRES_PASSWORD,
         database: process.env.POSTGRES_DB,
-        entities: [__dirname + '/modules/**/entities/*.entity{.ts,.js}', __dirname + '/master/**/entities/*.entity{.ts,.js}'],
+        entities: [__dirname + '/modules/**/entities/*.entity{.ts,.js}'],
         synchronize: false,
       }),
     }),

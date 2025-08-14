@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { Sites } from '../../master/sites/entities/sites.entity';
+import { Sites } from '../../modules/sites/entities/sites.entity';
 
 export class SitesSeeder {
   constructor(private dataSource: DataSource) {}

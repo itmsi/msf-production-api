@@ -6,8 +6,8 @@ import { Users } from '.././users/entities/users.entity';
 import { RabbitmqModule } from '../../integrations/rabbitmq/rabbitmq.module';
 import { MailModule } from '../../integrations/mail/mail.module';
 import { S3Module } from '../../integrations/s3/s3.module';
-import { SitesModule } from '../../master/sites/sites.module';
-import { EmployeeModule } from '../../master/employee/employee.module';
+import { SitesModule } from '../sites/sites.module';
+import { EmployeeModule } from '../employee/employee.module';
 
 @Module({
   imports: [

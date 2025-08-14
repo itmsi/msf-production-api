@@ -1,5 +1,5 @@
 import { Expose, Exclude } from 'class-transformer';
-import { Users } from '../../../modules/users/entities/users.entity';
+// import { Users } from '../../users/entities/users.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -57,8 +57,8 @@ export class Employee {
   @DeleteDateColumn()
   deletedAt?: Date | null;
 
-  @OneToMany(() => Users, (user) => user.employees)
-  users?: Users[];
+  @OneToMany('Users', (user: any) => user.employees)
+  users?: any[];
 
   // Virtual property untuk nama lengkap
   @Expose()
