@@ -15,10 +15,10 @@ export class UsersSeeder {
     const sitesRepository = this.dataSource.getRepository(Sites);
 
     // Get existing roles, employees, and sites
-    const superAdminRole = await rolesRepository.findOne({ where: { roleCode: 'SUPER_ADMIN' } });
-    const adminRole = await rolesRepository.findOne({ where: { roleCode: 'ADMIN' } });
-    const managerRole = await rolesRepository.findOne({ where: { roleCode: 'MANAGER' } });
-    const staffRole = await rolesRepository.findOne({ where: { roleCode: 'STAFF' } });
+    const superAdminRole = await rolesRepository.findOne({ where: { role_code: 'SUPER_ADMIN' } });
+    const adminRole = await rolesRepository.findOne({ where: { role_code: 'ADMIN' } });
+    const managerRole = await rolesRepository.findOne({ where: { role_code: 'MANAGER' } });
+    const staffRole = await rolesRepository.findOne({ where: { role_code: 'STAFF' } });
 
     const siteJakarta = await sitesRepository.findOne({ where: { name: 'Site Jakarta' } });
     const siteSurabaya = await sitesRepository.findOne({ where: { name: 'Site Surabaya' } });

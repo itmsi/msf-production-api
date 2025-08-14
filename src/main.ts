@@ -14,9 +14,23 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   // Swagger config
   const config = new DocumentBuilder()
-    .setTitle('Part Management API')
-    .setDescription('API documentation for the Part Management System')
+    .setTitle('MSF Production API')
+    .setDescription('API documentation for the MSF Production System with User Management')
     .setVersion('1.0')
+    .addTag('Auth', 'Authentication endpoints')
+    .addTag('Users', 'User management endpoints')
+    .addTag('Roles', 'Role management endpoints')
+    .addTag('Permission', 'Permission management endpoints')
+    .addTag('Menu', 'Menu management endpoints')
+    .addTag('Menu Has Permission', 'Menu permission management endpoints')
+    .addTag('Role Has Permission', 'Role permission management endpoints')
+    .addTag('User Role', 'User role assignment endpoints')
+    .addTag('Sites', 'Site management endpoints')
+    .addTag('Employee', 'Employee management endpoints')
+    .addTag('Brand', 'Brand management endpoints')
+    .addTag('Unit Type', 'Unit type management endpoints')
+    .addTag('Activities', 'Activities management endpoints')
+    .addTag('Population', 'Population management endpoints')
     .addBearerAuth(
       {
         type: 'http',

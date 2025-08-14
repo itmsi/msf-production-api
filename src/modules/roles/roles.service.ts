@@ -28,10 +28,10 @@ export class RolesService {
     private rolesRepository: Repository<Roles>,
   ) {}
 
-  async findByName(name: string): Promise<Roles | null> {
+  async findByPositionName(position_name: string): Promise<Roles | null> {
     return this.rolesRepository.findOne({
       where: {
-        name,
+        position_name,
       },
       withDeleted: false,
     });
@@ -42,10 +42,10 @@ export class RolesService {
     if (!result) {
       throwError('Roles not found', 404);
     }
-    const response: any = {
-      id: result.id,
-      name: result.name,
-    };
+          const response: any = {
+        id: result.id,
+        position_name: result.position_name,
+      };
     return successResponse(response);
   }
 
@@ -56,7 +56,7 @@ export class RolesService {
       const skip = (page - 1) * limit;
 
       const [result, total] = await this.rolesRepository.findAndCount({
-        where: query.search ? [{ name: ILike(`%${query.search}%`) }] : {},
+        where: query.search ? [{ position_name: ILike(`%${query.search}%`) }] : {},
         order: {
           id: 'DESC',
         },
@@ -83,7 +83,7 @@ export class RolesService {
 
   async create(data: CreateRolesDto): Promise<ApiResponse<RolesResponseDto>> {
     try {
-      const existing = await this.findByName(data.name);
+      const existing = await this.findByPositionName(data.position_name);
       if (existing) {
         throwError('Role name already exists', 409);
       }
@@ -92,9 +92,10 @@ export class RolesService {
       const result = await this.rolesRepository.save(newUser);
       const response: RolesResponseDto = {
         id: result.id,
-        roleCode: result.roleCode,
-        name: result.name,
+        role_code: result.role_code,
+        position_name: result.position_name,
         role_parent: result.role_parent,
+        sites_id: result.sites_id,
       };
 
       return successResponse(response, 'Create new role successfully', 201);
@@ -116,14 +117,14 @@ export class RolesService {
         throwError('Roles not found', 404);
       }
 
-      if (updateDto.roleCode) {
-        const existingNip = await this.rolesRepository.findOne({
+            if (updateDto.role_code) {
+        const existingRole = await this.rolesRepository.findOne({
           where: {
-            roleCode: updateDto.roleCode,
+            role_code: updateDto.role_code,
             id: Not(id),
           },
         });
-        if (existingNip) {
+        if (existingRole) {
           throwError('Role Code already in use by another role', 409);
         }
       }
@@ -137,9 +138,10 @@ export class RolesService {
 
       const response: any = {
         id: result.id,
-        roleCode: result.roleCode,
-        name: result.name,
+        role_code: result.role_code,
+        position_name: result.position_name,
         role_parent: result.role_parent,
+        sites_id: result.sites_id,
       };
 
       return successResponse(response, 'Roles updated successfully');

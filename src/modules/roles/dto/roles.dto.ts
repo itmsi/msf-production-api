@@ -13,22 +13,27 @@ import { JoinColumn, ManyToOne } from 'typeorm';
 export class CreateRolesDto {
   @IsString()
   @IsNotEmpty()
-  roleCode: string;
+  role_code: string;
 
   @IsString()
   @IsNotEmpty()
-  name: string;
+  position_name: string;
 
   @IsString()
   @IsOptional()
   role_parent: string;
+
+  @IsNumber()
+  @IsOptional()
+  sites_id: number;
 }
 
 export class RolesResponseDto {
   id: number;
-  roleCode: string;
-  name: string;
+  role_code: string;
+  position_name: string;
   role_parent: string;
+  sites_id: number;
   meta?: any;
 }
 
@@ -47,16 +52,20 @@ export class GetRolesQueryDto {
 
 export class UpdateRolesDto {
   @IsString()
-  @IsNotEmpty()
-  roleCode: string;
+  @IsOptional()
+  role_code: string;
 
   @IsString()
-  @IsNotEmpty()
-  name: string;
+  @IsOptional()
+  position_name: string;
 
   @IsString()
   @IsOptional()
   role_parent: string;
+
+  @IsNumber()
+  @IsOptional()
+  sites_id: number;
 }
 
 // export class DeleteUserDto {

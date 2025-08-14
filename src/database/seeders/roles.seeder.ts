@@ -18,44 +18,44 @@ export class RolesSeeder {
 
     const rolesData = [
       {
-        roleCode: 'SUPER_ADMIN',
-        name: 'Super Administrator',
+        role_code: 'SUPER_ADMIN',
+        position_name: 'Super Administrator',
         role_parent: '',
         sites_id: defaultSiteId,
       },
       {
-        roleCode: 'ADMIN',
-        name: 'Administrator',
+        role_code: 'ADMIN',
+        position_name: 'Administrator',
         role_parent: '',
         sites_id: defaultSiteId,
       },
       {
-        roleCode: 'MANAGER',
-        name: 'Manager',
+        role_code: 'MANAGER',
+        position_name: 'Manager',
         role_parent: '',
         sites_id: defaultSiteId,
       },
       {
-        roleCode: 'SUPERVISOR',
-        name: 'Supervisor',
+        role_code: 'SUPERVISOR',
+        position_name: 'Supervisor',
         role_parent: '',
         sites_id: defaultSiteId,
       },
       {
-        roleCode: 'OPERATOR',
-        name: 'Operator',
+        role_code: 'OPERATOR',
+        position_name: 'Operator',
         role_parent: '',
         sites_id: defaultSiteId,
       },
       {
-        roleCode: 'STAFF',
-        name: 'Staff',
+        role_code: 'STAFF',
+        position_name: 'Staff',
         role_parent: '',
         sites_id: defaultSiteId,
       },
       {
-        roleCode: 'VIEWER',
-        name: 'Viewer',
+        role_code: 'VIEWER',
+        position_name: 'Viewer',
         role_parent: '',
         sites_id: defaultSiteId,
       },
@@ -63,15 +63,15 @@ export class RolesSeeder {
 
     for (const roleData of rolesData) {
       const existingRole = await rolesRepository.findOne({
-        where: { roleCode: roleData.roleCode },
+        where: { role_code: roleData.role_code },
       });
 
       if (!existingRole) {
         const role = rolesRepository.create(roleData);
         await rolesRepository.save(role);
-        console.log(`✅ Role "${roleData.name}" created`);
+        console.log(`✅ Role "${roleData.position_name}" created`);
       } else {
-        console.log(`⏭️  Role "${roleData.name}" already exists`);
+        console.log(`⏭️  Role "${roleData.position_name}" already exists`);
       }
     }
   }

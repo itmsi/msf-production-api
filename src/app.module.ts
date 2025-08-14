@@ -10,6 +10,11 @@ import { BrandModule } from './modules/brand/brand.module';
 import { UnitTypeModule } from './modules/unit-type/unit-type.module';
 import { ActivitiesModule } from './modules/activities/activities.module';
 import { PopulationModule } from './modules/population/population.module';
+import { PermissionModule } from './modules/permission/permission.module';
+import { MenuModule } from './modules/menu/menu.module';
+import { MenuHasPermissionModule } from './modules/menu-has-permission/menu-has-permission.module';
+import { RoleHasPermissionModule } from './modules/role-has-permission/role-has-permission.module';
+import { UserRoleModule } from './modules/user-role/user-role.module';
 
 @Module({
   imports: [
@@ -37,6 +42,11 @@ import { PopulationModule } from './modules/population/population.module';
     UnitTypeModule,
     ActivitiesModule,
     PopulationModule,
+    PermissionModule,
+    MenuModule,
+    MenuHasPermissionModule,
+    RoleHasPermissionModule,
+    UserRoleModule,
   ],
 })
 export class AppModule {}

@@ -5,30 +5,24 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
-  ManyToOne,
   OneToMany,
-  JoinColumn,
 } from 'typeorm';
-import { Sites } from '../../sites/entities/sites.entity';
-import { UserRole } from '../../users/entities/user-role.entity';
 import { RoleHasPermission } from '../../role-has-permission/entities/role-has-permission.entity';
+import { MenuHasPermission } from '../../menu-has-permission/entities/menu-has-permission.entity';
 
-@Entity('m_role')
-export class Roles {
+@Entity('m_permission')
+export class Permission {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'int', nullable: false })
-  sites_id: number;
-
   @Column({ type: 'varchar', length: 100, nullable: false })
-  role_code: string;
+  permission_name: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: false })
-  position_name: string;
+  @Column({ type: 'varchar', length: 50, nullable: false, unique: true })
+  permission_code: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  role_parent: string;
+  @Column({ type: 'text', nullable: true })
+  description: string;
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
@@ -49,13 +43,9 @@ export class Roles {
   deletedBy: number;
 
   // Relations
-  @ManyToOne(() => Sites, (sites) => sites.roles)
-  @JoinColumn({ name: 'sites_id' })
-  sites: Sites;
-
-  @OneToMany(() => UserRole, (userRole) => userRole.role)
-  userRoles: UserRole[];
-
-  @OneToMany(() => RoleHasPermission, (roleHasPermission) => roleHasPermission.role)
+  @OneToMany(() => RoleHasPermission, (roleHasPermission) => roleHasPermission.permission)
   roleHasPermissions: RoleHasPermission[];
+
+  @OneToMany(() => MenuHasPermission, (menuHasPermission) => menuHasPermission.permission)
+  menuHasPermissions: MenuHasPermission[];
 }

@@ -49,7 +49,7 @@ export class UserRoleSeeder {
 
     for (const userRole of userRoleData) {
       const user = await usersRepository.findOne({ where: { username: userRole.username } });
-      const role = await rolesRepository.findOne({ where: { roleCode: userRole.roleCode } });
+      const role = await rolesRepository.findOne({ where: { role_code: userRole.roleCode } });
 
       if (user && role) {
         // Check if relationship already exists

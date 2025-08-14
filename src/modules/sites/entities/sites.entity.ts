@@ -9,6 +9,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { OperationPoints } from '../../operation-points/entities/operation-points.entity';
+import { Roles } from '../../roles/entities/roles.entity';
 
 @Entity('m_sites')
 export class Sites {
@@ -43,4 +44,7 @@ export class Sites {
 
   @OneToMany(() => OperationPoints, (op) => op.site)
   operator_points?: OperationPoints[];
+
+  @OneToMany(() => Roles, (role) => role.sites)
+  roles?: Roles[];
 }

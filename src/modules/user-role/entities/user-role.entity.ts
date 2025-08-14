@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Users } from './users.entity';
+import { Users } from '../../users/entities/users.entity';
 import { Roles } from '../../roles/entities/roles.entity';
 
 @Entity('r_user_role')
