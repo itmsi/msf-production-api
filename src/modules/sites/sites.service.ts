@@ -11,6 +11,7 @@ import {
   ApiResponse,
   successResponse,
   throwError,
+  emptyDataResponse,
 } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import {
@@ -30,17 +31,24 @@ export class SitesService {
     private operationPointsRepository: Repository<OperationPoints>,
   ) {}
 
-  async findById(id: number): Promise<ApiResponse<SitesResponseDto>> {
-    const result = await this.sitesRepository.findOne({
-      where: { id },
-      relations: ['operator_points'],
-    });
-    
-    if (!result) {
-      throwError('Site tidak ditemukan', 404);
+  async findById(id: number): Promise<ApiResponse<SitesResponseDto | null>> {
+    try {
+      const result = await this.sitesRepository.findOne({
+        where: { id },
+        relations: ['operator_points'],
+      });
+      
+      if (!result) {
+        return emptyDataResponse('Site tidak ditemukan', null);
+      }
+      
+      return successResponse(result as SitesResponseDto);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Gagal mengambil data site');
     }
-    
-    return successResponse(result as SitesResponseDto);
   }
 
   async findAll(
@@ -188,16 +196,16 @@ export class SitesService {
   async update(
     id: number,
     updateDto: UpdateSitesDto,
-  ): Promise<ApiResponse<SitesResponseDto>> {
+  ): Promise<ApiResponse<SitesResponseDto | null>> {
     try {
       const site = await this.sitesRepository.findOne({ where: { id } });
 
       if (!site) {
-        throwError('Site tidak ditemukan', 404);
+        return emptyDataResponse('Site tidak ditemukan', null);
       }
 
       // Update site data
-      const updatedSite = this.sitesRepository.merge(site!, {
+      const updatedSite = this.sitesRepository.merge(site, {
         name: updateDto.name,
         location: updateDto.location,
         longitude: updateDto.longitude,
@@ -249,11 +257,11 @@ export class SitesService {
       const site = await this.sitesRepository.findOne({ where: { id } });
 
       if (!site) {
-        throwError('Site tidak ditemukan', 404);
+        return emptyDataResponse('Site tidak ditemukan', null);
       }
       
       // Soft delete the site (this will cascade to operator points due to foreign key constraint)
-      await this.sitesRepository.softRemove(site!);
+      await this.sitesRepository.softRemove(site);
 
       return successResponse(null, 'Site berhasil dihapus');
     } catch (error) {

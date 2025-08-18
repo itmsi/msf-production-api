@@ -10,6 +10,7 @@ import {
   ApiResponse,
   successResponse,
   throwError,
+  emptyDataResponse,
 } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import {
@@ -26,55 +27,62 @@ export class PopulationService {
     private populationRepository: Repository<Population>,
   ) {}
 
-  async findById(id: number): Promise<ApiResponse<PopulationResponseDto>> {
-    const result = await this.populationRepository.findOne({
-      where: { id },
-      relations: ['unitType', 'unitType.brand', 'activities', 'site'],
-    });
-    
-    if (!result) {
-      throwError('Population tidak ditemukan', 404);
+  async findById(id: number): Promise<ApiResponse<PopulationResponseDto | null>> {
+    try {
+      const result = await this.populationRepository.findOne({
+        where: { id },
+        relations: ['unitType', 'unitType.brand', 'activities', 'site'],
+      });
+      
+      if (!result) {
+        return emptyDataResponse('Population tidak ditemukan', null);
+      }
+      
+      const response: PopulationResponseDto = {
+        id: result.id,
+        date_arrive: result.date_arrive,
+        status: result.status,
+        unit_type_id: result.unit_type_id,
+        no_unit: result.no_unit,
+        vin_number: result.vin_number,
+        no_unit_system: result.no_unit_system,
+        engine_brand: result.engine_brand,
+        serial_engine: result.serial_engine,
+        activities_id: result.activities_id,
+        site_origin: result.site_origin,
+        remarks: result.remarks,
+        site_id: result.site_id,
+        company: result.company,
+        tyre_type: result.tyre_type,
+        createdAt: result.createdAt,
+        updatedAt: result.updatedAt,
+        unitType: result.unitType ? {
+          id: result.unitType.id,
+          unit_name: result.unitType.unit_name,
+          type_name: result.unitType.type_name,
+          model_name: result.unitType.model_name,
+          brand: result.unitType.brand ? {
+            id: result.unitType.brand.id,
+            brand_name: result.unitType.brand.brand_name,
+          } : undefined,
+        } : undefined,
+        activities: result.activities ? {
+          id: result.activities.id,
+          activity_name: result.activities.name,
+        } : undefined,
+        site: result.site ? {
+          id: result.site.id,
+          site_name: result.site.name,
+        } : undefined,
+      };
+      
+      return successResponse(response);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Gagal mengambil data population');
     }
-    
-    const response: PopulationResponseDto = {
-      id: result!.id,
-      date_arrive: result!.date_arrive,
-      status: result!.status,
-      unit_type_id: result!.unit_type_id,
-      no_unit: result!.no_unit,
-      vin_number: result!.vin_number,
-      no_unit_system: result!.no_unit_system,
-      engine_brand: result!.engine_brand,
-      serial_engine: result!.serial_engine,
-      activities_id: result!.activities_id,
-      site_origin: result!.site_origin,
-      remarks: result!.remarks,
-      site_id: result!.site_id,
-      company: result!.company,
-      tyre_type: result!.tyre_type,
-      createdAt: result!.createdAt,
-      updatedAt: result!.updatedAt,
-      unitType: result!.unitType ? {
-        id: result!.unitType.id,
-        unit_name: result!.unitType.unit_name,
-        type_name: result!.unitType.type_name,
-        model_name: result!.unitType.model_name,
-        brand: result!.unitType.brand ? {
-          id: result!.unitType.brand.id,
-          brand_name: result!.unitType.brand.brand_name,
-        } : undefined,
-      } : undefined,
-              activities: result!.activities ? {
-          id: result!.activities.id,
-          activity_name: result!.activities.name,
-        } : undefined,
-        site: result!.site ? {
-          id: result!.site.id,
-          site_name: result!.site.name,
-        } : undefined,
-    };
-    
-    return successResponse(response);
   }
 
   async findAll(
@@ -319,7 +327,7 @@ export class PopulationService {
   async update(
     id: number,
     updateDto: UpdatePopulationDto,
-  ): Promise<ApiResponse<PopulationResponseDto>> {
+  ): Promise<ApiResponse<PopulationResponseDto | null>> {
     try {
       const population = await this.populationRepository.findOne({ 
         where: { id },
@@ -327,11 +335,11 @@ export class PopulationService {
       });
 
       if (!population) {
-        throwError('Population tidak ditemukan', 404);
+        return emptyDataResponse('Population tidak ditemukan', null);
       }
 
       // Check if VIN number already exists for other populations
-      if (updateDto.vin_number && updateDto.vin_number !== population!.vin_number) {
+      if (updateDto.vin_number && updateDto.vin_number !== population.vin_number) {
         const existingVin = await this.populationRepository.findOne({
           where: { vin_number: updateDto.vin_number, id: Not(id) },
         });
@@ -342,7 +350,7 @@ export class PopulationService {
       }
 
       // Check if no_unit already exists for other populations
-      if (updateDto.no_unit && updateDto.no_unit !== population!.no_unit) {
+      if (updateDto.no_unit && updateDto.no_unit !== population.no_unit) {
         const existingNoUnit = await this.populationRepository.findOne({
           where: { no_unit: updateDto.no_unit, id: Not(id) },
         });
@@ -353,7 +361,7 @@ export class PopulationService {
       }
 
       // Check if no_unit_system already exists for other populations
-      if (updateDto.no_unit_system && updateDto.no_unit_system !== population!.no_unit_system) {
+      if (updateDto.no_unit_system && updateDto.no_unit_system !== population.no_unit_system) {
         const existingNoUnitSystem = await this.populationRepository.findOne({
           where: { no_unit_system: updateDto.no_unit_system, id: Not(id) },
         });
@@ -368,7 +376,7 @@ export class PopulationService {
         updateData.date_arrive = new Date(updateDto.date_arrive);
       }
 
-      const updatedPopulation = this.populationRepository.merge(population!, updateData);
+      const updatedPopulation = this.populationRepository.merge(population, updateData);
       const result = await this.populationRepository.save(updatedPopulation);
       
       // Fetch updated data with relations
@@ -429,10 +437,10 @@ export class PopulationService {
       const population = await this.populationRepository.findOne({ where: { id } });
 
       if (!population) {
-        throwError('Population tidak ditemukan', 404);
+        return emptyDataResponse('Population tidak ditemukan', null);
       }
       
-      await this.populationRepository.softRemove(population!);
+      await this.populationRepository.softRemove(population);
 
       return successResponse(null, 'Population berhasil dihapus');
     } catch (error) {

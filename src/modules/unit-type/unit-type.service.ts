@@ -10,6 +10,7 @@ import {
   ApiResponse,
   successResponse,
   throwError,
+  emptyDataResponse,
 } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import {
@@ -26,31 +27,38 @@ export class UnitTypeService {
     private unitTypeRepository: Repository<UnitType>,
   ) {}
 
-  async findById(id: number): Promise<ApiResponse<UnitTypeResponseDto>> {
-    const result = await this.unitTypeRepository.findOne({
-      where: { id },
-      relations: ['brand'],
-    });
-    
-    if (!result) {
-      throwError('Unit type tidak ditemukan', 404);
+  async findById(id: number): Promise<ApiResponse<UnitTypeResponseDto | null>> {
+    try {
+      const result = await this.unitTypeRepository.findOne({
+        where: { id },
+        relations: ['brand'],
+      });
+      
+      if (!result) {
+        return emptyDataResponse('Unit type tidak ditemukan', null);
+      }
+      
+      const response: UnitTypeResponseDto = {
+        id: result.id,
+        brand_id: result.brand_id,
+        unit_name: result.unit_name,
+        type_name: result.type_name,
+        model_name: result.model_name,
+        createdAt: result.createdAt,
+        updatedAt: result.updatedAt,
+        brand: result.brand ? {
+          id: result.brand.id,
+          brand_name: result.brand.brand_name,
+        } : undefined,
+      };
+      
+      return successResponse(response);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Gagal mengambil data unit type');
     }
-    
-    const response: UnitTypeResponseDto = {
-      id: result!.id,
-      brand_id: result!.brand_id,
-      unit_name: result!.unit_name,
-      type_name: result!.type_name,
-      model_name: result!.model_name,
-      createdAt: result!.createdAt,
-      updatedAt: result!.updatedAt,
-      brand: result!.brand ? {
-        id: result!.brand.id,
-        brand_name: result!.brand.brand_name,
-      } : undefined,
-    };
-    
-    return successResponse(response);
   }
 
   async findAll(
@@ -208,7 +216,7 @@ export class UnitTypeService {
   async update(
     id: number,
     updateDto: UpdateUnitTypeDto,
-  ): Promise<ApiResponse<UnitTypeResponseDto>> {
+  ): Promise<ApiResponse<UnitTypeResponseDto | null>> {
     try {
       const unitType = await this.unitTypeRepository.findOne({ 
         where: { id },
@@ -216,17 +224,17 @@ export class UnitTypeService {
       });
 
       if (!unitType) {
-        throwError('Unit type tidak ditemukan', 404);
+        return emptyDataResponse('Unit type tidak ditemukan', null);
       }
 
       // Check if combination already exists for other unit types
       if (updateDto.brand_id || updateDto.unit_name || updateDto.type_name || updateDto.model_name) {
         const existingUnitType = await this.unitTypeRepository.findOne({
           where: {
-            brand_id: updateDto.brand_id ?? unitType!.brand_id,
-            unit_name: updateDto.unit_name ?? unitType!.unit_name,
-            type_name: updateDto.type_name ?? unitType!.type_name,
-            model_name: updateDto.model_name ?? unitType!.model_name,
+            brand_id: updateDto.brand_id ?? unitType.brand_id,
+            unit_name: updateDto.unit_name ?? unitType.unit_name,
+            type_name: updateDto.type_name ?? unitType.type_name,
+            model_name: updateDto.model_name ?? unitType.model_name,
             id: Not(id),
           },
         });
@@ -239,7 +247,7 @@ export class UnitTypeService {
         }
       }
 
-      const updatedUnitType = this.unitTypeRepository.merge(unitType!, updateDto);
+      const updatedUnitType = this.unitTypeRepository.merge(unitType, updateDto);
       const result = await this.unitTypeRepository.save(updatedUnitType);
       
       // Fetch updated data with brand relation
@@ -276,10 +284,10 @@ export class UnitTypeService {
       const unitType = await this.unitTypeRepository.findOne({ where: { id } });
 
       if (!unitType) {
-        throwError('Unit type tidak ditemukan', 404);
+        return emptyDataResponse('Unit type tidak ditemukan', null);
       }
       
-      await this.unitTypeRepository.softRemove(unitType!);
+      await this.unitTypeRepository.softRemove(unitType);
 
       return successResponse(null, 'Unit type berhasil dihapus');
     } catch (error) {

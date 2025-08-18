@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserRole } from './entities/user-role.entity';
 import { CreateUserRoleDto, UpdateUserRoleDto } from './dto/user-role.dto';
-import { ApiResponse, successResponse, throwError } from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 
 @Injectable()
 export class UserRoleService {
@@ -50,7 +50,7 @@ export class UserRoleService {
     }
   }
 
-  async findOne(id: number): Promise<ApiResponse<UserRole>> {
+  async findOne(id: number): Promise<ApiResponse<UserRole | null>> {
     try {
       const userRole = await this.userRoleRepository.findOne({
         where: { id },
@@ -58,30 +58,30 @@ export class UserRoleService {
       });
 
       if (!userRole) {
-        throwError('User role not found', 404);
+        return emptyDataResponse('User role not found', null);
       }
 
-      return successResponse(userRole!, 'Get user role successfully');
+      return successResponse(userRole, 'Get user role successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch user role');
     }
   }
 
-  async update(id: number, updateUserRoleDto: UpdateUserRoleDto): Promise<ApiResponse<UserRole>> {
+  async update(id: number, updateUserRoleDto: UpdateUserRoleDto): Promise<ApiResponse<UserRole | null>> {
     try {
       const userRole = await this.userRoleRepository.findOne({
         where: { id },
       });
 
       if (!userRole) {
-        throwError('User role not found', 404);
+        return emptyDataResponse('User role not found', null);
       }
 
       // Check if new combination already exists (if being updated)
       if (updateUserRoleDto.user_id || updateUserRoleDto.role_id) {
-        const newUserId = updateUserRoleDto.user_id || userRole!.user_id;
-        const newRoleId = updateUserRoleDto.role_id || userRole!.role_id;
+        const newUserId = updateUserRoleDto.user_id || userRole.user_id;
+        const newRoleId = updateUserRoleDto.role_id || userRole.role_id;
 
         const existing = await this.userRoleRepository.findOne({
           where: {
@@ -95,8 +95,8 @@ export class UserRoleService {
         }
       }
 
-      Object.assign(userRole!, updateUserRoleDto);
-      const result = await this.userRoleRepository.save(userRole!);
+      Object.assign(userRole, updateUserRoleDto);
+      const result = await this.userRoleRepository.save(userRole);
 
       return successResponse(result, 'User role updated successfully');
     } catch (error) {
@@ -112,10 +112,10 @@ export class UserRoleService {
       });
 
       if (!userRole) {
-        throwError('User role not found', 404);
+        return emptyDataResponse('User role not found', null);
       }
 
-      await this.userRoleRepository.remove(userRole!);
+      await this.userRoleRepository.remove(userRole);
 
       return successResponse(null, 'User role deleted successfully');
     } catch (error) {
@@ -168,10 +168,10 @@ export class UserRoleService {
       });
 
       if (!userRole) {
-        throwError('User role combination not found', 404);
+        return emptyDataResponse('User role combination not found', null);
       }
 
-      await this.userRoleRepository.remove(userRole!);
+      await this.userRoleRepository.remove(userRole);
 
       return successResponse(null, 'Role removed from user successfully');
     } catch (error) {

@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder, Not } from 'typeorm';
 import { Employee } from './entities/employee.entity';
 import { CreateEmployeeDto, UpdateEmployeeDto, EmployeeResponseDto, GetEmployeesQueryDto } from './dto/employee.dto';
-import { ApiResponse, successResponse, throwError } from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 
 @Injectable()
@@ -104,28 +104,28 @@ export class EmployeeService {
     }
   }
 
-  async findOne(id: number): Promise<ApiResponse<EmployeeResponseDto>> {
+  async findOne(id: number): Promise<ApiResponse<EmployeeResponseDto | null>> {
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id, deletedAt: null as any },
       });
 
       if (!employee) {
-        throwError('Employee not found', 404);
+        return emptyDataResponse('Employee not found', null);
       }
 
       const response: EmployeeResponseDto = {
-        id: employee!.id,
-        firstName: employee!.firstName,
-        lastName: employee!.lastName,
-        name: employee!.name,
-        department: employee!.department,
-        position: employee!.position,
-        nip: employee!.nip,
-        status: employee!.status as any,
-        salary: employee!.salary,
-        createdAt: employee!.createdAt!,
-        updatedAt: employee!.updatedAt!,
+        id: employee.id,
+        firstName: employee.firstName,
+        lastName: employee.lastName,
+        name: employee.name,
+        department: employee.department,
+        position: employee.position,
+        nip: employee.nip,
+        status: employee.status as any,
+        salary: employee.salary,
+        createdAt: employee.createdAt!,
+        updatedAt: employee.updatedAt!,
       };
 
       return successResponse(response, 'Get employee successfully');
@@ -135,18 +135,18 @@ export class EmployeeService {
     }
   }
 
-  async update(id: number, updateEmployeeDto: UpdateEmployeeDto): Promise<ApiResponse<EmployeeResponseDto>> {
+  async update(id: number, updateEmployeeDto: UpdateEmployeeDto): Promise<ApiResponse<EmployeeResponseDto | null>> {
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id, deletedAt: null as any },
       });
 
       if (!employee) {
-        throwError('Employee not found', 404);
+        return emptyDataResponse('Employee not found', null);
       }
 
       // Check if NIP already exists (if being updated)
-      if (updateEmployeeDto.nip && updateEmployeeDto.nip !== employee!.nip) {
+      if (updateEmployeeDto.nip && updateEmployeeDto.nip !== employee.nip) {
         const existingEmployee = await this.employeeRepository.findOne({
           where: { nip: updateEmployeeDto.nip, deletedAt: null as any },
         });
@@ -156,8 +156,8 @@ export class EmployeeService {
         }
       }
 
-      Object.assign(employee!, updateEmployeeDto);
-      const result = await this.employeeRepository.save(employee!);
+      Object.assign(employee, updateEmployeeDto);
+      const result = await this.employeeRepository.save(employee);
 
       const response: EmployeeResponseDto = {
         id: result.id,
@@ -187,7 +187,7 @@ export class EmployeeService {
       });
 
       if (!employee) {
-        throwError('Employee not found', 404);
+        return emptyDataResponse('Employee not found', null);
       }
 
       await this.employeeRepository.softDelete(id);

@@ -23,6 +23,17 @@ export function successResponse<T = any>(
   };
 }
 
+export function emptyDataResponse<T = any>(
+  message = 'Data not found',
+  data: T = null as T,
+): ApiResponse<T> {
+  return {
+    statusCode: 200,
+    message,
+    data,
+  };
+}
+
 export function errorResponse(
   message = 'Error',
   statusCode = 400,

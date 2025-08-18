@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RoleHasPermission } from './entities/role-has-permission.entity';
 import { CreateRoleHasPermissionDto, UpdateRoleHasPermissionDto } from './dto/role-has-permission.dto';
-import { ApiResponse, successResponse, throwError } from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 
 @Injectable()
 export class RoleHasPermissionService {
@@ -51,7 +51,7 @@ export class RoleHasPermissionService {
     }
   }
 
-  async findOne(id: number): Promise<ApiResponse<RoleHasPermission>> {
+  async findOne(id: number): Promise<ApiResponse<RoleHasPermission | null>> {
     try {
       const roleHasPermission = await this.roleHasPermissionRepository.findOne({
         where: { id },
@@ -59,31 +59,31 @@ export class RoleHasPermissionService {
       });
 
       if (!roleHasPermission) {
-        throwError('Role permission not found', 404);
+        return emptyDataResponse('Role permission not found', null);
       }
 
-      return successResponse(roleHasPermission!, 'Get role permission successfully');
+      return successResponse(roleHasPermission, 'Get role permission successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch role permission');
     }
   }
 
-  async update(id: number, updateRoleHasPermissionDto: UpdateRoleHasPermissionDto): Promise<ApiResponse<RoleHasPermission>> {
+  async update(id: number, updateRoleHasPermissionDto: UpdateRoleHasPermissionDto): Promise<ApiResponse<RoleHasPermission | null>> {
     try {
       const roleHasPermission = await this.roleHasPermissionRepository.findOne({
         where: { id },
       });
 
       if (!roleHasPermission) {
-        throwError('Role permission not found', 404);
+        return emptyDataResponse('Role permission not found', null);
       }
 
       // Check if new combination already exists (if being updated)
       if (updateRoleHasPermissionDto.role_id || updateRoleHasPermissionDto.mhp_id || updateRoleHasPermissionDto.permission_id) {
-        const newRoleId = updateRoleHasPermissionDto.role_id || roleHasPermission!.role_id;
-        const newMhpId = updateRoleHasPermissionDto.mhp_id || roleHasPermission!.mhp_id;
-        const newPermissionId = updateRoleHasPermissionDto.permission_id || roleHasPermission!.permission_id;
+        const newRoleId = updateRoleHasPermissionDto.role_id || roleHasPermission.role_id;
+        const newMhpId = updateRoleHasPermissionDto.mhp_id || roleHasPermission.mhp_id;
+        const newPermissionId = updateRoleHasPermissionDto.permission_id || roleHasPermission.permission_id;
 
         const existing = await this.roleHasPermissionRepository.findOne({
           where: {
@@ -98,8 +98,8 @@ export class RoleHasPermissionService {
         }
       }
 
-      Object.assign(roleHasPermission!, updateRoleHasPermissionDto);
-      const result = await this.roleHasPermissionRepository.save(roleHasPermission!);
+      Object.assign(roleHasPermission, updateRoleHasPermissionDto);
+      const result = await this.roleHasPermissionRepository.save(roleHasPermission);
 
       return successResponse(result, 'Role permission updated successfully');
     } catch (error) {
@@ -115,10 +115,10 @@ export class RoleHasPermissionService {
       });
 
       if (!roleHasPermission) {
-        throwError('Role permission not found', 404);
+        return emptyDataResponse('Role permission not found', null);
       }
 
-      await this.roleHasPermissionRepository.remove(roleHasPermission!);
+      await this.roleHasPermissionRepository.remove(roleHasPermission);
 
       return successResponse(null, 'Role permission deleted successfully');
     } catch (error) {

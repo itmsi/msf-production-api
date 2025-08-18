@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder, Not } from 'typeorm';
 import { Users } from './entities/users.entity';
 import { CreateUserDto, UpdateUserDto, UserResponseDto } from './dto/user.dto';
-import { ApiResponse, successResponse, throwError } from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import { plainToInstance } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
@@ -34,7 +34,7 @@ export class UsersService {
 
       if (search) {
         qb.andWhere(
-          '(user.username ILIKE :search OR user.email ILIKE :search OR employee.name ILIKE :search)',
+          '(user.username ILIKE :search OR user.email ILIKE :search OR employee.firstName ILIKE :search OR employee.lastName ILIKE :search)',
           { search: `%${search}%` },
         );
       }
@@ -119,12 +119,12 @@ export class UsersService {
   async update(
     id: number,
     updateDto: UpdateUserDto,
-  ): Promise<ApiResponse<Users>> {
+  ): Promise<ApiResponse<Users | null>> {
     try {
       const user = await this.userRepository.findOne({ where: { id } });
 
       if (!user) {
-        throwError('User not found', 404);
+        return emptyDataResponse('User not found', null);
       }
 
       if ('password' in updateDto) {
@@ -177,17 +177,24 @@ export class UsersService {
     }
   }
 
-  async findOne(id: number): Promise<Users> {
-    const user = await this.userRepository.findOne({
-      where: { id },
-      relations: ['employees', 'userRoles', 'userRoles.role'],
-    });
+  async findOne(id: number): Promise<ApiResponse<Users | null>> {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id },
+        relations: ['employees', 'userRoles', 'userRoles.role'],
+      });
 
-    if (!user) {
-      throwError('User not found', 404);
+      if (!user) {
+        return emptyDataResponse('User not found', null);
+      }
+
+      return successResponse(user, 'User found successfully');
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to fetch user');
     }
-
-    return user!;
   }
 
   async findByUsername(username: string): Promise<Users | null> {
@@ -200,7 +207,11 @@ export class UsersService {
 
   async remove(id: number): Promise<ApiResponse<null>> {
     try {
-      const user = await this.findOne(id);
+      const user = await this.userRepository.findOne({ where: { id } });
+      
+      if (!user) {
+        return emptyDataResponse('User not found', null);
+      }
 
       // Remove user-role relationships first
       await this.userRoleRepository.delete({ user_id: id });

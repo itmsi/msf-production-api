@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MenuHasPermission } from './entities/menu-has-permission.entity';
 import { CreateMenuHasPermissionDto, UpdateMenuHasPermissionDto } from './dto/menu-has-permission.dto';
-import { ApiResponse, successResponse, throwError } from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 
 @Injectable()
 export class MenuHasPermissionService {
@@ -50,7 +50,7 @@ export class MenuHasPermissionService {
     }
   }
 
-  async findOne(id: number): Promise<ApiResponse<MenuHasPermission>> {
+  async findOne(id: number): Promise<ApiResponse<MenuHasPermission | null>> {
     try {
       const menuHasPermission = await this.menuHasPermissionRepository.findOne({
         where: { id },
@@ -58,30 +58,30 @@ export class MenuHasPermissionService {
       });
 
       if (!menuHasPermission) {
-        throwError('Menu permission not found', 404);
+        return emptyDataResponse('Menu permission not found', null);
       }
 
-      return successResponse(menuHasPermission!, 'Get menu permission successfully');
+      return successResponse(menuHasPermission, 'Get menu permission successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch menu permission');
     }
   }
 
-  async update(id: number, updateMenuHasPermissionDto: UpdateMenuHasPermissionDto): Promise<ApiResponse<MenuHasPermission>> {
+  async update(id: number, updateMenuHasPermissionDto: UpdateMenuHasPermissionDto): Promise<ApiResponse<MenuHasPermission | null>> {
     try {
       const menuHasPermission = await this.menuHasPermissionRepository.findOne({
         where: { id },
       });
 
       if (!menuHasPermission) {
-        throwError('Menu permission not found', 404);
+        return emptyDataResponse('Menu permission not found', null);
       }
 
       // Check if new combination already exists (if being updated)
       if (updateMenuHasPermissionDto.menu_id || updateMenuHasPermissionDto.permission_id) {
-        const newMenuId = updateMenuHasPermissionDto.menu_id || menuHasPermission!.menu_id;
-        const newPermissionId = updateMenuHasPermissionDto.permission_id || menuHasPermission!.permission_id;
+        const newMenuId = updateMenuHasPermissionDto.menu_id || menuHasPermission.menu_id;
+        const newPermissionId = updateMenuHasPermissionDto.permission_id || menuHasPermission.permission_id;
 
         const existing = await this.menuHasPermissionRepository.findOne({
           where: {
@@ -95,8 +95,8 @@ export class MenuHasPermissionService {
         }
       }
 
-      Object.assign(menuHasPermission!, updateMenuHasPermissionDto);
-      const result = await this.menuHasPermissionRepository.save(menuHasPermission!);
+      Object.assign(menuHasPermission, updateMenuHasPermissionDto);
+      const result = await this.menuHasPermissionRepository.save(menuHasPermission);
 
       return successResponse(result, 'Menu permission updated successfully');
     } catch (error) {
@@ -112,10 +112,10 @@ export class MenuHasPermissionService {
       });
 
       if (!menuHasPermission) {
-        throwError('Menu permission not found', 404);
+        return emptyDataResponse('Menu permission not found', null);
       }
 
-      await this.menuHasPermissionRepository.remove(menuHasPermission!);
+      await this.menuHasPermissionRepository.remove(menuHasPermission);
 
       return successResponse(null, 'Menu permission deleted successfully');
     } catch (error) {

@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Permission } from './entities/permission.entity';
 import { CreatePermissionDto, UpdatePermissionDto } from './dto/permission.dto';
-import { ApiResponse, successResponse, throwError } from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 
 @Injectable()
 export class PermissionService {
@@ -47,35 +47,35 @@ export class PermissionService {
     }
   }
 
-  async findOne(id: number): Promise<ApiResponse<Permission>> {
+  async findOne(id: number): Promise<ApiResponse<Permission | null>> {
     try {
       const permission = await this.permissionRepository.findOne({
         where: { id, deletedAt: null as any },
       });
 
       if (!permission) {
-        throwError('Permission not found', 404);
+        return emptyDataResponse('Permission not found', null);
       }
 
-      return successResponse(permission!, 'Get permission successfully');
+      return successResponse(permission, 'Get permission successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch permission');
     }
   }
 
-  async update(id: number, updatePermissionDto: UpdatePermissionDto): Promise<ApiResponse<Permission>> {
+  async update(id: number, updatePermissionDto: UpdatePermissionDto): Promise<ApiResponse<Permission | null>> {
     try {
       const permission = await this.permissionRepository.findOne({
         where: { id, deletedAt: null as any },
       });
 
       if (!permission) {
-        throwError('Permission not found', 404);
+        return emptyDataResponse('Permission not found', null);
       }
 
       // Check if permission_code already exists (if being updated)
-      if (updatePermissionDto.permission_code && updatePermissionDto.permission_code !== permission!.permission_code) {
+      if (updatePermissionDto.permission_code && updatePermissionDto.permission_code !== permission.permission_code) {
         const existingPermission = await this.permissionRepository.findOne({
           where: { permission_code: updatePermissionDto.permission_code, deletedAt: null as any },
         });
@@ -85,8 +85,8 @@ export class PermissionService {
         }
       }
 
-      Object.assign(permission!, updatePermissionDto);
-      const result = await this.permissionRepository.save(permission!);
+      Object.assign(permission, updatePermissionDto);
+      const result = await this.permissionRepository.save(permission);
 
       return successResponse(result, 'Permission updated successfully');
     } catch (error) {
@@ -102,13 +102,12 @@ export class PermissionService {
       });
 
       if (!permission) {
-        throwError('Permission not found', 404);
+        return emptyDataResponse('Permission not found', null);
       }
-      
-      permission!.deletedAt = new Date();
-      permission!.deletedBy = deletedBy;
-      
-      await this.permissionRepository.save(permission!);
+
+      permission.deletedAt = new Date();
+      permission.deletedBy = deletedBy;
+      await this.permissionRepository.save(permission);
 
       return successResponse(null, 'Permission deleted successfully');
     } catch (error) {

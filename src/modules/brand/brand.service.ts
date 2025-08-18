@@ -10,6 +10,7 @@ import {
   ApiResponse,
   successResponse,
   throwError,
+  emptyDataResponse,
 } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import {
@@ -26,16 +27,23 @@ export class BrandService {
     private brandRepository: Repository<Brand>,
   ) {}
 
-  async findById(id: number): Promise<ApiResponse<BrandResponseDto>> {
-    const result = await this.brandRepository.findOne({
-      where: { id },
-    });
-    
-    if (!result) {
-      throwError('Brand tidak ditemukan', 404);
+  async findById(id: number): Promise<ApiResponse<BrandResponseDto | null>> {
+    try {
+      const result = await this.brandRepository.findOne({
+        where: { id },
+      });
+      
+      if (!result) {
+        return emptyDataResponse('Brand tidak ditemukan', null);
+      }
+      
+      return successResponse(result as BrandResponseDto);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Gagal mengambil data brand');
     }
-    
-    return successResponse(result as BrandResponseDto);
   }
 
   async findAll(
@@ -136,12 +144,12 @@ export class BrandService {
   async update(
     id: number,
     updateDto: UpdateBrandDto,
-  ): Promise<ApiResponse<BrandResponseDto>> {
+  ): Promise<ApiResponse<BrandResponseDto | null>> {
     try {
       const brand = await this.brandRepository.findOne({ where: { id } });
 
       if (!brand) {
-        throwError('Brand tidak ditemukan', 404);
+        return emptyDataResponse('Brand tidak ditemukan', null);
       }
 
       // Check if brand_name already exists for other brands
@@ -161,7 +169,7 @@ export class BrandService {
         }
       }
 
-      const updatedBrand = this.brandRepository.merge(brand!, updateDto);
+      const updatedBrand = this.brandRepository.merge(brand, updateDto);
       const result = await this.brandRepository.save(updatedBrand);
       
       return successResponse(result, 'Brand berhasil diupdate');
@@ -178,10 +186,10 @@ export class BrandService {
       const brand = await this.brandRepository.findOne({ where: { id } });
 
       if (!brand) {
-        throwError('Brand tidak ditemukan', 404);
+        return emptyDataResponse('Brand tidak ditemukan', null);
       }
       
-      await this.brandRepository.softRemove(brand!);
+      await this.brandRepository.softRemove(brand);
 
       return successResponse(null, 'Brand berhasil dihapus');
     } catch (error) {

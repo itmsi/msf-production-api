@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Menu } from './entities/menu.entity';
 import { CreateMenuDto, UpdateMenuDto } from './dto/menu.dto';
 import { MenuHasPermission } from '../menu-has-permission/entities/menu-has-permission.entity';
-import { ApiResponse, successResponse, throwError } from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 
 @Injectable()
 export class MenuService {
@@ -56,7 +56,7 @@ export class MenuService {
     }
   }
 
-  async findOne(id: number): Promise<ApiResponse<Menu>> {
+  async findOne(id: number): Promise<ApiResponse<Menu | null>> {
     try {
       const menu = await this.menuRepository.findOne({
         where: { id, deletedAt: null as any },
@@ -64,28 +64,28 @@ export class MenuService {
       });
 
       if (!menu) {
-        throwError('Menu not found', 404);
+        return emptyDataResponse('Menu not found', null);
       }
 
-      return successResponse(menu!, 'Get menu successfully');
+      return successResponse(menu, 'Get menu successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch menu');
     }
   }
 
-  async update(id: number, updateMenuDto: UpdateMenuDto): Promise<ApiResponse<Menu>> {
+  async update(id: number, updateMenuDto: UpdateMenuDto): Promise<ApiResponse<Menu | null>> {
     try {
       const menu = await this.menuRepository.findOne({
         where: { id, deletedAt: null as any },
       });
 
       if (!menu) {
-        throwError('Menu not found', 404);
+        return emptyDataResponse('Menu not found', null);
       }
 
       // Check if menu_code already exists (if being updated)
-      if (updateMenuDto.menu_code && updateMenuDto.menu_code !== menu!.menu_code) {
+      if (updateMenuDto.menu_code && updateMenuDto.menu_code !== menu.menu_code) {
         const existingMenu = await this.menuRepository.findOne({
           where: { menu_code: updateMenuDto.menu_code, deletedAt: null as any },
         });
@@ -95,8 +95,8 @@ export class MenuService {
         }
       }
 
-      Object.assign(menu!, updateMenuDto);
-      const updatedMenu = await this.menuRepository.save(menu!);
+      Object.assign(menu, updateMenuDto);
+      const updatedMenu = await this.menuRepository.save(menu);
 
       // Handle permissions if provided
       if (updateMenuDto.permissionIds) {
@@ -117,13 +117,13 @@ export class MenuService {
       });
 
       if (!menu) {
-        throwError('Menu not found', 404);
+        return emptyDataResponse('Menu not found', null);
       }
       
-      menu!.deletedAt = new Date();
-      menu!.deletedBy = deletedBy;
+      menu.deletedAt = new Date();
+      menu.deletedBy = deletedBy;
       
-      await this.menuRepository.save(menu!);
+      await this.menuRepository.save(menu);
 
       return successResponse(null, 'Menu deleted successfully');
     } catch (error) {

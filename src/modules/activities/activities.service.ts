@@ -10,6 +10,7 @@ import {
   ApiResponse,
   successResponse,
   throwError,
+  emptyDataResponse,
 } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import {
@@ -26,16 +27,23 @@ export class ActivitiesService {
     private activitiesRepository: Repository<Activities>,
   ) {}
 
-  async findById(id: number): Promise<ApiResponse<ActivitiesResponseDto>> {
-    const result = await this.activitiesRepository.findOne({
-      where: { id },
-    });
-    
-    if (!result) {
-      throwError('Aktivitas tidak ditemukan', 404);
+  async findById(id: number): Promise<ApiResponse<ActivitiesResponseDto | null>> {
+    try {
+      const result = await this.activitiesRepository.findOne({
+        where: { id },
+      });
+      
+      if (!result) {
+        return emptyDataResponse('Aktivitas tidak ditemukan', null);
+      }
+      
+      return successResponse(result as ActivitiesResponseDto);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Gagal mengambil data aktivitas');
     }
-    
-    return successResponse(result as ActivitiesResponseDto);
   }
 
   async findAll(
@@ -145,12 +153,12 @@ export class ActivitiesService {
   async update(
     id: number,
     updateDto: UpdateActivitiesDto,
-  ): Promise<ApiResponse<ActivitiesResponseDto>> {
+  ): Promise<ApiResponse<ActivitiesResponseDto | null>> {
     try {
       const activity = await this.activitiesRepository.findOne({ where: { id } });
 
       if (!activity) {
-        throwError('Aktivitas tidak ditemukan', 404);
+        return emptyDataResponse('Aktivitas tidak ditemukan', null);
       }
 
       // Check if name already exists for other activities
@@ -170,7 +178,7 @@ export class ActivitiesService {
         }
       }
 
-      const updatedActivity = this.activitiesRepository.merge(activity!, updateDto);
+      const updatedActivity = this.activitiesRepository.merge(activity, updateDto);
       const result = await this.activitiesRepository.save(updatedActivity);
       
       return successResponse(result, 'Aktivitas berhasil diupdate');
@@ -187,10 +195,10 @@ export class ActivitiesService {
       const activity = await this.activitiesRepository.findOne({ where: { id } });
 
       if (!activity) {
-        throwError('Aktivitas tidak ditemukan', 404);
+        return emptyDataResponse('Aktivitas tidak ditemukan', null);
       }
       
-      await this.activitiesRepository.softRemove(activity!);
+      await this.activitiesRepository.softRemove(activity);
 
       return successResponse(null, 'Aktivitas berhasil dihapus');
     } catch (error) {

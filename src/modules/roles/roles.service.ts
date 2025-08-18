@@ -10,6 +10,7 @@ import {
   ApiResponse,
   successResponse,
   throwError,
+  emptyDataResponse,
 } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import * as bcrypt from 'bcrypt';
@@ -38,15 +39,22 @@ export class RolesService {
   }
 
   async findById(id: number): Promise<ApiResponse<any>> {
-    const result: any = await this.rolesRepository.findOne({ where: { id } });
-    if (!result) {
-      throwError('Roles not found', 404);
-    }
-          const response: any = {
+    try {
+      const result: any = await this.rolesRepository.findOne({ where: { id } });
+      if (!result) {
+        return emptyDataResponse('Role not found', null);
+      }
+      const response: any = {
         id: result.id,
         position_name: result.position_name,
       };
-    return successResponse(response);
+      return successResponse(response);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to fetch role');
+    }
   }
 
   async findAll(query: GetRolesQueryDto): Promise<ApiResponse<Roles[]>> {
@@ -110,14 +118,14 @@ export class RolesService {
   async update(
     id: number,
     updateDto: UpdateRolesDto,
-  ): Promise<ApiResponse<Roles>> {
+  ): Promise<ApiResponse<Roles | null>> {
     try {
       const roles = await this.rolesRepository.findOne({ where: { id } });
       if (!roles) {
-        throwError('Roles not found', 404);
+        return emptyDataResponse('Role not found', null);
       }
 
-            if (updateDto.role_code) {
+      if (updateDto.role_code) {
         const existingRole = await this.rolesRepository.findOne({
           where: {
             role_code: updateDto.role_code,
@@ -158,7 +166,7 @@ export class RolesService {
       const roles = await this.rolesRepository.findOne({ where: { id } });
 
       if (!roles) {
-        throwError('roles not found', 404);
+        return emptyDataResponse('Role not found', null);
       }
       await this.rolesRepository.softRemove(roles!);
 
