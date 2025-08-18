@@ -5,13 +5,21 @@ export class UserSeeder {
   constructor(private dataSource: DataSource) {}
 
   async run(): Promise<void> {
+    // Get first employee for user creation
+    const employees = await this.dataSource.query('SELECT id FROM m_employee LIMIT 1');
+    if (employees.length === 0) {
+      console.log('❌ No employees found. Please run employee seeder first.');
+      return;
+    }
+    const defaultEmployeeId = employees[0].id;
+
     const usersData = [
       {
         username: 'superadmin',
         email: 'superadmin@msf.com',
         password: 'Qwer1234!',
-        fullName: 'Super Administrator',
-        status: 'active'
+        employeeId: defaultEmployeeId,
+        isActive: true
       }
     ];
 
@@ -32,8 +40,8 @@ export class UserSeeder {
 
         // Create new user
         await this.dataSource.query(
-          'INSERT INTO m_user (username, email, password, full_name, status, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, NOW(), NOW())',
-          [userData.username, userData.email, hashedPassword, userData.fullName, userData.status]
+          'INSERT INTO m_user (username, email, password, "isActive", employee_id, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, NOW(), NOW())',
+          [userData.username, userData.email, hashedPassword, userData.isActive, userData.employeeId]
         );
         createdCount++;
         console.log(`✅ User created: ${userData.username}`);
