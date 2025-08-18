@@ -16,6 +16,11 @@ export enum MenuStatus {
   INACTIVE = 'inactive',
 }
 
+export enum MenuModuleType {
+  SPARE_PART = 'spare-part',
+  PRODUCTION = 'production',
+}
+
 @Entity('m_menu')
 export class Menu {
   @PrimaryGeneratedColumn()
@@ -48,6 +53,14 @@ export class Menu {
     default: MenuStatus.ACTIVE,
   })
   status: MenuStatus;
+
+  @Column({
+    type: 'enum',
+    enum: MenuModuleType,
+    default: MenuModuleType.PRODUCTION,
+    nullable: true,
+  })
+  module: MenuModuleType;
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;

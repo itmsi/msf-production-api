@@ -1,6 +1,6 @@
 import { IsString, IsNotEmpty, IsOptional, IsInt, IsBoolean, IsEnum, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { MenuStatus } from '../entities/menu.entity';
+import { MenuStatus, MenuModuleType } from '../entities/menu.entity';
 
 export class CreateMenuDto {
   @ApiPropertyOptional({ description: 'ID menu parent' })
@@ -42,6 +42,11 @@ export class CreateMenuDto {
   @IsEnum(MenuStatus)
   @IsOptional()
   status?: MenuStatus;
+
+  @ApiPropertyOptional({ description: 'Module menu', enum: MenuModuleType, example: MenuModuleType.PRODUCTION })
+  @IsEnum(MenuModuleType)
+  @IsOptional()
+  module?: MenuModuleType;
 
   @ApiPropertyOptional({ description: 'ID user yang membuat' })
   @IsInt()
@@ -96,6 +101,11 @@ export class UpdateMenuDto {
   @IsOptional()
   status?: MenuStatus;
 
+  @ApiPropertyOptional({ description: 'Module menu', enum: MenuModuleType })
+  @IsEnum(MenuModuleType)
+  @IsOptional()
+  module?: MenuModuleType;
+
   @ApiPropertyOptional({ description: 'ID user yang mengupdate' })
   @IsInt()
   @IsOptional()
@@ -135,6 +145,9 @@ export class MenuResponseDto {
 
   @ApiProperty()
   status: MenuStatus;
+
+  @ApiProperty()
+  module: MenuModuleType;
 
   @ApiProperty()
   createdAt: Date;

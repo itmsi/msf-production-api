@@ -5,43 +5,128 @@ export class MenuHasPermissionSeeder {
 
   async run(): Promise<void> {
     const menuPermissionData = [
-      // Dashboard - no specific permissions needed
+      // Dashboard - Read saja
+      { menuCode: 'DASHBOARD', permissions: ['READ'] },
       
-      // Master Data permissions
-      { menuCode: 'SITES', permissions: ['SITE_VIEW', 'SITE_CREATE', 'SITE_EDIT', 'SITE_DELETE'] },
-      { menuCode: 'EMPLOYEES', permissions: ['EMPLOYEE_VIEW', 'EMPLOYEE_CREATE', 'EMPLOYEE_EDIT', 'EMPLOYEE_DELETE'] },
-      { menuCode: 'ROLES', permissions: ['ROLE_VIEW', 'ROLE_CREATE', 'ROLE_EDIT', 'ROLE_DELETE'] },
-      { menuCode: 'USERS', permissions: ['USER_VIEW', 'USER_CREATE', 'USER_EDIT', 'USER_DELETE'] },
-      { menuCode: 'BRANDS', permissions: ['SITE_VIEW', 'SITE_CREATE', 'SITE_EDIT', 'SITE_DELETE'] },
-      { menuCode: 'UNIT_TYPES', permissions: ['SITE_VIEW', 'SITE_CREATE', 'SITE_EDIT', 'SITE_DELETE'] },
-      { menuCode: 'ACTIVITIES', permissions: ['ACTIVITIES_VIEW', 'ACTIVITIES_CREATE', 'ACTIVITIES_EDIT', 'ACTIVITIES_DELETE'] },
-      { menuCode: 'OPERATION_POINTS', permissions: ['SITE_VIEW', 'SITE_CREATE', 'SITE_EDIT', 'SITE_DELETE'] },
-      { menuCode: 'BARGES', permissions: ['BARGE_VIEW', 'BARGE_CREATE', 'BARGE_EDIT', 'BARGE_DELETE'] },
+      // Overall Performance - Read saja
+      { menuCode: 'OVERALL_PERFORMANCE', permissions: ['READ'] },
       
-      // Operations permissions
-      { menuCode: 'POPULATION', permissions: ['POPULATION_VIEW', 'POPULATION_CREATE', 'POPULATION_EDIT', 'POPULATION_DELETE'] },
-      { menuCode: 'INPUT_BARGE', permissions: ['BARGE_VIEW', 'BARGE_CREATE', 'BARGE_EDIT'] },
-      { menuCode: 'BASE_DATA_PRODUCTION', permissions: ['REPORTS_VIEW'] },
-      { menuCode: 'LOSS_TIME', permissions: ['REPORTS_VIEW'] },
-      { menuCode: 'FUEL', permissions: ['REPORTS_VIEW'] },
-      { menuCode: 'PLAN_PRODUCTION', permissions: ['REPORTS_VIEW'] },
-      { menuCode: 'PLAN_WORKING_HOUR', permissions: ['REPORTS_VIEW'] },
+      // Monthly Production Performance - Read, Export
+      { menuCode: 'MONTHLY_PRODUCTION_PERFORMANCE', permissions: ['READ', 'EXPORT'] },
       
-      // CCR permissions
-      { menuCode: 'CCR_HAULING', permissions: ['REPORTS_VIEW'] },
-      { menuCode: 'CCR_HAULING_PROBLEM', permissions: ['REPORTS_VIEW'] },
-      { menuCode: 'CCR_BARGING', permissions: ['REPORTS_VIEW'] },
-      { menuCode: 'CCR_BARGING_PROBLEM', permissions: ['REPORTS_VIEW'] },
+      // CCR Hourly - Read saja
+      { menuCode: 'CCR_HOURLY', permissions: ['READ'] },
       
-      // Reports permissions
-      { menuCode: 'PRODUCTION_REPORT', permissions: ['REPORTS_VIEW', 'REPORTS_EXPORT'] },
-      { menuCode: 'FUEL_REPORT', permissions: ['REPORTS_VIEW', 'REPORTS_EXPORT'] },
-      { menuCode: 'LOSS_TIME_REPORT', permissions: ['REPORTS_VIEW', 'REPORTS_EXPORT'] },
-      { menuCode: 'CCR_REPORT', permissions: ['REPORTS_VIEW', 'REPORTS_EXPORT'] },
+      // Hauling Performance - Read, Update, Delete, Export
+      { menuCode: 'HAULING_PERFORMANCE', permissions: ['READ', 'UPDATE', 'DELETE', 'EXPORT'] },
       
-      // Settings permissions
-      { menuCode: 'SYSTEM_SETTINGS', permissions: ['SETTINGS_VIEW', 'SETTINGS_EDIT'] },
-      { menuCode: 'USER_PREFERENCES', permissions: ['SETTINGS_VIEW'] },
+      // Barging Performance - Read, Update, Delete, Export
+      { menuCode: 'BARGING_PERFORMANCE', permissions: ['READ', 'UPDATE', 'DELETE', 'EXPORT'] },
+
+      // View Data Page - Read saja
+      { menuCode: 'VIEW_DATA_PAGE', permissions: ['READ'] },
+      
+      // Control Page - Read saja
+      { menuCode: 'CONTROL_PAGE', permissions: ['READ'] },
+      
+      // Control Day Production - Read, Export
+      { menuCode: 'CONTROL_DAY_PRODUCTION', permissions: ['READ', 'EXPORT'] },
+      
+      // Control Day Work Hour - Read, Export
+      { menuCode: 'CONTROL_DAY_WORK_HOUR', permissions: ['READ', 'EXPORT'] },
+      
+      // Control Shift Production - Read, Export
+      { menuCode: 'CONTROL_SHIFT_PRODUCTION', permissions: ['READ', 'EXPORT'] },
+      
+      // Control Shift Work Hour - Read, Export
+      { menuCode: 'CONTROL_SHIFT_WORK_HOUR', permissions: ['READ', 'EXPORT'] },
+      
+      // Summary Production - Read, Export
+      { menuCode: 'SUMMARY_PRODUCTION', permissions: ['READ', 'EXPORT'] },
+      
+      // Analysis Barge & Hauling - Read, Export
+      { menuCode: 'ANALYSIS_BARGE_HAULING', permissions: ['READ', 'EXPORT'] },
+
+      // Entry Data Page - Read saja
+      { menuCode: 'ENTRY_DATA_PAGE', permissions: ['READ'] },
+      
+      // Work Plan - Read saja
+      { menuCode: 'WORK_PLAN', permissions: ['READ'] },
+      
+      // Daily Working Hour Plan List - Create, Read, Update, Delete, Export, Import
+      { menuCode: 'DAILY_WORKING_HOUR_PLAN_LIST', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'] },
+      
+      // Settings Daily Working Hour Plan - Create, Read, Update, Delete, Export, Import
+      { menuCode: 'SETTINGS_DAILY_WORKING_HOUR_PLAN', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'] },
+      
+      // Daily Production Plan List - Create, Read, Update, Delete, Export, Import
+      { menuCode: 'DAILY_PRODUCTION_PLAN_LIST', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'] },
+      
+      // Settings Daily Production Plan - Create, Read, Update, Delete, Export, Import
+      { menuCode: 'SETTINGS_DAILY_PRODUCTION_PLAN', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'] },
+
+      // MTD Production - Read saja
+      { menuCode: 'MTD_PRODUCTION', permissions: ['READ'] },
+      
+      // Production List - Create, Read, Update, Delete, Export, Import
+      { menuCode: 'PRODUCTION_LIST', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'] },
+      
+      // Loss Time List - Create, Read, Update, Delete, Export, Import
+      { menuCode: 'LOSS_TIME_LIST', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'] },
+      
+      // Barge List - Create, Read, Update, Delete, Export, Import
+      { menuCode: 'BARGE_LIST', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'] },
+      
+      // Fuel Consumption List - Create, Read, Update, Delete, Export, Import
+      { menuCode: 'FUEL_CONSUMPTION_LIST', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'] },
+
+      // CCR Hourly Entry - Read saja
+      { menuCode: 'CCR_HOURLY_ENTRY', permissions: ['READ'] },
+      
+      // CCR Hauling List - Create, Read, Update, Delete, Export, Import
+      { menuCode: 'CCR_HAULING_LIST', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'] },
+      
+      // CCR Barging List - Create, Read, Update, Delete, Export, Import
+      { menuCode: 'CCR_BARGING_LIST', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'] },
+      
+      // CCR Problem Hauling List - Create, Read, Update, Delete, Export, Import
+      { menuCode: 'CCR_PROBLEM_HAULING_LIST', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'] },
+      
+      // CCR Problem Barging List - Create, Read, Update, Delete, Export, Import
+      { menuCode: 'CCR_PROBLEM_BARGING_LIST', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'] },
+
+      // Master Data Page - Read saja
+      { menuCode: 'MASTER_DATA_PAGE', permissions: ['READ'] },
+      
+      // Unit Type - Create, Read, Update, Delete, Export
+      { menuCode: 'UNIT_TYPE', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT'] },
+      
+      // COA Population List - Create, Read, Update, Delete, Export
+      { menuCode: 'COA_POPULATION_LIST', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT'] },
+      
+      // Sites - Create, Read, Update, Delete
+      { menuCode: 'SITES', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE'] },
+      
+      // Activities - Create, Read, Update, Delete, Export
+      { menuCode: 'ACTIVITIES', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT'] },
+      
+      // User - Create, Read, Update, Delete, Export
+      { menuCode: 'USER', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT'] },
+      
+      // Employee - Create, Read, Update, Delete, Export
+      { menuCode: 'EMPLOYEE', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT'] },
+      
+      // Barge - Create, Read, Update, Delete, Export
+      { menuCode: 'BARGE', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT'] },
+      
+      // Brand - Create, Read, Update, Delete
+      { menuCode: 'BRAND', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE'] },
+
+      // Profile - Read saja
+      { menuCode: 'PROFILE', permissions: ['READ'] },
+      
+      // My Profile - Create, Read, Update, Delete
+      { menuCode: 'MY_PROFILE', permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE'] },
     ];
 
     let createdCount = 0;

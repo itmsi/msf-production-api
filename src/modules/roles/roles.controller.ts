@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { RolesService } from './roles.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiBody } from '@nestjs/swagger';
 import {
   CreateRolesDto,
   GetRolesQueryDto,
@@ -38,6 +38,30 @@ export class RolesController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
+  @ApiBody({
+    type: CreateRolesDto,
+    description: 'Data untuk membuat role baru',
+    examples: {
+      example1: {
+        summary: 'Contoh pembuatan role dengan semua field',
+        description: 'Contoh lengkap untuk membuat role baru',
+        value: {
+          role_code: 'ADMIN',
+          position_name: 'Administrator',
+          role_parent: 'SUPER_ADMIN',
+          sites_id: 1
+        }
+      },
+      example2: {
+        summary: 'Contoh pembuatan role tanpa role_parent dan sites_id',
+        description: 'Contoh minimal untuk membuat role baru',
+        value: {
+          role_code: 'USER',
+          position_name: 'Regular User'
+        }
+      }
+    }
+  })
   create(@Body() dto: CreateRolesDto) {
     return this.rolesService.create(dto);
   }

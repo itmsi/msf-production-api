@@ -43,6 +43,18 @@ export class MenuController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('module/:module')
+  findByModule(@Param('module') module: string) {
+    return this.menuService.findByModule(module);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('tree/module/:module')
+  getMenuTreeByModule(@Param('module') module: string) {
+    return this.menuService.getMenuTreeByModule(module);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.menuService.findOne(id);

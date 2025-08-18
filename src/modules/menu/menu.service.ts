@@ -153,6 +153,36 @@ export class MenuService {
     }
   }
 
+  async findByModule(module: string): Promise<ApiResponse<Menu[]>> {
+    try {
+      const menus = await this.menuRepository.find({
+        where: { module: module as any, deletedAt: null as any },
+        relations: ['children', 'menuHasPermissions', 'menuHasPermissions.permission'],
+        order: { sort_order: 'ASC', createdAt: 'ASC' },
+      });
+
+      return successResponse(menus, `Get menus for module ${module} successfully`);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException('Failed to fetch menus by module');
+    }
+  }
+
+  async getMenuTreeByModule(module: string): Promise<ApiResponse<Menu[]>> {
+    try {
+      const allMenus = await this.menuRepository.find({
+        where: { module: module as any, deletedAt: null as any, parent_id: null as any },
+        relations: ['children', 'menuHasPermissions', 'menuHasPermissions.permission'],
+        order: { sort_order: 'ASC' },
+      });
+
+      return successResponse(allMenus, `Get menu tree for module ${module} successfully`);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException('Failed to fetch menu tree by module');
+    }
+  }
+
   private async assignPermissionsToMenu(menuId: number, permissionIds: number[], createdBy: number): Promise<void> {
     const menuHasPermissions = permissionIds.map(permissionId => ({
       menu_id: menuId,
