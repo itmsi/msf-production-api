@@ -1,10 +1,12 @@
 import { Injectable, HttpException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike, Not } from 'typeorm';
 import { Menu } from './entities/menu.entity';
-import { CreateMenuDto, UpdateMenuDto } from './dto/menu.dto';
+import { CreateMenuDto, UpdateMenuDto, GetMenusQueryDto } from './dto/menu.dto';
 import { MenuHasPermission } from '../menu-has-permission/entities/menu-has-permission.entity';
 import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
+import { paginateResponse } from '../../common/helpers/public.helper';
+import { MenuStatus, MenuModuleType } from './entities/menu.entity';
 
 @Injectable()
 export class MenuService {
@@ -17,6 +19,8 @@ export class MenuService {
 
   async create(createMenuDto: CreateMenuDto): Promise<ApiResponse<Menu>> {
     try {
+      console.log('Creating menu with data:', createMenuDto);
+
       // Check if menu_code already exists
       const existingMenu = await this.menuRepository.findOne({
         where: { menu_code: createMenuDto.menu_code },
@@ -26,30 +30,108 @@ export class MenuService {
         throwError('Menu code already exists', 409);
       }
 
-      const menu = this.menuRepository.create(createMenuDto);
+      // Set default values if not provided
+      const menuData: Partial<Menu> = {
+        parent_id: createMenuDto.parent_id ?? undefined,
+        menu_name: createMenuDto.menu_name,
+        menu_code: createMenuDto.menu_code,
+        icon: createMenuDto.icon ?? undefined,
+        url: createMenuDto.url ?? undefined,
+        is_parent: createMenuDto.is_parent ?? false,
+        sort_order: createMenuDto.sort_order ?? 0,
+        status: createMenuDto.status ?? MenuStatus.ACTIVE,
+        module: createMenuDto.module ?? MenuModuleType.PRODUCTION,
+        createdBy: createMenuDto.createdBy ?? undefined,
+      };
+
+      console.log('Processed menu data:', menuData);
+
+      const menu = this.menuRepository.create(menuData);
       const savedMenu = await this.menuRepository.save(menu);
+
+      console.log('Menu saved successfully:', savedMenu);
 
       // Handle permissions if provided
       if (createMenuDto.permissionIds && createMenuDto.permissionIds.length > 0) {
+        console.log('Assigning permissions:', createMenuDto.permissionIds);
         await this.assignPermissionsToMenu(savedMenu.id, createMenuDto.permissionIds, createMenuDto.createdBy || 0);
+        console.log('Permissions assigned successfully');
       }
 
       return successResponse(savedMenu, 'Menu created successfully', 201);
     } catch (error) {
+      console.error('Error creating menu:', error);
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Failed to create menu');
+      throw new InternalServerErrorException(`Failed to create menu: ${error.message}`);
     }
   }
 
-  async findAll(): Promise<ApiResponse<Menu[]>> {
+  async findAll(query: GetMenusQueryDto): Promise<ApiResponse<Menu[]>> {
     try {
-      const result = await this.menuRepository.find({
-        where: { deletedAt: null as any },
-        relations: ['children', 'menuHasPermissions', 'menuHasPermissions.permission'],
-        order: { sort_order: 'ASC', createdAt: 'ASC' },
-      });
+      const page = parseInt(query.page ?? '1', 10);
+      const limit = parseInt(query.limit ?? '10', 10);
+      const skip = (page - 1) * limit;
+      const search = query.search?.toLowerCase() ?? '';
+      const module = query.module;
+      const status = query.status;
+      const isParent = query.is_parent;
+      const parentId = query.parent_id;
+      const sortBy = query.sortBy ?? 'sort_order';
+      const sortOrder = query.sortOrder ?? 'ASC';
 
-      return successResponse(result, 'Get menus successfully');
+      const qb = this.menuRepository
+        .createQueryBuilder('menu')
+        .leftJoinAndSelect('menu.children', 'children')
+        .leftJoinAndSelect('menu.menuHasPermissions', 'menuHasPermissions')
+        .leftJoinAndSelect('menuHasPermissions.permission', 'permission')
+        .where('menu.deletedAt IS NULL');
+
+      // Search filter
+      if (search) {
+        qb.andWhere(
+          '(menu.menu_name ILIKE :search OR menu.menu_code ILIKE :search)',
+          { search: `%${search}%` }
+        );
+      }
+
+      // Filter by module
+      if (module) {
+        qb.andWhere('menu.module = :module', { module });
+      }
+
+      // Filter by status
+      if (status) {
+        qb.andWhere('menu.status = :status', { status });
+      }
+
+      // Filter by is_parent
+      if (isParent !== undefined) {
+        qb.andWhere('menu.is_parent = :isParent', { isParent });
+      }
+
+      // Filter by parent_id
+      if (parentId !== undefined) {
+        qb.andWhere('menu.parent_id = :parentId', { parentId });
+      }
+
+      // Validate sortBy field to prevent SQL injection
+      const allowedSortFields = ['id', 'menu_name', 'menu_code', 'sort_order', 'createdAt', 'updatedAt'];
+      const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'sort_order';
+      const validSortOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
+
+      qb.orderBy(`menu.${validSortBy}`, validSortOrder)
+        .skip(skip)
+        .take(limit);
+
+      const [result, total] = await qb.getManyAndCount();
+
+      return paginateResponse(
+        result,
+        total,
+        page,
+        limit,
+        'Get menus successfully',
+      );
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch menus');
