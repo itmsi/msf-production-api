@@ -115,7 +115,7 @@ export class PopulationService {
       // Search filter (mencari di semua field yang relevan)
       if (search) {
         qb.andWhere(
-          '(population.no_unit ILIKE :search OR population.vin_number ILIKE :search OR population.no_unit_system ILIKE :search OR population.serial_engine ILIKE :search OR population.site_origin ILIKE :search OR population.company ILIKE :search OR unitType.unit_name ILIKE :search OR unitType.type_name ILIKE :search OR unitType.model_name ILIKE :search OR brand.brand_name ILIKE :search OR activities.activity_name ILIKE :search OR site.site_name ILIKE :search)',
+          '(population.no_unit ILIKE :search OR population.vin_number ILIKE :search OR population.no_unit_system ILIKE :search OR population.serial_engine ILIKE :search OR population.site_origin ILIKE :search OR population.company ILIKE :search OR unitType.unit_name ILIKE :search OR unitType.type_name ILIKE :search OR unitType.model_name ILIKE :search OR brand.brand_name ILIKE :search OR activities.name ILIKE :search OR site.name ILIKE :search)',
           { search: `%${search}%` }
         );
       }
