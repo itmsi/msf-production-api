@@ -29,6 +29,12 @@ export class CreateTableRInputBarge1700000000006 implements MigrationInterface {
             isNullable: false,
           },
           {
+            name: 'shipment',
+            type: 'varchar',
+            length: '255',
+            isNullable: true,
+          },
+          {
             name: 'start_loading',
             type: 'date',
             isNullable: true,

@@ -55,17 +55,37 @@ export class UserResponseDto {
 }
 
 export class GetUsersQueryDto {
+  @ApiProperty({ 
+    required: false, 
+    description: 'Page number (default: 1)',
+    example: '1'
+  })
   @IsOptional()
   @IsNumberString()
   page?: string;
 
+  @ApiProperty({ 
+    required: false, 
+    description: 'Items per page (default: 10)',
+    example: '10'
+  })
   @IsOptional()
   @IsNumberString()
   limit?: string;
 
+  @ApiProperty({ 
+    required: false, 
+    description: 'Search term for username or email',
+    example: 'john'
+  })
   @IsOptional()
   search?: string;
 
+  @ApiProperty({ 
+    required: false, 
+    description: 'Filter by role',
+    example: 'admin'
+  })
   @IsOptional()
   role?: string;
 }
