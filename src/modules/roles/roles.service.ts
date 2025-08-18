@@ -70,34 +70,39 @@ export class RolesService {
         },
         skip,
         take: limit,
-        relations: ['parent'],
-      });
-      const transformedResult = plainToInstance(Roles, result, {
-        excludeExtraneousValues: true,
       });
 
       return paginateResponse(
-        transformedResult,
+        result,
         total,
         page,
         limit,
-        'Get users susccessfuly',
+        'Get roles successfully',
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Failed to fetch users');
+      throw new InternalServerErrorException('Failed to fetch roles');
     }
   }
 
   async create(data: CreateRolesDto): Promise<ApiResponse<RolesResponseDto>> {
     try {
-      const existing = await this.findByPositionName(data.position_name);
-      if (existing) {
+      // Check if role_code already exists
+      const existingRoleCode = await this.rolesRepository.findOne({
+        where: { role_code: data.role_code },
+      });
+      if (existingRoleCode) {
+        throwError('Role code already exists', 409);
+      }
+
+      // Check if position_name already exists
+      const existingPositionName = await this.findByPositionName(data.position_name);
+      if (existingPositionName) {
         throwError('Role name already exists', 409);
       }
 
-      const newUser = this.rolesRepository.create(data);
-      const result = await this.rolesRepository.save(newUser);
+      const newRole = this.rolesRepository.create(data);
+      const result = await this.rolesRepository.save(newRole);
       const response: RolesResponseDto = {
         id: result.id,
         role_code: result.role_code,
@@ -111,7 +116,7 @@ export class RolesService {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException('Failed to create user');
+      throw new InternalServerErrorException('Failed to create role');
     }
   }
 
