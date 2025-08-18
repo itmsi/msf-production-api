@@ -1,82 +1,60 @@
 import { DataSource } from 'typeorm';
-import { Users } from '../../modules/users/entities/users.entity';
-import { Roles } from '../../modules/roles/entities/roles.entity';
 
 export class UserRoleSeeder {
   constructor(private dataSource: DataSource) {}
 
   async run(): Promise<void> {
-    const usersRepository = this.dataSource.getRepository(Users);
-    const rolesRepository = this.dataSource.getRepository(Roles);
+    console.log('🔗 Seeding User-Role relationships...');
 
-    // Get existing users and roles
-    const users = await usersRepository.find();
-    const roles = await rolesRepository.find();
+    try {
+      // Get Super Admin user ID
+      const superAdminUser = await this.dataSource.query(
+        'SELECT id FROM m_user WHERE username = $1',
+        ['superadmin']
+      );
 
-    if (users.length === 0) {
-      console.log('❌ No users found. Please run users seeder first.');
-      return;
-    }
-
-    if (roles.length === 0) {
-      console.log('❌ No roles found. Please run roles seeder first.');
-      return;
-    }
-
-    // Create user-role relationships
-    const userRoleData = [
-      // Super Admin - gets all roles
-      { username: 'superadmin', roleCode: 'SUPER_ADMIN' },
-      
-      // Admin - gets admin and below roles
-      { username: 'admin', roleCode: 'ADMIN' },
-      { username: 'admin', roleCode: 'MANAGER' },
-      { username: 'admin', roleCode: 'STAFF' },
-      
-      // Manager - gets manager and below roles
-      { username: 'manager', roleCode: 'MANAGER' },
-      { username: 'manager', roleCode: 'STAFF' },
-      
-      // Staff users - get staff role only
-      { username: 'staff1', roleCode: 'STAFF' },
-      { username: 'staff2', roleCode: 'STAFF' },
-      { username: 'operator1', roleCode: 'STAFF' },
-      { username: 'viewer1', roleCode: 'STAFF' },
-    ];
-
-    let createdCount = 0;
-    let skippedCount = 0;
-
-    for (const userRole of userRoleData) {
-      const user = await usersRepository.findOne({ where: { username: userRole.username } });
-      const role = await rolesRepository.findOne({ where: { role_code: userRole.roleCode } });
-
-      if (user && role) {
-        // Check if relationship already exists
-        const existingRelation = await this.dataSource.query(
-          'SELECT * FROM r_user_role WHERE user_id = $1 AND role_id = $2',
-          [user.id, role.id]
-        );
-
-        if (existingRelation.length === 0) {
-          // Create new user-role relationship
-          await this.dataSource.query(
-            'INSERT INTO r_user_role (user_id, role_id, "createdAt", "updatedAt") VALUES ($1, $2, NOW(), NOW())',
-            [user.id, role.id]
-          );
-          createdCount++;
-          console.log(`✅ User-role relationship created: ${userRole.username} -> ${userRole.roleCode}`);
-        } else {
-          skippedCount++;
-          console.log(`⏭️  User-role relationship already exists: ${userRole.username} -> ${userRole.roleCode}`);
-        }
-      } else {
-        console.log(`❌ User or role not found: ${userRole.username} -> ${userRole.roleCode}`);
+      if (superAdminUser.length === 0) {
+        console.log('❌ Super Admin user not found. Please run user seeder first.');
+        return;
       }
-    }
 
-    console.log(`\n📊 User-Role Seeding Summary:`);
-    console.log(`   • Created: ${createdCount} relationships`);
-    console.log(`   • Skipped: ${skippedCount} existing relationships`);
+      const userId = superAdminUser[0].id;
+
+      // Get Super Admin role ID
+      const superAdminRole = await this.dataSource.query(
+        'SELECT id FROM m_role WHERE role_code = $1',
+        ['SUPER_ADMIN']
+      );
+
+      if (superAdminRole.length === 0) {
+        console.log('❌ Super Admin role not found. Please run role seeder first.');
+        return;
+      }
+
+      const roleId = superAdminRole[0].id;
+
+      // Check if relationship already exists
+      const existingRelation = await this.dataSource.query(
+        'SELECT * FROM r_user_role WHERE user_id = $1 AND role_id = $2',
+        [userId, roleId]
+      );
+
+      if (existingRelation.length === 0) {
+        // Create new user-role relationship
+        await this.dataSource.query(
+          'INSERT INTO r_user_role (user_id, role_id, "createdAt", "updatedAt") VALUES ($1, $2, NOW(), NOW())',
+          [userId, roleId]
+        );
+        console.log(`✅ User-Role relationship created: superadmin -> SUPER_ADMIN`);
+      } else {
+        console.log(`⏭️  User-Role relationship already exists: superadmin -> SUPER_ADMIN`);
+      }
+
+      console.log(`✅ User-Role relationships seeding completed`);
+
+    } catch (error) {
+      console.error('❌ Error during User-Role seeding:', error);
+      throw error;
+    }
   }
 }

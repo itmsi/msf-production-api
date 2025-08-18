@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import { ProductionSeeder } from './seeders/production-seeder';
 import { config } from 'dotenv';
+import { CustomRolesUsersSeeder } from './seeders/custom-roles-users.seeder';
 
 // Load environment variables
 config();
@@ -26,6 +27,10 @@ async function seedProduction() {
 
     const productionSeeder = new ProductionSeeder(dataSource);
     await productionSeeder.run();
+
+    // Run custom roles/users seeder
+    const customRolesUsersSeeder = new CustomRolesUsersSeeder(dataSource);
+    await customRolesUsersSeeder.run();
 
   } catch (error) {
     console.error('❌ Production Module seeding failed:', error);
