@@ -4,11 +4,12 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { MenuHasPermission } from './entities/menu-has-permission.entity';
 import {
   CreateMenuHasPermissionDto,
   UpdateMenuHasPermissionDto,
+  GetMenuHasPermissionsQueryDto,
 } from './dto/menu-has-permission.dto';
 import {
   ApiResponse,
@@ -16,6 +17,7 @@ import {
   throwError,
   emptyDataResponse,
 } from '../../common/helpers/response.helper';
+import { paginateResponse } from '../../common/helpers/public.helper';
 
 @Injectable()
 export class MenuHasPermissionService {
@@ -59,14 +61,67 @@ export class MenuHasPermissionService {
     }
   }
 
-  async findAll(): Promise<ApiResponse<MenuHasPermission[]>> {
+  async findAll(query?: GetMenuHasPermissionsQueryDto): Promise<ApiResponse<MenuHasPermission[]>> {
     try {
-      const result = await this.menuHasPermissionRepository.find({
-        relations: ['menu', 'permission'],
-        order: { createdAt: 'DESC' },
-      });
+      if (!query) {
+        // Fallback untuk kompatibilitas backward
+        const result = await this.menuHasPermissionRepository.find({
+          relations: ['menu', 'permission'],
+          order: { createdAt: 'DESC' },
+        });
+        return successResponse(result, 'Get menu permissions successfully');
+      }
 
-      return successResponse(result, 'Get menu permissions successfully');
+      const page = parseInt(query.page ?? '1', 10);
+      const limit = parseInt(query.limit ?? '10', 10);
+      const skip = (page - 1) * limit;
+      const menu_id = query.menu_id ? parseInt(query.menu_id, 10) : null;
+      const permission_id = query.permission_id ? parseInt(query.permission_id, 10) : null;
+      const sortBy = query.sortBy ?? 'id';
+      const sortOrder = query.sortOrder ?? 'DESC';
+
+      // Validate limit
+      if (limit > 100) {
+        throwError('Limit tidak boleh lebih dari 100', 400);
+      }
+
+      const qb: SelectQueryBuilder<MenuHasPermission> = this.menuHasPermissionRepository
+        .createQueryBuilder('mhp')
+        .leftJoinAndSelect('mhp.menu', 'menu')
+        .leftJoinAndSelect('mhp.permission', 'permission');
+
+      // Filter by menu_id
+      if (menu_id) {
+        qb.andWhere('mhp.menu_id = :menu_id', { menu_id });
+      }
+
+      // Filter by permission_id
+      if (permission_id) {
+        qb.andWhere('mhp.permission_id = :permission_id', { permission_id });
+      }
+
+      // Validate sortBy field to prevent SQL injection
+      const allowedSortFields = [
+        'id',
+        'menu_id',
+        'permission_id',
+        'createdAt',
+        'updatedAt',
+      ];
+      const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
+      const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
+      qb.orderBy(`mhp.${validSortBy}`, validSortOrder).skip(skip).take(limit);
+
+      const [result, total] = await qb.getManyAndCount();
+
+      return paginateResponse(
+        result,
+        total,
+        page,
+        limit,
+        'Get menu permissions successfully',
+      );
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
