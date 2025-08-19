@@ -4,15 +4,20 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { UserRole } from './entities/user-role.entity';
-import { CreateUserRoleDto, UpdateUserRoleDto } from './dto/user-role.dto';
+import { 
+  CreateUserRoleDto, 
+  UpdateUserRoleDto, 
+  GetUserRolesQueryDto,
+} from './dto/user-role.dto';
 import {
   ApiResponse,
   successResponse,
   throwError,
   emptyDataResponse,
 } from '../../common/helpers/response.helper';
+import { paginateResponse } from '../../common/helpers/public.helper';
 
 @Injectable()
 export class UserRoleService {
@@ -47,14 +52,67 @@ export class UserRoleService {
     }
   }
 
-  async findAll(): Promise<ApiResponse<UserRole[]>> {
+  async findAll(query?: GetUserRolesQueryDto): Promise<ApiResponse<UserRole[]>> {
     try {
-      const result = await this.userRoleRepository.find({
-        relations: ['user', 'role'],
-        order: { createdAt: 'DESC' },
-      });
+      if (!query) {
+        // Fallback untuk kompatibilitas backward
+        const result = await this.userRoleRepository.find({
+          relations: ['user', 'role'],
+          order: { createdAt: 'DESC' },
+        });
+        return successResponse(result, 'Get user roles successfully');
+      }
 
-      return successResponse(result, 'Get user roles successfully');
+      const page = parseInt(query.page ?? '1', 10);
+      const limit = parseInt(query.limit ?? '10', 10);
+      const skip = (page - 1) * limit;
+      const user_id = query.user_id ? parseInt(query.user_id, 10) : null;
+      const role_id = query.role_id ? parseInt(query.role_id, 10) : null;
+      const sortBy = query.sortBy ?? 'id';
+      const sortOrder = query.sortOrder ?? 'DESC';
+
+      // Validate limit
+      if (limit > 100) {
+        throwError('Limit tidak boleh lebih dari 100', 400);
+      }
+
+      const qb: SelectQueryBuilder<UserRole> = this.userRoleRepository
+        .createQueryBuilder('userRole')
+        .leftJoinAndSelect('userRole.user', 'user')
+        .leftJoinAndSelect('userRole.role', 'role');
+
+      // Filter by user_id
+      if (user_id) {
+        qb.andWhere('userRole.user_id = :user_id', { user_id });
+      }
+
+      // Filter by role_id
+      if (role_id) {
+        qb.andWhere('userRole.role_id = :role_id', { role_id });
+      }
+
+      // Validate sortBy field to prevent SQL injection
+      const allowedSortFields = [
+        'id',
+        'user_id',
+        'role_id',
+        'createdAt',
+        'updatedAt',
+      ];
+      const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
+      const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
+      qb.orderBy(`userRole.${validSortBy}`, validSortOrder).skip(skip).take(limit);
+
+      const [result, total] = await qb.getManyAndCount();
+
+      return paginateResponse(
+        result,
+        total,
+        page,
+        limit,
+        'Get user roles successfully',
+      );
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch user roles');
