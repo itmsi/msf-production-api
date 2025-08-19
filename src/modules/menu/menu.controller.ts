@@ -25,6 +25,8 @@ import {
   UpdateMenuDto,
   MenuResponseDto,
   GetMenusQueryDto,
+  MenuListResponseDto,
+  SingleMenuResponseDto,
 } from './dto/menu.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 
@@ -84,19 +86,77 @@ export class MenuController {
   @ApiResponse({
     status: 201,
     description: 'Menu created successfully',
-    type: MenuResponseDto,
+    type: SingleMenuResponseDto,
+    schema: {
+      example: {
+        statusCode: 201,
+        message: 'Menu created successfully',
+        data: {
+          id: 1,
+          parent_id: null,
+          menu_name: 'User Management',
+          menu_code: 'USER_MANAGEMENT',
+          icon: 'user',
+          url: '/users',
+          is_parent: false,
+          sort_order: 1,
+          status: 'active',
+          module: 'production',
+          createdAt: '2024-01-01T00:00:00.000Z',
+          createdBy: 1,
+          updatedAt: '2024-01-01T00:00:00.000Z',
+          updatedBy: 1,
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 400,
     description: 'Bad request - validation error',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'menu_name should not be empty',
+        error: true,
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - JWT token tidak valid atau tidak ada',
+    schema: {
+      example: {
+        statusCode: 401,
+        message: 'Unauthorized',
+        error: true,
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
   @ApiResponse({
     status: 409,
     description: 'Conflict - menu code already exists',
+    schema: {
+      example: {
+        statusCode: 409,
+        message: 'Menu code already exists',
+        error: true,
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
   @ApiResponse({
     status: 500,
     description: 'Internal server error',
+    schema: {
+      example: {
+        statusCode: 500,
+        message: 'Internal server error',
+        error: true,
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
   create(@Body() createMenuDto: CreateMenuDto, @Request() req: any) {
     if (!createMenuDto.createdBy) {
@@ -159,6 +219,66 @@ export class MenuController {
   @ApiResponse({
     status: 200,
     description: 'Menus retrieved successfully',
+    type: MenuListResponseDto,
+    schema: {
+      example: {
+        statusCode: 200,
+        message: 'Get menus successfully',
+        data: [
+          {
+            id: 1,
+            parent_id: null,
+            menu_name: 'User Management',
+            menu_code: 'USER_MANAGEMENT',
+            icon: 'user',
+            url: '/users',
+            is_parent: true,
+            sort_order: 1,
+            status: 'active',
+            module: 'production',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            createdBy: 1,
+            updatedAt: '2024-01-01T00:00:00.000Z',
+            updatedBy: 1,
+            children: [
+              {
+                id: 2,
+                parent_id: 1,
+                menu_name: 'User List',
+                menu_code: 'USER_LIST',
+                icon: 'list',
+                url: '/users/list',
+                is_parent: false,
+                sort_order: 1,
+                status: 'active',
+                module: 'production',
+                createdAt: '2024-01-01T00:00:00.000Z',
+                createdBy: 1,
+                updatedAt: '2024-01-01T00:00:00.000Z',
+                updatedBy: 1,
+              },
+            ],
+          },
+        ],
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 10,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Parameter query tidak valid',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - JWT token tidak valid atau tidak ada',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal Server Error - Terjadi kesalahan pada server',
   })
   findAll(@Query() query: GetMenusQueryDto) {
     return this.menuService.findAll(query);
@@ -173,6 +293,57 @@ export class MenuController {
   @ApiResponse({
     status: 200,
     description: 'Menu tree retrieved successfully',
+    type: MenuListResponseDto,
+    schema: {
+      example: {
+        statusCode: 200,
+        message: 'Get menu tree successfully',
+        data: [
+          {
+            id: 1,
+            parent_id: null,
+            menu_name: 'User Management',
+            menu_code: 'USER_MANAGEMENT',
+            icon: 'user',
+            url: '/users',
+            is_parent: true,
+            sort_order: 1,
+            status: 'active',
+            module: 'production',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            createdBy: 1,
+            updatedAt: '2024-01-01T00:00:00.000Z',
+            updatedBy: 1,
+            children: [
+              {
+                id: 2,
+                parent_id: 1,
+                menu_name: 'User List',
+                menu_code: 'USER_LIST',
+                icon: 'list',
+                url: '/users/list',
+                is_parent: false,
+                sort_order: 1,
+                status: 'active',
+                module: 'production',
+                createdAt: '2024-01-01T00:00:00.000Z',
+                createdBy: 1,
+                updatedAt: '2024-01-01T00:00:00.000Z',
+                updatedBy: 1,
+              },
+            ],
+          },
+        ],
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - JWT token tidak valid atau tidak ada',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal Server Error - Terjadi kesalahan pada server',
   })
   getMenuTree() {
     return this.menuService.getMenuTree();
@@ -187,6 +358,43 @@ export class MenuController {
   @ApiResponse({
     status: 200,
     description: 'Module menus retrieved successfully',
+    type: MenuListResponseDto,
+    schema: {
+      example: {
+        statusCode: 200,
+        message: 'Get menus for module production successfully',
+        data: [
+          {
+            id: 1,
+            parent_id: null,
+            menu_name: 'User Management',
+            menu_code: 'USER_MANAGEMENT',
+            icon: 'user',
+            url: '/users',
+            is_parent: true,
+            sort_order: 1,
+            status: 'active',
+            module: 'production',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            createdBy: 1,
+            updatedAt: '2024-01-01T00:00:00.000Z',
+            updatedBy: 1,
+          },
+        ],
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Module tidak valid',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - JWT token tidak valid atau tidak ada',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal Server Error - Terjadi kesalahan pada server',
   })
   findByModule(@Param('module') module: string) {
     return this.menuService.findByModule(module);
@@ -201,6 +409,61 @@ export class MenuController {
   @ApiResponse({
     status: 200,
     description: 'Module menu tree retrieved successfully',
+    type: MenuListResponseDto,
+    schema: {
+      example: {
+        statusCode: 200,
+        message: 'Get menu tree for module production successfully',
+        data: [
+          {
+            id: 1,
+            parent_id: null,
+            menu_name: 'User Management',
+            menu_code: 'USER_MANAGEMENT',
+            icon: 'user',
+            url: '/users',
+            is_parent: true,
+            sort_order: 1,
+            status: 'active',
+            module: 'production',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            createdBy: 1,
+            updatedAt: '2024-01-01T00:00:00.000Z',
+            updatedBy: 1,
+            children: [
+              {
+                id: 2,
+                parent_id: 1,
+                menu_name: 'User List',
+                menu_code: 'USER_LIST',
+                icon: 'list',
+                url: '/users/list',
+                is_parent: false,
+                sort_order: 1,
+                status: 'active',
+                module: 'production',
+                createdAt: '2024-01-01T00:00:00.000Z',
+                createdBy: 1,
+                updatedAt: '2024-01-01T00:00:00.000Z',
+                updatedBy: 1,
+              },
+            ],
+          },
+        ],
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Module tidak valid',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - JWT token tidak valid atau tidak ada',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal Server Error - Terjadi kesalahan pada server',
   })
   getMenuTreeByModule(@Param('module') module: string) {
     return this.menuService.getMenuTreeByModule(module);
@@ -215,11 +478,79 @@ export class MenuController {
   @ApiResponse({
     status: 200,
     description: 'Menu retrieved successfully',
-    type: MenuResponseDto,
+    type: SingleMenuResponseDto,
+    schema: {
+      example: {
+        statusCode: 200,
+        message: 'Get menu successfully',
+        data: {
+          id: 1,
+          parent_id: null,
+          menu_name: 'User Management',
+          menu_code: 'USER_MANAGEMENT',
+          icon: 'user',
+          url: '/users',
+          is_parent: true,
+          sort_order: 1,
+          status: 'active',
+          module: 'production',
+          createdAt: '2024-01-01T00:00:00.000Z',
+          createdBy: 1,
+          updatedAt: '2024-01-01T00:00:00.000Z',
+          updatedBy: 1,
+          children: [
+            {
+              id: 2,
+              parent_id: 1,
+              menu_name: 'User List',
+              menu_code: 'USER_LIST',
+              icon: 'list',
+              url: '/users/list',
+              is_parent: false,
+              sort_order: 1,
+              status: 'active',
+              module: 'production',
+              createdAt: '2024-01-01T00:00:00.000Z',
+              createdBy: 1,
+              updatedAt: '2024-01-01T00:00:00.000Z',
+              updatedBy: 1,
+            },
+          ],
+          permissions: [
+            {
+              id: 1,
+              name: 'read',
+              description: 'Read permission',
+              slug: 'read',
+            },
+          ],
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - ID tidak valid',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - JWT token tidak valid atau tidak ada',
   })
   @ApiResponse({
     status: 404,
     description: 'Menu not found',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Menu not found',
+        error: true,
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal Server Error - Terjadi kesalahan pada server',
   })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.menuService.findOne(id);
@@ -238,15 +569,65 @@ export class MenuController {
   @ApiResponse({
     status: 200,
     description: 'Menu updated successfully',
-    type: MenuResponseDto,
+    type: SingleMenuResponseDto,
+    schema: {
+      example: {
+        statusCode: 200,
+        message: 'Menu updated successfully',
+        data: {
+          id: 1,
+          parent_id: null,
+          menu_name: 'User Management Updated',
+          menu_code: 'USER_MANAGEMENT',
+          icon: 'user',
+          url: '/users',
+          is_parent: true,
+          sort_order: 1,
+          status: 'active',
+          module: 'production',
+          createdAt: '2024-01-01T00:00:00.000Z',
+          createdBy: 1,
+          updatedAt: '2024-01-01T00:00:00.000Z',
+          updatedBy: 1,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Data tidak valid',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - JWT token tidak valid atau tidak ada',
   })
   @ApiResponse({
     status: 404,
     description: 'Menu not found',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Menu not found',
+        error: true,
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
   @ApiResponse({
     status: 409,
     description: 'Conflict - menu code already exists',
+    schema: {
+      example: {
+        statusCode: 409,
+        message: 'Menu code already exists',
+        error: true,
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal Server Error - Terjadi kesalahan pada server',
   })
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -269,10 +650,37 @@ export class MenuController {
   @ApiResponse({
     status: 200,
     description: 'Menu deleted successfully',
+    schema: {
+      example: {
+        statusCode: 200,
+        message: 'Menu deleted successfully',
+        data: null,
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - ID tidak valid',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - JWT token tidak valid atau tidak ada',
   })
   @ApiResponse({
     status: 404,
     description: 'Menu not found',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Menu not found',
+        error: true,
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal Server Error - Terjadi kesalahan pada server',
   })
   remove(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
     const deletedBy = req.user?.id;
