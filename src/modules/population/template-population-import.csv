@@ -1,6 +1,4 @@
 date_arrive,status,unit_name,no_unit,vin_number,no_unit_system,serial_engine,engine_brand,activities_name,user_site,site_origin,remarks,site_name,company,last_unit_number,tyre_type
-2025-01-01,active,Excavator,EXC001,VIN123456789,SYS001,ENG123456,cummins,Mining,user_site,Site A,RFU,Site A,PT ABC,LUN001,6x4
-2025-01-02,active,Dump Truck,DT001,VIN987654321,SYS002,ENG654321,weichai,Hauling,user_site,Site B,BD,Site B,PT XYZ,LUN002,8x4
-2025-01-03,inactive,Wheel Loader,WL001,VIN111222333,SYS003,ENG111222,cummins,Loading,user_site,Site C,RFU,Site C,PT DEF,LUN003,6x4
-2025-01-04,active,Bulldozer,BD001,VIN444555666,SYS004,ENG444555,weichai,Clearing,user_site,Site D,BD,Site D,PT GHI,LUN004,6x4
-2025-01-05,active,Motor Grader,MG001,VIN777888999,SYS005,ENG777888,cummins,Grading,user_site,Site E,RFU,Site E,PT JKL,LUN005,6x4
+2025-01-01,active,Excavator,KFM-DT-0101,VIN014567890191,SYS-0101,ENG123456,cummins,Grading,user1,Site A,RFU,Site Jakarta,PT ABC,LUN001,6x4
+2025-01-02,active,Truck,KFM-DT-0102,VIN0145678901292,SYS-0102,ENG654321,weichai,Grading,user2,Site B,BD,Site Jakarta,PT XYZ,LUN002,8x4
+2025-01-03,inactive,Compressor,KFM-DT-0103,VIN0145678901293,SYS-0103,ENG111222,cummins,Grading,user3,Site C,RFU,Site Jakarta,PT DEF,LUN003,6x4

@@ -663,15 +663,32 @@ export class PopulationService {
     try {
       const fs = require('fs');
       const path = require('path');
-      const templatePath = path.join(__dirname, 'template-population-import.csv');
       
-      if (!fs.existsSync(templatePath)) {
-        throw new Error('Template CSV tidak ditemukan');
+      // Coba beberapa path yang mungkin
+      const possiblePaths = [
+        path.join(__dirname, 'template-population-import.csv'),
+        path.join(process.cwd(), 'src/modules/population/template-population-import.csv'),
+        path.join(process.cwd(), 'dist/modules/population/template-population-import.csv')
+      ];
+      
+      let templatePath = null;
+      for (const p of possiblePaths) {
+        if (fs.existsSync(p)) {
+          templatePath = p;
+          break;
+        }
       }
       
+      if (!templatePath) {
+        console.error('Template paths tried:', possiblePaths);
+        throw new Error('Template CSV tidak ditemukan di semua lokasi yang mungkin');
+      }
+      
+      console.log('Template found at:', templatePath);
       return fs.readFileSync(templatePath);
     } catch (error) {
-      throw new InternalServerErrorException('Gagal download template CSV');
+      console.error('Error downloading template:', error);
+      throw new InternalServerErrorException('Gagal download template CSV: ' + error.message);
     }
   }
 
