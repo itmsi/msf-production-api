@@ -15,6 +15,8 @@ import { RoleHasPermissionSeeder } from './role-has-permission.seeder';
 import { UserSeeder } from './user.seeder';
 import { UserRoleSeeder } from './user-role.seeder';
 import { CustomRolesUsersSeeder } from './custom-roles-users.seeder';
+import PlanWorkingHourSeeder from './plan-working-hour.seeder';
+import PlanWorkingHourDetailSeeder from './plan-working-hour-detail.seeder';
 
 export class CompleteSeeder {
   constructor(private dataSource: DataSource) {}
@@ -83,22 +85,34 @@ export class CompleteSeeder {
       await populationSeeder.run();
       console.log('✅ Population seeding completed\n');
 
+      // 10. Seed Plan Working Hour (depends on Activities)
+      console.log('⏰ Seeding Plan Working Hour...');
+      const planWorkingHourSeeder = new PlanWorkingHourSeeder();
+      await planWorkingHourSeeder.run(this.dataSource);
+      console.log('✅ Plan Working Hour seeding completed\n');
+
+      // 10.1. Seed Plan Working Hour Detail (depends on Plan Working Hour and Activities)
+      console.log('⏰ Seeding Plan Working Hour Detail...');
+      const planWorkingHourDetailSeeder = new PlanWorkingHourDetailSeeder();
+      await planWorkingHourDetailSeeder.run(this.dataSource);
+      console.log('✅ Plan Working Hour Detail seeding completed\n');
+
       // Phase 3: Permission & Menu System
       console.log('📍 Phase 3: Seeding Permission & Menu System...\n');
 
-      // 10. Seed Permissions (no dependencies)
+      // 11. Seed Permissions (no dependencies)
       console.log('🔐 Seeding Permissions...');
       const permissionSeeder = new PermissionSeeder(this.dataSource);
       await permissionSeeder.run();
       console.log('✅ Permissions seeding completed\n');
 
-      // 11. Seed Menus (no dependencies)
+      // 12. Seed Menus (no dependencies)
       console.log('📋 Seeding Menus...');
       const menuSeeder = new MenuSeeder(this.dataSource);
       await menuSeeder.run();
       console.log('✅ Menus seeding completed\n');
 
-      // 12. Seed Menu-Permission relationships (depends on Menus and Permissions)
+      // 13. Seed Menu-Permission relationships (depends on Menus and Permissions)
       console.log('🔗 Seeding Menu-Permission relationships...');
       const menuHasPermissionSeeder = new MenuHasPermissionSeeder(
         this.dataSource,
@@ -109,13 +123,13 @@ export class CompleteSeeder {
       // Phase 4: User & Access Control
       console.log('📍 Phase 4: Seeding User & Access Control...\n');
 
-      // 13. Seed Users (depends on Sites, Roles, Employees)
+      // 14. Seed Users (depends on Sites, Roles, Employees)
       console.log('👤 Seeding Users...');
       const userSeeder = new UserSeeder(this.dataSource);
       await userSeeder.run();
       console.log('✅ Users seeding completed\n');
 
-      // 14. Seed Role-Permission relationships (depends on Roles, Menu-Permissions, and Permissions)
+      // 15. Seed Role-Permission relationships (depends on Roles, Menu-Permissions, and Permissions)
       console.log('🔗 Seeding Role-Permission relationships...');
       const roleHasPermissionSeeder = new RoleHasPermissionSeeder(
         this.dataSource,
@@ -123,7 +137,7 @@ export class CompleteSeeder {
       await roleHasPermissionSeeder.run();
       console.log('✅ Role-Permission relationships seeding completed\n');
 
-      // 15. Seed User-Role relationships (depends on Users and Roles)
+      // 16. Seed User-Role relationships (depends on Users and Roles)
       console.log('🔗 Seeding User-Role relationships...');
       const userRoleSeeder = new UserRoleSeeder(this.dataSource);
       await userRoleSeeder.run();
@@ -132,7 +146,7 @@ export class CompleteSeeder {
       // Phase 5: Custom Roles & Users
       console.log('📍 Phase 5: Seeding Custom Roles & Users...\n');
 
-      // 16. Seed Custom Roles, Users, and Access Mappings
+      // 17. Seed Custom Roles, Users, and Access Mappings
       console.log('🔐 Seeding Custom Roles, Users, and Access Mappings...');
       const customRolesUsersSeeder = new CustomRolesUsersSeeder(
         this.dataSource,
@@ -155,6 +169,8 @@ export class CompleteSeeder {
       console.log('   • Operation Points (10 operation points)');
       console.log('   • Barge (5 barge)');
       console.log('   • Population (15 population units)');
+      console.log('   • Plan Working Hour (4 records)');
+      console.log('   • Plan Working Hour Detail (8 records)');
       console.log('   • Permissions (6 permissions)');
       console.log('   • Menus (41 menu items)');
       console.log('   • Menu-Permission relationships (147 relationships)');

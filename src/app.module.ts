@@ -15,6 +15,7 @@ import { MenuModule } from './modules/menu/menu.module';
 import { MenuHasPermissionModule } from './modules/menu-has-permission/menu-has-permission.module';
 import { RoleHasPermissionModule } from './modules/role-has-permission/role-has-permission.module';
 import { UserRoleModule } from './modules/user-role/user-role.module';
+import { PlanWorkingHourModule } from './modules/plan-working-hour/plan-working-hour.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { UserRoleModule } from './modules/user-role/user-role.module';
     MenuHasPermissionModule,
     RoleHasPermissionModule,
     UserRoleModule,
+    PlanWorkingHourModule,
   ],
 })
 export class AppModule {}

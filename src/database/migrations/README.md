@@ -33,8 +33,11 @@ Dokumentasi ini menjelaskan semua file migrasi database yang telah dibuat berdas
 - **1700000000023-CreateTableTB_R_Menu_Has_Permission.ts** - Tabel junction menu-permission
 - **1700000000024-CreateTableTB_R_Role_Has_Permission.ts** - Tabel junction role-menu-permission
 
-### Migrasi Update (1700000000025)
+### Migrasi Update (1700000000025 - 1700000000028)
 - **1700000000025-UpdateTableTBMUserRemoveRoleId.ts** - Update tabel user: hapus kolom roleId
+- **1700000000026-AddModuleColumnToMenu.ts** - Tambah kolom module ke tabel menu
+- **1700000000027-AddSparePartMenus.ts** - Tambah menu spare part
+- **1700000000028-UpdateTableRPlanWorkingHour.ts** - Update tabel plan working hour sesuai skema baru
 
 ### Migrasi Tambahan (1700000000026)
 - **1700000000026-CreateTableTB_R_Barge_Loading.ts** - Tabel relasi barge loading

@@ -3,7 +3,7 @@ import { MigrationInterface, QueryRunner, Table } from 'typeorm';
 export class CreateTableMActivities1700000000008 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      CREATE TYPE enum_activities_status AS ENUM ('working', 'breakdown', 'stand-by')
+      CREATE TYPE enum_activities_status AS ENUM ('working', 'breakdown', 'idle', 'delay')
     `);
 
     await queryRunner.createTable(
@@ -26,7 +26,7 @@ export class CreateTableMActivities1700000000008 implements MigrationInterface {
           {
             name: 'status',
             type: 'enum',
-            enum: ['working', 'breakdown', 'stand-by'],
+            enum: ['working', 'breakdown', 'idle', 'delay'],
             enumName: 'enum_activities_status',
             isNullable: true,
           },
