@@ -58,6 +58,11 @@ export class BrandService {
       const sortBy = query.sortBy ?? 'id';
       const sortOrder = query.sortOrder ?? 'DESC';
 
+      // Validate limit
+      if (limit > 100) {
+        throwError('Limit tidak boleh lebih dari 100', 400);
+      }
+
       const qb = this.brandRepository
         .createQueryBuilder('brand')
         .where('brand.deletedAt IS NULL'); // Exclude soft deleted records

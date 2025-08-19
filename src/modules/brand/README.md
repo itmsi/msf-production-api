@@ -1,54 +1,66 @@
 # Brand Module
 
-Module ini menangani operasi CRUD untuk entitas Brand yang tersimpan di tabel `m_brand`.
-
-## Fitur
-
-- **Create**: Membuat brand baru dengan validasi duplikasi
-- **Read**: Mengambil data brand dengan pagination, filtering, dan sorting
-- **Update**: Mengupdate data brand dengan validasi duplikasi
-- **Delete**: Soft delete data brand
+Modul ini menangani manajemen brand dalam sistem MSF Production. Brand adalah merek atau nama perusahaan yang memproduksi unit atau peralatan.
 
 ## Endpoints
 
-### GET /brands
+### 1. GET /api/brands
+
 Mendapatkan semua data brand dengan pagination, filtering, dan sorting.
 
 **Query Parameters:**
-- `page`: Halaman (default: 1)
-- `limit`: Jumlah data per halaman (default: 10, max: 100)
-- `search`: Pencarian umum di semua field
-- `brand_name`: Filter berdasarkan nama brand (partial match)
-- `sortBy`: Field untuk sorting (id, brand_name, createdAt, updatedAt) (default: id)
-- `sortOrder`: Urutan sorting (ASC/DESC) (default: DESC)
+- `page` (optional): Nomor halaman (default: 1)
+- `limit` (optional): Jumlah data per halaman (default: 10, max: 100)
+- `search` (optional): Pencarian umum di field brand_name
+- `brand_name` (optional): Filter berdasarkan nama brand (partial match)
+- `sortBy` (optional): Field untuk sorting (id, brand_name, createdAt, updatedAt)
+- `sortOrder` (optional): Urutan sorting (ASC atau DESC)
 
-**Contoh Curl:**
+**Contoh Request:**
 ```bash
-curl -X 'GET' \
-  'http://localhost:9526/api/brands?page=1&limit=10&search=toyota&brand_name=toyota&sortBy=brand_name&sortOrder=ASC' \
-  -H 'accept: application/json' \
-  -H 'Authorization: Bearer <jwt_token>'
+GET /api/brands?page=1&limit=10&search=toyota&sortBy=brand_name&sortOrder=ASC
 ```
 
-**Response:**
+**Response Success (200):**
 ```json
 {
   "statusCode": 200,
   "message": "Data brand berhasil diambil",
-  "data": [...],
-  "pagination": {
-    "total": 100,
+  "data": [
+    {
+      "id": 1,
+      "brand_name": "Toyota",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "brand_name": "Honda",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "meta": {
+    "total": 2,
     "page": 1,
-    "limit": 10,
-    "lastPage": 10
+    "limit": 10
   }
 }
 ```
 
-### GET /brands/:id
+### 2. GET /api/brands/:id
+
 Mendapatkan data brand berdasarkan ID.
 
-**Response:**
+**Path Parameters:**
+- `id`: ID brand (number)
+
+**Contoh Request:**
+```bash
+GET /api/brands/1
+```
+
+**Response Success (200):**
 ```json
 {
   "statusCode": 200,
@@ -62,8 +74,9 @@ Mendapatkan data brand berdasarkan ID.
 }
 ```
 
-### POST /brands
-Membuat brand baru.
+### 3. POST /api/brands
+
+Membuat brand baru dengan validasi duplikasi brand_name.
 
 **Request Body:**
 ```json
@@ -72,100 +85,10 @@ Membuat brand baru.
 }
 ```
 
-**Response:**
-```json
-{
-  "statusCode": 200,
-  "message": "Brand berhasil dibuat",
-  "data": {
-    "id": 1,
-    "brand_name": "Toyota",
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
-  }
-}
-```
+**Field Validation:**
+- `brand_name`: String, required, min: 1, max: 100 karakter
 
-### PUT /brands/:id
-Mengupdate data brand berdasarkan ID.
-
-**Request Body:**
-```json
-{
-  "brand_name": "Toyota Motor"
-}
-```
-
-**Response:**
-```json
-{
-  "statusCode": 200,
-  "message": "Brand berhasil diupdate",
-  "data": {
-    "id": 1,
-    "brand_name": "Toyota Motor",
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
-  }
-}
-```
-
-### DELETE /brands/:id
-Menghapus data brand berdasarkan ID (soft delete).
-
-**Response:**
-```json
-{
-  "statusCode": 200,
-  "message": "Brand berhasil dihapus",
-  "data": null
-}
-```
-
-## Validasi
-
-- Brand name tidak boleh kosong
-- Brand name harus berupa string
-- Brand name tidak boleh duplikat
-- Semua endpoint memerlukan JWT authentication
-
-## Response Status Codes
-
-### Success Responses:
-- **200**: OK - Data berhasil diambil/diupdate/dihapus
-- **201**: Created - Brand berhasil dibuat
-
-### Error Responses:
-- **400**: Bad Request - Parameter tidak valid atau data tidak lengkap
-- **401**: Unauthorized - JWT token tidak valid atau tidak ada
-- **404**: Not Found - Brand tidak ditemukan
-- **409**: Conflict - Brand name sudah terdaftar atau digunakan
-- **500**: Internal Server Error - Terjadi kesalahan pada server
-
-## Contoh Response untuk Setiap Status Code
-
-### 200 OK - Get All Brands
-```json
-{
-  "statusCode": 200,
-  "message": "Data brand berhasil diambil",
-  "data": [
-    {
-      "id": 1,
-      "brand_name": "Toyota",
-      "createdAt": "2024-01-01T00:00:00.000Z",
-      "updatedAt": "2024-01-01T00:00:00.000Z"
-    }
-  ],
-  "meta": {
-    "total": 1,
-    "page": 1,
-    "limit": 10
-  }
-}
-```
-
-### 201 Created - Create Brand
+**Response Success (201):**
 ```json
 {
   "statusCode": 201,
@@ -179,17 +102,68 @@ Menghapus data brand berdasarkan ID (soft delete).
 }
 ```
 
-### 400 Bad Request
+### 4. PUT /api/brands/:id
+
+Mengupdate data brand berdasarkan ID.
+
+**Path Parameters:**
+- `id`: ID brand yang akan diupdate (number)
+
+**Request Body:**
+```json
+{
+  "brand_name": "Toyota Motor"
+}
+```
+
+**Response Success (200):**
+```json
+{
+  "statusCode": 200,
+  "message": "Brand berhasil diupdate",
+  "data": {
+    "id": 1,
+    "brand_name": "Toyota Motor",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+### 5. DELETE /api/brands/:id
+
+Menghapus data brand berdasarkan ID (soft delete).
+
+**Path Parameters:**
+- `id`: ID brand yang akan dihapus (number)
+
+**Contoh Request:**
+```bash
+DELETE /api/brands/1
+```
+
+**Response Success (200):**
+```json
+{
+  "statusCode": 200,
+  "message": "Brand berhasil dihapus",
+  "data": null
+}
+```
+
+## Error Responses
+
+### Bad Request (400)
 ```json
 {
   "statusCode": 400,
-  "message": "brand_name should not be empty",
+  "message": "Validation failed",
   "error": true,
   "timestamp": "2024-01-01T00:00:00.000Z"
 }
 ```
 
-### 401 Unauthorized
+### Unauthorized (401)
 ```json
 {
   "statusCode": 401,
@@ -199,7 +173,7 @@ Menghapus data brand berdasarkan ID (soft delete).
 }
 ```
 
-### 404 Not Found
+### Not Found (404)
 ```json
 {
   "statusCode": 404,
@@ -209,7 +183,7 @@ Menghapus data brand berdasarkan ID (soft delete).
 }
 ```
 
-### 409 Conflict
+### Conflict (409)
 ```json
 {
   "statusCode": 409,
@@ -219,7 +193,7 @@ Menghapus data brand berdasarkan ID (soft delete).
 }
 ```
 
-### 500 Internal Server Error
+### Internal Server Error (500)
 ```json
 {
   "statusCode": 500,
@@ -229,11 +203,95 @@ Menghapus data brand berdasarkan ID (soft delete).
 }
 ```
 
-## Database
+## Authentication
 
-Data disimpan di tabel `m_brand` dengan struktur:
-- `id`: Primary key (auto increment)
-- `brand_name`: Nama brand (varchar 100, not null)
-- `createdAt`: Timestamp pembuatan
-- `updatedAt`: Timestamp update
-- `deletedAt`: Timestamp soft delete
+Semua endpoint memerlukan JWT token yang valid. Token harus dikirim dalam header Authorization:
+
+```
+Authorization: Bearer <jwt_token>
+```
+
+## Data Model
+
+### Brand Entity
+```typescript
+{
+  id: number;           // Primary key, auto increment
+  brand_name: string;   // Nama brand (max 100 karakter)
+  createdAt: Date;      // Timestamp pembuatan
+  updatedAt: Date;      // Timestamp update terakhir
+  deletedAt: Date;      // Timestamp soft delete (nullable)
+}
+```
+
+## Business Rules
+
+1. **Nama Unik**: Nama brand harus unik dalam sistem
+2. **Soft Delete**: Data tidak benar-benar dihapus, hanya di-mark sebagai deleted
+3. **Validation**: Semua input harus divalidasi sesuai dengan constraint yang ditentukan
+4. **Pagination**: Limit maksimal adalah 100 data per halaman
+5. **Search**: Pencarian dilakukan di field brand_name
+6. **Filtering**: Filter berdasarkan brand_name dengan partial match
+7. **Sorting**: Sorting berdasarkan field yang diizinkan dengan validasi
+
+## Examples
+
+### Create Multiple Brands
+
+```bash
+# Create first brand
+curl -X POST http://localhost:3000/api/brands \
+  -H "Authorization: Bearer <jwt_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"brand_name": "Toyota"}'
+
+# Create second brand
+curl -X POST http://localhost:3000/api/brands \
+  -H "Authorization: Bearer <jwt_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"brand_name": "Honda"}'
+```
+
+### Search and Filter
+
+```bash
+# Search for brands containing "toyota"
+curl "http://localhost:3000/api/brands?search=toyota" \
+  -H "Authorization: Bearer <jwt_token>"
+
+# Filter by brand name and sort by name
+curl "http://localhost:3000/api/brands?brand_name=toyota&sortBy=brand_name&sortOrder=ASC" \
+  -H "Authorization: Bearer <jwt_token>"
+```
+
+### Update Brand
+
+```bash
+curl -X PUT http://localhost:3000/api/brands/1 \
+  -H "Authorization: Bearer <jwt_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"brand_name": "Toyota Motor"}'
+```
+
+## Testing
+
+Untuk testing endpoint ini, gunakan file test yang tersedia:
+- `brand.controller.spec.ts`
+- `brand.service.spec.ts`
+
+## Dependencies
+
+- `@nestjs/common` - NestJS core functionality
+- `@nestjs/typeorm` - TypeORM integration
+- `@nestjs/swagger` - Swagger documentation
+- `class-validator` - Input validation
+- `class-transformer` - Data transformation
+
+## Notes
+
+- Semua endpoint menggunakan JWT authentication
+- Data yang di-soft delete tidak akan muncul di query findAll
+- Timestamp menggunakan format ISO 8601
+- Response format konsisten untuk semua endpoint
+- Error handling terstandarisasi dengan format yang sama
+- Brand name harus unik untuk menghindari duplikasi

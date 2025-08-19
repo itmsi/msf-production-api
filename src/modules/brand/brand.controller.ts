@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { BrandService } from './brand.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
@@ -16,12 +17,16 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse as SwaggerApiResponse,
+  ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import {
   CreateBrandDto,
   GetBrandsQueryDto,
   UpdateBrandDto,
   BrandResponseDto,
+  BrandListResponseDto,
+  SingleBrandResponseDto,
 } from './dto/brand.dto';
 
 @ApiTags('Brand')
@@ -33,15 +38,26 @@ export class BrandController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary:
-      'Mendapatkan semua data brand dengan pagination, filtering, dan sorting',
-    description:
-      'Endpoint ini mendukung pagination, pencarian, filtering berdasarkan brand_name, dan sorting berdasarkan field tertentu',
+    summary: 'Mendapatkan semua data brand dengan pagination, filtering, dan sorting',
+    description: `
+      Endpoint ini mendukung:
+      - Pagination dengan parameter page dan limit
+      - Pencarian umum dengan parameter search
+      - Filter berdasarkan brand_name
+      - Sorting berdasarkan field tertentu (id, brand_name, createdAt, updatedAt)
+      - Urutan sorting ASC atau DESC
+    `,
   })
+  @ApiQuery({ name: 'page', required: false, type: String, description: 'Nomor halaman (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: String, description: 'Jumlah data per halaman (default: 10, max: 100)' })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Pencarian umum di field brand_name' })
+  @ApiQuery({ name: 'brand_name', required: false, type: String, description: 'Filter berdasarkan nama brand' })
+  @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Field untuk sorting' })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'], description: 'Urutan sorting' })
   @SwaggerApiResponse({
     status: 200,
     description: 'Data brand berhasil diambil',
-    type: [BrandResponseDto],
+    type: BrandListResponseDto,
     schema: {
       example: {
         statusCode: 200,
@@ -53,9 +69,15 @@ export class BrandController {
             createdAt: '2024-01-01T00:00:00.000Z',
             updatedAt: '2024-01-01T00:00:00.000Z',
           },
+          {
+            id: 2,
+            brand_name: 'Honda',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
         ],
         meta: {
-          total: 1,
+          total: 2,
           page: 1,
           limit: 10,
         },
@@ -108,10 +130,16 @@ export class BrandController {
     summary: 'Mendapatkan data brand berdasarkan ID',
     description: 'Mengambil data brand berdasarkan ID yang diberikan',
   })
+  @ApiParam({
+    name: 'id',
+    description: 'ID brand yang akan diambil',
+    example: 1,
+    type: Number,
+  })
   @SwaggerApiResponse({
     status: 200,
     description: 'Data brand berhasil diambil',
-    type: BrandResponseDto,
+    type: SingleBrandResponseDto,
     schema: {
       example: {
         statusCode: 200,
@@ -173,7 +201,7 @@ export class BrandController {
       },
     },
   })
-  findOne(@Param('id') id: number) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.brandService.findById(id);
   }
 
@@ -181,12 +209,12 @@ export class BrandController {
   @Post()
   @ApiOperation({
     summary: 'Membuat brand baru',
-    description: 'Membuat brand baru dengan validasi duplikasi brand_name',
+    description: 'Membuat brand baru dengan validasi duplikasi brand_name. Nama brand harus unik dalam sistem.',
   })
   @SwaggerApiResponse({
     status: 201,
     description: 'Brand berhasil dibuat',
-    type: BrandResponseDto,
+    type: SingleBrandResponseDto,
     schema: {
       example: {
         statusCode: 201,
@@ -256,12 +284,18 @@ export class BrandController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data brand berdasarkan ID',
-    description: 'Mengupdate data brand dengan validasi duplikasi brand_name',
+    description: 'Mengupdate data brand dengan validasi duplikasi brand_name. Hanya field yang dikirim yang akan diupdate.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID brand yang akan diupdate',
+    example: 1,
+    type: Number,
   })
   @SwaggerApiResponse({
     status: 200,
     description: 'Brand berhasil diupdate',
-    type: BrandResponseDto,
+    type: SingleBrandResponseDto,
     schema: {
       example: {
         statusCode: 200,
@@ -335,7 +369,7 @@ export class BrandController {
       },
     },
   })
-  update(@Param('id') id: number, @Body() dto: UpdateBrandDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateBrandDto) {
     return this.brandService.update(id, dto);
   }
 
@@ -343,8 +377,18 @@ export class BrandController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Menghapus data brand berdasarkan ID (soft delete)',
-    description:
-      'Melakukan soft delete pada brand (data tidak benar-benar dihapus dari database)',
+    description: `
+      Melakukan soft delete pada brand:
+      - Data tidak benar-benar dihapus dari database
+      - Field deletedAt akan diisi dengan timestamp saat ini
+      - Data yang sudah di-soft delete tidak akan muncul di query findAll
+    `,
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID brand yang akan dihapus',
+    example: 1,
+    type: Number,
   })
   @SwaggerApiResponse({
     status: 200,
@@ -405,7 +449,7 @@ export class BrandController {
       },
     },
   })
-  remove(@Param('id') id: number) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.brandService.remove(id);
   }
 }
