@@ -78,6 +78,11 @@ export class UnitTypeService {
       const sortBy = query.sortBy ?? 'id';
       const sortOrder = query.sortOrder ?? 'DESC';
 
+      // Validate limit
+      if (limit > 100) {
+        throwError('Limit tidak boleh lebih dari 100', 400);
+      }
+
       const qb = this.unitTypeRepository
         .createQueryBuilder('unitType')
         .leftJoinAndSelect('unitType.brand', 'brand')

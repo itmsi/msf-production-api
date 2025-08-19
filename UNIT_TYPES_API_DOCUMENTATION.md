@@ -1,30 +1,64 @@
-# Unit Type Module
+# Unit Types API Documentation
 
-Modul ini menangani manajemen unit type dalam sistem MSF Production. Unit type adalah kombinasi dari brand, unit, type, dan model yang membentuk identitas unik dari suatu unit.
+## Overview
+
+Unit Types API adalah endpoint untuk mengelola data unit type dalam sistem MSF Production. Unit type adalah kombinasi dari brand, unit, type, dan model yang membentuk identitas unik dari suatu unit. API ini mendukung operasi CRUD lengkap dengan fitur pagination, filtering, dan sorting.
+
+**Base URL:** `http://localhost:3000/api/unit-types`
+
+## Authentication
+
+Semua endpoint memerlukan JWT token yang valid. Token harus dikirim dalam header Authorization:
+
+```
+Authorization: Bearer <jwt_token>
+```
 
 ## Endpoints
 
-### 1. GET /api/unit-types
+### 1. Get All Unit Types
+
+**GET** `/api/unit-types`
 
 Mendapatkan semua data unit type dengan pagination, filtering, dan sorting.
 
-**Query Parameters:**
-- `page` (optional): Nomor halaman (default: 1)
-- `limit` (optional): Jumlah data per halaman (default: 10, max: 100)
-- `search` (optional): Pencarian umum di semua field (unit_name, type_name, model_name, brand_name)
-- `brand_id` (optional): Filter berdasarkan brand ID
-- `unit_name` (optional): Filter berdasarkan nama unit (partial match)
-- `type_name` (optional): Filter berdasarkan tipe unit (partial match)
-- `model_name` (optional): Filter berdasarkan model unit (partial match)
-- `sortBy` (optional): Field untuk sorting (id, brand_id, unit_name, type_name, model_name, createdAt, updatedAt)
-- `sortOrder` (optional): Urutan sorting (ASC atau DESC)
+#### Query Parameters
 
-**Contoh Request:**
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `page` | string | No | "1" | Nomor halaman |
+| `limit` | string | No | "10" | Jumlah data per halaman (max: 100) |
+| `search` | string | No | - | Pencarian umum di semua field |
+| `brand_id` | string | No | - | Filter berdasarkan brand ID |
+| `unit_name` | string | No | - | Filter berdasarkan nama unit |
+| `type_name` | string | No | - | Filter berdasarkan tipe unit |
+| `model_name` | string | No | - | Filter berdasarkan model unit |
+| `sortBy` | string | No | "id" | Field untuk sorting |
+| `sortOrder` | string | No | "DESC" | Urutan sorting (ASC/DESC) |
+
+#### Valid Values
+
+**Sort By Fields:**
+- `id` - ID unit type
+- `brand_id` - ID brand
+- `unit_name` - Nama unit
+- `type_name` - Tipe unit
+- `model_name` - Model unit
+- `createdAt` - Waktu pembuatan
+- `updatedAt` - Waktu update terakhir
+
+**Sort Order:**
+- `ASC` - Ascending (A-Z, 0-9)
+- `DESC` - Descending (Z-A, 9-0)
+
+#### Example Request
+
 ```bash
 GET /api/unit-types?page=1&limit=10&search=excavator&brand_id=1&sortBy=unit_name&sortOrder=ASC
 ```
 
-**Response Success (200):**
+#### Response Success (200)
+
 ```json
 {
   "statusCode": 200,
@@ -42,29 +76,49 @@ GET /api/unit-types?page=1&limit=10&search=excavator&brand_id=1&sortBy=unit_name
         "id": 1,
         "brand_name": "Komatsu"
       }
+    },
+    {
+      "id": 2,
+      "brand_id": 1,
+      "unit_name": "Excavator",
+      "type_name": "Heavy Equipment",
+      "model_name": "PC300-8",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "brand": {
+        "id": 1,
+        "brand_name": "Komatsu"
+      }
     }
   ],
   "meta": {
-    "total": 1,
+    "total": 2,
     "page": 1,
     "limit": 10
   }
 }
 ```
 
-### 2. GET /api/unit-types/:id
+### 2. Get Unit Type by ID
+
+**GET** `/api/unit-types/:id`
 
 Mendapatkan data unit type berdasarkan ID.
 
-**Path Parameters:**
-- `id`: ID unit type (number)
+#### Path Parameters
 
-**Contoh Request:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | number | Yes | ID unit type |
+
+#### Example Request
+
 ```bash
 GET /api/unit-types/1
 ```
 
-**Response Success (200):**
+#### Response Success (200)
+
 ```json
 {
   "statusCode": 200,
@@ -85,11 +139,14 @@ GET /api/unit-types/1
 }
 ```
 
-### 3. POST /api/unit-types
+### 3. Create Unit Type
+
+**POST** `/api/unit-types`
 
 Membuat unit type baru dengan validasi duplikasi kombinasi.
 
-**Request Body:**
+#### Request Body
+
 ```json
 {
   "brand_id": 1,
@@ -99,13 +156,17 @@ Membuat unit type baru dengan validasi duplikasi kombinasi.
 }
 ```
 
-**Field Validation:**
-- `brand_id`: Number, required, min: 1
-- `unit_name`: String, required, min: 1, max: 100 karakter
-- `type_name`: String, required, min: 1, max: 100 karakter
-- `model_name`: String, required, min: 1, max: 100 karakter
+#### Field Validation
 
-**Response Success (201):**
+| Field | Type | Required | Min Length | Max Length | Min Value | Description |
+|-------|------|----------|------------|------------|-----------|-------------|
+| `brand_id` | number | Yes | - | - | 1 | ID dari brand yang terkait |
+| `unit_name` | string | Yes | 1 | 100 | - | Nama unit yang akan dibuat |
+| `type_name` | string | Yes | 1 | 100 | - | Tipe unit yang akan dibuat |
+| `model_name` | string | Yes | 1 | 100 | - | Model unit yang akan dibuat |
+
+#### Response Success (201)
+
 ```json
 {
   "statusCode": 201,
@@ -126,14 +187,20 @@ Membuat unit type baru dengan validasi duplikasi kombinasi.
 }
 ```
 
-### 4. PUT /api/unit-types/:id
+### 4. Update Unit Type
+
+**PUT** `/api/unit-types/:id`
 
 Mengupdate data unit type berdasarkan ID.
 
-**Path Parameters:**
-- `id`: ID unit type yang akan diupdate (number)
+#### Path Parameters
 
-**Request Body:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | number | Yes | ID unit type yang akan diupdate |
+
+#### Request Body
+
 ```json
 {
   "unit_name": "Excavator Updated",
@@ -141,7 +208,8 @@ Mengupdate data unit type berdasarkan ID.
 }
 ```
 
-**Response Success (200):**
+#### Response Success (200)
+
 ```json
 {
   "statusCode": 200,
@@ -162,19 +230,26 @@ Mengupdate data unit type berdasarkan ID.
 }
 ```
 
-### 5. DELETE /api/unit-types/:id
+### 5. Delete Unit Type
+
+**DELETE** `/api/unit-types/:id`
 
 Menghapus data unit type berdasarkan ID (soft delete).
 
-**Path Parameters:**
-- `id`: ID unit type yang akan dihapus (number)
+#### Path Parameters
 
-**Contoh Request:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | number | Yes | ID unit type yang akan dihapus |
+
+#### Example Request
+
 ```bash
 DELETE /api/unit-types/1
 ```
 
-**Response Success (200):**
+#### Response Success (200)
+
 ```json
 {
   "statusCode": 200,
@@ -186,16 +261,39 @@ DELETE /api/unit-types/1
 ## Error Responses
 
 ### Bad Request (400)
+
+**Validation Error:**
 ```json
 {
   "statusCode": 400,
-  "message": "Validation failed",
+  "message": "brand_id should not be empty",
+  "error": true,
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+**Invalid ID:**
+```json
+{
+  "statusCode": 400,
+  "message": "ID harus berupa angka",
+  "error": true,
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+**Limit Exceeded:**
+```json
+{
+  "statusCode": 400,
+  "message": "Limit tidak boleh lebih dari 100",
   "error": true,
   "timestamp": "2024-01-01T00:00:00.000Z"
 }
 ```
 
 ### Unauthorized (401)
+
 ```json
 {
   "statusCode": 401,
@@ -206,6 +304,7 @@ DELETE /api/unit-types/1
 ```
 
 ### Not Found (404)
+
 ```json
 {
   "statusCode": 404,
@@ -216,6 +315,8 @@ DELETE /api/unit-types/1
 ```
 
 ### Conflict (409)
+
+**Duplicate Combination:**
 ```json
 {
   "statusCode": 409,
@@ -225,7 +326,18 @@ DELETE /api/unit-types/1
 }
 ```
 
+**Combination Used by Other Unit Type:**
+```json
+{
+  "statusCode": 409,
+  "message": "Unit type dengan kombinasi brand, unit, type, dan model yang sama sudah digunakan oleh unit type lain",
+  "error": true,
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
 ### Internal Server Error (500)
+
 ```json
 {
   "statusCode": 500,
@@ -235,36 +347,67 @@ DELETE /api/unit-types/1
 }
 ```
 
-## Authentication
+## Data Models
 
-Semua endpoint memerlukan JWT token yang valid. Token harus dikirim dalam header Authorization:
+### CreateUnitTypeDto
 
-```
-Authorization: Bearer <jwt_token>
-```
-
-## Data Model
-
-### Unit Type Entity
 ```typescript
 {
-  id: number;           // Primary key, auto increment
-  brand_id: number;     // Foreign key ke brand
-  unit_name: string;    // Nama unit (max 100 karakter)
-  type_name: string;    // Tipe unit (max 100 karakter)
-  model_name: string;   // Model unit (max 100 karakter)
-  createdAt: Date;      // Timestamp pembuatan
-  updatedAt: Date;      // Timestamp update terakhir
-  deletedAt: Date;      // Timestamp soft delete (nullable)
-  brand: Brand;         // Relasi ke brand (eager loading)
+  brand_id: number;     // Required, min: 1
+  unit_name: string;    // Required, min: 1, max: 100 chars
+  type_name: string;    // Required, min: 1, max: 100 chars
+  model_name: string;   // Required, min: 1, max: 100 chars
 }
 ```
 
-### Brand Entity (Relation)
+### UpdateUnitTypeDto
+
+```typescript
+{
+  brand_id?: number;    // Optional, min: 1
+  unit_name?: string;   // Optional, min: 1, max: 100 chars
+  type_name?: string;   // Optional, min: 1, max: 100 chars
+  model_name?: string;  // Optional, min: 1, max: 100 chars
+}
+```
+
+### UnitTypeResponseDto
+
+```typescript
+{
+  id: number;             // Primary key
+  brand_id: number;       // Foreign key ke brand
+  unit_name: string;      // Nama unit
+  type_name: string;      // Tipe unit
+  model_name: string;     // Model unit
+  createdAt: Date;        // Waktu pembuatan
+  updatedAt: Date;        // Waktu update terakhir
+  brand?: BrandDto;       // Data brand yang terkait
+}
+```
+
+### BrandDto
+
 ```typescript
 {
   id: number;           // Primary key brand
   brand_name: string;   // Nama brand
+}
+```
+
+### GetUnitTypesQueryDto
+
+```typescript
+{
+  page?: string;          // Optional, default: "1"
+  limit?: string;         // Optional, default: "10", max: "100"
+  search?: string;        // Optional, search in all fields
+  brand_id?: string;      // Optional, filter by brand ID
+  unit_name?: string;     // Optional, filter by unit name
+  type_name?: string;     // Optional, filter by type name
+  model_name?: string;    // Optional, filter by model name
+  sortBy?: string;        // Optional, default: "id"
+  sortOrder?: 'ASC' | 'DESC'; // Optional, default: "DESC"
 }
 ```
 
@@ -318,6 +461,13 @@ curl -X PUT http://localhost:3000/api/unit-types/1 \
   -d '{"unit_name": "Excavator Updated", "model_name": "PC200-8M"}'
 ```
 
+### Delete Unit Type
+
+```bash
+curl -X DELETE http://localhost:3000/api/unit-types/1 \
+  -H "Authorization: Bearer <jwt_token>"
+```
+
 ## Testing
 
 Untuk testing endpoint ini, gunakan file test yang tersedia:
@@ -340,3 +490,5 @@ Untuk testing endpoint ini, gunakan file test yang tersedia:
 - Response format konsisten untuk semua endpoint
 - Error handling terstandarisasi dengan format yang sama
 - Relasi dengan brand menggunakan eager loading untuk performa
+- Kombinasi brand_id, unit_name, type_name, dan model_name harus unik
+- Validasi input menggunakan class-validator dengan constraint yang ketat

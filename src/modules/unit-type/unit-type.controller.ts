@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { UnitTypeService } from './unit-type.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
@@ -16,12 +17,16 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse as SwaggerApiResponse,
+  ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import {
   CreateUnitTypeDto,
   GetUnitTypesQueryDto,
   UpdateUnitTypeDto,
   UnitTypeResponseDto,
+  UnitTypeListResponseDto,
+  SingleUnitTypeResponseDto,
 } from './dto/unit-type.dto';
 
 @ApiTags('Unit Type')
@@ -33,15 +38,29 @@ export class UnitTypeController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary:
-      'Mendapatkan semua data unit type dengan pagination, filtering, dan sorting',
-    description:
-      'Endpoint ini mendukung pagination, pencarian, filtering berdasarkan brand_id, unit_name, type_name, model_name, dan sorting berdasarkan field tertentu',
+    summary: 'Mendapatkan semua data unit type dengan pagination, filtering, dan sorting',
+    description: `
+      Endpoint ini mendukung:
+      - Pagination dengan parameter page dan limit
+      - Pencarian umum dengan parameter search
+      - Filter berdasarkan brand_id, unit_name, type_name, dan model_name
+      - Sorting berdasarkan field tertentu (id, brand_id, unit_name, type_name, model_name, createdAt, updatedAt)
+      - Urutan sorting ASC atau DESC
+    `,
   })
+  @ApiQuery({ name: 'page', required: false, type: String, description: 'Nomor halaman (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: String, description: 'Jumlah data per halaman (default: 10, max: 100)' })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Pencarian umum di semua field' })
+  @ApiQuery({ name: 'brand_id', required: false, type: String, description: 'Filter berdasarkan brand ID' })
+  @ApiQuery({ name: 'unit_name', required: false, type: String, description: 'Filter berdasarkan nama unit' })
+  @ApiQuery({ name: 'type_name', required: false, type: String, description: 'Filter berdasarkan tipe unit' })
+  @ApiQuery({ name: 'model_name', required: false, type: String, description: 'Filter berdasarkan model unit' })
+  @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Field untuk sorting' })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'], description: 'Urutan sorting' })
   @SwaggerApiResponse({
     status: 200,
     description: 'Data unit type berhasil diambil',
-    type: [UnitTypeResponseDto],
+    type: UnitTypeListResponseDto,
     schema: {
       example: {
         statusCode: 200,
@@ -60,9 +79,22 @@ export class UnitTypeController {
               brand_name: 'Komatsu',
             },
           },
+          {
+            id: 2,
+            brand_id: 1,
+            unit_name: 'Excavator',
+            type_name: 'Heavy Equipment',
+            model_name: 'PC300-8',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+            brand: {
+              id: 1,
+              brand_name: 'Komatsu',
+            },
+          },
         ],
         meta: {
-          total: 1,
+          total: 2,
           page: 1,
           limit: 10,
         },
@@ -115,10 +147,16 @@ export class UnitTypeController {
     summary: 'Mendapatkan data unit type berdasarkan ID',
     description: 'Mengambil data unit type berdasarkan ID yang diberikan',
   })
+  @ApiParam({
+    name: 'id',
+    description: 'ID unit type yang akan diambil',
+    example: 1,
+    type: Number,
+  })
   @SwaggerApiResponse({
     status: 200,
     description: 'Data unit type berhasil diambil',
-    type: UnitTypeResponseDto,
+    type: SingleUnitTypeResponseDto,
     schema: {
       example: {
         statusCode: 200,
@@ -187,7 +225,7 @@ export class UnitTypeController {
       },
     },
   })
-  findOne(@Param('id') id: number) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.unitTypeService.findById(id);
   }
 
@@ -195,13 +233,16 @@ export class UnitTypeController {
   @Post()
   @ApiOperation({
     summary: 'Membuat unit type baru',
-    description:
-      'Membuat unit type baru dengan validasi duplikasi kombinasi brand_id, unit_name, type_name, dan model_name',
+    description: `
+      Membuat unit type baru dengan validasi duplikasi kombinasi:
+      - brand_id, unit_name, type_name, dan model_name
+      - Kombinasi ini harus unik dalam sistem
+    `,
   })
   @SwaggerApiResponse({
     status: 201,
     description: 'Unit type berhasil dibuat',
-    type: UnitTypeResponseDto,
+    type: SingleUnitTypeResponseDto,
     schema: {
       example: {
         statusCode: 201,
@@ -279,13 +320,23 @@ export class UnitTypeController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data unit type berdasarkan ID',
-    description:
-      'Mengupdate data unit type dengan validasi duplikasi kombinasi brand_id, unit_name, type_name, dan model_name',
+    description: `
+      Mengupdate data unit type dengan validasi duplikasi kombinasi:
+      - brand_id, unit_name, type_name, dan model_name
+      - Kombinasi ini harus unik dalam sistem
+      - Hanya field yang dikirim yang akan diupdate
+    `,
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID unit type yang akan diupdate',
+    example: 1,
+    type: Number,
   })
   @SwaggerApiResponse({
     status: 200,
     description: 'Unit type berhasil diupdate',
-    type: UnitTypeResponseDto,
+    type: SingleUnitTypeResponseDto,
     schema: {
       example: {
         statusCode: 200,
@@ -368,7 +419,7 @@ export class UnitTypeController {
       },
     },
   })
-  update(@Param('id') id: number, @Body() dto: UpdateUnitTypeDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUnitTypeDto) {
     return this.unitTypeService.update(id, dto);
   }
 
@@ -376,8 +427,18 @@ export class UnitTypeController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Menghapus data unit type berdasarkan ID (soft delete)',
-    description:
-      'Melakukan soft delete pada unit type (data tidak benar-benar dihapus dari database)',
+    description: `
+      Melakukan soft delete pada unit type:
+      - Data tidak benar-benar dihapus dari database
+      - Field deletedAt akan diisi dengan timestamp saat ini
+      - Data yang sudah di-soft delete tidak akan muncul di query findAll
+    `,
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID unit type yang akan dihapus',
+    example: 1,
+    type: Number,
   })
   @SwaggerApiResponse({
     status: 200,
@@ -438,7 +499,7 @@ export class UnitTypeController {
       },
     },
   })
-  remove(@Param('id') id: number) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.unitTypeService.remove(id);
   }
 }
