@@ -4,11 +4,12 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { RoleHasPermission } from './entities/role-has-permission.entity';
 import {
   CreateRoleHasPermissionDto,
   UpdateRoleHasPermissionDto,
+  GetRoleHasPermissionsQueryDto,
 } from './dto/role-has-permission.dto';
 import {
   ApiResponse,
@@ -16,6 +17,7 @@ import {
   throwError,
   emptyDataResponse,
 } from '../../common/helpers/response.helper';
+import { paginateResponse } from '../../common/helpers/public.helper';
 
 @Injectable()
 export class RoleHasPermissionService {
@@ -60,14 +62,75 @@ export class RoleHasPermissionService {
     }
   }
 
-  async findAll(): Promise<ApiResponse<RoleHasPermission[]>> {
+  async findAll(query?: GetRoleHasPermissionsQueryDto): Promise<ApiResponse<RoleHasPermission[]>> {
     try {
-      const result = await this.roleHasPermissionRepository.find({
-        relations: ['role', 'menuHasPermission', 'permission'],
-        order: { createdAt: 'DESC' },
-      });
+      if (!query) {
+        // Fallback untuk kompatibilitas backward
+        const result = await this.roleHasPermissionRepository.find({
+          relations: ['role', 'menuHasPermission', 'permission'],
+          order: { createdAt: 'DESC' },
+        });
+        return successResponse(result, 'Get role permissions successfully');
+      }
 
-      return successResponse(result, 'Get role permissions successfully');
+      const page = parseInt(query.page ?? '1', 10);
+      const limit = parseInt(query.limit ?? '10', 10);
+      const skip = (page - 1) * limit;
+      const role_id = query.role_id ? parseInt(query.role_id, 10) : null;
+      const mhp_id = query.mhp_id ? parseInt(query.mhp_id, 10) : null;
+      const permission_id = query.permission_id ? parseInt(query.permission_id, 10) : null;
+      const sortBy = query.sortBy ?? 'id';
+      const sortOrder = query.sortOrder ?? 'DESC';
+
+      // Validate limit
+      if (limit > 100) {
+        throwError('Limit tidak boleh lebih dari 100', 400);
+      }
+
+      const qb: SelectQueryBuilder<RoleHasPermission> = this.roleHasPermissionRepository
+        .createQueryBuilder('rhp')
+        .leftJoinAndSelect('rhp.role', 'role')
+        .leftJoinAndSelect('rhp.menuHasPermission', 'menuHasPermission')
+        .leftJoinAndSelect('rhp.permission', 'permission');
+
+      // Filter by role_id
+      if (role_id) {
+        qb.andWhere('rhp.role_id = :role_id', { role_id });
+      }
+
+      // Filter by mhp_id
+      if (mhp_id) {
+        qb.andWhere('rhp.mhp_id = :mhp_id', { mhp_id });
+      }
+
+      // Filter by permission_id
+      if (permission_id) {
+        qb.andWhere('rhp.permission_id = :permission_id', { permission_id });
+      }
+
+      // Validate sortBy field to prevent SQL injection
+      const allowedSortFields = [
+        'id',
+        'role_id',
+        'mhp_id',
+        'permission_id',
+        'createdAt',
+        'updatedAt',
+      ];
+      const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
+      const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
+      qb.orderBy(`rhp.${validSortBy}`, validSortOrder).skip(skip).take(limit);
+
+      const [result, total] = await qb.getManyAndCount();
+
+      return paginateResponse(
+        result,
+        total,
+        page,
+        limit,
+        'Get role permissions successfully',
+      );
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
