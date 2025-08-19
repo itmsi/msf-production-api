@@ -18,6 +18,7 @@ import {
   ActivitiesResponseDto,
   GetActivitiesQueryDto,
   UpdateActivitiesDto,
+  ActivityStatus,
 } from './dto/activities.dto';
 
 @Injectable()
@@ -60,6 +61,11 @@ export class ActivitiesService {
       const status = query.status?.toLowerCase() ?? '';
       const sortBy = query.sortBy ?? 'id';
       const sortOrder = query.sortOrder ?? 'DESC';
+
+      // Validate limit
+      if (limit > 100) {
+        throwError('Limit tidak boleh lebih dari 100', 400);
+      }
 
       const qb = this.activitiesRepository
         .createQueryBuilder('activities')
@@ -110,7 +116,7 @@ export class ActivitiesService {
       const transformedResult = result.map((activity) => ({
         id: activity.id,
         name: activity.name,
-        status: activity.status,
+        status: activity.status as ActivityStatus,
         createdAt: activity.createdAt,
         updatedAt: activity.updatedAt,
       }));
@@ -143,6 +149,11 @@ export class ActivitiesService {
     data: CreateActivitiesDto,
   ): Promise<ApiResponse<ActivitiesResponseDto>> {
     try {
+      // Set default status if not provided
+      if (!data.status) {
+        data.status = ActivityStatus.ACTIVE;
+      }
+
       const existing = await this.activitiesRepository.findOne({
         where: { name: data.name },
       });
@@ -154,7 +165,16 @@ export class ActivitiesService {
       const newActivity = this.activitiesRepository.create(data);
       const result = await this.activitiesRepository.save(newActivity);
 
-      return successResponse(result, 'Aktivitas berhasil dibuat');
+      // Transform to DTO format
+      const responseData: ActivitiesResponseDto = {
+        id: result.id,
+        name: result.name,
+        status: result.status as ActivityStatus,
+        createdAt: result.createdAt,
+        updatedAt: result.updatedAt,
+      };
+
+      return successResponse(responseData, 'Aktivitas berhasil dibuat');
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -199,7 +219,16 @@ export class ActivitiesService {
       );
       const result = await this.activitiesRepository.save(updatedActivity);
 
-      return successResponse(result, 'Aktivitas berhasil diupdate');
+      // Transform to DTO format
+      const responseData: ActivitiesResponseDto = {
+        id: result.id,
+        name: result.name,
+        status: result.status as ActivityStatus,
+        createdAt: result.createdAt,
+        updatedAt: result.updatedAt,
+      };
+
+      return successResponse(responseData, 'Aktivitas berhasil diupdate');
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

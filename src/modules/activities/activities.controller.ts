@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ActivitiesService } from './activities.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
@@ -16,12 +17,17 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse as SwaggerApiResponse,
+  ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import {
   CreateActivitiesDto,
   GetActivitiesQueryDto,
   UpdateActivitiesDto,
   ActivitiesResponseDto,
+  ActivitiesListResponseDto,
+  SingleActivityResponseDto,
+  ActivityStatus,
 } from './dto/activities.dto';
 
 @ApiTags('Activities')
@@ -33,15 +39,27 @@ export class ActivitiesController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary:
-      'Mendapatkan semua data aktivitas dengan pagination, filtering, dan sorting',
-    description:
-      'Endpoint ini mendukung pagination, pencarian, filtering berdasarkan name dan status, dan sorting berdasarkan field tertentu',
+    summary: 'Mendapatkan semua data aktivitas dengan pagination, filtering, dan sorting',
+    description: `
+      Endpoint ini mendukung:
+      - Pagination dengan parameter page dan limit
+      - Pencarian umum dengan parameter search
+      - Filter berdasarkan name dan status
+      - Sorting berdasarkan field tertentu (id, name, status, createdAt, updatedAt)
+      - Urutan sorting ASC atau DESC
+    `,
   })
+  @ApiQuery({ name: 'page', required: false, type: String, description: 'Nomor halaman (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: String, description: 'Jumlah data per halaman (default: 10, max: 100)' })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Pencarian umum di semua field' })
+  @ApiQuery({ name: 'name', required: false, type: String, description: 'Filter berdasarkan nama aktivitas' })
+  @ApiQuery({ name: 'status', required: false, enum: ActivityStatus, description: 'Filter berdasarkan status aktivitas' })
+  @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Field untuk sorting' })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'], description: 'Urutan sorting' })
   @SwaggerApiResponse({
     status: 200,
     description: 'Data aktivitas berhasil diambil',
-    type: [ActivitiesResponseDto],
+    type: ActivitiesListResponseDto,
     schema: {
       example: {
         statusCode: 200,
@@ -54,9 +72,16 @@ export class ActivitiesController {
             createdAt: '2024-01-01T00:00:00.000Z',
             updatedAt: '2024-01-01T00:00:00.000Z',
           },
+          {
+            id: 2,
+            name: 'Unloading Barge',
+            status: 'active',
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
         ],
         meta: {
-          total: 1,
+          total: 2,
           page: 1,
           limit: 10,
         },
@@ -109,10 +134,16 @@ export class ActivitiesController {
     summary: 'Mendapatkan data aktivitas berdasarkan ID',
     description: 'Mengambil data aktivitas berdasarkan ID yang diberikan',
   })
+  @ApiParam({
+    name: 'id',
+    description: 'ID aktivitas yang akan diambil',
+    example: 1,
+    type: Number,
+  })
   @SwaggerApiResponse({
     status: 200,
     description: 'Data aktivitas berhasil diambil',
-    type: ActivitiesResponseDto,
+    type: SingleActivityResponseDto,
     schema: {
       example: {
         statusCode: 200,
@@ -175,7 +206,7 @@ export class ActivitiesController {
       },
     },
   })
-  findOne(@Param('id') id: number) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.activitiesService.findById(id);
   }
 
@@ -183,12 +214,12 @@ export class ActivitiesController {
   @Post()
   @ApiOperation({
     summary: 'Membuat aktivitas baru',
-    description: 'Membuat aktivitas baru dengan validasi duplikasi name',
+    description: 'Membuat aktivitas baru dengan validasi duplikasi name. Status default adalah active.',
   })
   @SwaggerApiResponse({
     status: 201,
     description: 'Aktivitas berhasil dibuat',
-    type: ActivitiesResponseDto,
+    type: SingleActivityResponseDto,
     schema: {
       example: {
         statusCode: 201,
@@ -259,12 +290,18 @@ export class ActivitiesController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data aktivitas berdasarkan ID',
-    description: 'Mengupdate data aktivitas dengan validasi duplikasi name',
+    description: 'Mengupdate data aktivitas dengan validasi duplikasi name. Hanya field yang dikirim yang akan diupdate.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID aktivitas yang akan diupdate',
+    example: 1,
+    type: Number,
   })
   @SwaggerApiResponse({
     status: 200,
     description: 'Aktivitas berhasil diupdate',
-    type: ActivitiesResponseDto,
+    type: SingleActivityResponseDto,
     schema: {
       example: {
         statusCode: 200,
@@ -340,7 +377,7 @@ export class ActivitiesController {
       },
     },
   })
-  update(@Param('id') id: number, @Body() dto: UpdateActivitiesDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateActivitiesDto) {
     return this.activitiesService.update(id, dto);
   }
 
@@ -348,8 +385,18 @@ export class ActivitiesController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Menghapus data aktivitas berdasarkan ID (soft delete)',
-    description:
-      'Melakukan soft delete pada aktivitas (data tidak benar-benar dihapus dari database)',
+    description: `
+      Melakukan soft delete pada aktivitas:
+      - Data tidak benar-benar dihapus dari database
+      - Field deletedAt akan diisi dengan timestamp saat ini
+      - Data yang sudah di-soft delete tidak akan muncul di query findAll
+    `,
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID aktivitas yang akan dihapus',
+    example: 1,
+    type: Number,
   })
   @SwaggerApiResponse({
     status: 200,
@@ -410,7 +457,7 @@ export class ActivitiesController {
       },
     },
   })
-  remove(@Param('id') id: number) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.activitiesService.remove(id);
   }
 }
