@@ -1,247 +1,418 @@
 # Employee Module
 
-Modul untuk mengelola data karyawan (employee) dalam sistem MSF Production API.
-
-## Fitur
-
-- **CRUD Operations**: Create, Read, Update, Delete employee
-- **Search & Filter**: Pencarian berdasarkan nama, departemen, posisi, dan status
-- **Pagination**: Support untuk pagination dengan limit dan offset
-- **Soft Delete**: Penghapusan data secara soft (tidak menghapus dari database)
-- **Validation**: Validasi input menggunakan class-validator
-- **Swagger Documentation**: API documentation lengkap dengan Swagger
-
-## Entity
-
-### Employee Entity
-
-```typescript
-@Entity('m_employee')
-export class Employee {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ name: 'first_name' })
-  firstName: string;
-
-  @Column({ name: 'last_name' })
-  lastName: string;
-
-  @Column()
-  department: string;
-
-  @Column()
-  position: string;
-
-  @Column()
-  nip: number;
-
-  @Column({
-    type: 'enum',
-    enum: ['active', 'inactive', 'resign', 'on-leave'],
-    default: 'active'
-  })
-  status: string;
-
-  @Column({ nullable: true })
-  salary: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
-
-  @DeleteDateColumn()
-  deletedAt: Date;
-
-  // Virtual property untuk nama lengkap
-  get name(): string {
-    return `${this.firstName} ${this.lastName}`;
-  }
-}
-```
-
-## DTOs
-
-### CreateEmployeeDto
-- `firstName`: Nama depan karyawan (required)
-- `lastName`: Nama belakang karyawan (required)
-- `department`: Departemen karyawan (required)
-- `position`: Posisi/jabatan karyawan (required)
-- `nip`: Nomor Induk Pegawai (required, unique)
-- `status`: Status karyawan (enum: active, inactive, resign, on-leave)
-- `salary`: Gaji karyawan (optional)
-
-### UpdateEmployeeDto
-- Semua field optional untuk partial update
-- Validasi NIP uniqueness jika diupdate
-
-### EmployeeResponseDto
-- Response format yang konsisten dengan field lengkap
-- Include virtual property `name` (nama lengkap)
-- Timestamp fields (createdAt, updatedAt)
-
-### GetEmployeesQueryDto
-- `page`: Nomor halaman (default: 1)
-- `limit`: Jumlah item per halaman (default: 10)
-- `search`: Pencarian berdasarkan nama, departemen, atau posisi
-- `department`: Filter berdasarkan departemen
-- `status`: Filter berdasarkan status
+Modul ini menangani manajemen employee dalam sistem MSF Production. Employee adalah karyawan yang bekerja di perusahaan dengan berbagai informasi seperti nama, department, posisi, NIP, dan status.
 
 ## Endpoints
 
-### Base URL: `/api/employees`
+### 1. GET /api/employees
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/` | Create new employee | ✅ JWT |
-| GET | `/` | Get all employees with pagination & filters | ✅ JWT |
-| GET | `/by-department/:department` | Get employees by department | ✅ JWT |
-| GET | `/by-status/:status` | Get employees by status | ✅ JWT |
-| GET | `/:id` | Get employee by ID | ✅ JWT |
-| PUT | `/:id` | Update employee | ✅ JWT |
-| DELETE | `/:id` | Soft delete employee | ✅ JWT |
+Mendapatkan semua data employee dengan pagination, filtering, dan sorting.
 
-## Service Methods
+**Query Parameters:**
+- `page` (optional): Nomor halaman (default: 1)
+- `limit` (optional): Jumlah data per halaman (default: 10, max: 100)
+- `search` (optional): Pencarian umum di field firstName, lastName, department, position
+- `department` (optional): Filter berdasarkan department (partial match)
+- `status` (optional): Filter berdasarkan status (active, inactive, resign, on-leave)
+- `sortBy` (optional): Field untuk sorting (id, firstName, lastName, department, position, nip, status, createdAt, updatedAt)
+- `sortOrder` (optional): Urutan sorting (ASC atau DESC)
 
-### EmployeeService
+**Contoh Request:**
+```bash
+GET /api/employees?page=1&limit=10&search=john&department=IT&status=active&sortBy=firstName&sortOrder=ASC
+```
 
-- `create(createEmployeeDto)`: Membuat employee baru
-- `findAll(query)`: Mendapatkan semua employee dengan pagination dan filter
-- `findOne(id)`: Mendapatkan employee berdasarkan ID
-- `update(id, updateEmployeeDto)`: Update employee
-- `remove(id)`: Soft delete employee
-- `findByNip(nip)`: Mencari employee berdasarkan NIP
-- `findByDepartment(department)`: Mendapatkan employee berdasarkan departemen
-- `findByStatus(status)`: Mendapatkan employee berdasarkan status
-
-## Business Logic
-
-### Validation Rules
-- NIP harus unique (tidak boleh duplikat)
-- Status harus sesuai enum yang didefinisikan
-- Soft delete untuk menjaga data integrity
-
-### Search & Filter
-- Case-insensitive search menggunakan ILIKE
-- Support untuk multiple field search (nama, departemen, posisi)
-- Filter berdasarkan departemen dan status
-- Pagination dengan order by ID descending
-
-## Response Format
-
-### Success Response
+**Response Success (200):**
 ```json
 {
   "statusCode": 200,
   "message": "Get employees successfully",
-  "data": [...],
-  "pagination": {
-    "total": 100,
+  "data": [
+    {
+      "id": 1,
+      "firstName": "John",
+      "lastName": "Doe",
+      "name": "John Doe",
+      "department": "IT",
+      "position": "Software Engineer",
+      "nip": 123456789,
+      "status": "active",
+      "salary": "5000000",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "meta": {
+    "total": 1,
     "page": 1,
-    "limit": 10,
-    "lastPage": 10
+    "limit": 10
   }
 }
 ```
 
-### Error Response
-```json
-{
-  "statusCode": 400,
-  "message": "Validation error",
-  "error": true,
-  "timestamp": "2025-08-14T15:11:37.757Z"
-}
+### 2. GET /api/employees/:id
+
+Mendapatkan data employee berdasarkan ID.
+
+**Path Parameters:**
+- `id`: ID employee (number)
+
+**Contoh Request:**
+```bash
+GET /api/employees/1
 ```
 
-## Usage Examples
-
-### Create Employee
-```bash
-curl -X POST http://localhost:9526/api/employees \
-  -H "Authorization: Bearer <JWT_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
+**Response Success (200):**
+```json
+{
+  "statusCode": 200,
+  "message": "Get employee successfully",
+  "data": {
+    "id": 1,
     "firstName": "John",
     "lastName": "Doe",
+    "name": "John Doe",
     "department": "IT",
     "position": "Software Engineer",
     "nip": 123456789,
     "status": "active",
-    "salary": "5000000"
-  }'
+    "salary": "5000000",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+}
 ```
 
-### Get Employees with Search
+### 3. GET /api/employees/by-department/:department
+
+Mendapatkan semua employee berdasarkan department.
+
+**Path Parameters:**
+- `department`: Nama department (string)
+
+**Contoh Request:**
 ```bash
-curl "http://localhost:9526/api/employees?search=john&department=IT&page=1&limit=5" \
-  -H "Authorization: Bearer <JWT_TOKEN>"
+GET /api/employees/by-department/IT
+```
+
+**Response Success (200):**
+```json
+{
+  "statusCode": 200,
+  "message": "Get employees by department successfully",
+  "data": [
+    {
+      "id": 1,
+      "firstName": "John",
+      "lastName": "Doe",
+      "name": "John Doe",
+      "department": "IT",
+      "position": "Software Engineer",
+      "nip": 123456789,
+      "status": "active",
+      "salary": "5000000",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+### 4. GET /api/employees/by-status/:status
+
+Mendapatkan semua employee berdasarkan status.
+
+**Path Parameters:**
+- `status`: Status employee (active, inactive, resign, on-leave)
+
+**Contoh Request:**
+```bash
+GET /api/employees/by-status/active
+```
+
+**Response Success (200):**
+```json
+{
+  "statusCode": 200,
+  "message": "Get employees by status successfully",
+  "data": [
+    {
+      "id": 1,
+      "firstName": "John",
+      "lastName": "Doe",
+      "name": "John Doe",
+      "department": "IT",
+      "position": "Software Engineer",
+      "nip": 123456789,
+      "status": "active",
+      "salary": "5000000",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+### 5. POST /api/employees
+
+Membuat employee baru dengan validasi duplikasi NIP.
+
+**Request Body:**
+```json
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "department": "IT",
+  "position": "Software Engineer",
+  "nip": 123456789,
+  "status": "active",
+  "salary": "5000000"
+}
+```
+
+**Field Validation:**
+- `firstName`: String, required, min: 1, max: 100 karakter
+- `lastName`: String, required, min: 1, max: 100 karakter
+- `department`: String, required, min: 1, max: 100 karakter
+- `position`: String, required, min: 1, max: 100 karakter
+- `nip`: Number, required, min: 100000000, max: 999999999
+- `status`: Enum, required (active, inactive, resign, on-leave)
+- `salary`: String, optional, min: 1, max: 20 karakter
+
+**Response Success (201):**
+```json
+{
+  "statusCode": 201,
+  "message": "Employee created successfully",
+  "data": {
+    "id": 1,
+    "firstName": "John",
+    "lastName": "Doe",
+    "name": "John Doe",
+    "department": "IT",
+    "position": "Software Engineer",
+    "nip": 123456789,
+    "status": "active",
+    "salary": "5000000",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+### 6. PUT /api/employees/:id
+
+Mengupdate data employee berdasarkan ID.
+
+**Path Parameters:**
+- `id`: ID employee yang akan diupdate (number)
+
+**Request Body:**
+```json
+{
+  "firstName": "John Updated",
+  "position": "Senior Software Engineer",
+  "salary": "6000000"
+}
+```
+
+**Response Success (200):**
+```json
+{
+  "statusCode": 200,
+  "message": "Employee updated successfully",
+  "data": {
+    "id": 1,
+    "firstName": "John Updated",
+    "lastName": "Doe",
+    "name": "John Updated Doe",
+    "department": "IT",
+    "position": "Senior Software Engineer",
+    "nip": 123456789,
+    "status": "active",
+    "salary": "6000000",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+### 7. DELETE /api/employees/:id
+
+Menghapus data employee berdasarkan ID (soft delete).
+
+**Path Parameters:**
+- `id`: ID employee yang akan dihapus (number)
+
+**Contoh Request:**
+```bash
+DELETE /api/employees/1
+```
+
+**Response Success (200):**
+```json
+{
+  "statusCode": 200,
+  "message": "Employee deleted successfully",
+  "data": null
+}
+```
+
+## Error Responses
+
+### Bad Request (400)
+```json
+{
+  "statusCode": 400,
+  "message": "Validation failed",
+  "error": true,
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### Unauthorized (401)
+```json
+{
+  "statusCode": 401,
+  "message": "Unauthorized",
+  "error": true,
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### Not Found (404)
+```json
+{
+  "statusCode": 404,
+  "message": "Employee not found",
+  "error": true,
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### Conflict (409)
+```json
+{
+  "statusCode": 409,
+  "message": "NIP already exists",
+  "error": true,
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### Internal Server Error (500)
+```json
+{
+  "statusCode": 500,
+  "message": "Internal server error",
+  "error": true,
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+## Authentication
+
+Semua endpoint memerlukan JWT token yang valid. Token harus dikirim dalam header Authorization:
+
+```
+Authorization: Bearer <jwt_token>
+```
+
+## Data Model
+
+### Employee Entity
+```typescript
+{
+  id: number;           // Primary key, auto increment
+  firstName: string;    // Nama depan (max 100 karakter)
+  lastName: string;     // Nama belakang (max 100 karakter)
+  department: string;   // Department (max 100 karakter)
+  position: string;     // Posisi/jabatan (max 100 karakter)
+  nip: number;          // NIP/Employee ID (9 digit)
+  status: string;       // Status employee (active, inactive, resign, on-leave)
+  salary: string;       // Gaji (optional, max 20 karakter)
+  createdAt: Date;      // Timestamp pembuatan
+  updatedAt: Date;      // Timestamp update terakhir
+  deletedAt: Date;      // Timestamp soft delete (nullable)
+  name: string;         // Virtual property: firstName + lastName
+}
+```
+
+### Employee Status Values
+- `active` - Karyawan aktif
+- `inactive` - Karyawan tidak aktif
+- `resign` - Karyawan sudah resign
+- `on-leave` - Karyawan sedang cuti
+
+## Business Rules
+
+1. **NIP Unik**: NIP (Employee ID) harus unik dalam sistem
+2. **Soft Delete**: Data tidak benar-benar dihapus, hanya di-mark sebagai deleted
+3. **Validation**: Semua input harus divalidasi sesuai dengan constraint yang ditentukan
+4. **Pagination**: Limit maksimal adalah 100 data per halaman
+5. **Search**: Pencarian dilakukan di field firstName, lastName, department, position
+6. **Filtering**: Filter berdasarkan department (partial match) dan status (exact match)
+7. **Sorting**: Sorting berdasarkan field yang diizinkan dengan validasi
+
+## Examples
+
+### Create Multiple Employees
+
+```bash
+# Create first employee
+curl -X POST http://localhost:3000/api/employees \
+  -H "Authorization: Bearer <jwt_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"firstName": "John", "lastName": "Doe", "department": "IT", "position": "Software Engineer", "nip": 123456789, "status": "active", "salary": "5000000"}'
+
+# Create second employee
+curl -X POST http://localhost:3000/api/employees \
+  -H "Authorization: Bearer <jwt_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"firstName": "Jane", "lastName": "Smith", "department": "HR", "position": "HR Manager", "nip": 987654321, "status": "active", "salary": "8000000"}'
+```
+
+### Search and Filter
+
+```bash
+# Search for employees containing "john"
+curl "http://localhost:3000/api/employees?search=john" \
+  -H "Authorization: Bearer <jwt_token>"
+
+# Filter by department and sort by name
+curl "http://localhost:3000/api/employees?department=IT&sortBy=firstName&sortOrder=ASC" \
+  -H "Authorization: Bearer <jwt_token>"
 ```
 
 ### Update Employee
+
 ```bash
-curl -X PUT http://localhost:9526/api/employees/1 \
-  -H "Authorization: Bearer <JWT_TOKEN>" \
+curl -X PUT http://localhost:3000/api/employees/1 \
+  -H "Authorization: Bearer <jwt_token>" \
   -H "Content-Type: application/json" \
-  -d '{
-    "position": "Senior Software Engineer",
-    "salary": "7500000"
-  }'
+  -d '{"firstName": "John Updated", "position": "Senior Software Engineer", "salary": "6000000"}'
 ```
-
-## Dependencies
-
-- **NestJS**: Framework utama
-- **TypeORM**: Database ORM
-- **class-validator**: Input validation
-- **class-transformer**: Object transformation
-- **Swagger**: API documentation
-
-## Database
-
-### Table: `m_employee`
-- Primary key: `id`
-- Unique constraint: `nip`
-- Soft delete: `deletedAt` column
-- Audit fields: `createdAt`, `updatedAt`
-
-### Indexes
-- `id` (Primary Key)
-- `nip` (Unique)
-- `department` (for filtering)
-- `status` (for filtering)
-- `deletedAt` (for soft delete queries)
-
-## Security
-
-- **JWT Authentication**: Semua endpoint memerlukan valid JWT token
-- **Input Validation**: Validasi input menggunakan class-validator
-- **SQL Injection Protection**: Menggunakan TypeORM query builder
-- **Soft Delete**: Data tidak benar-benar dihapus dari database
-
-## Error Handling
-
-- **400 Bad Request**: Validation error atau input tidak valid
-- **401 Unauthorized**: JWT token tidak valid atau tidak ada
-- **404 Not Found**: Employee tidak ditemukan
-- **409 Conflict**: NIP sudah ada
-- **500 Internal Server Error**: Error server yang tidak terduga
 
 ## Testing
 
-Modul ini dapat di-test menggunakan:
-- Unit tests dengan Jest
-- Integration tests dengan TestContainer
-- API tests dengan Swagger UI
-- Manual testing dengan Postman/curl
+Untuk testing endpoint ini, gunakan file test yang tersedia:
+- `employee.controller.spec.ts`
+- `employee.service.spec.ts`
 
-## Future Enhancements
+## Dependencies
 
-- **Bulk Operations**: Import/export employee data
-- **Advanced Search**: Full-text search dengan Elasticsearch
-- **Audit Trail**: Tracking perubahan data employee
-- **File Upload**: Upload foto employee
-- **Reporting**: Generate laporan employee
-- **Integration**: Integrasi dengan sistem HR external
+- `@nestjs/common` - NestJS core functionality
+- `@nestjs/typeorm` - TypeORM integration
+- `@nestjs/swagger` - Swagger documentation
+- `class-validator` - Input validation
+- `class-transformer` - Data transformation
+
+## Notes
+
+- Semua endpoint menggunakan JWT authentication
+- Data yang di-soft delete tidak akan muncul di query findAll
+- Timestamp menggunakan format ISO 8601
+- Response format konsisten untuk semua endpoint
+- Error handling terstandarisasi dengan format yang sama
+- NIP harus unik untuk menghindari duplikasi
+- Virtual property `name` otomatis digenerate dari firstName + lastName

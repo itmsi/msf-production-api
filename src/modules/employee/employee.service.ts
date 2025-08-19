@@ -71,29 +71,54 @@ export class EmployeeService {
       const page = parseInt(query.page || '1', 10);
       const limit = parseInt(query.limit || '10', 10);
       const skip = (page - 1) * limit;
+      const search = query.search?.toLowerCase() || '';
+      const department = query.department?.toLowerCase() || '';
+      const status = query.status || '';
+      const sortBy = query.sortBy || 'id';
+      const sortOrder = query.sortOrder || 'DESC';
+
+      // Validate limit
+      if (limit > 100) {
+        throwError('Limit tidak boleh lebih dari 100', 400);
+      }
 
       const qb: SelectQueryBuilder<Employee> = this.employeeRepository
         .createQueryBuilder('employee')
         .where('employee.deletedAt IS NULL');
 
-      if (query.search) {
+      if (search) {
         qb.andWhere(
           '(employee.firstName ILIKE :search OR employee.lastName ILIKE :search OR employee.department ILIKE :search OR employee.position ILIKE :search)',
-          { search: `%${query.search}%` },
+          { search: `%${search}%` },
         );
       }
 
-      if (query.department) {
-        qb.andWhere('employee.department = :department', {
-          department: query.department,
+      if (department) {
+        qb.andWhere('employee.department ILIKE :department', {
+          department: `%${department}%`,
         });
       }
 
-      if (query.status) {
-        qb.andWhere('employee.status = :status', { status: query.status });
+      if (status) {
+        qb.andWhere('employee.status = :status', { status });
       }
 
-      qb.orderBy('employee.id', 'DESC').skip(skip).take(limit);
+      // Validate sortBy field to prevent SQL injection
+      const allowedSortFields = [
+        'id',
+        'firstName',
+        'lastName',
+        'department',
+        'position',
+        'nip',
+        'status',
+        'createdAt',
+        'updatedAt',
+      ];
+      const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
+      const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
+      qb.orderBy(`employee.${validSortBy}`, validSortOrder).skip(skip).take(limit);
 
       const [result, total] = await qb.getManyAndCount();
 
