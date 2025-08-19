@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { SitesService } from './sites.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
@@ -16,12 +17,17 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse as SwaggerApiResponse,
+  ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import {
   CreateSitesDto,
   GetSitesQueryDto,
   UpdateSitesDto,
   SitesResponseDto,
+  SitesListResponseDto,
+  SingleSiteResponseDto,
+  OperatorPointType,
 } from './dto/sites.dto';
 
 @ApiTags('Sites')
@@ -35,13 +41,26 @@ export class SitesController {
   @ApiOperation({
     summary:
       'Mendapatkan semua data sites dengan pagination, filtering, dan sorting',
-    description:
-      'Endpoint ini mendukung pagination, pencarian, filtering berdasarkan name dan location, dan sorting berdasarkan field tertentu',
+    description: `
+      Endpoint ini mendukung:
+      - Pagination dengan parameter page dan limit
+      - Pencarian umum dengan parameter search
+      - Filter berdasarkan name dan location
+      - Sorting berdasarkan field tertentu (id, name, location, longitude, latitude, createdAt, updatedAt)
+      - Urutan sorting ASC atau DESC
+    `,
   })
+  @ApiQuery({ name: 'page', required: false, type: String, description: 'Nomor halaman (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: String, description: 'Jumlah data per halaman (default: 10, max: 100)' })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Pencarian umum di field name dan location' })
+  @ApiQuery({ name: 'name', required: false, type: String, description: 'Filter berdasarkan nama site' })
+  @ApiQuery({ name: 'location', required: false, type: String, description: 'Filter berdasarkan lokasi site' })
+  @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Field untuk sorting' })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'], description: 'Urutan sorting' })
   @SwaggerApiResponse({
     status: 200,
     description: 'Data sites berhasil diambil',
-    type: [SitesResponseDto],
+    type: SitesListResponseDto,
     schema: {
       example: {
         statusCode: 200,
@@ -124,10 +143,16 @@ export class SitesController {
     description:
       'Mengambil data site berdasarkan ID yang diberikan beserta operator points',
   })
+  @ApiParam({
+    name: 'id',
+    description: 'ID site yang akan diambil',
+    example: 1,
+    type: Number,
+  })
   @SwaggerApiResponse({
     status: 200,
     description: 'Data site berhasil diambil',
-    type: SitesResponseDto,
+    type: SingleSiteResponseDto,
     schema: {
       example: {
         statusCode: 200,
@@ -204,7 +229,7 @@ export class SitesController {
       },
     },
   })
-  findOne(@Param('id') id: number) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.sitesService.findById(id);
   }
 
@@ -217,7 +242,7 @@ export class SitesController {
   @SwaggerApiResponse({
     status: 201,
     description: 'Site berhasil dibuat',
-    type: SitesResponseDto,
+    type: SingleSiteResponseDto,
     schema: {
       example: {
         statusCode: 201,
@@ -292,10 +317,16 @@ export class SitesController {
     summary: 'Mengupdate data site berdasarkan ID',
     description: 'Mengupdate data site beserta operator points',
   })
+  @ApiParam({
+    name: 'id',
+    description: 'ID site yang akan diupdate',
+    example: 1,
+    type: Number,
+  })
   @SwaggerApiResponse({
     status: 200,
     description: 'Site berhasil diupdate',
-    type: SitesResponseDto,
+    type: SingleSiteResponseDto,
     schema: {
       example: {
         statusCode: 200,
@@ -372,7 +403,7 @@ export class SitesController {
       },
     },
   })
-  update(@Param('id') id: number, @Body() dto: UpdateSitesDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateSitesDto) {
     return this.sitesService.update(id, dto);
   }
 
@@ -382,6 +413,12 @@ export class SitesController {
     summary: 'Menghapus data site berdasarkan ID (soft delete)',
     description:
       'Melakukan soft delete pada site (data tidak benar-benar dihapus dari database)',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID site yang akan dihapus',
+    example: 1,
+    type: Number,
   })
   @SwaggerApiResponse({
     status: 200,
@@ -442,7 +479,7 @@ export class SitesController {
       },
     },
   })
-  remove(@Param('id') id: number) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.sitesService.remove(id);
   }
 }

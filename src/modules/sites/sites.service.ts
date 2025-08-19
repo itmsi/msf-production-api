@@ -64,6 +64,11 @@ export class SitesService {
       const sortBy = query.sortBy ?? 'id';
       const sortOrder = query.sortOrder ?? 'DESC';
 
+      // Validate limit
+      if (limit > 100) {
+        throwError('Limit tidak boleh lebih dari 100', 400);
+      }
+
       const qb = this.sitesRepository
         .createQueryBuilder('site')
         .leftJoinAndSelect('site.operator_points', 'op')
@@ -130,24 +135,13 @@ export class SitesService {
           })) || [],
       }));
 
-      const response = paginateResponse(
+      return paginateResponse(
         transformedResult,
         total,
         page,
         limit,
         'Data sites berhasil diambil',
       );
-
-      return {
-        statusCode: response.statusCode,
-        message: response.message,
-        data: response.data,
-        meta: {
-          total,
-          page,
-          limit,
-        },
-      };
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Gagal mengambil data sites');
