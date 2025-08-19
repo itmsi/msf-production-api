@@ -32,6 +32,8 @@ export class UsersService {
     limit: number = 10,
     search?: string,
     role?: string,
+    sortBy?: string,
+    sortOrder?: 'ASC' | 'DESC',
   ): Promise<ApiResponse<UserResponseDto[]>> {
     try {
       const skip = (page - 1) * limit;
@@ -54,14 +56,45 @@ export class UsersService {
 
       qb.orderBy('user.id', 'DESC').skip(skip).take(limit);
 
+      // Validate limit
+      if (limit > 100) {
+        throwError('Limit tidak boleh lebih dari 100', 400);
+      }
+
+      // Validate sortBy field to prevent SQL injection
+      const allowedSortFields = [
+        'id',
+        'username',
+        'email',
+        'createdAt',
+        'updatedAt',
+      ];
+      const validSortBy = allowedSortFields.includes(sortBy || '') ? sortBy : 'id';
+      const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
+      qb.orderBy(`user.${validSortBy}`, validSortOrder);
+
       const [result, total] = await qb.getManyAndCount();
 
       const transformedResult = result.map((user) => ({
         id: user.id,
         username: user.username,
         email: user.email,
+        isActive: user.isActive,
         employee_id: user.employee_id,
-        roles: user.userRoles?.map((ur) => ur.role) || [],
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt || undefined,
+        roles: user.userRoles?.map((ur) => ({
+          id: ur.role.id,
+          role_code: ur.role.role_code,
+          position_name: ur.role.position_name,
+        })) || [],
+        employees: user.employees ? {
+          id: user.employees.id,
+          firstName: user.employees.firstName,
+          lastName: user.employees.lastName,
+          email: `${user.employees.firstName.toLowerCase()}.${user.employees.lastName.toLowerCase()}@company.com`,
+        } : undefined,
       }));
 
       return paginateResponse(
@@ -113,7 +146,12 @@ export class UsersService {
         id: result.id,
         username: result.username,
         email: result.email,
+        isActive: result.isActive,
         employee_id: result.employee_id,
+        createdAt: result.createdAt,
+        updatedAt: result.updatedAt || undefined,
+        roles: [],
+        employees: undefined,
       };
 
       return successResponse(response);
