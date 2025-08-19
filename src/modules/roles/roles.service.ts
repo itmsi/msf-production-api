@@ -62,13 +62,32 @@ export class RolesService {
       const page = parseInt(query.page ?? '1', 10);
       const limit = parseInt(query.limit ?? '10', 10);
       const skip = (page - 1) * limit;
+      const sortBy = query.sortBy ?? 'id';
+      const sortOrder = query.sortOrder ?? 'DESC';
+
+      // Validate limit
+      if (limit > 100) {
+        throwError('Limit tidak boleh lebih dari 100', 400);
+      }
+
+      // Validate sortBy field to prevent SQL injection
+      const allowedSortFields = [
+        'id',
+        'role_code',
+        'position_name',
+        'createdAt',
+        'updatedAt',
+      ];
+      const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
+      const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
       const [result, total] = await this.rolesRepository.findAndCount({
         where: query.search
           ? [{ position_name: ILike(`%${query.search}%`) }]
           : {},
+        relations: ['sites'],
         order: {
-          id: 'DESC',
+          [validSortBy]: validSortOrder,
         },
         skip,
         take: limit,
@@ -113,6 +132,10 @@ export class RolesService {
         position_name: result.position_name,
         role_parent: result.role_parent,
         sites_id: result.sites_id,
+        createdAt: result.createdAt,
+        createdBy: result.createdBy,
+        updatedAt: result.updatedAt,
+        updatedBy: result.updatedBy,
       };
 
       return successResponse(response, 'Create new role successfully', 201);
@@ -170,12 +193,16 @@ export class RolesService {
     }
   }
 
-  async remove(id: number): Promise<ApiResponse<null>> {
+  async remove(id: number, deletedBy?: number): Promise<ApiResponse<null>> {
     try {
       const roles = await this.rolesRepository.findOne({ where: { id } });
 
       if (!roles) {
         return emptyDataResponse('Role not found', null);
+      }
+
+      if (deletedBy) {
+        roles.deletedBy = deletedBy;
       }
       await this.rolesRepository.softRemove(roles);
 
