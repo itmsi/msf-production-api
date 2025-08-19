@@ -4,15 +4,16 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Permission } from './entities/permission.entity';
-import { CreatePermissionDto, UpdatePermissionDto } from './dto/permission.dto';
+import { CreatePermissionDto, UpdatePermissionDto, GetPermissionsQueryDto } from './dto/permission.dto';
 import {
   ApiResponse,
   successResponse,
   throwError,
   emptyDataResponse,
 } from '../../common/helpers/response.helper';
+import { paginateResponse } from '../../common/helpers/public.helper';
 
 @Injectable()
 export class PermissionService {
@@ -44,14 +45,63 @@ export class PermissionService {
     }
   }
 
-  async findAll(): Promise<ApiResponse<Permission[]>> {
+  async findAll(query?: GetPermissionsQueryDto): Promise<ApiResponse<Permission[]>> {
     try {
-      const result = await this.permissionRepository.find({
-        where: { deletedAt: null as any },
-        order: { createdAt: 'DESC' },
-      });
+      if (!query) {
+        // Fallback untuk kompatibilitas backward
+        const result = await this.permissionRepository.find({
+          where: { deletedAt: null as any },
+          order: { createdAt: 'DESC' },
+        });
+        return successResponse(result, 'Get permissions successfully');
+      }
 
-      return successResponse(result, 'Get permissions successfully');
+      const page = parseInt(query.page ?? '1', 10);
+      const limit = parseInt(query.limit ?? '10', 10);
+      const skip = (page - 1) * limit;
+      const search = query.search?.toLowerCase() ?? '';
+      const sortBy = query.sortBy ?? 'id';
+      const sortOrder = query.sortOrder ?? 'DESC';
+
+      // Validate limit
+      if (limit > 100) {
+        throwError('Limit tidak boleh lebih dari 100', 400);
+      }
+
+      const qb: SelectQueryBuilder<Permission> = this.permissionRepository
+        .createQueryBuilder('permission')
+        .where('permission.deletedAt IS NULL');
+
+      // Search filter
+      if (search) {
+        qb.andWhere(
+          '(permission.permission_name ILIKE :search OR permission.permission_code ILIKE :search)',
+          { search: `%${search}%` },
+        );
+      }
+
+      // Validate sortBy field to prevent SQL injection
+      const allowedSortFields = [
+        'id',
+        'permission_name',
+        'permission_code',
+        'createdAt',
+        'updatedAt',
+      ];
+      const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
+      const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
+      qb.orderBy(`permission.${validSortBy}`, validSortOrder).skip(skip).take(limit);
+
+      const [result, total] = await qb.getManyAndCount();
+
+      return paginateResponse(
+        result,
+        total,
+        page,
+        limit,
+        'Get permissions successfully',
+      );
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch permissions');
