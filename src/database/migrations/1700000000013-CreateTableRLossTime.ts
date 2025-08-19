@@ -145,9 +145,9 @@ export class CreateTableRLossTime1700000000013 implements MigrationInterface {
     }
 
     await queryRunner.dropTable('r_loss_time');
-    
+
     // Hapus ENUM types
     await queryRunner.query(`DROP TYPE IF EXISTS enum_loss_type`);
     await queryRunner.query(`DROP TYPE IF EXISTS enum_shift_loss`);
   }
-} 
+}

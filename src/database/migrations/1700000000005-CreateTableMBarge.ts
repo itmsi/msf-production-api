@@ -80,4 +80,4 @@ export class CreateTableMBarge1700000000005 implements MigrationInterface {
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.dropTable('m_barge');
   }
-} 
+}

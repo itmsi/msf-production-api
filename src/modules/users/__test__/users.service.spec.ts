@@ -176,16 +176,19 @@ describe('UsersService', () => {
     });
 
     it('should throw InternalServerErrorException on error', async () => {
-      repository.createQueryBuilder.mockImplementationOnce(() => ({
-        leftJoinAndSelect: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        orWhere: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        take: jest.fn().mockReturnThis(),
-        getManyAndCount: jest.fn().mockRejectedValue(new Error('DB error')),
-      } as any));
+      repository.createQueryBuilder.mockImplementationOnce(
+        () =>
+          ({
+            leftJoinAndSelect: jest.fn().mockReturnThis(),
+            where: jest.fn().mockReturnThis(),
+            orWhere: jest.fn().mockReturnThis(),
+            andWhere: jest.fn().mockReturnThis(),
+            orderBy: jest.fn().mockReturnThis(),
+            skip: jest.fn().mockReturnThis(),
+            take: jest.fn().mockReturnThis(),
+            getManyAndCount: jest.fn().mockRejectedValue(new Error('DB error')),
+          }) as any,
+      );
 
       await expect(service.findAll({ page: '1', limit: '10' })).rejects.toThrow(
         InternalServerErrorException,
@@ -209,7 +212,7 @@ describe('UsersService', () => {
         username: 'newuser',
         email: 'newuser@example.com',
       };
-      
+
       repository.findOne.mockResolvedValueOnce(null); // no duplicate
       repository.create.mockReturnValue(mockNewUser);
       repository.save.mockResolvedValueOnce(mockNewUser);

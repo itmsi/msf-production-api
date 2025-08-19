@@ -1,8 +1,12 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+} from 'typeorm';
 
 export class CreateTableMUnitType1700000000008 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-
     await queryRunner.createTable(
       new Table({
         name: 'm_unit_type',
@@ -87,7 +91,10 @@ export class CreateTableMUnitType1700000000008 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropForeignKey('m_unit_type', 'm_unit_type_brand_id_foreign');
+    await queryRunner.dropForeignKey(
+      'm_unit_type',
+      'm_unit_type_brand_id_foreign',
+    );
     await queryRunner.dropTable('m_unit_type');
   }
-} 
+}

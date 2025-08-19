@@ -12,7 +12,11 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { EmployeeService } from './employee.service';
-import { CreateEmployeeDto, UpdateEmployeeDto, GetEmployeesQueryDto } from './dto/employee.dto';
+import {
+  CreateEmployeeDto,
+  UpdateEmployeeDto,
+  GetEmployeesQueryDto,
+} from './dto/employee.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 
 @ApiTags('Employee')

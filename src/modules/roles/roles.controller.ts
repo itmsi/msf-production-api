@@ -49,18 +49,18 @@ export class RolesController {
           role_code: 'ADMIN',
           position_name: 'Administrator',
           role_parent: 'SUPER_ADMIN',
-          sites_id: 1
-        }
+          sites_id: 1,
+        },
       },
       example2: {
         summary: 'Contoh pembuatan role tanpa role_parent dan sites_id',
         description: 'Contoh minimal untuk membuat role baru',
         value: {
           role_code: 'USER',
-          position_name: 'Regular User'
-        }
-      }
-    }
+          position_name: 'Regular User',
+        },
+      },
+    },
   })
   create(@Body() dto: CreateRolesDto) {
     return this.rolesService.create(dto);

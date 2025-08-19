@@ -33,11 +33,11 @@ export class UnitTypeService {
         where: { id },
         relations: ['brand'],
       });
-      
+
       if (!result) {
         return emptyDataResponse('Unit type tidak ditemukan', null);
       }
-      
+
       const response: UnitTypeResponseDto = {
         id: result.id,
         brand_id: result.brand_id,
@@ -46,12 +46,14 @@ export class UnitTypeService {
         model_name: result.model_name,
         createdAt: result.createdAt,
         updatedAt: result.updatedAt,
-        brand: result.brand ? {
-          id: result.brand.id,
-          brand_name: result.brand.brand_name,
-        } : undefined,
+        brand: result.brand
+          ? {
+              id: result.brand.id,
+              brand_name: result.brand.brand_name,
+            }
+          : undefined,
       };
-      
+
       return successResponse(response);
     } catch (error) {
       if (error instanceof HttpException) {
@@ -85,7 +87,7 @@ export class UnitTypeService {
       if (search) {
         qb.andWhere(
           '(unitType.unit_name ILIKE :search OR unitType.type_name ILIKE :search OR unitType.model_name ILIKE :search OR brand.brand_name ILIKE :search)',
-          { search: `%${search}%` }
+          { search: `%${search}%` },
         );
       }
 
@@ -116,7 +118,15 @@ export class UnitTypeService {
       }
 
       // Validate sortBy field to prevent SQL injection
-      const allowedSortFields = ['id', 'brand_id', 'unit_name', 'type_name', 'model_name', 'createdAt', 'updatedAt'];
+      const allowedSortFields = [
+        'id',
+        'brand_id',
+        'unit_name',
+        'type_name',
+        'model_name',
+        'createdAt',
+        'updatedAt',
+      ];
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
@@ -127,7 +137,7 @@ export class UnitTypeService {
       const [result, total] = await qb.getManyAndCount();
 
       // Transform result to DTO format
-      const transformedResult = result.map(unitType => ({
+      const transformedResult = result.map((unitType) => ({
         id: unitType.id,
         brand_id: unitType.brand_id,
         unit_name: unitType.unit_name,
@@ -135,10 +145,12 @@ export class UnitTypeService {
         model_name: unitType.model_name,
         createdAt: unitType.createdAt,
         updatedAt: unitType.updatedAt,
-        brand: unitType.brand ? {
-          id: unitType.brand.id,
-          brand_name: unitType.brand.brand_name,
-        } : undefined,
+        brand: unitType.brand
+          ? {
+              id: unitType.brand.id,
+              brand_name: unitType.brand.brand_name,
+            }
+          : undefined,
       }));
 
       const response = paginateResponse(
@@ -148,7 +160,7 @@ export class UnitTypeService {
         limit,
         'Data unit type berhasil diambil',
       );
-      
+
       return {
         statusCode: response.statusCode,
         message: response.message,
@@ -165,7 +177,9 @@ export class UnitTypeService {
     }
   }
 
-  async create(data: CreateUnitTypeDto): Promise<ApiResponse<UnitTypeResponseDto>> {
+  async create(
+    data: CreateUnitTypeDto,
+  ): Promise<ApiResponse<UnitTypeResponseDto>> {
     try {
       // Check if combination already exists
       const existing = await this.unitTypeRepository.findOne({
@@ -176,14 +190,17 @@ export class UnitTypeService {
           model_name: data.model_name,
         },
       });
-      
+
       if (existing) {
-        throwError('Unit type dengan kombinasi brand, unit, type, dan model yang sama sudah terdaftar', 409);
+        throwError(
+          'Unit type dengan kombinasi brand, unit, type, dan model yang sama sudah terdaftar',
+          409,
+        );
       }
 
       const newUnitType = this.unitTypeRepository.create(data);
       const result = await this.unitTypeRepository.save(newUnitType);
-      
+
       // Fetch with brand relation for response
       const savedUnitType = await this.unitTypeRepository.findOne({
         where: { id: result.id },
@@ -198,12 +215,14 @@ export class UnitTypeService {
         model_name: savedUnitType!.model_name,
         createdAt: savedUnitType!.createdAt,
         updatedAt: savedUnitType!.updatedAt,
-        brand: savedUnitType!.brand ? {
-          id: savedUnitType!.brand.id,
-          brand_name: savedUnitType!.brand.brand_name,
-        } : undefined,
+        brand: savedUnitType!.brand
+          ? {
+              id: savedUnitType!.brand.id,
+              brand_name: savedUnitType!.brand.brand_name,
+            }
+          : undefined,
       };
-      
+
       return successResponse(response, 'Unit type berhasil dibuat');
     } catch (error) {
       if (error instanceof HttpException) {
@@ -218,7 +237,7 @@ export class UnitTypeService {
     updateDto: UpdateUnitTypeDto,
   ): Promise<ApiResponse<UnitTypeResponseDto | null>> {
     try {
-      const unitType = await this.unitTypeRepository.findOne({ 
+      const unitType = await this.unitTypeRepository.findOne({
         where: { id },
         relations: ['brand'],
       });
@@ -228,7 +247,12 @@ export class UnitTypeService {
       }
 
       // Check if combination already exists for other unit types
-      if (updateDto.brand_id || updateDto.unit_name || updateDto.type_name || updateDto.model_name) {
+      if (
+        updateDto.brand_id ||
+        updateDto.unit_name ||
+        updateDto.type_name ||
+        updateDto.model_name
+      ) {
         const existingUnitType = await this.unitTypeRepository.findOne({
           where: {
             brand_id: updateDto.brand_id ?? unitType.brand_id,
@@ -238,7 +262,7 @@ export class UnitTypeService {
             id: Not(id),
           },
         });
-        
+
         if (existingUnitType) {
           throwError(
             'Unit type dengan kombinasi brand, unit, type, dan model yang sama sudah digunakan oleh unit type lain',
@@ -247,9 +271,12 @@ export class UnitTypeService {
         }
       }
 
-      const updatedUnitType = this.unitTypeRepository.merge(unitType, updateDto);
+      const updatedUnitType = this.unitTypeRepository.merge(
+        unitType,
+        updateDto,
+      );
       const result = await this.unitTypeRepository.save(updatedUnitType);
-      
+
       // Fetch updated data with brand relation
       const updatedData = await this.unitTypeRepository.findOne({
         where: { id: result.id },
@@ -264,12 +291,14 @@ export class UnitTypeService {
         model_name: updatedData!.model_name,
         createdAt: updatedData!.createdAt,
         updatedAt: updatedData!.updatedAt,
-        brand: updatedData!.brand ? {
-          id: updatedData!.brand.id,
-          brand_name: updatedData!.brand.brand_name,
-        } : undefined,
+        brand: updatedData!.brand
+          ? {
+              id: updatedData!.brand.id,
+              brand_name: updatedData!.brand.brand_name,
+            }
+          : undefined,
       };
-      
+
       return successResponse(response, 'Unit type berhasil diupdate');
     } catch (error) {
       if (error instanceof HttpException) {
@@ -286,7 +315,7 @@ export class UnitTypeService {
       if (!unitType) {
         return emptyDataResponse('Unit type tidak ditemukan', null);
       }
-      
+
       await this.unitTypeRepository.softRemove(unitType);
 
       return successResponse(null, 'Unit type berhasil dihapus');

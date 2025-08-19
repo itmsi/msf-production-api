@@ -1,9 +1,18 @@
-import { Injectable, HttpException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  HttpException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder, Not } from 'typeorm';
 import { Users } from './entities/users.entity';
 import { CreateUserDto, UpdateUserDto, UserResponseDto } from './dto/user.dto';
-import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
+import {
+  ApiResponse,
+  successResponse,
+  throwError,
+  emptyDataResponse,
+} from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import { plainToInstance } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
@@ -47,12 +56,12 @@ export class UsersService {
 
       const [result, total] = await qb.getManyAndCount();
 
-      const transformedResult = result.map(user => ({
+      const transformedResult = result.map((user) => ({
         id: user.id,
         username: user.username,
         email: user.email,
         employee_id: user.employee_id,
-        roles: user.userRoles?.map(ur => ur.role) || [],
+        roles: user.userRoles?.map((ur) => ur.role) || [],
       }));
 
       return paginateResponse(
@@ -88,7 +97,7 @@ export class UsersService {
         employee_id: data.employee_id,
         isActive: true,
       });
-      
+
       const result = await this.userRepository.save(newUser);
 
       // Create user-role relationship
@@ -146,14 +155,14 @@ export class UsersService {
         }
       }
 
-      const updatedUser = this.userRepository.merge(user!, updateDto);
+      const updatedUser = this.userRepository.merge(user, updateDto);
       const result = await this.userRepository.save(updatedUser);
 
       // Update user-role relationship if roleId is provided
       if (updateDto.roleId) {
         // Remove existing user-role relationships
         await this.userRoleRepository.delete({ user_id: id });
-        
+
         // Create new user-role relationship
         const userRole = this.userRoleRepository.create({
           user_id: id,
@@ -208,7 +217,7 @@ export class UsersService {
   async remove(id: number): Promise<ApiResponse<null>> {
     try {
       const user = await this.userRepository.findOne({ where: { id } });
-      
+
       if (!user) {
         return emptyDataResponse('User not found', null);
       }

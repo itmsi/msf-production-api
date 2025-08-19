@@ -44,6 +44,9 @@ export class MenuHasPermission {
   @JoinColumn({ name: 'permission_id' })
   permission: Permission;
 
-  @OneToMany(() => RoleHasPermission, (roleHasPermission) => roleHasPermission.menuHasPermission)
+  @OneToMany(
+    () => RoleHasPermission,
+    (roleHasPermission) => roleHasPermission.menuHasPermission,
+  )
   roleHasPermissions: RoleHasPermission[];
 }

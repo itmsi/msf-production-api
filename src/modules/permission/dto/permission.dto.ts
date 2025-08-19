@@ -24,12 +24,18 @@ export class CreatePermissionDto {
 }
 
 export class UpdatePermissionDto {
-  @ApiPropertyOptional({ description: 'Nama permission', example: 'Create User' })
+  @ApiPropertyOptional({
+    description: 'Nama permission',
+    example: 'Create User',
+  })
   @IsString()
   @IsOptional()
   permission_name?: string;
 
-  @ApiPropertyOptional({ description: 'Kode permission', example: 'CREATE_USER' })
+  @ApiPropertyOptional({
+    description: 'Kode permission',
+    example: 'CREATE_USER',
+  })
   @IsString()
   @IsOptional()
   permission_code?: string;

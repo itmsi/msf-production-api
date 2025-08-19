@@ -37,11 +37,11 @@ export class SitesService {
         where: { id },
         relations: ['operator_points'],
       });
-      
+
       if (!result) {
         return emptyDataResponse('Site tidak ditemukan', null);
       }
-      
+
       return successResponse(result as SitesResponseDto);
     } catch (error) {
       if (error instanceof HttpException) {
@@ -92,18 +92,24 @@ export class SitesService {
       }
 
       // Validate sortBy field to prevent SQL injection
-      const allowedSortFields = ['id', 'name', 'location', 'longitude', 'latitude', 'createdAt', 'updatedAt'];
+      const allowedSortFields = [
+        'id',
+        'name',
+        'location',
+        'longitude',
+        'latitude',
+        'createdAt',
+        'updatedAt',
+      ];
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
-      qb.orderBy(`site.${validSortBy}`, validSortOrder)
-        .skip(skip)
-        .take(limit);
+      qb.orderBy(`site.${validSortBy}`, validSortOrder).skip(skip).take(limit);
 
       const [result, total] = await qb.getManyAndCount();
 
       // Transform result to DTO format
-      const transformedResult = result.map(site => ({
+      const transformedResult = result.map((site) => ({
         id: site.id,
         name: site.name,
         location: site.location,
@@ -111,16 +117,17 @@ export class SitesService {
         latitude: site.latitude,
         createdAt: site.createdAt || new Date(),
         updatedAt: site.updatedAt || new Date(),
-        operator_points: site.operator_points?.map(op => ({
-          id: op.id,
-          sites_id: op.sites_id,
-          type: op.type,
-          name: op.name,
-          longitude: op.longitude,
-          latitude: op.latitude,
-          createdAt: op.createdAt,
-          updatedAt: op.updatedAt
-        })) || []
+        operator_points:
+          site.operator_points?.map((op) => ({
+            id: op.id,
+            sites_id: op.sites_id,
+            type: op.type,
+            name: op.name,
+            longitude: op.longitude,
+            latitude: op.latitude,
+            createdAt: op.createdAt,
+            updatedAt: op.updatedAt,
+          })) || [],
       }));
 
       const response = paginateResponse(
@@ -130,7 +137,7 @@ export class SitesService {
         limit,
         'Data sites berhasil diambil',
       );
-      
+
       return {
         statusCode: response.statusCode,
         message: response.message,
@@ -156,21 +163,21 @@ export class SitesService {
         longitude: data.longitude,
         latitude: data.latitude,
       });
-      
+
       const savedSite = await this.sitesRepository.save(newSite);
 
       // Create operator points
       if (data.operator_point && data.operator_point.length > 0) {
-        const operatorPoints = data.operator_point.map(op => 
+        const operatorPoints = data.operator_point.map((op) =>
           this.operationPointsRepository.create({
             sites_id: savedSite.id,
             type: op.type,
             name: op.name,
             longitude: op.longitude,
             latitude: op.latitude,
-          })
+          }),
         );
-        
+
         await this.operationPointsRepository.save(operatorPoints);
       }
 
@@ -179,12 +186,15 @@ export class SitesService {
         where: { id: savedSite.id },
         relations: ['operator_points'],
       });
-      
+
       if (!result) {
         throwError('Gagal mengambil data site yang baru dibuat', 500);
       }
-      
-      return successResponse(result as SitesResponseDto, 'Site berhasil dibuat');
+
+      return successResponse(
+        result as SitesResponseDto,
+        'Site berhasil dibuat',
+      );
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -211,25 +221,25 @@ export class SitesService {
         longitude: updateDto.longitude,
         latitude: updateDto.latitude,
       });
-      
+
       await this.sitesRepository.save(updatedSite);
 
       // Update operator points if provided
       if (updateDto.operator_point && updateDto.operator_point.length > 0) {
         // Delete existing operator points for this site
         await this.operationPointsRepository.delete({ sites_id: id });
-        
+
         // Create new operator points
-        const operatorPoints = updateDto.operator_point.map(op => 
+        const operatorPoints = updateDto.operator_point.map((op) =>
           this.operationPointsRepository.create({
             sites_id: id,
             type: op.type,
             name: op.name,
             longitude: op.longitude,
             latitude: op.latitude,
-          })
+          }),
         );
-        
+
         await this.operationPointsRepository.save(operatorPoints);
       }
 
@@ -238,12 +248,15 @@ export class SitesService {
         where: { id },
         relations: ['operator_points'],
       });
-      
+
       if (!result) {
         throwError('Gagal mengambil data site yang diupdate', 500);
       }
-      
-      return successResponse(result as SitesResponseDto, 'Site berhasil diupdate');
+
+      return successResponse(
+        result as SitesResponseDto,
+        'Site berhasil diupdate',
+      );
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -259,7 +272,7 @@ export class SitesService {
       if (!site) {
         return emptyDataResponse('Site tidak ditemukan', null);
       }
-      
+
       // Soft delete the site (this will cascade to operator points due to foreign key constraint)
       await this.sitesRepository.softRemove(site);
 

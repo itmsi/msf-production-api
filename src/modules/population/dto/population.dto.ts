@@ -1,248 +1,260 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, IsNumberString, IsNumber, IsDateString, IsEnum } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsDateString,
+  IsInt,
+  IsIn,
+} from 'class-validator';
 
 export class CreatePopulationDto {
-  @ApiProperty({ 
-    example: '2024-01-01', 
-    description: 'Tanggal kedatangan unit' 
+  @ApiProperty({
+    description: 'Tanggal kedatangan unit',
+    example: '2024-01-01',
   })
   @IsDateString()
-  @IsNotEmpty()
   date_arrive: string;
 
-  @ApiProperty({ 
-    example: 'active', 
-    description: 'Status unit (active/inactive)',
-    enum: ['active', 'inactive']
+  @ApiProperty({
+    description: 'Status unit',
+    example: 'active',
+    enum: ['active', 'inactive'],
   })
   @IsEnum(['active', 'inactive'])
-  @IsNotEmpty()
   status: string;
 
-  @ApiProperty({ 
-    example: 1, 
-    description: 'ID dari unit type yang terkait' 
+  @ApiProperty({
+    description: 'ID unit type',
+    example: 1,
   })
-  @IsNumber()
-  @IsNotEmpty()
+  @IsInt()
   unit_type_id: number;
 
-  @ApiProperty({ 
-    example: 'EXC001', 
-    description: 'Nomor unit' 
+  @ApiProperty({
+    description: 'Nomor unit',
+    example: 'EXC001',
   })
   @IsString()
-  @IsNotEmpty()
   no_unit: string;
 
-  @ApiProperty({ 
-    example: 'VIN123456789', 
-    description: 'Nomor VIN unit' 
+  @ApiProperty({
+    description: 'VIN number',
+    example: 'VIN123456789',
   })
   @IsString()
-  @IsNotEmpty()
   vin_number: string;
 
-  @ApiProperty({ 
-    example: 'SYS001', 
-    description: 'Nomor unit sistem' 
+  @ApiProperty({
+    description: 'Nomor unit sistem',
+    example: 'SYS001',
   })
   @IsString()
-  @IsNotEmpty()
   no_unit_system: string;
 
-  @ApiProperty({ 
-    example: 'cummins', 
-    description: 'Brand engine (cummins/weichai)',
-    enum: ['cummins', 'weichai']
+  @ApiProperty({
+    description: 'Brand engine',
+    example: 'cummins',
+    enum: ['cummins', 'weichai'],
   })
   @IsEnum(['cummins', 'weichai'])
-  @IsNotEmpty()
   engine_brand: string;
 
-  @ApiProperty({ 
-    example: 'ENG123456', 
-    description: 'Serial number engine' 
+  @ApiProperty({
+    description: 'Serial engine',
+    example: 'ENG123456',
   })
   @IsString()
-  @IsNotEmpty()
   serial_engine: string;
 
-  @ApiProperty({ 
-    example: 1, 
-    description: 'ID dari activities yang terkait' 
+  @ApiProperty({
+    description: 'ID aktivitas',
+    example: 1,
   })
-  @IsNumber()
-  @IsNotEmpty()
+  @IsInt()
   activities_id: number;
 
-  @ApiProperty({ 
-    example: 'Site A', 
-    description: 'Site asal unit' 
+  @ApiProperty({
+    description: 'Site origin',
+    example: 'Site A',
   })
   @IsString()
-  @IsNotEmpty()
   site_origin: string;
 
-  @ApiProperty({ 
-    example: 'Unit dalam kondisi baik', 
-    description: 'Catatan tambahan' 
+  @ApiProperty({
+    description: 'Remarks',
+    example: 'Unit dalam kondisi baik',
   })
-  @IsString()
   @IsOptional()
+  @IsString()
   remarks?: string;
 
-  @ApiProperty({ 
-    example: 1, 
-    description: 'ID dari site yang terkait' 
+  @ApiProperty({
+    description: 'ID site',
+    example: 1,
   })
-  @IsNumber()
-  @IsNotEmpty()
+  @IsInt()
   site_id: number;
 
-  @ApiProperty({ 
-    example: 'PT ABC', 
-    description: 'Nama perusahaan' 
+  @ApiProperty({
+    description: 'Company',
+    example: 'PT ABC',
   })
   @IsString()
-  @IsNotEmpty()
   company: string;
 
-  @ApiProperty({ 
-    example: '6x4', 
-    description: 'Tipe ban (6x4/8x4)',
-    enum: ['6x4', '8x4']
+  @ApiProperty({
+    description: 'Last unit number',
+    example: 'LUN001',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  last_unit_number?: string;
+
+  @ApiProperty({
+    description: 'Tipe ban',
+    example: '6x4',
+    enum: ['6x4', '8x4'],
   })
   @IsEnum(['6x4', '8x4'])
-  @IsNotEmpty()
   tyre_type: string;
 }
 
 export class UpdatePopulationDto {
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'Tanggal kedatangan unit',
+    example: '2024-01-01',
     required: false,
-    example: '2024-01-01', 
-    description: 'Tanggal kedatangan unit' 
   })
   @IsOptional()
   @IsDateString()
   date_arrive?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'Status unit',
+    example: 'active',
+    enum: ['active', 'inactive'],
     required: false,
-    example: 'active', 
-    description: 'Status unit (active/inactive)',
-    enum: ['active', 'inactive']
   })
   @IsOptional()
   @IsEnum(['active', 'inactive'])
   status?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'ID unit type',
+    example: 1,
     required: false,
-    example: 1, 
-    description: 'ID dari unit type yang terkait' 
   })
   @IsOptional()
-  @IsNumber()
+  @IsInt()
   unit_type_id?: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'Nomor unit',
+    example: 'EXC001',
     required: false,
-    example: 'EXC001', 
-    description: 'Nomor unit' 
   })
   @IsOptional()
   @IsString()
   no_unit?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'VIN number',
+    example: 'VIN123456789',
     required: false,
-    example: 'VIN123456789', 
-    description: 'Nomor VIN unit' 
   })
   @IsOptional()
   @IsString()
   vin_number?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'Nomor unit sistem',
+    example: 'SYS001',
     required: false,
-    example: 'SYS001', 
-    description: 'Nomor unit sistem' 
   })
   @IsOptional()
   @IsString()
   no_unit_system?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'Brand engine',
+    example: 'cummins',
+    enum: ['cummins', 'weichai'],
     required: false,
-    example: 'cummins', 
-    description: 'Brand engine (cummins/weichai)',
-    enum: ['cummins', 'weichai']
   })
   @IsOptional()
   @IsEnum(['cummins', 'weichai'])
   engine_brand?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'Serial engine',
+    example: 'ENG123456',
     required: false,
-    example: 'ENG123456', 
-    description: 'Serial number engine' 
   })
   @IsOptional()
   @IsString()
   serial_engine?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'ID aktivitas',
+    example: 1,
     required: false,
-    example: 1, 
-    description: 'ID dari activities yang terkait' 
   })
   @IsOptional()
-  @IsNumber()
+  @IsInt()
   activities_id?: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'Site origin',
+    example: 'Site A',
     required: false,
-    example: 'Site A', 
-    description: 'Site asal unit' 
   })
   @IsOptional()
   @IsString()
   site_origin?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'Remarks',
+    example: 'Unit dalam kondisi baik',
     required: false,
-    example: 'Unit dalam kondisi baik', 
-    description: 'Catatan tambahan' 
   })
   @IsOptional()
   @IsString()
   remarks?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'ID site',
+    example: 1,
     required: false,
-    example: 1, 
-    description: 'ID dari site yang terkait' 
   })
   @IsOptional()
-  @IsNumber()
+  @IsInt()
   site_id?: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'Company',
+    example: 'PT ABC',
     required: false,
-    example: 'PT ABC', 
-    description: 'Nama perusahaan' 
   })
   @IsOptional()
   @IsString()
   company?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
+    description: 'Last unit number',
+    example: 'LUN001',
     required: false,
-    example: '6x4', 
-    description: 'Tipe ban (6x4/8x4)',
-    enum: ['6x4', '8x4']
+  })
+  @IsOptional()
+  @IsString()
+  last_unit_number?: string;
+
+  @ApiProperty({
+    description: 'Tipe ban',
+    example: '6x4',
+    enum: ['6x4', '8x4'],
+    required: false,
   })
   @IsOptional()
   @IsEnum(['6x4', '8x4'])
@@ -250,23 +262,118 @@ export class UpdatePopulationDto {
 }
 
 export class PopulationResponseDto {
+  @ApiProperty({
+    description: 'ID population',
+    example: 1,
+  })
   id: number;
+
+  @ApiProperty({
+    description: 'Tanggal kedatangan unit',
+    example: '2024-01-01T00:00:00.000Z',
+  })
   date_arrive: Date;
+
+  @ApiProperty({
+    description: 'Status unit',
+    example: 'active',
+  })
   status: string;
+
+  @ApiProperty({
+    description: 'ID unit type',
+    example: 1,
+  })
   unit_type_id: number;
+
+  @ApiProperty({
+    description: 'Nomor unit',
+    example: 'EXC001',
+  })
   no_unit: string;
+
+  @ApiProperty({
+    description: 'VIN number',
+    example: 'VIN123456789',
+  })
   vin_number: string;
+
+  @ApiProperty({
+    description: 'Nomor unit sistem',
+    example: 'SYS001',
+  })
   no_unit_system: string;
+
+  @ApiProperty({
+    description: 'Brand engine',
+    example: 'cummins',
+  })
   engine_brand: string;
+
+  @ApiProperty({
+    description: 'Serial engine',
+    example: 'ENG123456',
+  })
   serial_engine: string;
+
+  @ApiProperty({
+    description: 'ID aktivitas',
+    example: 1,
+  })
   activities_id: number;
+
+  @ApiProperty({
+    description: 'Site origin',
+    example: 'Site A',
+  })
   site_origin: string;
-  remarks?: string;
+
+  @ApiProperty({
+    description: 'Remarks',
+    example: 'Unit dalam kondisi baik',
+  })
+  remarks: string;
+
+  @ApiProperty({
+    description: 'ID site',
+    example: 1,
+  })
   site_id: number;
+
+  @ApiProperty({
+    description: 'Company',
+    example: 'PT ABC',
+  })
   company: string;
+
+  @ApiProperty({
+    description: 'Last unit number',
+    example: 'LUN001',
+  })
+  last_unit_number: string;
+
+  @ApiProperty({
+    description: 'Tipe ban',
+    example: '6x4',
+  })
   tyre_type: string;
+
+  @ApiProperty({
+    description: 'Tanggal dibuat',
+    example: '2024-01-01T00:00:00.000Z',
+  })
   createdAt: Date;
+
+  @ApiProperty({
+    description: 'Tanggal diupdate',
+    example: '2024-01-01T00:00:00.000Z',
+  })
   updatedAt: Date;
+
+  @ApiProperty({
+    description: 'Unit type information',
+    required: false,
+  })
   unitType?: {
     id: number;
     unit_name: string;
@@ -277,10 +384,20 @@ export class PopulationResponseDto {
       brand_name: string;
     };
   };
+
+  @ApiProperty({
+    description: 'Activities information',
+    required: false,
+  })
   activities?: {
     id: number;
     activity_name: string;
   };
+
+  @ApiProperty({
+    description: 'Site information',
+    required: false,
+  })
   site?: {
     id: number;
     site_name: string;
@@ -288,117 +405,352 @@ export class PopulationResponseDto {
 }
 
 export class GetPopulationsQueryDto {
-  @ApiProperty({ 
-    required: false, 
-    example: '1', 
-    description: 'Nomor halaman (default: 1)' 
+  @ApiProperty({
+    description: 'Nomor halaman',
+    example: '1',
+    required: false,
   })
   @IsOptional()
-  @IsNumberString()
+  @IsString()
   page?: string;
 
-  @ApiProperty({ 
-    required: false, 
-    example: '10', 
-    description: 'Jumlah data per halaman (default: 10, max: 100)' 
+  @ApiProperty({
+    description: 'Jumlah data per halaman',
+    example: '10',
+    required: false,
   })
   @IsOptional()
-  @IsNumberString()
+  @IsString()
   limit?: string;
 
-  @ApiProperty({ 
-    required: false, 
-    example: 'exc001', 
-    description: 'Pencarian umum di semua field' 
+  @ApiProperty({
+    description: 'Kata kunci pencarian',
+    example: 'excavator',
+    required: false,
   })
   @IsOptional()
+  @IsString()
   search?: string;
 
-  @ApiProperty({ 
-    required: false, 
-    example: 'active', 
-    description: 'Filter berdasarkan status (active/inactive)' 
+  @ApiProperty({
+    description: 'Filter berdasarkan status',
+    example: 'active',
+    enum: ['active', 'inactive'],
+    required: false,
   })
   @IsOptional()
-  @IsEnum(['active', 'inactive'])
+  @IsIn(['active', 'inactive'])
   status?: string;
 
-  @ApiProperty({ 
-    required: false, 
-    example: 1, 
-    description: 'Filter berdasarkan unit type ID' 
+  @ApiProperty({
+    description: 'Filter berdasarkan unit type ID',
+    example: '1',
+    required: false,
   })
   @IsOptional()
-  @IsNumberString()
+  @IsString()
   unit_type_id?: string;
 
-  @ApiProperty({ 
-    required: false, 
-    example: 1, 
-    description: 'Filter berdasarkan activities ID' 
+  @ApiProperty({
+    description: 'Filter berdasarkan activities ID',
+    example: '1',
+    required: false,
   })
   @IsOptional()
-  @IsNumberString()
+  @IsString()
   activities_id?: string;
 
-  @ApiProperty({ 
-    required: false, 
-    example: 1, 
-    description: 'Filter berdasarkan site ID' 
+  @ApiProperty({
+    description: 'Filter berdasarkan site ID',
+    example: '1',
+    required: false,
   })
   @IsOptional()
-  @IsNumberString()
+  @IsString()
   site_id?: string;
 
-  @ApiProperty({ 
-    required: false, 
-    example: 'cummins', 
-    description: 'Filter berdasarkan brand engine (cummins/weichai)' 
+  @ApiProperty({
+    description: 'Filter berdasarkan brand engine',
+    example: 'cummins',
+    enum: ['cummins', 'weichai'],
+    required: false,
   })
   @IsOptional()
-  @IsEnum(['cummins', 'weichai'])
+  @IsIn(['cummins', 'weichai'])
   engine_brand?: string;
 
-  @ApiProperty({ 
-    required: false, 
-    example: '6x4', 
-    description: 'Filter berdasarkan tipe ban (6x4/8x4)' 
+  @ApiProperty({
+    description: 'Filter berdasarkan tipe ban',
+    example: '6x4',
+    enum: ['6x4', '8x4'],
+    required: false,
   })
   @IsOptional()
-  @IsEnum(['6x4', '8x4'])
+  @IsIn(['6x4', '8x4'])
   tyre_type?: string;
 
-  @ApiProperty({ 
-    required: false, 
-    example: '2024-01-01', 
-    description: 'Filter berdasarkan tanggal kedatangan (dari)' 
+  @ApiProperty({
+    description: 'Filter berdasarkan tanggal dari',
+    example: '2024-01-01',
+    required: false,
   })
   @IsOptional()
-  @IsDateString()
+  @IsString()
   date_from?: string;
 
-  @ApiProperty({ 
-    required: false, 
-    example: '2024-12-31', 
-    description: 'Filter berdasarkan tanggal kedatangan (sampai)' 
+  @ApiProperty({
+    description: 'Filter berdasarkan tanggal sampai',
+    example: '2024-12-31',
+    required: false,
   })
   @IsOptional()
-  @IsDateString()
+  @IsString()
   date_to?: string;
 
-  @ApiProperty({ 
-    required: false, 
-    example: 'id', 
-    description: 'Field untuk sorting (id, date_arrive, status, no_unit, vin_number, createdAt, updatedAt)' 
+  @ApiProperty({
+    description: 'Field untuk sorting',
+    example: 'id',
+    required: false,
   })
   @IsOptional()
+  @IsString()
   sortBy?: string;
 
-  @ApiProperty({ 
-    required: false, 
-    example: 'DESC', 
-    description: 'Urutan sorting (ASC atau DESC)' 
+  @ApiProperty({
+    description: 'Urutan sorting (ASC atau DESC)',
+    example: 'DESC',
+    enum: ['ASC', 'DESC'],
+    required: false,
   })
   @IsOptional()
+  @IsIn(['ASC', 'DESC'])
   sortOrder?: 'ASC' | 'DESC';
+}
+
+export class ImportPopulationCsvDto {
+  @ApiProperty({
+    type: 'string',
+    format: 'binary',
+    description: 'File CSV untuk import data population',
+  })
+  file: Express.Multer.File;
+}
+
+export class ImportPopulationCsvRowDto {
+  @ApiProperty({
+    description: 'Tanggal kedatangan (format: yyyy-mm-dd)',
+    example: '2025-01-01',
+  })
+  date_arrive: string;
+
+  @ApiProperty({
+    description: 'Status unit (active atau inactive)',
+    example: 'active',
+    enum: ['active', 'inactive'],
+  })
+  status: string;
+
+  @ApiProperty({
+    description: 'Nama unit dari tabel m_unit_type',
+    example: 'Excavator',
+  })
+  unit_name: string;
+
+  @ApiProperty({
+    description: 'Nomor unit',
+    example: 'EXC001',
+  })
+  no_unit: string;
+
+  @ApiProperty({
+    description: 'VIN number',
+    example: 'VIN123456789',
+  })
+  vin_number: string;
+
+  @ApiProperty({
+    description: 'Nomor unit sistem',
+    example: 'SYS001',
+  })
+  no_unit_system: string;
+
+  @ApiProperty({
+    description: 'Serial engine',
+    example: 'ENG123456',
+  })
+  serial_engine: string;
+
+  @ApiProperty({
+    description: 'Brand engine (cummins atau weichai)',
+    example: 'cummins',
+    enum: ['cummins', 'weichai'],
+  })
+  engine_brand: string;
+
+  @ApiProperty({
+    description: 'Nama aktivitas dari tabel m_activities',
+    example: 'Mining',
+  })
+  activities_name: string;
+
+  @ApiProperty({
+    description: 'User site',
+    example: 'user_site',
+  })
+  user_site: string;
+
+  @ApiProperty({
+    description: 'Site origin',
+    example: 'Site A',
+  })
+  site_origin: string;
+
+  @ApiProperty({
+    description: 'Remarks (RFU atau BD)',
+    example: 'RFU',
+    enum: ['RFU', 'BD'],
+  })
+  remarks: string;
+
+  @ApiProperty({
+    description: 'Nama site dari tabel m_site',
+    example: 'Site A',
+  })
+  site_name: string;
+
+  @ApiProperty({
+    description: 'Company',
+    example: 'PT ABC',
+  })
+  company: string;
+
+  @ApiProperty({
+    description: 'Tipe ban (6x4 atau 8x4)',
+    example: '6x4',
+    enum: ['6x4', '8x4'],
+  })
+  tyre_type: string;
+
+  @ApiProperty({
+    description: 'Last unit number',
+    example: 'LUN001',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  last_unit_number?: string;
+}
+
+export class ImportPopulationPreviewItemDto {
+  @ApiProperty({
+    description: 'Status baris data',
+    example: 'error',
+  })
+  status: string;
+
+  @ApiProperty({
+    description: 'Pesan untuk baris data',
+    example: 'unit_name tidak ada',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Nomor baris',
+    example: 1,
+  })
+  row: number;
+
+  @ApiProperty({
+    description: 'Data baris',
+    type: ImportPopulationCsvRowDto,
+  })
+  data: ImportPopulationCsvRowDto;
+}
+
+export class ImportPopulationPreviewResponseDto {
+  @ApiProperty({
+    description: 'Status preview import',
+    example: 'error',
+  })
+  status: string;
+
+  @ApiProperty({
+    description: 'Pesan preview import',
+    example: 'unit_name tidak ada',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Data preview import',
+    type: [ImportPopulationPreviewItemDto],
+  })
+  data: ImportPopulationPreviewItemDto[];
+}
+
+export class ImportPopulationRequestDto {
+  @ApiProperty({
+    description: 'File CSV yang akan diimport',
+    type: 'string',
+    format: 'binary',
+    example: 'population_data.csv',
+  })
+  file: Express.Multer.File;
+}
+
+export class ImportPopulationResponseDto {
+  @ApiProperty({
+    description: 'Status code response',
+    example: 201,
+  })
+  statusCode: number;
+
+  @ApiProperty({
+    description: 'Pesan response',
+    example: 'Data berhasil diimport',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Data hasil import',
+    example: {
+      total: 10,
+      success: 8,
+      failed: 2,
+      details: [
+        {
+          status: 'success',
+          message: 'Data berhasil diimport',
+          row: 1,
+          data: {
+            date_arrive: '2025-01-01',
+            status: 'active',
+            unit_name: 'Excavator',
+            no_unit: 'EXC001',
+            vin_number: 'VIN123456789',
+            no_unit_system: 'SYS001',
+            serial_engine: 'ENG123456',
+            activities_name: 'Mining',
+            user_site: 'user_site',
+            site_origin: 'Site A',
+            remarks: 'RFU',
+            site_id: '1',
+            company: 'PT ABC',
+            last_unit_number: 'LUN001',
+            tyre_type: '6x4',
+          },
+        },
+      ],
+    },
+  })
+  data: any;
+}
+
+export class FileUploadDto {
+  @ApiProperty({
+    type: 'string',
+    format: 'binary',
+    description: 'File CSV yang akan diupload',
+    example: 'population_data.csv',
+  })
+  file: Express.Multer.File;
 }

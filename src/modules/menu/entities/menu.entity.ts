@@ -88,6 +88,9 @@ export class Menu {
   @OneToMany(() => Menu, (menu) => menu.parent)
   children: Menu[];
 
-  @OneToMany(() => MenuHasPermission, (menuHasPermission) => menuHasPermission.menu)
+  @OneToMany(
+    () => MenuHasPermission,
+    (menuHasPermission) => menuHasPermission.menu,
+  )
   menuHasPermissions: MenuHasPermission[];
 }

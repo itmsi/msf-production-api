@@ -13,9 +13,7 @@ async function fixSuperAdmin() {
     username: process.env.POSTGRES_USER,
     password: process.env.POSTGRES_PASSWORD,
     database: process.env.POSTGRES_DB,
-    entities: [
-      __dirname + '/../modules/**/entities/*.entity{.ts,.js}',
-    ],
+    entities: [__dirname + '/../modules/**/entities/*.entity{.ts,.js}'],
     synchronize: false,
     logging: false,
   });
@@ -26,7 +24,6 @@ async function fixSuperAdmin() {
 
     const fixSuperAdminSeeder = new FixSuperAdminSeeder(dataSource);
     await fixSuperAdminSeeder.run();
-
   } catch (error) {
     console.error('❌ Fix Super Admin failed:', error);
     process.exit(1);

@@ -12,7 +12,11 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PermissionService } from './permission.service';
-import { CreatePermissionDto, UpdatePermissionDto, PermissionResponseDto } from './dto/permission.dto';
+import {
+  CreatePermissionDto,
+  UpdatePermissionDto,
+  PermissionResponseDto,
+} from './dto/permission.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 
 @ApiTags('Permission')
@@ -23,7 +27,10 @@ export class PermissionController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() createPermissionDto: CreatePermissionDto, @Request() req: any) {
+  create(
+    @Body() createPermissionDto: CreatePermissionDto,
+    @Request() req: any,
+  ) {
     if (!createPermissionDto.createdBy) {
       createPermissionDto.createdBy = req.user?.id;
     }

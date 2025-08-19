@@ -1,108 +1,119 @@
-import { IsString, IsNotEmpty, IsOptional, IsInt, IsBoolean, IsEnum, IsArray } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsInt,
+  IsBoolean,
+  IsEnum,
+  IsArray,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { MenuStatus, MenuModuleType } from '../entities/menu.entity';
 
 export class CreateMenuDto {
-  @ApiPropertyOptional({ 
-    description: 'ID menu parent (null untuk menu root, atau ID menu yang valid untuk sub-menu). ⚠️ Gunakan null untuk menu root, jangan gunakan 0', 
+  @ApiPropertyOptional({
+    description:
+      'ID menu parent (null untuk menu root, atau ID menu yang valid untuk sub-menu). ⚠️ Gunakan null untuk menu root, jangan gunakan 0',
     example: null,
-    nullable: true
+    nullable: true,
   })
   @IsOptional()
   @IsInt()
   parent_id?: number | null;
 
-  @ApiProperty({ 
-    description: 'Nama menu', 
+  @ApiProperty({
+    description: 'Nama menu',
     example: 'User Management',
     minLength: 1,
-    maxLength: 100
+    maxLength: 100,
   })
   @IsString()
   @IsNotEmpty()
   menu_name: string;
 
-  @ApiProperty({ 
-    description: 'Kode menu (harus unik)', 
+  @ApiProperty({
+    description: 'Kode menu (harus unik)',
     example: 'USER_MANAGEMENT',
     minLength: 1,
-    maxLength: 50
+    maxLength: 50,
   })
   @IsString()
   @IsNotEmpty()
   menu_code: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Icon menu (Material Icons)', 
+  @ApiPropertyOptional({
+    description: 'Icon menu (Material Icons)',
     example: 'user',
-    maxLength: 100
+    maxLength: 100,
   })
   @IsOptional()
   @IsString()
   icon?: string;
 
-  @ApiPropertyOptional({ 
-    description: 'URL menu', 
+  @ApiPropertyOptional({
+    description: 'URL menu',
     example: '/users',
-    maxLength: 255
+    maxLength: 255,
   })
   @IsOptional()
   @IsString()
   url?: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Apakah menu parent (true jika memiliki sub-menu)', 
+  @ApiPropertyOptional({
+    description: 'Apakah menu parent (true jika memiliki sub-menu)',
     example: false,
-    default: false
+    default: false,
   })
   @IsOptional()
   @IsBoolean()
   is_parent?: boolean;
 
-  @ApiPropertyOptional({ 
-    description: 'Urutan menu (ascending)', 
+  @ApiPropertyOptional({
+    description: 'Urutan menu (ascending)',
     example: 1,
     default: 0,
-    minimum: 0
+    minimum: 0,
   })
   @IsOptional()
   @IsInt()
   sort_order?: number;
 
-  @ApiPropertyOptional({ 
-    description: 'Status menu', 
-    enum: MenuStatus, 
+  @ApiPropertyOptional({
+    description: 'Status menu',
+    enum: MenuStatus,
     example: MenuStatus.ACTIVE,
-    default: MenuStatus.ACTIVE
+    default: MenuStatus.ACTIVE,
   })
   @IsOptional()
   @IsEnum(MenuStatus)
   status?: MenuStatus;
 
-  @ApiPropertyOptional({ 
-    description: 'Module menu', 
-    enum: MenuModuleType, 
+  @ApiPropertyOptional({
+    description: 'Module menu',
+    enum: MenuModuleType,
     example: MenuModuleType.PRODUCTION,
-    default: MenuModuleType.PRODUCTION
+    default: MenuModuleType.PRODUCTION,
   })
   @IsOptional()
   @IsEnum(MenuModuleType)
   module?: MenuModuleType;
 
-  @ApiPropertyOptional({ 
-    description: 'ID user yang membuat (akan diisi otomatis jika tidak disediakan)', 
+  @ApiPropertyOptional({
+    description:
+      'ID user yang membuat (akan diisi otomatis jika tidak disediakan)',
     example: 1,
-    minimum: 1
+    minimum: 1,
   })
   @IsOptional()
   @IsInt()
   createdBy?: number;
 
-  @ApiPropertyOptional({ 
-    description: 'Array permission IDs untuk menu ini (opsional). Permission ID harus ada di database', 
+  @ApiPropertyOptional({
+    description:
+      'Array permission IDs untuk menu ini (opsional). Permission ID harus ada di database',
     type: [Number],
     example: [1, 2, 3],
-    isArray: true
+    isArray: true,
   })
   @IsOptional()
   @IsArray()
@@ -229,17 +240,28 @@ export class GetMenusQueryDto {
   @IsString()
   limit?: string;
 
-  @ApiPropertyOptional({ description: 'Search term for menu_name or menu_code', example: 'user' })
+  @ApiPropertyOptional({
+    description: 'Search term for menu_name or menu_code',
+    example: 'user',
+  })
   @IsOptional()
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by module', enum: MenuModuleType, example: MenuModuleType.PRODUCTION })
+  @ApiPropertyOptional({
+    description: 'Filter by module',
+    enum: MenuModuleType,
+    example: MenuModuleType.PRODUCTION,
+  })
   @IsOptional()
   @IsEnum(MenuModuleType)
   module?: MenuModuleType;
 
-  @ApiPropertyOptional({ description: 'Filter by status', enum: MenuStatus, example: MenuStatus.ACTIVE })
+  @ApiPropertyOptional({
+    description: 'Filter by status',
+    enum: MenuStatus,
+    example: MenuStatus.ACTIVE,
+  })
   @IsOptional()
   @IsEnum(MenuStatus)
   status?: MenuStatus;

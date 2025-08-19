@@ -4,7 +4,8 @@ export class OperationPointsSeeder {
   constructor(private dataSource: DataSource) {}
 
   async run(): Promise<void> {
-    const operationPointsRepository = this.dataSource.getRepository('m_operation_points');
+    const operationPointsRepository =
+      this.dataSource.getRepository('m_operation_points');
 
     const operationPointsData = [
       {
@@ -18,8 +19,8 @@ export class OperationPointsSeeder {
         sites_id: 1, // Site Jakarta
         type: 'loading',
         name: 'OP-002',
-        longitude: 106.8500,
-        latitude: -6.2100,
+        longitude: 106.85,
+        latitude: -6.21,
       },
       {
         sites_id: 2, // Site Surabaya
@@ -32,8 +33,8 @@ export class OperationPointsSeeder {
         sites_id: 2, // Site Surabaya
         type: 'unloading',
         name: 'OP-004',
-        longitude: 112.7450,
-        latitude: -7.2550,
+        longitude: 112.745,
+        latitude: -7.255,
       },
       {
         sites_id: 3, // Site Medan
@@ -46,8 +47,8 @@ export class OperationPointsSeeder {
         sites_id: 3, // Site Medan
         type: 'quality-control',
         name: 'OP-006',
-        longitude: 98.6750,
-        latitude: 3.5980,
+        longitude: 98.675,
+        latitude: 3.598,
       },
       {
         sites_id: 4, // Site Makassar
@@ -60,8 +61,8 @@ export class OperationPointsSeeder {
         sites_id: 4, // Site Makassar
         type: 'emergency',
         name: 'OP-008',
-        longitude: 119.4320,
-        latitude: -5.1440,
+        longitude: 119.432,
+        latitude: -5.144,
       },
       {
         sites_id: 5, // Site Semarang
@@ -74,8 +75,8 @@ export class OperationPointsSeeder {
         sites_id: 5, // Site Semarang
         type: 'loading',
         name: 'OP-010',
-        longitude: 110.4250,
-        latitude: -6.9900,
+        longitude: 110.425,
+        latitude: -6.99,
       },
     ];
 

@@ -32,11 +32,11 @@ export class BrandService {
       const result = await this.brandRepository.findOne({
         where: { id },
       });
-      
+
       if (!result) {
         return emptyDataResponse('Brand tidak ditemukan', null);
       }
-      
+
       return successResponse(result as BrandResponseDto);
     } catch (error) {
       if (error instanceof HttpException) {
@@ -81,18 +81,16 @@ export class BrandService {
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
-      qb.orderBy(`brand.${validSortBy}`, validSortOrder)
-        .skip(skip)
-        .take(limit);
+      qb.orderBy(`brand.${validSortBy}`, validSortOrder).skip(skip).take(limit);
 
       const [result, total] = await qb.getManyAndCount();
 
       // Transform result to DTO format without using plainToInstance
-      const transformedResult = result.map(brand => ({
+      const transformedResult = result.map((brand) => ({
         id: brand.id,
         brand_name: brand.brand_name,
         createdAt: brand.createdAt,
-        updatedAt: brand.updatedAt
+        updatedAt: brand.updatedAt,
       }));
 
       const response = paginateResponse(
@@ -102,7 +100,7 @@ export class BrandService {
         limit,
         'Data brand berhasil diambil',
       );
-      
+
       return {
         statusCode: response.statusCode,
         message: response.message,
@@ -124,14 +122,14 @@ export class BrandService {
       const existing = await this.brandRepository.findOne({
         where: { brand_name: data.brand_name },
       });
-      
+
       if (existing) {
         throwError('Brand name sudah terdaftar', 409);
       }
 
       const newBrand = this.brandRepository.create(data);
       const result = await this.brandRepository.save(newBrand);
-      
+
       return successResponse(result, 'Brand berhasil dibuat');
     } catch (error) {
       if (error instanceof HttpException) {
@@ -160,7 +158,7 @@ export class BrandService {
             id: Not(id),
           },
         });
-        
+
         if (existingBrand) {
           throwError(
             `Brand name ${updateDto.brand_name} sudah digunakan oleh brand lain`,
@@ -171,7 +169,7 @@ export class BrandService {
 
       const updatedBrand = this.brandRepository.merge(brand, updateDto);
       const result = await this.brandRepository.save(updatedBrand);
-      
+
       return successResponse(result, 'Brand berhasil diupdate');
     } catch (error) {
       if (error instanceof HttpException) {
@@ -188,7 +186,7 @@ export class BrandService {
       if (!brand) {
         return emptyDataResponse('Brand tidak ditemukan', null);
       }
-      
+
       await this.brandRepository.softRemove(brand);
 
       return successResponse(null, 'Brand berhasil dihapus');

@@ -14,9 +14,7 @@ async function seedProduction() {
     username: process.env.POSTGRES_USER,
     password: process.env.POSTGRES_PASSWORD,
     database: process.env.POSTGRES_DB,
-    entities: [
-      __dirname + '/../modules/**/entities/*.entity{.ts,.js}',
-    ],
+    entities: [__dirname + '/../modules/**/entities/*.entity{.ts,.js}'],
     synchronize: false,
     logging: false,
   });
@@ -31,7 +29,6 @@ async function seedProduction() {
     // Run custom roles/users seeder
     const customRolesUsersSeeder = new CustomRolesUsersSeeder(dataSource);
     await customRolesUsersSeeder.run();
-
   } catch (error) {
     console.error('❌ Production Module seeding failed:', error);
     process.exit(1);

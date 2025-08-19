@@ -142,4 +142,4 @@ export class CreateTableRInputBarge1700000000006 implements MigrationInterface {
 
     await queryRunner.dropTable('r_input_barge');
   }
-} 
+}

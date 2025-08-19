@@ -25,7 +25,7 @@ export class CompleteSeeder {
     try {
       // Phase 1: Basic Data (No Dependencies)
       console.log('📍 Phase 1: Seeding Basic Data...\n');
-      
+
       // 1. Seed Sites (no dependencies)
       console.log('📍 Seeding Sites...');
       const sitesSeeder = new SitesSeeder(this.dataSource);
@@ -58,7 +58,7 @@ export class CompleteSeeder {
 
       // Phase 2: Dependent Data
       console.log('📍 Phase 2: Seeding Dependent Data...\n');
-      
+
       // 6. Seed Unit Types (depends on Brand)
       console.log('🚛 Seeding Unit Types...');
       const unitTypeSeeder = new UnitTypeSeeder(this.dataSource);
@@ -85,7 +85,7 @@ export class CompleteSeeder {
 
       // Phase 3: Permission & Menu System
       console.log('📍 Phase 3: Seeding Permission & Menu System...\n');
-      
+
       // 10. Seed Permissions (no dependencies)
       console.log('🔐 Seeding Permissions...');
       const permissionSeeder = new PermissionSeeder(this.dataSource);
@@ -100,13 +100,15 @@ export class CompleteSeeder {
 
       // 12. Seed Menu-Permission relationships (depends on Menus and Permissions)
       console.log('🔗 Seeding Menu-Permission relationships...');
-      const menuHasPermissionSeeder = new MenuHasPermissionSeeder(this.dataSource);
+      const menuHasPermissionSeeder = new MenuHasPermissionSeeder(
+        this.dataSource,
+      );
       await menuHasPermissionSeeder.run();
       console.log('✅ Menu-Permission relationships seeding completed\n');
 
       // Phase 4: User & Access Control
       console.log('📍 Phase 4: Seeding User & Access Control...\n');
-      
+
       // 13. Seed Users (depends on Sites, Roles, Employees)
       console.log('👤 Seeding Users...');
       const userSeeder = new UserSeeder(this.dataSource);
@@ -115,7 +117,9 @@ export class CompleteSeeder {
 
       // 14. Seed Role-Permission relationships (depends on Roles, Menu-Permissions, and Permissions)
       console.log('🔗 Seeding Role-Permission relationships...');
-      const roleHasPermissionSeeder = new RoleHasPermissionSeeder(this.dataSource);
+      const roleHasPermissionSeeder = new RoleHasPermissionSeeder(
+        this.dataSource,
+      );
       await roleHasPermissionSeeder.run();
       console.log('✅ Role-Permission relationships seeding completed\n');
 
@@ -127,14 +131,20 @@ export class CompleteSeeder {
 
       // Phase 5: Custom Roles & Users
       console.log('📍 Phase 5: Seeding Custom Roles & Users...\n');
-      
+
       // 16. Seed Custom Roles, Users, and Access Mappings
       console.log('🔐 Seeding Custom Roles, Users, and Access Mappings...');
-      const customRolesUsersSeeder = new CustomRolesUsersSeeder(this.dataSource);
+      const customRolesUsersSeeder = new CustomRolesUsersSeeder(
+        this.dataSource,
+      );
       await customRolesUsersSeeder.run();
-      console.log('✅ Custom Roles, Users, and Access Mappings seeding completed\n');
+      console.log(
+        '✅ Custom Roles, Users, and Access Mappings seeding completed\n',
+      );
 
-      console.log('🎉 Complete Database Seeding Process Finished Successfully!');
+      console.log(
+        '🎉 Complete Database Seeding Process Finished Successfully!',
+      );
       console.log('\n📋 Summary of All Seeded Data:');
       console.log('   • Sites (5 sites)');
       console.log('   • Roles (7 roles)');
@@ -154,10 +164,11 @@ export class CompleteSeeder {
 
       console.log('\n🔑 User Credentials:');
       console.log('   • superadmin / Qwer1234! (Super Admin)');
-      console.log('   • productionadmin / Qwer1234! (Production Administrator)');
+      console.log(
+        '   • productionadmin / Qwer1234! (Production Administrator)',
+      );
       console.log('   • management / Qwer1234! (Management)');
       console.log('   • ccr / Qwer1234! (CCR)');
-
     } catch (error) {
       console.error('❌ Error during Complete Seeding Process:', error);
       throw error;

@@ -5,7 +5,9 @@ import {
   TableForeignKey,
 } from 'typeorm';
 
-export class CreateTableRBaseDataPro1700000000007 implements MigrationInterface {
+export class CreateTableRBaseDataPro1700000000007
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Buat ENUM types terlebih dahulu
     await queryRunner.query(`
@@ -191,9 +193,9 @@ export class CreateTableRBaseDataPro1700000000007 implements MigrationInterface 
     }
 
     await queryRunner.dropTable('r_base_data_pro');
-    
+
     // Hapus ENUM types
     await queryRunner.query(`DROP TYPE IF EXISTS enum_shift`);
     await queryRunner.query(`DROP TYPE IF EXISTS enum_material`);
   }
-} 
+}

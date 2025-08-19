@@ -90,9 +90,13 @@ export class EmployeeSeeder {
       if (!existingEmployee) {
         const employee = employeeRepository.create(employeeData);
         await employeeRepository.save(employee);
-        console.log(`✅ Employee "${employeeData.firstName} ${employeeData.lastName}" created`);
+        console.log(
+          `✅ Employee "${employeeData.firstName} ${employeeData.lastName}" created`,
+        );
       } else {
-        console.log(`⏭️  Employee "${employeeData.firstName} ${employeeData.lastName}" already exists`);
+        console.log(
+          `⏭️  Employee "${employeeData.firstName} ${employeeData.lastName}" already exists`,
+        );
       }
     }
   }

@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner, Table } from 'typeorm';
 
-export class CreateTableRPlanWorkingHour1700000000015 implements MigrationInterface {
+export class CreateTableRPlanWorkingHour1700000000015
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
@@ -95,7 +97,8 @@ export class CreateTableRPlanWorkingHour1700000000015 implements MigrationInterf
             name: 'daily_old_stock',
             type: 'float',
             isNullable: true,
-            comment: 'Calculated: (old stock global - ore shipment + ore target)',
+            comment:
+              'Calculated: (old stock global - ore shipment + ore target)',
           },
           {
             name: 'shift_ob_target',
@@ -146,4 +149,4 @@ export class CreateTableRPlanWorkingHour1700000000015 implements MigrationInterf
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.dropTable('r_plan_working_hour');
   }
-} 
+}

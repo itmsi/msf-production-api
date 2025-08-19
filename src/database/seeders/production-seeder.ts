@@ -28,7 +28,9 @@ export class ProductionSeeder {
 
       // 3. Seed Menu-Permission relationships (depends on Menus and Permissions)
       console.log('🔗 Seeding Menu-Permission relationships...');
-      const menuHasPermissionSeeder = new MenuHasPermissionSeeder(this.dataSource);
+      const menuHasPermissionSeeder = new MenuHasPermissionSeeder(
+        this.dataSource,
+      );
       await menuHasPermissionSeeder.run();
       console.log('✅ Menu-Permission relationships seeding completed\n');
 
@@ -46,7 +48,9 @@ export class ProductionSeeder {
 
       // 6. Seed Role-Permission relationships (depends on Roles and Permissions)
       console.log('🔗 Seeding Role-Permission relationships...');
-      const roleHasPermissionSeeder = new RoleHasPermissionSeeder(this.dataSource);
+      const roleHasPermissionSeeder = new RoleHasPermissionSeeder(
+        this.dataSource,
+      );
       await roleHasPermissionSeeder.run();
       console.log('✅ Role-Permission relationships seeding completed\n');
 
@@ -58,19 +62,24 @@ export class ProductionSeeder {
 
       console.log('🎉 Production Module seeding completed successfully!');
       console.log('\n📋 Summary of seeded data:');
-      console.log('   • 6 Permissions (CREATE, READ, UPDATE, DELETE, EXPORT, IMPORT)');
+      console.log(
+        '   • 6 Permissions (CREATE, READ, UPDATE, DELETE, EXPORT, IMPORT)',
+      );
       console.log('   • 50+ Menu Items with proper hierarchy');
       console.log('   • Menu-Permission relationships for Production Module');
       console.log('   • 1 Role (Super Admin)');
       console.log('   • 1 User (superadmin)');
-      console.log('   • Role-Permission relationships (Super Admin gets all permissions)');
+      console.log(
+        '   • Role-Permission relationships (Super Admin gets all permissions)',
+      );
       console.log('   • User-Role relationships (superadmin -> Super Admin)');
 
       console.log('\n🔑 Super Admin Credentials:');
       console.log('   • Username: superadmin');
       console.log('   • Password: Qwer1234!');
-      console.log('   • Role: Super Admin (full access to all menus and features)');
-
+      console.log(
+        '   • Role: Super Admin (full access to all menus and features)',
+      );
     } catch (error) {
       console.error('❌ Error during Production Module seeding:', error);
       throw error;

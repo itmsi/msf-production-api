@@ -1,9 +1,18 @@
-import { Injectable, HttpException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  HttpException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserRole } from './entities/user-role.entity';
 import { CreateUserRoleDto, UpdateUserRoleDto } from './dto/user-role.dto';
-import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
+import {
+  ApiResponse,
+  successResponse,
+  throwError,
+  emptyDataResponse,
+} from '../../common/helpers/response.helper';
 
 @Injectable()
 export class UserRoleService {
@@ -12,7 +21,9 @@ export class UserRoleService {
     private userRoleRepository: Repository<UserRole>,
   ) {}
 
-  async create(createUserRoleDto: CreateUserRoleDto): Promise<ApiResponse<UserRole>> {
+  async create(
+    createUserRoleDto: CreateUserRoleDto,
+  ): Promise<ApiResponse<UserRole>> {
     try {
       // Check if combination already exists
       const existing = await this.userRoleRepository.findOne({
@@ -68,7 +79,10 @@ export class UserRoleService {
     }
   }
 
-  async update(id: number, updateUserRoleDto: UpdateUserRoleDto): Promise<ApiResponse<UserRole | null>> {
+  async update(
+    id: number,
+    updateUserRoleDto: UpdateUserRoleDto,
+  ): Promise<ApiResponse<UserRole | null>> {
     try {
       const userRole = await this.userRoleRepository.findOne({
         where: { id },
@@ -134,7 +148,9 @@ export class UserRoleService {
       return successResponse(result, 'Get user roles by user ID successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Failed to fetch user roles by user ID');
+      throw new InternalServerErrorException(
+        'Failed to fetch user roles by user ID',
+      );
     }
   }
 
@@ -148,11 +164,17 @@ export class UserRoleService {
       return successResponse(result, 'Get user roles by role ID successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Failed to fetch user roles by role ID');
+      throw new InternalServerErrorException(
+        'Failed to fetch user roles by role ID',
+      );
     }
   }
 
-  async assignRoleToUser(userId: number, roleId: number, createdBy: number): Promise<ApiResponse<UserRole>> {
+  async assignRoleToUser(
+    userId: number,
+    roleId: number,
+    createdBy: number,
+  ): Promise<ApiResponse<UserRole>> {
     const createUserRoleDto: CreateUserRoleDto = {
       user_id: userId,
       role_id: roleId,
@@ -161,7 +183,10 @@ export class UserRoleService {
     return this.create(createUserRoleDto);
   }
 
-  async removeRoleFromUser(userId: number, roleId: number): Promise<ApiResponse<null>> {
+  async removeRoleFromUser(
+    userId: number,
+    roleId: number,
+  ): Promise<ApiResponse<null>> {
     try {
       const userRole = await this.userRoleRepository.findOne({
         where: { user_id: userId, role_id: roleId },

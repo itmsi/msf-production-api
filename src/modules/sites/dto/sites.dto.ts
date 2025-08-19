@@ -1,41 +1,50 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, IsNumberString, IsNumber, IsArray, IsEnum, ValidateNested } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsNumberString,
+  IsNumber,
+  IsArray,
+  IsEnum,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export enum OperatorPointType {
   DUMPING = 'dumping',
-  LOADING = 'loading'
+  LOADING = 'loading',
 }
 
 export class OperatorPointDto {
-  @ApiProperty({ 
-    example: 'dumping', 
+  @ApiProperty({
+    example: 'dumping',
     description: 'Tipe operator point (dumping atau loading)',
-    enum: OperatorPointType
+    enum: OperatorPointType,
   })
   @IsEnum(OperatorPointType)
   @IsNotEmpty()
   type: OperatorPointType;
 
-  @ApiProperty({ 
-    example: 'Dumping Point A', 
-    description: 'Nama operator point' 
+  @ApiProperty({
+    example: 'Dumping Point A',
+    description: 'Nama operator point',
   })
   @IsString()
   @IsNotEmpty()
   name: string;
 
-  @ApiProperty({ 
-    example: 106.8456, 
-    description: 'Longitude operator point' 
+  @ApiProperty({
+    example: 106.8456,
+    description: 'Longitude operator point',
   })
   @IsNumber()
   @IsNotEmpty()
   longitude: number;
 
-  @ApiProperty({ 
-    example: -6.2088, 
-    description: 'Latitude operator point' 
+  @ApiProperty({
+    example: -6.2088,
+    description: 'Latitude operator point',
   })
   @IsNumber()
   @IsNotEmpty()
@@ -43,49 +52,49 @@ export class OperatorPointDto {
 }
 
 export class CreateSitesDto {
-  @ApiProperty({ 
-    example: 'Site Jakarta', 
-    description: 'Nama site yang akan dibuat' 
+  @ApiProperty({
+    example: 'Site Jakarta',
+    description: 'Nama site yang akan dibuat',
   })
   @IsString()
   @IsNotEmpty()
   name: string;
 
-  @ApiProperty({ 
-    example: 'Jakarta Selatan', 
-    description: 'Lokasi site' 
+  @ApiProperty({
+    example: 'Jakarta Selatan',
+    description: 'Lokasi site',
   })
   @IsString()
   @IsNotEmpty()
   location: string;
 
-  @ApiProperty({ 
-    example: 106.8456, 
-    description: 'Longitude site' 
+  @ApiProperty({
+    example: 106.8456,
+    description: 'Longitude site',
   })
   @IsNumber()
   @IsNotEmpty()
   longitude: number;
 
-  @ApiProperty({ 
-    example: -6.2088, 
-    description: 'Latitude site' 
+  @ApiProperty({
+    example: -6.2088,
+    description: 'Latitude site',
   })
   @IsNumber()
   @IsNotEmpty()
   latitude: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: [
       {
         type: 'dumping',
         name: 'Dumping Point A',
         longitude: 106.8456,
-        latitude: -6.2088
-      }
-    ], 
+        latitude: -6.2088,
+      },
+    ],
     description: 'Array operator points yang akan dibuat',
-    type: [OperatorPointDto]
+    type: [OperatorPointDto],
   })
   @IsArray()
   @ValidateNested({ each: true })
@@ -94,54 +103,54 @@ export class CreateSitesDto {
 }
 
 export class UpdateSitesDto {
-  @ApiProperty({ 
-    example: 'Site Jakarta', 
+  @ApiProperty({
+    example: 'Site Jakarta',
     description: 'Nama site yang akan diupdate',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
   name?: string;
 
-  @ApiProperty({ 
-    example: 'Jakarta Selatan', 
+  @ApiProperty({
+    example: 'Jakarta Selatan',
     description: 'Lokasi site',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsString()
   location?: string;
 
-  @ApiProperty({ 
-    example: 106.8456, 
+  @ApiProperty({
+    example: 106.8456,
     description: 'Longitude site',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsNumber()
   longitude?: number;
 
-  @ApiProperty({ 
-    example: -6.2088, 
+  @ApiProperty({
+    example: -6.2088,
     description: 'Latitude site',
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsNumber()
   latitude?: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: [
       {
         type: 'dumping',
         name: 'Dumping Point A',
         longitude: 106.8456,
-        latitude: -6.2088
-      }
-    ], 
+        latitude: -6.2088,
+      },
+    ],
     description: 'Array operator points yang akan diupdate',
     type: [OperatorPointDto],
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsArray()
@@ -173,60 +182,61 @@ export class OperatorPointResponseDto {
 }
 
 export class GetSitesQueryDto {
-  @ApiProperty({ 
-    required: false, 
-    example: '1', 
-    description: 'Nomor halaman (default: 1)' 
+  @ApiProperty({
+    required: false,
+    example: '1',
+    description: 'Nomor halaman (default: 1)',
   })
   @IsOptional()
   @IsNumberString()
   page?: string;
 
-  @ApiProperty({ 
-    required: false, 
-    example: '10', 
-    description: 'Jumlah data per halaman (default: 10, max: 100)' 
+  @ApiProperty({
+    required: false,
+    example: '10',
+    description: 'Jumlah data per halaman (default: 10, max: 100)',
   })
   @IsOptional()
   @IsNumberString()
   limit?: string;
 
-  @ApiProperty({ 
-    required: false, 
-    example: 'jakarta', 
-    description: 'Pencarian umum di semua field' 
+  @ApiProperty({
+    required: false,
+    example: 'jakarta',
+    description: 'Pencarian umum di semua field',
   })
   @IsOptional()
   search?: string;
 
-  @ApiProperty({ 
-    required: false, 
-    example: 'jakarta', 
-    description: 'Filter berdasarkan nama site (partial match)' 
+  @ApiProperty({
+    required: false,
+    example: 'jakarta',
+    description: 'Filter berdasarkan nama site (partial match)',
   })
   @IsOptional()
   name?: string;
 
-  @ApiProperty({ 
-    required: false, 
-    example: 'jakarta selatan', 
-    description: 'Filter berdasarkan lokasi site (partial match)' 
+  @ApiProperty({
+    required: false,
+    example: 'jakarta selatan',
+    description: 'Filter berdasarkan lokasi site (partial match)',
   })
   @IsOptional()
   location?: string;
 
-  @ApiProperty({ 
-    required: false, 
-    example: 'name', 
-    description: 'Field untuk sorting (id, name, location, longitude, latitude, createdAt, updatedAt)' 
+  @ApiProperty({
+    required: false,
+    example: 'name',
+    description:
+      'Field untuk sorting (id, name, location, longitude, latitude, createdAt, updatedAt)',
   })
   @IsOptional()
   sortBy?: string;
 
-  @ApiProperty({ 
-    required: false, 
-    example: 'ASC', 
-    description: 'Urutan sorting (ASC atau DESC)' 
+  @ApiProperty({
+    required: false,
+    example: 'ASC',
+    description: 'Urutan sorting (ASC atau DESC)',
   })
   @IsOptional()
   sortOrder?: 'ASC' | 'DESC';

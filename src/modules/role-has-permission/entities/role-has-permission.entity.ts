@@ -42,7 +42,10 @@ export class RoleHasPermission {
   @JoinColumn({ name: 'role_id' })
   role: Roles;
 
-  @ManyToOne(() => MenuHasPermission, (menuHasPermission) => menuHasPermission.roleHasPermissions)
+  @ManyToOne(
+    () => MenuHasPermission,
+    (menuHasPermission) => menuHasPermission.roleHasPermissions,
+  )
   @JoinColumn({ name: 'mhp_id' })
   menuHasPermission: MenuHasPermission;
 

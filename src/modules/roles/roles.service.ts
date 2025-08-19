@@ -64,7 +64,9 @@ export class RolesService {
       const skip = (page - 1) * limit;
 
       const [result, total] = await this.rolesRepository.findAndCount({
-        where: query.search ? [{ position_name: ILike(`%${query.search}%`) }] : {},
+        where: query.search
+          ? [{ position_name: ILike(`%${query.search}%`) }]
+          : {},
         order: {
           id: 'DESC',
         },
@@ -96,7 +98,9 @@ export class RolesService {
       }
 
       // Check if position_name already exists
-      const existingPositionName = await this.findByPositionName(data.position_name);
+      const existingPositionName = await this.findByPositionName(
+        data.position_name,
+      );
       if (existingPositionName) {
         throwError('Role name already exists', 409);
       }
@@ -146,7 +150,7 @@ export class RolesService {
         ...updateDto,
       };
 
-      const updateRoles = this.rolesRepository.merge(roles!, updatedData);
+      const updateRoles = this.rolesRepository.merge(roles, updatedData);
       const result = await this.rolesRepository.save(updateRoles);
 
       const response: any = {
@@ -173,7 +177,7 @@ export class RolesService {
       if (!roles) {
         return emptyDataResponse('Role not found', null);
       }
-      await this.rolesRepository.softRemove(roles!);
+      await this.rolesRepository.softRemove(roles);
 
       return successResponse(null, 'Roles deleted successfully');
     } catch (error) {

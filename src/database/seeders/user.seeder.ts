@@ -6,7 +6,9 @@ export class UserSeeder {
 
   async run(): Promise<void> {
     // Get first employee for user creation
-    const employees = await this.dataSource.query('SELECT id FROM m_employee LIMIT 1');
+    const employees = await this.dataSource.query(
+      'SELECT id FROM m_employee LIMIT 1',
+    );
     if (employees.length === 0) {
       console.log('❌ No employees found. Please run employee seeder first.');
       return;
@@ -19,8 +21,8 @@ export class UserSeeder {
         email: 'superadmin@msf.com',
         password: 'Qwer1234!',
         employeeId: defaultEmployeeId,
-        isActive: true
-      }
+        isActive: true,
+      },
     ];
 
     let createdCount = 0;
@@ -30,7 +32,7 @@ export class UserSeeder {
       // Check if user already exists
       const existingUser = await this.dataSource.query(
         'SELECT * FROM m_user WHERE username = $1 OR email = $2',
-        [userData.username, userData.email]
+        [userData.username, userData.email],
       );
 
       if (existingUser.length === 0) {
@@ -41,7 +43,13 @@ export class UserSeeder {
         // Create new user
         await this.dataSource.query(
           'INSERT INTO m_user (username, email, password, "isActive", employee_id, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, NOW(), NOW())',
-          [userData.username, userData.email, hashedPassword, userData.isActive, userData.employeeId]
+          [
+            userData.username,
+            userData.email,
+            hashedPassword,
+            userData.isActive,
+            userData.employeeId,
+          ],
         );
         createdCount++;
         console.log(`✅ User created: ${userData.username}`);
@@ -54,7 +62,7 @@ export class UserSeeder {
     console.log(`\n📊 User Seeding Summary:`);
     console.log(`   • Created: ${createdCount} users`);
     console.log(`   • Skipped: ${skippedCount} existing users`);
-    
+
     if (createdCount > 0) {
       console.log('\n🔑 User Credentials:');
       console.log(`   • Username: superadmin`);

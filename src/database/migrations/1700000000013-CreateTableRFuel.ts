@@ -174,8 +174,8 @@ export class CreateTableRFuel1700000000013 implements MigrationInterface {
     }
 
     await queryRunner.dropTable('r_fuel');
-    
+
     // Hapus ENUM type
     await queryRunner.query(`DROP TYPE IF EXISTS enum_fuel_uom`);
   }
-} 
+}

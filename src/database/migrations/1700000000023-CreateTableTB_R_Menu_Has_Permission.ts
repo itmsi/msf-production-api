@@ -5,7 +5,9 @@ import {
   TableForeignKey,
 } from 'typeorm';
 
-export class CreateTableTB_R_Menu_Has_Permission1700000000023 implements MigrationInterface {
+export class CreateTableTB_R_Menu_Has_Permission1700000000023
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({

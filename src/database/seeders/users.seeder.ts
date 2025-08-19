@@ -15,23 +15,39 @@ export class UsersSeeder {
     const sitesRepository = this.dataSource.getRepository(Sites);
 
     // Get existing roles, employees, and sites
-    const superAdminRole = await rolesRepository.findOne({ where: { role_code: 'SUPER_ADMIN' } });
-    const adminRole = await rolesRepository.findOne({ where: { role_code: 'ADMIN' } });
-    const managerRole = await rolesRepository.findOne({ where: { role_code: 'MANAGER' } });
-    const staffRole = await rolesRepository.findOne({ where: { role_code: 'STAFF' } });
+    const superAdminRole = await rolesRepository.findOne({
+      where: { role_code: 'SUPER_ADMIN' },
+    });
+    const adminRole = await rolesRepository.findOne({
+      where: { role_code: 'ADMIN' },
+    });
+    const managerRole = await rolesRepository.findOne({
+      where: { role_code: 'MANAGER' },
+    });
+    const staffRole = await rolesRepository.findOne({
+      where: { role_code: 'STAFF' },
+    });
 
-    const siteJakarta = await sitesRepository.findOne({ where: { name: 'Site Jakarta' } });
-    const siteSurabaya = await sitesRepository.findOne({ where: { name: 'Site Surabaya' } });
+    const siteJakarta = await sitesRepository.findOne({
+      where: { name: 'Site Jakarta' },
+    });
+    const siteSurabaya = await sitesRepository.findOne({
+      where: { name: 'Site Surabaya' },
+    });
 
     const employees = await employeeRepository.find();
 
     if (!superAdminRole || !adminRole || !managerRole || !staffRole) {
-      console.log('❌ Required roles not found. Please run roles seeder first.');
+      console.log(
+        '❌ Required roles not found. Please run roles seeder first.',
+      );
       return;
     }
 
     if (!siteJakarta || !siteSurabaya) {
-      console.log('❌ Required sites not found. Please run sites seeder first.');
+      console.log(
+        '❌ Required sites not found. Please run sites seeder first.',
+      );
       return;
     }
 
@@ -107,14 +123,16 @@ export class UsersSeeder {
       if (!existingUser) {
         // Hash password
         const hashedPassword = await bcrypt.hash(userData.password, 10);
-        
+
         const user = usersRepository.create({
           ...userData,
           password: hashedPassword,
         });
-        
+
         await usersRepository.save(user);
-        console.log(`✅ User "${userData.username}" created with password: ${userData.password}`);
+        console.log(
+          `✅ User "${userData.username}" created with password: ${userData.password}`,
+        );
       } else {
         console.log(`⏭️  User "${userData.username}" already exists`);
       }

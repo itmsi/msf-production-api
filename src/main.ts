@@ -15,7 +15,9 @@ async function bootstrap() {
   // Swagger config
   const config = new DocumentBuilder()
     .setTitle('MSF Production API')
-    .setDescription('API documentation for the MSF Production System with User Management')
+    .setDescription(
+      'API documentation for the MSF Production System with User Management',
+    )
     .setVersion('1.0')
     .addTag('Auth', 'Authentication endpoints')
     .addTag('Users', 'User management endpoints')

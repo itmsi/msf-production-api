@@ -40,7 +40,7 @@ describe('PopulationController', () => {
         statusCode: 200,
         message: 'Data population berhasil diambil',
         data: [],
-        meta: { total: 0, page: 1, limit: 10 }
+        meta: { total: 0, page: 1, limit: 10 },
       };
 
       mockPopulationService.findAll.mockResolvedValue(mockResult);
@@ -62,7 +62,7 @@ describe('PopulationController', () => {
           id: 1,
           no_unit: 'EXC001',
           vin_number: 'VIN123456789',
-        }
+        },
       };
 
       mockPopulationService.findById.mockResolvedValue(mockResult);
@@ -96,7 +96,7 @@ describe('PopulationController', () => {
       const mockResult = {
         statusCode: 201,
         message: 'Population berhasil dibuat',
-        data: { id: 1, ...createDto }
+        data: { id: 1, ...createDto },
       };
 
       mockPopulationService.create.mockResolvedValue(mockResult);
@@ -119,7 +119,7 @@ describe('PopulationController', () => {
       const mockResult = {
         statusCode: 200,
         message: 'Population berhasil diupdate',
-        data: { id: 1, ...updateDto }
+        data: { id: 1, ...updateDto },
       };
 
       mockPopulationService.update.mockResolvedValue(mockResult);
@@ -137,7 +137,7 @@ describe('PopulationController', () => {
       const mockResult = {
         statusCode: 200,
         message: 'Population berhasil dihapus',
-        data: null
+        data: null,
       };
 
       mockPopulationService.remove.mockResolvedValue(mockResult);

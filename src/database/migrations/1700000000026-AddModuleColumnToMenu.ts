@@ -1,8 +1,4 @@
-import {
-  MigrationInterface,
-  QueryRunner,
-  TableColumn,
-} from 'typeorm';
+import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
 
 export class AddModuleColumnToMenu1700000000026 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -27,7 +23,7 @@ export class AddModuleColumnToMenu1700000000026 implements MigrationInterface {
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Hapus kolom module
     await queryRunner.dropColumn('m_menu', 'module');
-    
+
     // Hapus ENUM type
     await queryRunner.query(`DROP TYPE IF EXISTS enum_menu_module`);
   }

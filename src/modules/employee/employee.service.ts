@@ -1,9 +1,23 @@
-import { Injectable, HttpException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  HttpException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder, Not } from 'typeorm';
 import { Employee } from './entities/employee.entity';
-import { CreateEmployeeDto, UpdateEmployeeDto, EmployeeResponseDto, GetEmployeesQueryDto } from './dto/employee.dto';
-import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
+import {
+  CreateEmployeeDto,
+  UpdateEmployeeDto,
+  EmployeeResponseDto,
+  GetEmployeesQueryDto,
+} from './dto/employee.dto';
+import {
+  ApiResponse,
+  successResponse,
+  throwError,
+  emptyDataResponse,
+} from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 
 @Injectable()
@@ -13,7 +27,9 @@ export class EmployeeService {
     private employeeRepository: Repository<Employee>,
   ) {}
 
-  async create(createEmployeeDto: CreateEmployeeDto): Promise<ApiResponse<EmployeeResponseDto>> {
+  async create(
+    createEmployeeDto: CreateEmployeeDto,
+  ): Promise<ApiResponse<EmployeeResponseDto>> {
     try {
       // Check if NIP already exists
       const existingEmployee = await this.employeeRepository.findOne({
@@ -48,7 +64,9 @@ export class EmployeeService {
     }
   }
 
-  async findAll(query: GetEmployeesQueryDto): Promise<ApiResponse<EmployeeResponseDto[]>> {
+  async findAll(
+    query: GetEmployeesQueryDto,
+  ): Promise<ApiResponse<EmployeeResponseDto[]>> {
     try {
       const page = parseInt(query.page || '1', 10);
       const limit = parseInt(query.limit || '10', 10);
@@ -66,7 +84,9 @@ export class EmployeeService {
       }
 
       if (query.department) {
-        qb.andWhere('employee.department = :department', { department: query.department });
+        qb.andWhere('employee.department = :department', {
+          department: query.department,
+        });
       }
 
       if (query.status) {
@@ -77,7 +97,7 @@ export class EmployeeService {
 
       const [result, total] = await qb.getManyAndCount();
 
-      const transformedResult = result.map(employee => ({
+      const transformedResult = result.map((employee) => ({
         id: employee.id,
         firstName: employee.firstName,
         lastName: employee.lastName,
@@ -135,7 +155,10 @@ export class EmployeeService {
     }
   }
 
-  async update(id: number, updateEmployeeDto: UpdateEmployeeDto): Promise<ApiResponse<EmployeeResponseDto | null>> {
+  async update(
+    id: number,
+    updateEmployeeDto: UpdateEmployeeDto,
+  ): Promise<ApiResponse<EmployeeResponseDto | null>> {
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id, deletedAt: null as any },
@@ -205,14 +228,16 @@ export class EmployeeService {
     });
   }
 
-  async findByDepartment(department: string): Promise<ApiResponse<EmployeeResponseDto[]>> {
+  async findByDepartment(
+    department: string,
+  ): Promise<ApiResponse<EmployeeResponseDto[]>> {
     try {
       const result = await this.employeeRepository.find({
         where: { department, deletedAt: null as any },
         order: { firstName: 'ASC', lastName: 'ASC' },
       });
 
-      const transformedResult = result.map(employee => ({
+      const transformedResult = result.map((employee) => ({
         id: employee.id,
         firstName: employee.firstName,
         lastName: employee.lastName,
@@ -226,21 +251,28 @@ export class EmployeeService {
         updatedAt: employee.updatedAt!,
       }));
 
-      return successResponse(transformedResult, 'Get employees by department successfully');
+      return successResponse(
+        transformedResult,
+        'Get employees by department successfully',
+      );
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Failed to fetch employees by department');
+      throw new InternalServerErrorException(
+        'Failed to fetch employees by department',
+      );
     }
   }
 
-  async findByStatus(status: string): Promise<ApiResponse<EmployeeResponseDto[]>> {
+  async findByStatus(
+    status: string,
+  ): Promise<ApiResponse<EmployeeResponseDto[]>> {
     try {
       const result = await this.employeeRepository.find({
         where: { status, deletedAt: null as any },
         order: { firstName: 'ASC', lastName: 'ASC' },
       });
 
-      const transformedResult = result.map(employee => ({
+      const transformedResult = result.map((employee) => ({
         id: employee.id,
         firstName: employee.firstName,
         lastName: employee.lastName,
@@ -254,10 +286,15 @@ export class EmployeeService {
         updatedAt: employee.updatedAt!,
       }));
 
-      return successResponse(transformedResult, 'Get employees by status successfully');
+      return successResponse(
+        transformedResult,
+        'Get employees by status successfully',
+      );
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Failed to fetch employees by status');
+      throw new InternalServerErrorException(
+        'Failed to fetch employees by status',
+      );
     }
   }
 }

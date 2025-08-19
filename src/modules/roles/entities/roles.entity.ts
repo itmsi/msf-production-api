@@ -71,6 +71,9 @@ export class Roles {
   userRoles: UserRole[];
 
   @Expose()
-  @OneToMany(() => RoleHasPermission, (roleHasPermission) => roleHasPermission.role)
+  @OneToMany(
+    () => RoleHasPermission,
+    (roleHasPermission) => roleHasPermission.role,
+  )
   roleHasPermissions: RoleHasPermission[];
 }

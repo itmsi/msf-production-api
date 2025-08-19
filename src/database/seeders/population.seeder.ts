@@ -5,7 +5,7 @@ export class PopulationSeeder {
 
   async run(): Promise<void> {
     const populationRepository = this.dataSource.getRepository('m_population');
-    
+
     // Get existing IDs from related tables
     const unitTypeRepository = this.dataSource.getRepository('m_unit_type');
     const activitiesRepository = this.dataSource.getRepository('m_activities');
@@ -16,8 +16,14 @@ export class PopulationSeeder {
     const activities = await activitiesRepository.find();
     const sites = await sitesRepository.find();
 
-    if (unitTypes.length === 0 || activities.length === 0 || sites.length === 0) {
-      console.log('⚠️  Related data not found. Please run other seeders first.');
+    if (
+      unitTypes.length === 0 ||
+      activities.length === 0 ||
+      sites.length === 0
+    ) {
+      console.log(
+        '⚠️  Related data not found. Please run other seeders first.',
+      );
       return;
     }
 

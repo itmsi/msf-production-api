@@ -50,7 +50,7 @@ describe('BrandService', () => {
     it('should create a brand successfully', async () => {
       const createBrandDto: CreateBrandDto = { brand_name: 'Toyota' };
       const brand = { id: 1, ...createBrandDto };
-      
+
       mockRepository.findOne.mockResolvedValue(null);
       mockRepository.create.mockReturnValue(brand);
       mockRepository.save.mockResolvedValue(brand);
@@ -65,10 +65,12 @@ describe('BrandService', () => {
     it('should throw error if brand name already exists', async () => {
       const createBrandDto: CreateBrandDto = { brand_name: 'Toyota' };
       const existingBrand = { id: 1, brand_name: 'Toyota' };
-      
+
       mockRepository.findOne.mockResolvedValue(existingBrand);
 
-      await expect(service.create(createBrandDto)).rejects.toThrow('Brand name sudah terdaftar');
+      await expect(service.create(createBrandDto)).rejects.toThrow(
+        'Brand name sudah terdaftar',
+      );
     });
   });
 
@@ -77,7 +79,7 @@ describe('BrandService', () => {
       const query = { page: '1', limit: '10' };
       const brands = [{ id: 1, brand_name: 'Toyota' }];
       const total = 1;
-      
+
       const queryBuilder = mockRepository.createQueryBuilder();
       queryBuilder.getManyAndCount.mockResolvedValue([brands, total]);
 
@@ -100,7 +102,7 @@ describe('BrandService', () => {
     it('should return brand by id', async () => {
       const id = 1;
       const brand = { id: 1, brand_name: 'Toyota' };
-      
+
       mockRepository.findOne.mockResolvedValue(brand);
 
       const result = await service.findById(id);
@@ -111,10 +113,12 @@ describe('BrandService', () => {
 
     it('should throw error if brand not found', async () => {
       const id = 1;
-      
+
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findById(id)).rejects.toThrow('Brand tidak ditemukan');
+      await expect(service.findById(id)).rejects.toThrow(
+        'Brand tidak ditemukan',
+      );
     });
   });
 
@@ -124,7 +128,7 @@ describe('BrandService', () => {
       const updateBrandDto: UpdateBrandDto = { brand_name: 'Toyota Motor' };
       const existingBrand = { id: 1, brand_name: 'Toyota' };
       const updatedBrand = { id: 1, brand_name: 'Toyota Motor' };
-      
+
       mockRepository.findOne
         .mockResolvedValueOnce(existingBrand) // first call for finding brand
         .mockResolvedValueOnce(null); // second call for checking duplicate
@@ -141,10 +145,12 @@ describe('BrandService', () => {
     it('should throw error if brand not found', async () => {
       const id = 1;
       const updateBrandDto: UpdateBrandDto = { brand_name: 'Toyota Motor' };
-      
+
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.update(id, updateBrandDto)).rejects.toThrow('Brand tidak ditemukan');
+      await expect(service.update(id, updateBrandDto)).rejects.toThrow(
+        'Brand tidak ditemukan',
+      );
     });
   });
 
@@ -152,7 +158,7 @@ describe('BrandService', () => {
     it('should remove brand successfully', async () => {
       const id = 1;
       const brand = { id: 1, brand_name: 'Toyota' };
-      
+
       mockRepository.findOne.mockResolvedValue(brand);
       mockRepository.softRemove.mockResolvedValue(undefined);
 
@@ -165,7 +171,7 @@ describe('BrandService', () => {
 
     it('should throw error if brand not found', async () => {
       const id = 1;
-      
+
       mockRepository.findOne.mockResolvedValue(null);
 
       await expect(service.remove(id)).rejects.toThrow('Brand tidak ditemukan');

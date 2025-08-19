@@ -40,7 +40,9 @@ describe('PopulationService', () => {
     }).compile();
 
     service = module.get<PopulationService>(PopulationService);
-    repository = module.get<Repository<Population>>(getRepositoryToken(Population));
+    repository = module.get<Repository<Population>>(
+      getRepositoryToken(Population),
+    );
   });
 
   it('should be defined', () => {
@@ -74,17 +76,17 @@ describe('PopulationService', () => {
           model_name: 'PC200-8',
           brand: {
             id: 1,
-            brand_name: 'Komatsu'
-          }
+            brand_name: 'Komatsu',
+          },
         },
         activities: {
           id: 1,
-          activity_name: 'Mining'
+          activity_name: 'Mining',
         },
         site: {
           id: 1,
-          site_name: 'Site A'
-        }
+          site_name: 'Site A',
+        },
       };
 
       mockRepository.findOne.mockResolvedValue(mockPopulation);
@@ -105,7 +107,9 @@ describe('PopulationService', () => {
     it('should throw error when population not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findById(999)).rejects.toThrow('Population tidak ditemukan');
+      await expect(service.findById(999)).rejects.toThrow(
+        'Population tidak ditemukan',
+      );
     });
   });
 
@@ -142,10 +146,10 @@ describe('PopulationService', () => {
       mockRepository.findOne.mockResolvedValueOnce(null);
       // Mock untuk check duplikasi no_unit_system
       mockRepository.findOne.mockResolvedValueOnce(null);
-      
+
       mockRepository.create.mockReturnValue(mockPopulation);
       mockRepository.save.mockResolvedValue(mockPopulation);
-      
+
       // Mock untuk final fetch dengan relations
       mockRepository.findOne.mockResolvedValueOnce(mockPopulation);
 
@@ -178,7 +182,9 @@ describe('PopulationService', () => {
 
       mockRepository.findOne.mockResolvedValue({ id: 1 }); // Existing VIN
 
-      await expect(service.create(createDto)).rejects.toThrow('VIN number sudah terdaftar');
+      await expect(service.create(createDto)).rejects.toThrow(
+        'VIN number sudah terdaftar',
+      );
     });
   });
 
@@ -206,23 +212,28 @@ describe('PopulationService', () => {
       mockRepository.findOne.mockResolvedValueOnce(existingPopulation);
       // Mock untuk check duplikasi no_unit
       mockRepository.findOne.mockResolvedValueOnce(null);
-      
+
       mockRepository.merge.mockReturnValue(updatedPopulation);
       mockRepository.save.mockResolvedValue(updatedPopulation);
-      
+
       // Mock untuk final fetch dengan relations
       mockRepository.findOne.mockResolvedValueOnce(updatedPopulation);
 
       const result = await service.update(1, updateDto);
 
       expect(result.message).toBe('Population berhasil diupdate');
-      expect(mockRepository.merge).toHaveBeenCalledWith(existingPopulation, updateDto);
+      expect(mockRepository.merge).toHaveBeenCalledWith(
+        existingPopulation,
+        updateDto,
+      );
     });
 
     it('should throw error when population not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.update(999, {})).rejects.toThrow('Population tidak ditemukan');
+      await expect(service.update(999, {})).rejects.toThrow(
+        'Population tidak ditemukan',
+      );
     });
   });
 
@@ -242,7 +253,9 @@ describe('PopulationService', () => {
     it('should throw error when population not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.remove(999)).rejects.toThrow('Population tidak ditemukan');
+      await expect(service.remove(999)).rejects.toThrow(
+        'Population tidak ditemukan',
+      );
     });
   });
 });

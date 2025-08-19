@@ -1,9 +1,18 @@
-import { Injectable, HttpException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  HttpException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Permission } from './entities/permission.entity';
 import { CreatePermissionDto, UpdatePermissionDto } from './dto/permission.dto';
-import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
+import {
+  ApiResponse,
+  successResponse,
+  throwError,
+  emptyDataResponse,
+} from '../../common/helpers/response.helper';
 
 @Injectable()
 export class PermissionService {
@@ -12,7 +21,9 @@ export class PermissionService {
     private permissionRepository: Repository<Permission>,
   ) {}
 
-  async create(createPermissionDto: CreatePermissionDto): Promise<ApiResponse<Permission>> {
+  async create(
+    createPermissionDto: CreatePermissionDto,
+  ): Promise<ApiResponse<Permission>> {
     try {
       // Check if permission_code already exists
       const existingPermission = await this.permissionRepository.findOne({
@@ -64,7 +75,10 @@ export class PermissionService {
     }
   }
 
-  async update(id: number, updatePermissionDto: UpdatePermissionDto): Promise<ApiResponse<Permission | null>> {
+  async update(
+    id: number,
+    updatePermissionDto: UpdatePermissionDto,
+  ): Promise<ApiResponse<Permission | null>> {
     try {
       const permission = await this.permissionRepository.findOne({
         where: { id, deletedAt: null as any },
@@ -75,9 +89,15 @@ export class PermissionService {
       }
 
       // Check if permission_code already exists (if being updated)
-      if (updatePermissionDto.permission_code && updatePermissionDto.permission_code !== permission.permission_code) {
+      if (
+        updatePermissionDto.permission_code &&
+        updatePermissionDto.permission_code !== permission.permission_code
+      ) {
         const existingPermission = await this.permissionRepository.findOne({
-          where: { permission_code: updatePermissionDto.permission_code, deletedAt: null as any },
+          where: {
+            permission_code: updatePermissionDto.permission_code,
+            deletedAt: null as any,
+          },
         });
 
         if (existingPermission) {

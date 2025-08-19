@@ -6,9 +6,7 @@ import { Sites } from './entities/sites.entity';
 import { OperationPoints } from '../operation-points/entities/operation-points.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Sites, OperationPoints]),
-  ],
+  imports: [TypeOrmModule.forFeature([Sites, OperationPoints])],
   controllers: [SitesController],
   providers: [SitesService],
   exports: [SitesService],

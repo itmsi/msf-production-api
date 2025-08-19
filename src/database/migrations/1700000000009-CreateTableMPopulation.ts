@@ -110,6 +110,12 @@ export class CreateTableMPopulation1700000000009 implements MigrationInterface {
             isNullable: true,
           },
           {
+            name: 'last_unit_number',
+            type: 'varchar',
+            length: '255',
+            isNullable: true,
+          },
+          {
             name: 'company',
             type: 'varchar',
             length: '255',
@@ -137,7 +143,7 @@ export class CreateTableMPopulation1700000000009 implements MigrationInterface {
             default: 'CURRENT_TIMESTAMP',
             onUpdate: 'CURRENT_TIMESTAMP',
           },
-          { 
+          {
             name: 'updatedBy',
             type: 'int',
             isNullable: true,
@@ -202,11 +208,11 @@ export class CreateTableMPopulation1700000000009 implements MigrationInterface {
     }
 
     await queryRunner.dropTable('m_population');
-    
+
     // Hapus ENUM types
     await queryRunner.query(`DROP TYPE IF EXISTS enum_population_status`);
     await queryRunner.query(`DROP TYPE IF EXISTS enum_population_engine_brand`);
     await queryRunner.query(`DROP TYPE IF EXISTS enum_note`);
     await queryRunner.query(`DROP TYPE IF EXISTS enum_tyre_type`);
   }
-} 
+}

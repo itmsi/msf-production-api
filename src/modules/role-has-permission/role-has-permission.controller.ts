@@ -12,18 +12,27 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { RoleHasPermissionService } from './role-has-permission.service';
-import { CreateRoleHasPermissionDto, UpdateRoleHasPermissionDto, RoleHasPermissionResponseDto } from './dto/role-has-permission.dto';
+import {
+  CreateRoleHasPermissionDto,
+  UpdateRoleHasPermissionDto,
+  RoleHasPermissionResponseDto,
+} from './dto/role-has-permission.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 
 @ApiTags('Role Has Permission')
 @ApiBearerAuth('jwt')
 @Controller('role-has-permissions')
 export class RoleHasPermissionController {
-  constructor(private readonly roleHasPermissionService: RoleHasPermissionService) {}
+  constructor(
+    private readonly roleHasPermissionService: RoleHasPermissionService,
+  ) {}
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() createRoleHasPermissionDto: CreateRoleHasPermissionDto, @Request() req: any) {
+  create(
+    @Body() createRoleHasPermissionDto: CreateRoleHasPermissionDto,
+    @Request() req: any,
+  ) {
     if (!createRoleHasPermissionDto.createdBy) {
       createRoleHasPermissionDto.createdBy = req.user?.id;
     }
@@ -44,7 +53,9 @@ export class RoleHasPermissionController {
 
   @UseGuards(JwtAuthGuard)
   @Get('by-permission/:permissionId')
-  findByPermissionId(@Param('permissionId', ParseIntPipe) permissionId: number) {
+  findByPermissionId(
+    @Param('permissionId', ParseIntPipe) permissionId: number,
+  ) {
     return this.roleHasPermissionService.findByPermissionId(permissionId);
   }
 

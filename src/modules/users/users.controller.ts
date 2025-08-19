@@ -23,18 +23,33 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  @ApiQuery({ name: 'page', required: false, description: 'Page number (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Items per page (default: 10)' })
-  @ApiQuery({ name: 'search', required: false, description: 'Search term for username or email' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Items per page (default: 10)',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search term for username or email',
+  })
   @ApiQuery({ name: 'role', required: false, description: 'Filter by role' })
-  findAll(
-    @Query() query: GetUsersQueryDto,
-  ) {
+  findAll(@Query() query: GetUsersQueryDto) {
     const page = query.page || '1';
     const limit = query.limit || '10';
     const pageNum = parseInt(page, 10);
     const limitNum = parseInt(limit, 10);
-    return this.usersService.findAll(pageNum, limitNum, query.search, query.role);
+    return this.usersService.findAll(
+      pageNum,
+      limitNum,
+      query.search,
+      query.role,
+    );
   }
 
   @UseGuards(JwtAuthGuard)

@@ -51,7 +51,7 @@ export class CreateTableM_Brand1700000000008 implements MigrationInterface {
             type: 'int',
             isNullable: true,
           },
-          ],
+        ],
       }),
       true,
     );

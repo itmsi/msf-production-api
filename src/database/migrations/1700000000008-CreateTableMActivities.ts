@@ -5,7 +5,7 @@ export class CreateTableMActivities1700000000008 implements MigrationInterface {
     await queryRunner.query(`
       CREATE TYPE enum_activities_status AS ENUM ('working', 'breakdown', 'stand-by')
     `);
-    
+
     await queryRunner.createTable(
       new Table({
         name: 'm_activities',
@@ -70,4 +70,4 @@ export class CreateTableMActivities1700000000008 implements MigrationInterface {
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.dropTable('m_activities');
   }
-} 
+}

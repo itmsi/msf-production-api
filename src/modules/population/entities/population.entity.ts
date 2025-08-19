@@ -1,4 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { UnitType } from '../../unit-type/entities/unit-type.entity';
 import { Activities } from '../../activities/entities/activities.entity';
 import { Sites } from '../../sites/entities/sites.entity';
@@ -50,6 +59,9 @@ export class Population {
   @Column({ type: 'varchar', length: 255, nullable: true })
   company: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  last_unit_number: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
@@ -59,17 +71,27 @@ export class Population {
   @DeleteDateColumn()
   deletedAt: Date;
 
-  @ManyToOne(() => UnitType, { onDelete: 'SET NULL', onUpdate: 'CASCADE', eager: true })
+  @ManyToOne(() => UnitType, {
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
+    eager: true,
+  })
   @JoinColumn({ name: 'unit_type_id' })
   unitType: UnitType;
 
-  @ManyToOne(() => Activities, { onDelete: 'SET NULL', onUpdate: 'CASCADE', eager: true })
+  @ManyToOne(() => Activities, {
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
+    eager: true,
+  })
   @JoinColumn({ name: 'activities_id' })
   activities: Activities;
 
-  @ManyToOne(() => Sites, { onDelete: 'SET NULL', onUpdate: 'CASCADE', eager: true })
+  @ManyToOne(() => Sites, {
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
+    eager: true,
+  })
   @JoinColumn({ name: 'site_id' })
   site: Sites;
-
-
 }

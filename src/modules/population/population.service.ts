@@ -2,9 +2,13 @@ import {
   Injectable,
   InternalServerErrorException,
   HttpException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Population } from './entities/population.entity';
+import { UnitType } from '../unit-type/entities/unit-type.entity';
+import { Activities } from '../activities/entities/activities.entity';
+import { Sites } from '../sites/entities/sites.entity';
 import { Repository, Not, Between } from 'typeorm';
 import {
   ApiResponse,
@@ -18,26 +22,38 @@ import {
   PopulationResponseDto,
   GetPopulationsQueryDto,
   UpdatePopulationDto,
+  ImportPopulationCsvRowDto,
+  ImportPopulationPreviewItemDto,
 } from './dto/population.dto';
+import csv from 'csv-parser';
+import { Readable } from 'stream';
 
 @Injectable()
 export class PopulationService {
   constructor(
     @InjectRepository(Population)
     private populationRepository: Repository<Population>,
+    @InjectRepository(UnitType)
+    private unitTypeRepository: Repository<UnitType>,
+    @InjectRepository(Activities)
+    private activitiesRepository: Repository<Activities>,
+    @InjectRepository(Sites)
+    private sitesRepository: Repository<Sites>,
   ) {}
 
-  async findById(id: number): Promise<ApiResponse<PopulationResponseDto | null>> {
+  async findById(
+    id: number,
+  ): Promise<ApiResponse<PopulationResponseDto | null>> {
     try {
       const result = await this.populationRepository.findOne({
         where: { id },
         relations: ['unitType', 'unitType.brand', 'activities', 'site'],
       });
-      
+
       if (!result) {
         return emptyDataResponse('Population tidak ditemukan', null);
       }
-      
+
       const response: PopulationResponseDto = {
         id: result.id,
         date_arrive: result.date_arrive,
@@ -53,29 +69,38 @@ export class PopulationService {
         remarks: result.remarks,
         site_id: result.site_id,
         company: result.company,
+        last_unit_number: result.last_unit_number,
         tyre_type: result.tyre_type,
         createdAt: result.createdAt,
         updatedAt: result.updatedAt,
-        unitType: result.unitType ? {
-          id: result.unitType.id,
-          unit_name: result.unitType.unit_name,
-          type_name: result.unitType.type_name,
-          model_name: result.unitType.model_name,
-          brand: result.unitType.brand ? {
-            id: result.unitType.brand.id,
-            brand_name: result.unitType.brand.brand_name,
-          } : undefined,
-        } : undefined,
-        activities: result.activities ? {
-          id: result.activities.id,
-          activity_name: result.activities.name,
-        } : undefined,
-        site: result.site ? {
-          id: result.site.id,
-          site_name: result.site.name,
-        } : undefined,
+        unitType: result.unitType
+          ? {
+              id: result.unitType.id,
+              unit_name: result.unitType.unit_name,
+              type_name: result.unitType.type_name,
+              model_name: result.unitType.model_name,
+              brand: result.unitType.brand
+                ? {
+                    id: result.unitType.brand.id,
+                    brand_name: result.unitType.brand.brand_name,
+                  }
+                : undefined,
+            }
+          : undefined,
+        activities: result.activities
+          ? {
+              id: result.activities.id,
+              activity_name: result.activities.name,
+            }
+          : undefined,
+        site: result.site
+          ? {
+              id: result.site.id,
+              site_name: result.site.name,
+            }
+          : undefined,
       };
-      
+
       return successResponse(response);
     } catch (error) {
       if (error instanceof HttpException) {
@@ -94,8 +119,12 @@ export class PopulationService {
       const skip = (page - 1) * limit;
       const search = query.search?.toLowerCase() ?? '';
       const status = query.status;
-      const unitTypeId = query.unit_type_id ? parseInt(query.unit_type_id, 10) : undefined;
-      const activitiesId = query.activities_id ? parseInt(query.activities_id, 10) : undefined;
+      const unitTypeId = query.unit_type_id
+        ? parseInt(query.unit_type_id, 10)
+        : undefined;
+      const activitiesId = query.activities_id
+        ? parseInt(query.activities_id, 10)
+        : undefined;
       const siteId = query.site_id ? parseInt(query.site_id, 10) : undefined;
       const engineBrand = query.engine_brand;
       const tyreType = query.tyre_type;
@@ -116,7 +145,7 @@ export class PopulationService {
       if (search) {
         qb.andWhere(
           '(population.no_unit ILIKE :search OR population.vin_number ILIKE :search OR population.no_unit_system ILIKE :search OR population.serial_engine ILIKE :search OR population.site_origin ILIKE :search OR population.company ILIKE :search OR unitType.unit_name ILIKE :search OR unitType.type_name ILIKE :search OR unitType.model_name ILIKE :search OR brand.brand_name ILIKE :search OR activities.name ILIKE :search OR site.name ILIKE :search)',
-          { search: `%${search}%` }
+          { search: `%${search}%` },
         );
       }
 
@@ -132,7 +161,9 @@ export class PopulationService {
 
       // Filter by activities_id
       if (activitiesId) {
-        qb.andWhere('population.activities_id = :activitiesId', { activitiesId });
+        qb.andWhere('population.activities_id = :activitiesId', {
+          activitiesId,
+        });
       }
 
       // Filter by site_id
@@ -163,7 +194,15 @@ export class PopulationService {
       }
 
       // Validate sortBy field to prevent SQL injection
-      const allowedSortFields = ['id', 'date_arrive', 'status', 'no_unit', 'vin_number', 'createdAt', 'updatedAt'];
+      const allowedSortFields = [
+        'id',
+        'date_arrive',
+        'status',
+        'no_unit',
+        'vin_number',
+        'createdAt',
+        'updatedAt',
+      ];
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
@@ -174,7 +213,7 @@ export class PopulationService {
       const [result, total] = await qb.getManyAndCount();
 
       // Transform result to DTO format
-      const transformedResult = result.map(population => ({
+      const transformedResult = result.map((population) => ({
         id: population.id,
         date_arrive: population.date_arrive,
         status: population.status,
@@ -189,27 +228,36 @@ export class PopulationService {
         remarks: population.remarks,
         site_id: population.site_id,
         company: population.company,
+        last_unit_number: population.last_unit_number,
         tyre_type: population.tyre_type,
         createdAt: population.createdAt,
         updatedAt: population.updatedAt,
-        unitType: population.unitType ? {
-          id: population.unitType.id,
-          unit_name: population.unitType.unit_name,
-          type_name: population.unitType.type_name,
-          model_name: population.unitType.model_name,
-          brand: population.unitType.brand ? {
-            id: population.unitType.brand.id,
-            brand_name: population.unitType.brand.brand_name,
-          } : undefined,
-        } : undefined,
-        activities: population.activities ? {
-          id: population.activities.id,
-          activity_name: population.activities.name,
-        } : undefined,
-        site: population.site ? {
-          id: population.site.id,
-          site_name: population.site.name,
-        } : undefined,
+        unitType: population.unitType
+          ? {
+              id: population.unitType.id,
+              unit_name: population.unitType.unit_name,
+              type_name: population.unitType.type_name,
+              model_name: population.unitType.model_name,
+              brand: population.unitType.brand
+                ? {
+                    id: population.unitType.brand.id,
+                    brand_name: population.unitType.brand.brand_name,
+                  }
+                : undefined,
+            }
+          : undefined,
+        activities: population.activities
+          ? {
+              id: population.activities.id,
+              activity_name: population.activities.name,
+            }
+          : undefined,
+        site: population.site
+          ? {
+              id: population.site.id,
+              site_name: population.site.name,
+            }
+          : undefined,
       }));
 
       const response = paginateResponse(
@@ -219,7 +267,7 @@ export class PopulationService {
         limit,
         'Data population berhasil diambil',
       );
-      
+
       return {
         statusCode: response.statusCode,
         message: response.message,
@@ -236,13 +284,15 @@ export class PopulationService {
     }
   }
 
-  async create(data: CreatePopulationDto): Promise<ApiResponse<PopulationResponseDto>> {
+  async create(
+    data: CreatePopulationDto,
+  ): Promise<ApiResponse<PopulationResponseDto>> {
     try {
       // Check if VIN number already exists
       const existingVin = await this.populationRepository.findOne({
         where: { vin_number: data.vin_number },
       });
-      
+
       if (existingVin) {
         throwError('VIN number sudah terdaftar', 409);
       }
@@ -251,7 +301,7 @@ export class PopulationService {
       const existingNoUnit = await this.populationRepository.findOne({
         where: { no_unit: data.no_unit },
       });
-      
+
       if (existingNoUnit) {
         throwError('Nomor unit sudah terdaftar', 409);
       }
@@ -260,7 +310,7 @@ export class PopulationService {
       const existingNoUnitSystem = await this.populationRepository.findOne({
         where: { no_unit_system: data.no_unit_system },
       });
-      
+
       if (existingNoUnitSystem) {
         throwError('Nomor unit sistem sudah terdaftar', 409);
       }
@@ -270,7 +320,7 @@ export class PopulationService {
         date_arrive: new Date(data.date_arrive),
       });
       const result = await this.populationRepository.save(newPopulation);
-      
+
       // Fetch with relations for response
       const savedPopulation = await this.populationRepository.findOne({
         where: { id: result.id },
@@ -292,29 +342,38 @@ export class PopulationService {
         remarks: savedPopulation!.remarks,
         site_id: savedPopulation!.site_id,
         company: savedPopulation!.company,
+        last_unit_number: savedPopulation!.last_unit_number,
         tyre_type: savedPopulation!.tyre_type,
         createdAt: savedPopulation!.createdAt,
         updatedAt: savedPopulation!.updatedAt,
-        unitType: savedPopulation!.unitType ? {
-          id: savedPopulation!.unitType.id,
-          unit_name: savedPopulation!.unitType.unit_name,
-          type_name: savedPopulation!.unitType.type_name,
-          model_name: savedPopulation!.unitType.model_name,
-          brand: savedPopulation!.unitType.brand ? {
-            id: savedPopulation!.unitType.brand.id,
-            brand_name: savedPopulation!.unitType.brand.brand_name,
-          } : undefined,
-        } : undefined,
-        activities: savedPopulation!.activities ? {
-          id: savedPopulation!.activities.id,
-          activity_name: savedPopulation!.activities.name,
-        } : undefined,
-        site: savedPopulation!.site ? {
-          id: savedPopulation!.site.id,
-          site_name: savedPopulation!.site.name,
-        } : undefined,
+        unitType: savedPopulation!.unitType
+          ? {
+              id: savedPopulation!.unitType.id,
+              unit_name: savedPopulation!.unitType.unit_name,
+              type_name: savedPopulation!.unitType.type_name,
+              model_name: savedPopulation!.unitType.model_name,
+              brand: savedPopulation!.unitType.brand
+                ? {
+                    id: savedPopulation!.unitType.brand.id,
+                    brand_name: savedPopulation!.unitType.brand.brand_name,
+                  }
+                : undefined,
+            }
+          : undefined,
+        activities: savedPopulation!.activities
+          ? {
+              id: savedPopulation!.activities.id,
+              activity_name: savedPopulation!.activities.name,
+            }
+          : undefined,
+        site: savedPopulation!.site
+          ? {
+              id: savedPopulation!.site.id,
+              site_name: savedPopulation!.site.name,
+            }
+          : undefined,
       };
-      
+
       return successResponse(response, 'Population berhasil dibuat');
     } catch (error) {
       if (error instanceof HttpException) {
@@ -329,7 +388,7 @@ export class PopulationService {
     updateDto: UpdatePopulationDto,
   ): Promise<ApiResponse<PopulationResponseDto | null>> {
     try {
-      const population = await this.populationRepository.findOne({ 
+      const population = await this.populationRepository.findOne({
         where: { id },
         relations: ['unitType', 'unitType.brand', 'activities', 'site'],
       });
@@ -339,11 +398,14 @@ export class PopulationService {
       }
 
       // Check if VIN number already exists for other populations
-      if (updateDto.vin_number && updateDto.vin_number !== population.vin_number) {
+      if (
+        updateDto.vin_number &&
+        updateDto.vin_number !== population.vin_number
+      ) {
         const existingVin = await this.populationRepository.findOne({
           where: { vin_number: updateDto.vin_number, id: Not(id) },
         });
-        
+
         if (existingVin) {
           throwError('VIN number sudah digunakan oleh population lain', 409);
         }
@@ -354,20 +416,26 @@ export class PopulationService {
         const existingNoUnit = await this.populationRepository.findOne({
           where: { no_unit: updateDto.no_unit, id: Not(id) },
         });
-        
+
         if (existingNoUnit) {
           throwError('Nomor unit sudah digunakan oleh population lain', 409);
         }
       }
 
       // Check if no_unit_system already exists for other populations
-      if (updateDto.no_unit_system && updateDto.no_unit_system !== population.no_unit_system) {
+      if (
+        updateDto.no_unit_system &&
+        updateDto.no_unit_system !== population.no_unit_system
+      ) {
         const existingNoUnitSystem = await this.populationRepository.findOne({
           where: { no_unit_system: updateDto.no_unit_system, id: Not(id) },
         });
-        
+
         if (existingNoUnitSystem) {
-          throwError('Nomor unit sistem sudah digunakan oleh population lain', 409);
+          throwError(
+            'Nomor unit sistem sudah digunakan oleh population lain',
+            409,
+          );
         }
       }
 
@@ -376,9 +444,12 @@ export class PopulationService {
         updateData.date_arrive = new Date(updateDto.date_arrive);
       }
 
-      const updatedPopulation = this.populationRepository.merge(population, updateData);
+      const updatedPopulation = this.populationRepository.merge(
+        population,
+        updateData,
+      );
       const result = await this.populationRepository.save(updatedPopulation);
-      
+
       // Fetch updated data with relations
       const updatedData = await this.populationRepository.findOne({
         where: { id: result.id },
@@ -400,29 +471,38 @@ export class PopulationService {
         remarks: updatedData!.remarks,
         site_id: updatedData!.site_id,
         company: updatedData!.company,
+        last_unit_number: updatedData!.last_unit_number,
         tyre_type: updatedData!.tyre_type,
         createdAt: updatedData!.createdAt,
         updatedAt: updatedData!.updatedAt,
-        unitType: updatedData!.unitType ? {
-          id: updatedData!.unitType.id,
-          unit_name: updatedData!.unitType.unit_name,
-          type_name: updatedData!.unitType.type_name,
-          model_name: updatedData!.unitType.model_name,
-          brand: updatedData!.unitType.brand ? {
-            id: updatedData!.unitType.brand.id,
-            brand_name: updatedData!.unitType.brand.brand_name,
-          } : undefined,
-        } : undefined,
-        activities: updatedData!.activities ? {
-          id: updatedData!.activities.id,
-          activity_name: updatedData!.activities.name,
-        } : undefined,
-        site: updatedData!.site ? {
-          id: updatedData!.site.id,
-          site_name: updatedData!.site.name,
-        } : undefined,
+        unitType: updatedData!.unitType
+          ? {
+              id: updatedData!.unitType.id,
+              unit_name: updatedData!.unitType.unit_name,
+              type_name: updatedData!.unitType.type_name,
+              model_name: updatedData!.unitType.model_name,
+              brand: updatedData!.unitType.brand
+                ? {
+                    id: updatedData!.unitType.brand.id,
+                    brand_name: updatedData!.unitType.brand.brand_name,
+                  }
+                : undefined,
+            }
+          : undefined,
+        activities: updatedData!.activities
+          ? {
+              id: updatedData!.activities.id,
+              activity_name: updatedData!.activities.name,
+            }
+          : undefined,
+        site: updatedData!.site
+          ? {
+              id: updatedData!.site.id,
+              site_name: updatedData!.site.name,
+            }
+          : undefined,
       };
-      
+
       return successResponse(response, 'Population berhasil diupdate');
     } catch (error) {
       if (error instanceof HttpException) {
@@ -434,12 +514,14 @@ export class PopulationService {
 
   async remove(id: number): Promise<ApiResponse<null>> {
     try {
-      const population = await this.populationRepository.findOne({ where: { id } });
+      const population = await this.populationRepository.findOne({
+        where: { id },
+      });
 
       if (!population) {
         return emptyDataResponse('Population tidak ditemukan', null);
       }
-      
+
       await this.populationRepository.softRemove(population);
 
       return successResponse(null, 'Population berhasil dihapus');
@@ -449,5 +531,338 @@ export class PopulationService {
       }
       throw new InternalServerErrorException('Gagal menghapus population');
     }
+  }
+
+  async previewImport(
+    file: Express.Multer.File,
+  ): Promise<{ status: string; message: string; data: ImportPopulationPreviewItemDto[] }> {
+    try {
+      if (!file) {
+        throw new BadRequestException('File tidak ditemukan');
+      }
+
+      if (
+        !file.mimetype.includes('csv') &&
+        !file.originalname.endsWith('.csv')
+      ) {
+        throw new BadRequestException('File harus berupa CSV');
+      }
+
+      const csvData = await this.parseCsvFile(file.buffer);
+      const validationResults: ImportPopulationPreviewItemDto[] = [];
+
+      for (let i = 0; i < csvData.length; i++) {
+        const row = csvData[i];
+        const rowNumber = i + 1;
+
+        // Validasi data
+        const validation = await this.validateCsvRow(row);
+
+        validationResults.push({
+          status: validation.isValid ? 'success' : 'error',
+          message: validation.isValid ? 'Data valid' : validation.message,
+          row: rowNumber,
+          data: row,
+        });
+      }
+
+      // Tentukan status dan message berdasarkan hasil validasi
+      const hasErrors = validationResults.some(result => result.status === 'error');
+      const status = hasErrors ? 'error' : 'success';
+      const message = hasErrors ? 'Terdapat data yang tidak valid' : 'Semua data valid';
+
+      return {
+        status,
+        message,
+        data: validationResults
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Gagal preview import CSV');
+    }
+  }
+
+  async importData(file: Express.Multer.File): Promise<ApiResponse<any>> {
+    try {
+      if (!file) {
+        throw new BadRequestException('File tidak ditemukan');
+      }
+
+      if (
+        !file.mimetype.includes('csv') &&
+        !file.originalname.endsWith('.csv')
+      ) {
+        throw new BadRequestException('File harus berupa CSV');
+      }
+
+      const csvData = await this.parseCsvFile(file.buffer);
+      const importResults: ImportPopulationPreviewItemDto[] = [];
+      let successCount = 0;
+      let failedCount = 0;
+
+      for (let i = 0; i < csvData.length; i++) {
+        const row = csvData[i];
+        const rowNumber = i + 1;
+
+        try {
+          // Validasi data
+          const validation = await this.validateCsvRow(row);
+
+          if (validation.isValid) {
+            // Import data ke database
+            await this.importCsvRow(row);
+            successCount++;
+
+            importResults.push({
+              status: 'success',
+              message: 'Data berhasil diimport',
+              row: rowNumber,
+              data: row,
+            });
+          } else {
+            failedCount++;
+
+            importResults.push({
+              status: 'error',
+              message: validation.message,
+              row: rowNumber,
+              data: row,
+            });
+          }
+        } catch (error) {
+          failedCount++;
+
+          importResults.push({
+            status: 'error',
+            message: error.message || 'Gagal import data',
+            row: rowNumber,
+            data: row,
+          });
+        }
+      }
+
+      const response = {
+        total: csvData.length,
+        success: successCount,
+        failed: failedCount,
+        details: importResults,
+      };
+
+      return successResponse(response, 'Data berhasil diimport');
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Gagal import CSV');
+    }
+  }
+
+  async downloadTemplate(): Promise<Buffer> {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const templatePath = path.join(__dirname, 'template-population-import.csv');
+      
+      if (!fs.existsSync(templatePath)) {
+        throw new Error('Template CSV tidak ditemukan');
+      }
+      
+      return fs.readFileSync(templatePath);
+    } catch (error) {
+      throw new InternalServerErrorException('Gagal download template CSV');
+    }
+  }
+
+  private async parseCsvFile(
+    buffer: Buffer,
+  ): Promise<ImportPopulationCsvRowDto[]> {
+    return new Promise((resolve, reject) => {
+      const results: ImportPopulationCsvRowDto[] = [];
+      const stream = Readable.from(buffer);
+
+      stream
+        .pipe(csv())
+        .on('data', (data) => {
+                  results.push({
+          date_arrive: data.date_arrive || '',
+          status: data.status || '',
+          unit_name: data.unit_name || '',
+          no_unit: data.no_unit || '',
+          vin_number: data.vin_number || '',
+          no_unit_system: data.no_unit_system || '',
+          serial_engine: data.serial_engine || '',
+          engine_brand: data.engine_brand || '',
+          activities_name: data.activities_name || '',
+          user_site: data.user_site || '',
+          site_origin: data.site_origin || '',
+          remarks: data.remarks || '',
+          site_name: data.site_name || '',
+          company: data.company || '',
+          last_unit_number: data.last_unit_number || '',
+          tyre_type: data.tyre_type || '',
+        });
+        })
+        .on('end', () => {
+          resolve(results);
+        })
+        .on('error', (error) => {
+          reject(error);
+        });
+    });
+  }
+
+  private async validateCsvRow(
+    row: ImportPopulationCsvRowDto,
+  ): Promise<{ isValid: boolean; message: string }> {
+    // Validasi required fields
+    if (
+      !row.date_arrive ||
+      !row.status ||
+      !row.unit_name ||
+      !row.activities_name ||
+      !row.site_name
+    ) {
+      return { isValid: false, message: 'Data tidak lengkap' };
+    }
+
+    // Validasi format date
+    if (!this.isValidDate(row.date_arrive)) {
+      return {
+        isValid: false,
+        message: 'Format tanggal tidak valid (yyyy-mm-dd)',
+      };
+    }
+
+    // Validasi status
+    if (!['active', 'inactive'].includes(row.status)) {
+      return { isValid: false, message: 'Status harus active atau inactive' };
+    }
+
+    // Validasi tyre_type
+    if (row.tyre_type && !['6x4', '8x4'].includes(row.tyre_type)) {
+      return { isValid: false, message: 'Tyre type harus 6x4 atau 8x4' };
+    }
+
+    // Validasi remarks
+    if (row.remarks && !['RFU', 'BD'].includes(row.remarks)) {
+      return { isValid: false, message: 'Remarks harus RFU atau BD' };
+    }
+
+    // Validasi unit_name exists
+    const unitType = await this.unitTypeRepository.findOne({
+      where: { unit_name: row.unit_name },
+    });
+    if (!unitType) {
+      return { isValid: false, message: 'unit_name tidak ada' };
+    }
+
+    // Validasi activities_name exists
+    const activity = await this.activitiesRepository.findOne({
+      where: { name: row.activities_name },
+    });
+    if (!activity) {
+      return { isValid: false, message: 'activities_name tidak ada' };
+    }
+
+    // Validasi site_name exists
+    const site = await this.sitesRepository.findOne({
+      where: { name: row.site_name },
+    });
+    if (!site) {
+      return { isValid: false, message: 'site_name tidak ada' };
+    }
+
+    // Validasi duplikasi VIN number
+    if (row.vin_number) {
+      const existingVin = await this.populationRepository.findOne({
+        where: { vin_number: row.vin_number },
+      });
+      if (existingVin) {
+        return { isValid: false, message: 'VIN number sudah terdaftar' };
+      }
+    }
+
+    // Validasi duplikasi no_unit
+    if (row.no_unit) {
+      const existingNoUnit = await this.populationRepository.findOne({
+        where: { no_unit: row.no_unit },
+      });
+      if (existingNoUnit) {
+        return { isValid: false, message: 'Nomor unit sudah terdaftar' };
+      }
+    }
+
+    // Validasi duplikasi no_unit_system
+    if (row.no_unit_system) {
+      const existingNoUnitSystem = await this.populationRepository.findOne({
+        where: { no_unit_system: row.no_unit_system },
+      });
+      if (existingNoUnitSystem) {
+        return { isValid: false, message: 'Nomor unit sistem sudah terdaftar' };
+      }
+    }
+
+    return { isValid: true, message: 'Data valid' };
+  }
+
+  private async importCsvRow(row: ImportPopulationCsvRowDto): Promise<void> {
+    // Get unit_type_id from unit_name
+    const unitType = await this.unitTypeRepository.findOne({
+      where: { unit_name: row.unit_name },
+    });
+
+    if (!unitType) {
+      throw new Error('Unit type tidak ditemukan');
+    }
+
+    // Get activities_id from activities_name
+    const activity = await this.activitiesRepository.findOne({
+      where: { name: row.activities_name },
+    });
+
+    if (!activity) {
+      throw new Error('Activity tidak ditemukan');
+    }
+
+    // Get site_id from site_name
+    const site = await this.sitesRepository.findOne({
+      where: { name: row.site_name },
+    });
+
+    if (!site) {
+      throw new Error('Site tidak ditemukan');
+    }
+
+    const populationData = {
+      date_arrive: new Date(row.date_arrive),
+      status: row.status,
+      unit_type_id: unitType.id,
+      no_unit: row.no_unit,
+      vin_number: row.vin_number,
+      no_unit_system: row.no_unit_system,
+      serial_engine: row.serial_engine,
+      engine_brand: row.engine_brand,
+      activities_id: activity.id,
+      site_origin: row.site_origin,
+      remarks: row.remarks,
+      site_id: site.id,
+      company: row.company,
+      last_unit_number: row.last_unit_number,
+      tyre_type: row.tyre_type,
+    };
+
+    const newPopulation = this.populationRepository.create(populationData);
+    await this.populationRepository.save(newPopulation);
+  }
+
+  private isValidDate(dateString: string): boolean {
+    const date = new Date(dateString);
+    return (
+      date instanceof Date &&
+      !isNaN(date.getTime()) &&
+      !!dateString.match(/^\d{4}-\d{2}-\d{2}$/)
+    );
   }
 }

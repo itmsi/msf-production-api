@@ -1,6 +1,13 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableForeignKey,
+} from 'typeorm';
 
-export class CreateTableTB_R_CCR_Barging1700000000018 implements MigrationInterface {
+export class CreateTableTB_R_CCR_Barging1700000000018
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Buat tabel TB_R_CCR_Barging
     await queryRunner.createTable(
@@ -131,7 +138,7 @@ export class CreateTableTB_R_CCR_Barging1700000000018 implements MigrationInterf
     const table = await queryRunner.getTable('r_ccr_barging');
     if (table) {
       const foreignKeys = table.foreignKeys;
-      
+
       for (const foreignKey of foreignKeys) {
         await queryRunner.dropForeignKey('r_ccr_barging', foreignKey);
       }

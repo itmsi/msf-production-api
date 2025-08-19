@@ -7,7 +7,10 @@ export class RabbitmqService {
     console.log(`Publishing message to queue ${queue}:`, message);
   }
 
-  async consumeMessage(queue: string, callback: (message: any) => void): Promise<void> {
+  async consumeMessage(
+    queue: string,
+    callback: (message: any) => void,
+  ): Promise<void> {
     // TODO: Implement actual RabbitMQ consuming logic
     console.log(`Consuming messages from queue ${queue}`);
   }

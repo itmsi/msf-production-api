@@ -12,18 +12,27 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { MenuHasPermissionService } from './menu-has-permission.service';
-import { CreateMenuHasPermissionDto, UpdateMenuHasPermissionDto, MenuHasPermissionResponseDto } from './dto/menu-has-permission.dto';
+import {
+  CreateMenuHasPermissionDto,
+  UpdateMenuHasPermissionDto,
+  MenuHasPermissionResponseDto,
+} from './dto/menu-has-permission.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 
 @ApiTags('Menu Has Permission')
 @ApiBearerAuth('jwt')
 @Controller('menu-has-permissions')
 export class MenuHasPermissionController {
-  constructor(private readonly menuHasPermissionService: MenuHasPermissionService) {}
+  constructor(
+    private readonly menuHasPermissionService: MenuHasPermissionService,
+  ) {}
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() createMenuHasPermissionDto: CreateMenuHasPermissionDto, @Request() req: any) {
+  create(
+    @Body() createMenuHasPermissionDto: CreateMenuHasPermissionDto,
+    @Request() req: any,
+  ) {
     if (!createMenuHasPermissionDto.createdBy) {
       createMenuHasPermissionDto.createdBy = req.user?.id;
     }
@@ -44,7 +53,9 @@ export class MenuHasPermissionController {
 
   @UseGuards(JwtAuthGuard)
   @Get('by-permission/:permissionId')
-  findByPermissionId(@Param('permissionId', ParseIntPipe) permissionId: number) {
+  findByPermissionId(
+    @Param('permissionId', ParseIntPipe) permissionId: number,
+  ) {
     return this.menuHasPermissionService.findByPermissionId(permissionId);
   }
 

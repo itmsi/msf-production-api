@@ -97,13 +97,17 @@ export class MainSeeder {
 
       // 13. Seed Menu-Permission relationships (depends on Menus and Permissions)
       console.log('🔗 Seeding Menu-Permission relationships...');
-      const menuHasPermissionSeeder = new MenuHasPermissionSeeder(this.dataSource);
+      const menuHasPermissionSeeder = new MenuHasPermissionSeeder(
+        this.dataSource,
+      );
       await menuHasPermissionSeeder.run();
       console.log('✅ Menu-Permission relationships seeding completed\n');
 
       // 14. Seed Role-Permission relationships (depends on Roles, Menu-Permissions, and Permissions)
       console.log('🔗 Seeding Role-Permission relationships...');
-      const roleHasPermissionSeeder = new RoleHasPermissionSeeder(this.dataSource);
+      const roleHasPermissionSeeder = new RoleHasPermissionSeeder(
+        this.dataSource,
+      );
       await roleHasPermissionSeeder.run();
       console.log('✅ Role-Permission relationships seeding completed\n');
 
@@ -139,7 +143,6 @@ export class MainSeeder {
       console.log('   • staff2 / staff123');
       console.log('   • operator1 / operator123');
       console.log('   • viewer1 / viewer123');
-
     } catch (error) {
       console.error('❌ Error during seeding:', error);
       throw error;

@@ -43,9 +43,15 @@ export class Permission {
   deletedBy: number;
 
   // Relations
-  @OneToMany(() => RoleHasPermission, (roleHasPermission) => roleHasPermission.permission)
+  @OneToMany(
+    () => RoleHasPermission,
+    (roleHasPermission) => roleHasPermission.permission,
+  )
   roleHasPermissions: RoleHasPermission[];
 
-  @OneToMany(() => MenuHasPermission, (menuHasPermission) => menuHasPermission.permission)
+  @OneToMany(
+    () => MenuHasPermission,
+    (menuHasPermission) => menuHasPermission.permission,
+  )
   menuHasPermissions: MenuHasPermission[];
 }

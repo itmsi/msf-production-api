@@ -4,7 +4,8 @@ export class UnitVariantSeeder {
   constructor(private dataSource: DataSource) {}
 
   async run(): Promise<void> {
-    const unitVariantRepository = this.dataSource.getRepository('m_unit_variant');
+    const unitVariantRepository =
+      this.dataSource.getRepository('m_unit_variant');
 
     const unitVariantsData = [
       {
@@ -91,18 +92,22 @@ export class UnitVariantSeeder {
 
     for (const unitVariantData of unitVariantsData) {
       const existingUnitVariant = await unitVariantRepository.findOne({
-        where: { 
+        where: {
           name: unitVariantData.name,
-          model: unitVariantData.model 
+          model: unitVariantData.model,
         },
       });
 
       if (!existingUnitVariant) {
         const unitVariant = unitVariantRepository.create(unitVariantData);
         await unitVariantRepository.save(unitVariant);
-        console.log(`✅ Unit Variant "${unitVariantData.name} - ${unitVariantData.model}" created`);
+        console.log(
+          `✅ Unit Variant "${unitVariantData.name} - ${unitVariantData.model}" created`,
+        );
       } else {
-        console.log(`⏭️  Unit Variant "${unitVariantData.name} - ${unitVariantData.model}" already exists`);
+        console.log(
+          `⏭️  Unit Variant "${unitVariantData.name} - ${unitVariantData.model}" already exists`,
+        );
       }
     }
   }

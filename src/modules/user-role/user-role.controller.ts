@@ -12,7 +12,11 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UserRoleService } from './user-role.service';
-import { CreateUserRoleDto, UpdateUserRoleDto, UserRoleResponseDto } from './dto/user-role.dto';
+import {
+  CreateUserRoleDto,
+  UpdateUserRoleDto,
+  UserRoleResponseDto,
+} from './dto/user-role.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 
 @ApiTags('User Role')
@@ -37,7 +41,11 @@ export class UserRoleController {
     @Request() req: any,
   ) {
     const createdBy = req.user?.id;
-    return this.userRoleService.assignRoleToUser(body.user_id, body.role_id, createdBy);
+    return this.userRoleService.assignRoleToUser(
+      body.user_id,
+      body.role_id,
+      createdBy,
+    );
   }
 
   @UseGuards(JwtAuthGuard)

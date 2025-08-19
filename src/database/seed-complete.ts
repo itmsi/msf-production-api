@@ -13,9 +13,7 @@ async function seedComplete() {
     username: process.env.POSTGRES_USER,
     password: process.env.POSTGRES_PASSWORD,
     database: process.env.POSTGRES_DB,
-    entities: [
-      __dirname + '/../modules/**/entities/*.entity{.ts,.js}',
-    ],
+    entities: [__dirname + '/../modules/**/entities/*.entity{.ts,.js}'],
     synchronize: false,
     logging: false,
   });
@@ -26,7 +24,6 @@ async function seedComplete() {
 
     const completeSeeder = new CompleteSeeder(dataSource);
     await completeSeeder.run();
-
   } catch (error) {
     console.error('❌ Complete Seeding failed:', error);
     process.exit(1);

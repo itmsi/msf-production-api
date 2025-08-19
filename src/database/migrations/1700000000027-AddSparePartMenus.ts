@@ -1,7 +1,4 @@
-import {
-  MigrationInterface,
-  QueryRunner,
-} from 'typeorm';
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AddSparePartMenus1700000000027 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {

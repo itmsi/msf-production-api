@@ -11,12 +11,17 @@ import {
 } from '@nestjs/common';
 import { SitesService } from './sites.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse as SwaggerApiResponse } from '@nestjs/swagger';
-import { 
-  CreateSitesDto, 
-  GetSitesQueryDto, 
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiResponse as SwaggerApiResponse,
+} from '@nestjs/swagger';
+import {
+  CreateSitesDto,
+  GetSitesQueryDto,
   UpdateSitesDto,
-  SitesResponseDto 
+  SitesResponseDto,
 } from './dto/sites.dto';
 
 @ApiTags('Sites')
@@ -27,12 +32,14 @@ export class SitesController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  @ApiOperation({ 
-    summary: 'Mendapatkan semua data sites dengan pagination, filtering, dan sorting',
-    description: 'Endpoint ini mendukung pagination, pencarian, filtering berdasarkan name dan location, dan sorting berdasarkan field tertentu'
+  @ApiOperation({
+    summary:
+      'Mendapatkan semua data sites dengan pagination, filtering, dan sorting',
+    description:
+      'Endpoint ini mendukung pagination, pencarian, filtering berdasarkan name dan location, dan sorting berdasarkan field tertentu',
   })
-  @SwaggerApiResponse({ 
-    status: 200, 
+  @SwaggerApiResponse({
+    status: 200,
     description: 'Data sites berhasil diambil',
     type: [SitesResponseDto],
     schema: {
@@ -57,54 +64,54 @@ export class SitesController {
                 longitude: 106.8456,
                 latitude: -6.2088,
                 createdAt: '2024-01-01T00:00:00.000Z',
-                updatedAt: '2024-01-01T00:00:00.000Z'
-              }
-            ]
-          }
+                updatedAt: '2024-01-01T00:00:00.000Z',
+              },
+            ],
+          },
         ],
         meta: {
           total: 1,
           page: 1,
-          limit: 10
-        }
-      }
-    }
+          limit: 10,
+        },
+      },
+    },
   })
-  @SwaggerApiResponse({ 
-    status: 400, 
+  @SwaggerApiResponse({
+    status: 400,
     description: 'Bad Request - Parameter query tidak valid',
     schema: {
       example: {
         statusCode: 400,
         message: 'Validation failed',
         error: true,
-        timestamp: '2024-01-01T00:00:00.000Z'
-      }
-    }
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
-  @SwaggerApiResponse({ 
-    status: 401, 
+  @SwaggerApiResponse({
+    status: 401,
     description: 'Unauthorized - JWT token tidak valid atau tidak ada',
     schema: {
       example: {
         statusCode: 401,
         message: 'Unauthorized',
         error: true,
-        timestamp: '2024-01-01T00:00:00.000Z'
-      }
-    }
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
-  @SwaggerApiResponse({ 
-    status: 500, 
+  @SwaggerApiResponse({
+    status: 500,
     description: 'Internal Server Error - Terjadi kesalahan pada server',
     schema: {
       example: {
         statusCode: 500,
         message: 'Internal server error',
         error: true,
-        timestamp: '2024-01-01T00:00:00.000Z'
-      }
-    }
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
   findAll(@Query() query: GetSitesQueryDto) {
     return this.sitesService.findAll(query);
@@ -112,12 +119,13 @@ export class SitesController {
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Mendapatkan data site berdasarkan ID',
-    description: 'Mengambil data site berdasarkan ID yang diberikan beserta operator points'
+    description:
+      'Mengambil data site berdasarkan ID yang diberikan beserta operator points',
   })
-  @SwaggerApiResponse({ 
-    status: 200, 
+  @SwaggerApiResponse({
+    status: 200,
     description: 'Data site berhasil diambil',
     type: SitesResponseDto,
     schema: {
@@ -141,60 +149,60 @@ export class SitesController {
               longitude: 106.8456,
               latitude: -6.2088,
               createdAt: '2024-01-01T00:00:00.000Z',
-              updatedAt: '2024-01-01T00:00:00.000Z'
-            }
-          ]
-        }
-      }
-    }
+              updatedAt: '2024-01-01T00:00:00.000Z',
+            },
+          ],
+        },
+      },
+    },
   })
-  @SwaggerApiResponse({ 
-    status: 400, 
+  @SwaggerApiResponse({
+    status: 400,
     description: 'Bad Request - ID tidak valid',
     schema: {
       example: {
         statusCode: 400,
         message: 'ID harus berupa angka',
         error: true,
-        timestamp: '2024-01-01T00:00:00.000Z'
-      }
-    }
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
-  @SwaggerApiResponse({ 
-    status: 401, 
+  @SwaggerApiResponse({
+    status: 401,
     description: 'Unauthorized - JWT token tidak valid atau tidak ada',
     schema: {
       example: {
         statusCode: 401,
         message: 'Unauthorized',
         error: true,
-        timestamp: '2024-01-01T00:00:00.000Z'
-      }
-    }
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
-  @SwaggerApiResponse({ 
-    status: 404, 
+  @SwaggerApiResponse({
+    status: 404,
     description: 'Site tidak ditemukan',
     schema: {
       example: {
         statusCode: 404,
         message: 'Site tidak ditemukan',
         error: true,
-        timestamp: '2024-01-01T00:00:00.000Z'
-      }
-    }
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
-  @SwaggerApiResponse({ 
-    status: 500, 
+  @SwaggerApiResponse({
+    status: 500,
     description: 'Internal Server Error - Terjadi kesalahan pada server',
     schema: {
       example: {
         statusCode: 500,
         message: 'Internal server error',
         error: true,
-        timestamp: '2024-01-01T00:00:00.000Z'
-      }
-    }
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
   findOne(@Param('id') id: number) {
     return this.sitesService.findById(id);
@@ -202,12 +210,12 @@ export class SitesController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Membuat site baru',
-    description: 'Membuat site baru beserta operator points (dumping/loading)'
+    description: 'Membuat site baru beserta operator points (dumping/loading)',
   })
-  @SwaggerApiResponse({ 
-    status: 201, 
+  @SwaggerApiResponse({
+    status: 201,
     description: 'Site berhasil dibuat',
     type: SitesResponseDto,
     schema: {
@@ -231,48 +239,48 @@ export class SitesController {
               longitude: 106.8456,
               latitude: -6.2088,
               createdAt: '2024-01-01T00:00:00.000Z',
-              updatedAt: '2024-01-01T00:00:00.000Z'
-            }
-          ]
-        }
-      }
-    }
+              updatedAt: '2024-01-01T00:00:00.000Z',
+            },
+          ],
+        },
+      },
+    },
   })
-  @SwaggerApiResponse({ 
-    status: 400, 
+  @SwaggerApiResponse({
+    status: 400,
     description: 'Bad Request - Data tidak valid',
     schema: {
       example: {
         statusCode: 400,
         message: 'name should not be empty',
         error: true,
-        timestamp: '2024-01-01T00:00:00.000Z'
-      }
-    }
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
-  @SwaggerApiResponse({ 
-    status: 401, 
+  @SwaggerApiResponse({
+    status: 401,
     description: 'Unauthorized - JWT token tidak valid atau tidak ada',
     schema: {
       example: {
         statusCode: 401,
         message: 'Unauthorized',
         error: true,
-        timestamp: '2024-01-01T00:00:00.000Z'
-      }
-    }
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
-  @SwaggerApiResponse({ 
-    status: 500, 
+  @SwaggerApiResponse({
+    status: 500,
     description: 'Internal Server Error - Terjadi kesalahan pada server',
     schema: {
       example: {
         statusCode: 500,
         message: 'Internal server error',
         error: true,
-        timestamp: '2024-01-01T00:00:00.000Z'
-      }
-    }
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
   create(@Body() dto: CreateSitesDto) {
     return this.sitesService.create(dto);
@@ -280,12 +288,12 @@ export class SitesController {
 
   @UseGuards(JwtAuthGuard)
   @Put(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Mengupdate data site berdasarkan ID',
-    description: 'Mengupdate data site beserta operator points'
+    description: 'Mengupdate data site beserta operator points',
   })
-  @SwaggerApiResponse({ 
-    status: 200, 
+  @SwaggerApiResponse({
+    status: 200,
     description: 'Site berhasil diupdate',
     type: SitesResponseDto,
     schema: {
@@ -309,60 +317,60 @@ export class SitesController {
               longitude: 106.8456,
               latitude: -6.2088,
               createdAt: '2024-01-01T00:00:00.000Z',
-              updatedAt: '2024-01-01T00:00:00.000Z'
-            }
-          ]
-        }
-      }
-    }
+              updatedAt: '2024-01-01T00:00:00.000Z',
+            },
+          ],
+        },
+      },
+    },
   })
-  @SwaggerApiResponse({ 
-    status: 400, 
+  @SwaggerApiResponse({
+    status: 400,
     description: 'Bad Request - Data tidak valid',
     schema: {
       example: {
         statusCode: 400,
         message: 'name should not be empty',
         error: true,
-        timestamp: '2024-01-01T00:00:00.000Z'
-      }
-    }
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
-  @SwaggerApiResponse({ 
-    status: 401, 
+  @SwaggerApiResponse({
+    status: 401,
     description: 'Unauthorized - JWT token tidak valid atau tidak ada',
     schema: {
       example: {
         statusCode: 401,
         message: 'Unauthorized',
         error: true,
-        timestamp: '2024-01-01T00:00:00.000Z'
-      }
-    }
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
-  @SwaggerApiResponse({ 
-    status: 404, 
+  @SwaggerApiResponse({
+    status: 404,
     description: 'Site tidak ditemukan',
     schema: {
       example: {
         statusCode: 404,
         message: 'Site tidak ditemukan',
         error: true,
-        timestamp: '2024-01-01T00:00:00.000Z'
-      }
-    }
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
-  @SwaggerApiResponse({ 
-    status: 500, 
+  @SwaggerApiResponse({
+    status: 500,
     description: 'Internal Server Error - Terjadi kesalahan pada server',
     schema: {
       example: {
         statusCode: 500,
         message: 'Internal server error',
         error: true,
-        timestamp: '2024-01-01T00:00:00.000Z'
-      }
-    }
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
   update(@Param('id') id: number, @Body() dto: UpdateSitesDto) {
     return this.sitesService.update(id, dto);
@@ -370,68 +378,69 @@ export class SitesController {
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Menghapus data site berdasarkan ID (soft delete)',
-    description: 'Melakukan soft delete pada site (data tidak benar-benar dihapus dari database)'
+    description:
+      'Melakukan soft delete pada site (data tidak benar-benar dihapus dari database)',
   })
-  @SwaggerApiResponse({ 
-    status: 200, 
+  @SwaggerApiResponse({
+    status: 200,
     description: 'Site berhasil dihapus',
     schema: {
       example: {
         statusCode: 200,
         message: 'Site berhasil dihapus',
-        data: null
-      }
-    }
+        data: null,
+      },
+    },
   })
-  @SwaggerApiResponse({ 
-    status: 400, 
+  @SwaggerApiResponse({
+    status: 400,
     description: 'Bad Request - ID tidak valid',
     schema: {
       example: {
         statusCode: 400,
         message: 'ID harus berupa angka',
         error: true,
-        timestamp: '2024-01-01T00:00:00.000Z'
-      }
-    }
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
-  @SwaggerApiResponse({ 
-    status: 401, 
+  @SwaggerApiResponse({
+    status: 401,
     description: 'Unauthorized - JWT token tidak valid atau tidak ada',
     schema: {
       example: {
         statusCode: 401,
         message: 'Unauthorized',
         error: true,
-        timestamp: '2024-01-01T00:00:00.000Z'
-      }
-    }
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
-  @SwaggerApiResponse({ 
-    status: 404, 
+  @SwaggerApiResponse({
+    status: 404,
     description: 'Site tidak ditemukan',
     schema: {
       example: {
         statusCode: 404,
         message: 'Site tidak ditemukan',
         error: true,
-        timestamp: '2024-01-01T00:00:00.000Z'
-      }
-    }
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
-  @SwaggerApiResponse({ 
-    status: 500, 
+  @SwaggerApiResponse({
+    status: 500,
     description: 'Internal Server Error - Terjadi kesalahan pada server',
     schema: {
       example: {
         statusCode: 500,
         message: 'Internal server error',
         error: true,
-        timestamp: '2024-01-01T00:00:00.000Z'
-      }
-    }
+        timestamp: '2024-01-01T00:00:00.000Z',
+      },
+    },
   })
   remove(@Param('id') id: number) {
     return this.sitesService.remove(id);

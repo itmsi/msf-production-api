@@ -40,7 +40,7 @@ export class Employee {
   @Column({
     type: 'enum',
     enum: ['active', 'inactive', 'resign', 'on-leave'],
-    default: 'active'
+    default: 'active',
   })
   status: string;
 
