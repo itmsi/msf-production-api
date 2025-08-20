@@ -1,0 +1,278 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiParam,
+  ApiQuery,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { DailyPlanProductionService } from './daily-plan-production.service';
+import {
+  CreateDailyPlanProductionDto,
+  UpdateDailyPlanProductionDto,
+  QueryDailyPlanProductionDto,
+  DailyPlanProductionResponseDto,
+} from './dto/daily-plan-production.dto';
+import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
+
+@ApiTags('Daily Plan Production')
+@ApiBearerAuth()
+@Controller('daily-plan-production')
+@UseGuards(JwtAuthGuard)
+export class DailyPlanProductionController {
+  constructor(
+    private readonly dailyPlanProductionService: DailyPlanProductionService,
+  ) {}
+
+  @Post()
+  @ApiOperation({
+    summary: 'Create Daily Plan Production',
+    description: 'Membuat rencana produksi harian baru dengan validasi dan perhitungan otomatis',
+  })
+  @ApiBody({
+    type: CreateDailyPlanProductionDto,
+    description: 'Data untuk membuat daily plan production',
+    examples: {
+      example1: {
+        summary: 'Contoh data lengkap',
+        value: {
+          plan_date: '2025-01-01',
+          average_day_ewh: 1.5,
+          average_shift_ewh: 0.75,
+          ob_target: 1000,
+          ore_target: 800,
+          quarry: 200,
+          ore_shipment_target: 750,
+          total_fleet: 15,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Daily plan production berhasil dibuat',
+    type: DailyPlanProductionResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Validasi gagal atau data duplikat',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 400 },
+        message: { type: 'string', example: 'Plan date sudah ada dalam database' },
+        error: { type: 'boolean', example: true },
+        timestamp: { type: 'string', example: '2025-01-01T00:00:00.000Z' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - JWT token tidak valid',
+  })
+  create(@Body() createDto: CreateDailyPlanProductionDto) {
+    return this.dailyPlanProductionService.create(createDto);
+  }
+
+  @Get()
+  @ApiOperation({
+    summary: 'Get All Daily Plan Production',
+    description: 'Mengambil semua data rencana produksi dengan pagination dan filter',
+  })
+  @ApiQuery({
+    name: 'start_date',
+    required: false,
+    description: 'Filter tanggal mulai (YYYY-MM-DD)',
+    example: '2025-01-01',
+  })
+  @ApiQuery({
+    name: 'end_date',
+    required: false,
+    description: 'Filter tanggal akhir (YYYY-MM-DD)',
+    example: '2025-01-31',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Nomor halaman',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Limit per halaman',
+    example: 10,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Data daily plan production berhasil diambil',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 200 },
+        message: { type: 'string', example: 'Data daily plan production berhasil diambil' },
+        data: {
+          type: 'object',
+          properties: {
+            data: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/DailyPlanProductionResponseDto' },
+            },
+            pagination: {
+              type: 'object',
+              properties: {
+                page: { type: 'number', example: 1 },
+                limit: { type: 'number', example: 10 },
+                total: { type: 'number', example: 25 },
+                totalPages: { type: 'number', example: 3 },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - JWT token tidak valid',
+  })
+  findAll(@Query() queryDto: QueryDailyPlanProductionDto) {
+    return this.dailyPlanProductionService.findAll(queryDto);
+  }
+
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Get Daily Plan Production by ID',
+    description: 'Mengambil data rencana produksi berdasarkan ID',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID rencana produksi',
+    example: 1,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Data daily plan production berhasil diambil',
+    type: DailyPlanProductionResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Not Found - Data tidak ditemukan',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 404 },
+        message: { type: 'string', example: 'Daily plan production tidak ditemukan' },
+        error: { type: 'boolean', example: true },
+        timestamp: { type: 'string', example: '2025-01-01T00:00:00.000Z' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - JWT token tidak valid',
+  })
+  findOne(@Param('id') id: string) {
+    return this.dailyPlanProductionService.findOne(+id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Update Daily Plan Production',
+    description: 'Update data rencana produksi berdasarkan ID',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID rencana produksi',
+    example: 1,
+  })
+  @ApiBody({
+    type: UpdateDailyPlanProductionDto,
+    description: 'Data untuk update daily plan production',
+    examples: {
+      example1: {
+        summary: 'Update target OB dan ore',
+        value: {
+          ob_target: 1200,
+          ore_target: 900,
+        },
+      },
+      example2: {
+        summary: 'Update quarry dan fleet',
+        value: {
+          quarry: 250,
+          total_fleet: 18,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Daily plan production berhasil diupdate',
+    type: DailyPlanProductionResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Validasi gagal atau data duplikat',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Not Found - Data tidak ditemukan',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - JWT token tidak valid',
+  })
+  update(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateDailyPlanProductionDto,
+  ) {
+    return this.dailyPlanProductionService.update(+id, updateDto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({
+    summary: 'Delete Daily Plan Production',
+    description: 'Soft delete data rencana produksi berdasarkan ID',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID rencana produksi',
+    example: 1,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Daily plan production berhasil dihapus',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 200 },
+        message: { type: 'string', example: 'Daily plan production berhasil dihapus' },
+        data: { type: 'null', example: null },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Not Found - Data tidak ditemukan',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - JWT token tidak valid',
+  })
+  remove(@Param('id') id: string) {
+    return this.dailyPlanProductionService.remove(+id);
+  }
+}
