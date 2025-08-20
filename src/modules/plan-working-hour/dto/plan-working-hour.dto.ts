@@ -19,7 +19,7 @@ export class PlanWorkingHourDetailDto {
   })
   @IsNotEmpty()
   @IsNumber()
-  working_hour: number;
+  activities_hour: number;
 }
 
 export class CreatePlanWorkingHourDto {
@@ -32,36 +32,6 @@ export class CreatePlanWorkingHourDto {
   @Type(() => Date)
   @IsDate()
   plan_date: Date;
-
-  @ApiProperty({
-    description: 'Apakah hari kalender (auto-filled)',
-    example: true,
-    type: Boolean,
-    required: false
-  })
-  @IsOptional()
-  @IsBoolean()
-  is_calender_day?: boolean;
-
-  @ApiProperty({
-    description: 'Apakah hari libur (auto-filled)',
-    example: false,
-    type: Boolean,
-    required: false
-  })
-  @IsOptional()
-  @IsBoolean()
-  is_holiday_day?: boolean;
-
-  @ApiProperty({
-    description: 'Apakah hari terjadwal (auto-filled)',
-    example: true,
-    type: Boolean,
-    required: false
-  })
-  @IsOptional()
-  @IsBoolean()
-  is_schedule_day?: boolean;
 
   @ApiProperty({
     description: 'Jam kerja',
@@ -109,11 +79,11 @@ export class CreatePlanWorkingHourDto {
     example: [
       {
         activities_id: 1,
-        working_hour: 1
+        activities_hour: 1
       },
       {
         activities_id: 2,
-        working_hour: 1
+        activities_hour: 1
       }
     ]
   })
@@ -212,11 +182,11 @@ export class UpdatePlanWorkingHourDto {
     example: [
       {
         activities_id: 1,
-        working_hour: 1
+        activities_hour: 1
       },
       {
         activities_id: 2,
-        working_hour: 1
+        activities_hour: 1
       }
     ]
   })

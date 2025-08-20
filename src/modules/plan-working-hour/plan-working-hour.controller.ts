@@ -44,7 +44,7 @@ export class PlanWorkingHourController {
     description: `
       Endpoint untuk membuat data plan working hour baru dengan detail activities.
       
-      Field yang akan di-auto-fill:
+      Field yang akan di-auto-fill oleh sistem:
       - is_calender_day: true jika plan_date terisi
       - is_holiday_day: false jika plan_date terisi  
       - is_schedule_day: true jika plan_date bukan hari minggu
@@ -60,33 +60,30 @@ export class PlanWorkingHourController {
         summary: 'Contoh request dengan detail activities',
         value: {
           plan_date: "2025-01-01",
-          is_calender_day: true,
-          is_holiday_day: false,
-          is_schedule_day: true,
           working_day_longshift: 1,
           working_hour_longshift: 1,
-          working_hour: 1,
+                          activities_hour: 1,
           mohh_per_month: 1,
           detail: [
             {
               activities_id: 1,
-              working_hour: 1,
+              activities_hour: 1,
             },
             {
               activities_id: 2,
-              working_hour: 1,
+              activities_hour: 1,
             },
             {
               activities_id: 3,
-              working_hour: 1,
+              activities_hour: 1,
             },
             {
               activities_id: 4,
-              working_hour: 1,
+              activities_hour: 1,
             },
             {
               activities_id: 5,
-              working_hour: 1,
+              activities_hour: 1,
             }
           ]
         }
@@ -103,12 +100,9 @@ export class PlanWorkingHourController {
         data: {
           id: 1,
           plan_date: "2025-01-01",
-          is_calender_day: true,
-          is_holiday_day: false,
-          is_schedule_day: true,
           working_day_longshift: 1,
           working_hour_longshift: 1,
-          working_hour: 1,
+                          activities_hour: 1,
           mohh_per_month: 1,
           is_available_to_edit: true,
           is_available_to_delete: true,
@@ -116,7 +110,7 @@ export class PlanWorkingHourController {
             {
               id: 1,
               activities_id: 1,
-              working_hour: 1,
+              activities_hour: 1,
             }
           ],
           createdAt: '2024-01-01T00:00:00.000Z',
@@ -164,12 +158,9 @@ export class PlanWorkingHourController {
           {
             id: 1,
             plan_date: "2025-01-01",
-            is_calender_day: true,
-            is_holiday_day: false,
-            is_schedule_day: true,
             working_day_longshift: 1,
             working_hour_longshift: 1,
-            working_hour: 1,
+                            activities_hour: 1,
             mohh_per_month: 1,
             is_available_to_edit: true,
             is_available_to_delete: true,
@@ -177,7 +168,7 @@ export class PlanWorkingHourController {
               {
                 id: 1,
                 activities_id: 1,
-                working_hour: 1,
+                activities_hour: 1,
               }
             ],
             createdAt: '2024-01-01T00:00:00.000Z',
@@ -299,12 +290,9 @@ export class PlanWorkingHourController {
           {
             id: 1,
             plan_date: "2025-01-01",
-            is_calender_day: true,
-            is_holiday_day: false,
-            is_schedule_day: true,
             working_day_longshift: 1,
             working_hour_longshift: 1,
-            working_hour: 1,
+                            activities_hour: 1,
             mohh_per_month: 1,
             is_available_to_edit: true,
             is_available_to_delete: true,
@@ -312,11 +300,11 @@ export class PlanWorkingHourController {
               {
                 id: 1,
                 activities_id: 1,
-                working_hour: 1,
+                activities_hour: 1,
               }
             ],
             createdAt: '2024-01-01T00:00:00.000Z',
-            updatedAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: '2025-01-01T00:00:00.000Z',
           }
         ]
       }
@@ -349,12 +337,9 @@ export class PlanWorkingHourController {
         data: {
           id: 1,
           plan_date: "2025-01-01",
-          is_calender_day: true,
-          is_holiday_day: false,
-          is_schedule_day: true,
           working_day_longshift: 1,
           working_hour_longshift: 1,
-          working_hour: 1,
+                          activities_hour: 1,
           mohh_per_month: 1,
           is_available_to_edit: true,
           is_available_to_delete: true,
@@ -362,7 +347,7 @@ export class PlanWorkingHourController {
             {
               id: 1,
               activities_id: 1,
-              working_hour: 1,
+              activities_hour: 1,
             }
           ],
           createdAt: '2024-01-01T00:00:00.000Z',
@@ -400,12 +385,9 @@ export class PlanWorkingHourController {
         data: {
           id: 1,
           plan_date: "2025-01-01",
-          is_calender_day: true,
-          is_holiday_day: false,
-          is_schedule_day: true,
           working_day_longshift: 1,
           working_hour_longshift: 1,
-          working_hour: 1,
+                          activities_hour: 1,
           mohh_per_month: 1,
           is_available_to_edit: true,
           is_available_to_delete: true,
@@ -413,7 +395,7 @@ export class PlanWorkingHourController {
             {
               id: 1,
               activities_id: 1,
-              working_hour: 1,
+              activities_hour: 1,
             }
           ],
           createdAt: '2024-01-01T00:00:00.000Z',

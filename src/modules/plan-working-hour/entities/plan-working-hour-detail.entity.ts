@@ -23,7 +23,7 @@ export class PlanWorkingHourDetail {
   activities_id: number;
 
   @Column({ type: 'float', nullable: true })
-  working_hour: number;
+  activities_hour: number;
 
   @CreateDateColumn()
   createdAt: Date;

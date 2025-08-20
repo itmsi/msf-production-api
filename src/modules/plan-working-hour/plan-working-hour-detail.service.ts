@@ -31,8 +31,8 @@ export class PlanWorkingHourDetailService {
       where.activities_id = queryDto.activities_id;
     }
 
-    if (queryDto.working_hour !== undefined) {
-      where.working_hour = queryDto.working_hour;
+    if (queryDto.activities_hour !== undefined) {
+      where.activities_hour = queryDto.activities_hour;
     }
 
     return await this.planWorkingHourDetailRepository.find({
@@ -86,18 +86,18 @@ export class PlanWorkingHourDetailService {
     activities: Array<{
       activities_id: number;
       activities_name: string;
-      working_hour: number;
+      activities_hour: number;
     }>;
   }> {
     const details = await this.findByPlanWorkingHourId(planWorkingHourId);
     
     const totalActivities = details.length;
-    const totalHours = details.reduce((sum, detail) => sum + (detail.working_hour || 0), 0);
+    const totalHours = details.reduce((sum, detail) => sum + (detail.activities_hour || 0), 0);
     
     const activities = details.map(detail => ({
       activities_id: detail.activities_id,
       activities_name: detail.activities?.name || 'Unknown',
-      working_hour: detail.working_hour || 0,
+      activities_hour: detail.activities_hour || 0,
     }));
 
     return {

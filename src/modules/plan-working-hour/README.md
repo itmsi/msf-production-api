@@ -46,9 +46,6 @@ Modul Plan Working Hour digunakan untuk mengelola data perencanaan jam kerja den
 ```json
 {
   "plan_date": "2025-01-01",
-  "is_calender_day": true,
-  "is_holiday_day": false,
-  "is_schedule_day": true,
   "working_day_longshift": 1,
   "working_hour_longshift": 1,
   "working_hour": 1,
@@ -56,7 +53,11 @@ Modul Plan Working Hour digunakan untuk mengelola data perencanaan jam kerja den
   "detail": [
     {
       "activities_id": 1,
-      "working_hour": 1
+      "activities_hour": 1
+    },
+    {
+      "activities_id": 2,
+      "activities_hour": 1
     }
   ]
 }
@@ -70,9 +71,6 @@ Modul Plan Working Hour digunakan untuk mengelola data perencanaan jam kerja den
   "data": {
     "id": 1,
     "plan_date": "2025-01-01",
-    "is_calender_day": true,
-    "is_holiday_day": false,
-    "is_schedule_day": true,
     "working_day_longshift": 1,
     "working_hour_longshift": 1,
     "working_hour": 1,

@@ -22,33 +22,30 @@ Membuat data plan working hour baru dengan detail activities.
 ```json
 {
   "plan_date": "2025-01-01",
-  "is_calender_day": true,
-  "is_holiday_day": false,
-  "is_schedule_day": true,
   "working_day_longshift": 1,
   "working_hour_longshift": 1,
-  "working_hour": 1,
+        "activities_hour": 1,
   "mohh_per_month": 1,
   "detail": [
     {
       "activities_id": 1,
-      "working_hour": 1
+      "activities_hour": 1
     },
     {
       "activities_id": 2,
-      "working_hour": 1
+      "activities_hour": 1
     },
     {
       "activities_id": 3,
-      "working_hour": 1
+      "activities_hour": 1
     },
     {
       "activities_id": 4,
-      "working_hour": 1
+      "activities_hour": 1
     },
     {
       "activities_id": 5,
-      "working_hour": 1
+      "activities_hour": 1
     }
   ]
 }
@@ -68,12 +65,9 @@ Sistem akan otomatis mengisi field berikut berdasarkan `plan_date`:
   "data": {
     "id": 1,
     "plan_date": "2025-01-01",
-    "is_calender_day": true,
-    "is_holiday_day": false,
-    "is_schedule_day": true,
     "working_day_longshift": 1,
     "working_hour_longshift": 1,
-    "working_hour": 1,
+        "activities_hour": 1,
     "mohh_per_month": 1,
     "is_available_to_edit": true,
     "is_available_to_delete": true,
@@ -81,7 +75,7 @@ Sistem akan otomatis mengisi field berikut berdasarkan `plan_date`:
       {
         "id": 1,
         "activities_id": 1,
-        "working_hour": 1
+        "activities_hour": 1
       }
     ],
     "createdAt": "2024-01-01T00:00:00.000Z",
@@ -116,12 +110,9 @@ Mendapatkan semua data plan working hour dengan filtering.
     {
       "id": 1,
       "plan_date": "2025-01-01",
-      "is_calender_day": true,
-      "is_holiday_day": false,
-      "is_schedule_day": true,
       "working_day_longshift": 1,
       "working_hour_longshift": 1,
-      "working_hour": 1,
+      "activities_hour": 1,
       "mohh_per_month": 1,
       "is_available_to_edit": true,
       "is_available_to_delete": true,
@@ -129,11 +120,11 @@ Mendapatkan semua data plan working hour dengan filtering.
         {
           "id": 1,
           "activities_id": 1,
-          "working_hour": 1
+          "activities_hour": 1
         }
       ],
       "createdAt": "2024-01-01T00:00:00.000Z",
-      "updatedAt": "2024-01-01T00:00:00.000Z"
+      "updatedAt": "2025-01-01T00:00:00.000Z"
     }
   ]
 }
@@ -235,12 +226,9 @@ Mendapatkan data plan working hour berdasarkan range tanggal.
     {
       "id": 1,
       "plan_date": "2025-01-01",
-      "is_calender_day": true,
-      "is_holiday_day": false,
-      "is_schedule_day": true,
       "working_day_longshift": 1,
       "working_hour_longshift": 1,
-      "working_hour": 1,
+      "activities_hour": 1,
       "mohh_per_month": 1,
       "is_available_to_edit": true,
       "is_available_to_delete": true,
@@ -248,11 +236,11 @@ Mendapatkan data plan working hour berdasarkan range tanggal.
         {
           "id": 1,
           "activities_id": 1,
-          "working_hour": 1
+          "activities_hour": 1
         }
       ],
       "createdAt": "2024-01-01T00:00:00.000Z",
-      "updatedAt": "2024-01-01T00:00:00.000Z"
+      "updatedAt": "2025-01-01T00:00:00.000Z"
     }
   ]
 }
@@ -276,12 +264,9 @@ Mendapatkan data plan working hour berdasarkan ID tertentu.
   "data": {
     "id": 1,
     "plan_date": "2025-01-01",
-    "is_calender_day": true,
-    "is_holiday_day": false,
-    "is_schedule_day": true,
     "working_day_longshift": 1,
     "working_hour_longshift": 1,
-    "working_hour": 1,
+        "activities_hour": 1,
     "mohh_per_month": 1,
     "is_available_to_edit": true,
     "is_available_to_delete": true,
@@ -289,11 +274,11 @@ Mendapatkan data plan working hour berdasarkan ID tertentu.
       {
         "id": 1,
         "activities_id": 1,
-        "working_hour": 1
+        "activities_hour": 1
       }
     ],
     "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
+    "updatedAt": "2025-01-01T00:00:00.000Z"
   }
 }
 ```
@@ -324,11 +309,11 @@ Mengupdate data plan working hour berdasarkan ID tertentu.
   "detail": [
     {
       "activities_id": 1,
-      "working_hour": 4
+                "activities_hour": 4
     },
     {
       "activities_id": 2,
-      "working_hour": 4
+                "activities_hour": 4
     }
   ]
 }
@@ -342,9 +327,6 @@ Mengupdate data plan working hour berdasarkan ID tertentu.
   "data": {
     "id": 1,
     "plan_date": "2025-01-02",
-    "is_calender_day": true,
-    "is_holiday_day": false,
-    "is_schedule_day": true,
     "working_day_longshift": 1,
     "working_hour_longshift": 1,
     "working_hour": 8,
@@ -355,16 +337,16 @@ Mengupdate data plan working hour berdasarkan ID tertentu.
       {
         "id": 1,
         "activities_id": 1,
-        "working_hour": 4
+                  "activities_hour": 4
       },
       {
         "id": 2,
         "activities_id": 2,
-        "working_hour": 4
+                  "activities_hour": 4
       }
     ],
     "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
+    "updatedAt": "2025-01-01T00:00:00.000Z"
   }
 }
 ```
@@ -395,9 +377,6 @@ Menghapus data plan working hour berdasarkan ID tertentu (soft delete).
 {
   id: number;
   plan_date: Date;
-  is_calender_day: boolean;
-  is_holiday_day: boolean;
-  is_schedule_day: boolean;
   working_hour: number;
   working_day_longshift: number;
   working_hour_longshift: number;

@@ -26,7 +26,7 @@ export class CreatePlanWorkingHourDetailDto {
   })
   @IsOptional()
   @IsNumber()
-  working_hour?: number;
+  activities_hour?: number;
 }
 
 export class UpdatePlanWorkingHourDetailDto {
@@ -58,7 +58,7 @@ export class UpdatePlanWorkingHourDetailDto {
   })
   @IsOptional()
   @IsNumber()
-  working_hour?: number;
+  activities_hour?: number;
 }
 
 export class QueryPlanWorkingHourDetailDto {
@@ -90,5 +90,5 @@ export class QueryPlanWorkingHourDetailDto {
   })
   @IsOptional()
   @IsNumber()
-  working_hour?: number;
+  activities_hour?: number;
 }

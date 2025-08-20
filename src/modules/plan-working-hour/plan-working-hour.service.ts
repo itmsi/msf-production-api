@@ -22,23 +22,24 @@ export class PlanWorkingHourService {
   ) {}
 
   async create(createDto: CreatePlanWorkingHourDto): Promise<PlanWorkingHour> {
-    // Auto-fill fields berdasarkan plan_date
+    
     const planDate = new Date(createDto.plan_date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // is_calender_day: true jika plan_date terisi
-    createDto.is_calender_day = true;
-
-    // is_holiday_day: false jika plan_date terisi
-    createDto.is_holiday_day = false;
-
-    // is_schedule_day: true jika bukan hari minggu
-    const dayOfWeek = planDate.getDay();
-    createDto.is_schedule_day = dayOfWeek !== 0; // 0 = Sunday
+    // Buat object untuk disimpan ke database dengan field auto-fill
+    const planWorkingHourData = {
+      ...createDto,
+      // is_calender_day: true jika plan_date terisi
+      is_calender_day: true,
+      // is_holiday_day: false jika plan_date terisi
+      is_holiday_day: false,
+      // is_schedule_day: true jika bukan hari minggu
+      is_schedule_day: planDate.getDay() !== 0, // 0 = Sunday
+    };
 
     // Buat plan working hour
-    const planWorkingHour = this.planWorkingHourRepository.create(createDto);
+    const planWorkingHour = this.planWorkingHourRepository.create(planWorkingHourData);
     const savedPlan = await this.planWorkingHourRepository.save(planWorkingHour);
 
     // Buat detail records
@@ -47,7 +48,7 @@ export class PlanWorkingHourService {
         return this.planWorkingHourDetailRepository.create({
           plant_working_hour_id: savedPlan.id,
           activities_id: detail.activities_id,
-          working_hour: detail.working_hour,
+          activities_hour: detail.activities_hour,
         });
       });
 
@@ -166,7 +167,7 @@ export class PlanWorkingHourService {
         return this.planWorkingHourDetailRepository.create({
           plant_working_hour_id: id,
           activities_id: detail.activities_id,
-          working_hour: detail.working_hour,
+          activities_hour: detail.activities_hour,
         });
       });
 
@@ -233,7 +234,7 @@ export class PlanWorkingHourService {
     const plans = await this.findByDateRange(startDate, endDate);
     
     const totalWorkingHours = plans.reduce(
-      (sum, plan) => sum + (plan.working_hour || 0),
+      (sum, plan) => sum + (plan.activities_hour || 0),
       0,
     );
     
