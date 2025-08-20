@@ -754,3 +754,50 @@ export class FileUploadDto {
   })
   file: Express.Multer.File;
 }
+
+export class ImportPopulationErrorFileDto {
+  @ApiProperty({
+    description: 'URL download file error',
+    example: 'https://minio.example.com/download/error_file.csv',
+  })
+  download_url: string;
+
+  @ApiProperty({
+    description: 'Pesan informasi file error',
+    example: 'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
+  })
+  message: string;
+}
+
+export class ImportPopulationWithErrorResponseDto {
+  @ApiProperty({
+    description: 'Total data yang diimport',
+    example: 10,
+  })
+  total: number;
+
+  @ApiProperty({
+    description: 'Jumlah data yang berhasil',
+    example: 0,
+  })
+  success: number;
+
+  @ApiProperty({
+    description: 'Jumlah data yang gagal',
+    example: 10,
+  })
+  failed: number;
+
+  @ApiProperty({
+    description: 'Detail hasil import',
+    type: [ImportPopulationPreviewItemDto],
+  })
+  details: ImportPopulationPreviewItemDto[];
+
+  @ApiProperty({
+    description: 'Informasi file error',
+    type: ImportPopulationErrorFileDto,
+    required: false,
+  })
+  error_file?: ImportPopulationErrorFileDto;
+}

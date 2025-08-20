@@ -3,13 +3,14 @@ import {
   InternalServerErrorException,
   HttpException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Population } from './entities/population.entity';
 import { UnitType } from '../unit-type/entities/unit-type.entity';
 import { Activities } from '../activities/entities/activities.entity';
 import { Sites } from '../sites/entities/sites.entity';
-import { Repository, Not, Between } from 'typeorm';
+import { Repository, Not, Between, DataSource } from 'typeorm';
 import {
   ApiResponse,
   successResponse,
@@ -27,9 +28,12 @@ import {
 } from './dto/population.dto';
 import csv from 'csv-parser';
 import { Readable } from 'stream';
+import { S3Service } from '../../integrations/s3/s3.service';
 
 @Injectable()
 export class PopulationService {
+  private readonly logger = new Logger(PopulationService.name);
+
   constructor(
     @InjectRepository(Population)
     private populationRepository: Repository<Population>,
@@ -39,6 +43,8 @@ export class PopulationService {
     private activitiesRepository: Repository<Activities>,
     @InjectRepository(Sites)
     private sitesRepository: Repository<Sites>,
+    private dataSource: DataSource,
+    private s3Service: S3Service,
   ) {}
 
   async findById(
@@ -601,29 +607,28 @@ export class PopulationService {
       const importResults: ImportPopulationPreviewItemDto[] = [];
       let successCount = 0;
       let failedCount = 0;
+      let errorRows: any[] = [];
+      let successRows: any[] = [];
 
+      // Validasi semua data terlebih dahulu
       for (let i = 0; i < csvData.length; i++) {
         const row = csvData[i];
         const rowNumber = i + 1;
 
         try {
-          // Validasi data
           const validation = await this.validateCsvRow(row);
 
           if (validation.isValid) {
-            // Import data ke database
-            await this.importCsvRow(row);
-            successCount++;
-
+            successRows.push({ row: rowNumber, data: row });
             importResults.push({
               status: 'success',
-              message: 'Data berhasil diimport',
+              message: 'Data valid',
               row: rowNumber,
               data: row,
             });
           } else {
             failedCount++;
-
+            errorRows.push({ row: rowNumber, data: row, errors: validation.errors });
             importResults.push({
               status: 'error',
               message: validation.message,
@@ -633,24 +638,98 @@ export class PopulationService {
           }
         } catch (error) {
           failedCount++;
-
+          errorRows.push({ row: rowNumber, data: row, errors: [{ field: 'general', message: error.message || 'Gagal validasi data' }] });
           importResults.push({
             status: 'error',
-            message: error.message || 'Gagal import data',
+            message: error.message || 'Gagal validasi data',
             row: rowNumber,
             data: row,
           });
         }
       }
 
-      const response = {
-        total: csvData.length,
-        success: successCount,
-        failed: failedCount,
-        details: importResults,
-      };
+      // Jika ada error, buat file error dan return tanpa insert ke database
+      if (errorRows.length > 0) {
+        this.logger.log(`Found ${errorRows.length} rows with errors, generating error CSV...`);
+        
+        try {
+          const errorCsvBuffer = await this.generateErrorCsv(errorRows, csvData);
+          this.logger.log('Error CSV generated successfully');
+          
+          // Coba upload ke MinIO, jika gagal gunakan fallback
+          let errorFileInfo: { key: string; downloadUrl: string } | null = null;
+          try {
+            errorFileInfo = await this.s3Service.uploadErrorFile(
+              `import_error_${Date.now()}.csv`,
+              errorCsvBuffer
+            );
+            this.logger.log('Error file uploaded to MinIO successfully');
+          } catch (s3Error) {
+            this.logger.warn('MinIO tidak tersedia, menggunakan fallback response:', s3Error.message);
+          }
 
-      return successResponse(response, 'Data berhasil diimport');
+          const response = {
+            total: csvData.length,
+            success: 0,
+            failed: failedCount,
+            details: importResults,
+            error_file: errorFileInfo ? {
+              download_url: errorFileInfo.downloadUrl,
+              message: 'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
+            } : {
+              download_url: null,
+              message: 'File error gagal diupload ke cloud storage. Silakan periksa data error di response details.',
+            },
+          };
+
+          return successResponse(response, 'Import dibatalkan karena ada data yang tidak valid');
+        } catch (error) {
+          this.logger.error('Error generating error CSV:', error);
+          this.logger.error('Error stack:', error.stack);
+          
+          // Fallback response tanpa file error
+          const response = {
+            total: csvData.length,
+            success: 0,
+            failed: failedCount,
+            details: importResults,
+            error_file: {
+              download_url: null,
+              message: 'Gagal generate file error. Silakan periksa data error di response details.',
+            },
+          };
+
+          return successResponse(response, 'Import dibatalkan karena ada data yang tidak valid');
+        }
+      }
+
+      // Jika semua data valid, lakukan import dengan transaction
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      try {
+        for (const rowData of successRows) {
+          await this.importCsvRow(rowData.data);
+          successCount++;
+        }
+
+        await queryRunner.commitTransaction();
+
+        const response = {
+          total: csvData.length,
+          success: successCount,
+          failed: 0,
+          details: importResults,
+        };
+
+        return successResponse(response, 'Data berhasil diimport');
+      } catch (error) {
+        await queryRunner.rollbackTransaction();
+        throw new InternalServerErrorException(`Gagal import data: ${error.message}`);
+      } finally {
+        await queryRunner.release();
+      }
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -732,63 +811,74 @@ export class PopulationService {
 
   private async validateCsvRow(
     row: ImportPopulationCsvRowDto,
-  ): Promise<{ isValid: boolean; message: string }> {
+  ): Promise<{ isValid: boolean; message: string; errors: Array<{ field: string; message: string }> }> {
+    const errors: Array<{ field: string; message: string }> = [];
+
     // Validasi required fields
-    if (
-      !row.date_arrive ||
-      !row.status ||
-      !row.unit_name ||
-      !row.activities_name ||
-      !row.site_name
-    ) {
-      return { isValid: false, message: 'Data tidak lengkap' };
+    if (!row.date_arrive) {
+      errors.push({ field: 'date_arrive', message: 'Tanggal kedatangan wajib diisi' });
+    }
+    if (!row.status) {
+      errors.push({ field: 'status', message: 'Status wajib diisi' });
+    }
+    if (!row.unit_name) {
+      errors.push({ field: 'unit_name', message: 'Nama unit wajib diisi' });
+    }
+    if (!row.activities_name) {
+      errors.push({ field: 'activities_name', message: 'Nama aktivitas wajib diisi' });
+    }
+    if (!row.site_name) {
+      errors.push({ field: 'site_name', message: 'Nama site wajib diisi' });
     }
 
     // Validasi format date
-    if (!this.isValidDate(row.date_arrive)) {
-      return {
-        isValid: false,
-        message: 'Format tanggal tidak valid (yyyy-mm-dd)',
-      };
+    if (row.date_arrive && !this.isValidDate(row.date_arrive)) {
+      errors.push({ field: 'date_arrive', message: 'Format tanggal tidak valid (yyyy-mm-dd)' });
     }
 
     // Validasi status
-    if (!['active', 'inactive'].includes(row.status)) {
-      return { isValid: false, message: 'Status harus active atau inactive' };
+    if (row.status && !['active', 'inactive'].includes(row.status)) {
+      errors.push({ field: 'status', message: 'Status harus active atau inactive' });
     }
 
     // Validasi tyre_type
     if (row.tyre_type && !['6x4', '8x4'].includes(row.tyre_type)) {
-      return { isValid: false, message: 'Tyre type harus 6x4 atau 8x4' };
+      errors.push({ field: 'tyre_type', message: 'Tyre type harus 6x4 atau 8x4' });
     }
 
     // Validasi remarks
     if (row.remarks && !['RFU', 'BD'].includes(row.remarks)) {
-      return { isValid: false, message: 'Remarks harus RFU atau BD' };
+      errors.push({ field: 'remarks', message: 'Remarks harus RFU atau BD' });
     }
 
     // Validasi unit_name exists
-    const unitType = await this.unitTypeRepository.findOne({
-      where: { unit_name: row.unit_name },
-    });
-    if (!unitType) {
-      return { isValid: false, message: 'unit_name tidak ada' };
+    if (row.unit_name) {
+      const unitType = await this.unitTypeRepository.findOne({
+        where: { unit_name: row.unit_name },
+      });
+      if (!unitType) {
+        errors.push({ field: 'unit_name', message: `Unit type "${row.unit_name}" tidak ditemukan` });
+      }
     }
 
     // Validasi activities_name exists
-    const activity = await this.activitiesRepository.findOne({
-      where: { name: row.activities_name },
-    });
-    if (!activity) {
-      return { isValid: false, message: 'activities_name tidak ada' };
+    if (row.activities_name) {
+      const activity = await this.activitiesRepository.findOne({
+        where: { name: row.activities_name },
+      });
+      if (!activity) {
+        errors.push({ field: 'activities_name', message: `Activity "${row.activities_name}" tidak ditemukan` });
+      }
     }
 
     // Validasi site_name exists
-    const site = await this.sitesRepository.findOne({
-      where: { name: row.site_name },
-    });
-    if (!site) {
-      return { isValid: false, message: 'site_name tidak ada' };
+    if (row.site_name) {
+      const site = await this.sitesRepository.findOne({
+        where: { name: row.site_name },
+      });
+      if (!site) {
+        errors.push({ field: 'site_name', message: `Site "${row.site_name}" tidak ditemukan` });
+      }
     }
 
     // Validasi duplikasi VIN number
@@ -797,7 +887,7 @@ export class PopulationService {
         where: { vin_number: row.vin_number },
       });
       if (existingVin) {
-        return { isValid: false, message: 'VIN number sudah terdaftar' };
+        errors.push({ field: 'vin_number', message: `VIN number "${row.vin_number}" sudah terdaftar` });
       }
     }
 
@@ -807,7 +897,7 @@ export class PopulationService {
         where: { no_unit: row.no_unit },
       });
       if (existingNoUnit) {
-        return { isValid: false, message: 'Nomor unit sudah terdaftar' };
+        errors.push({ field: 'no_unit', message: `Nomor unit "${row.no_unit}" sudah terdaftar` });
       }
     }
 
@@ -817,11 +907,14 @@ export class PopulationService {
         where: { no_unit_system: row.no_unit_system },
       });
       if (existingNoUnitSystem) {
-        return { isValid: false, message: 'Nomor unit sistem sudah terdaftar' };
+        errors.push({ field: 'no_unit_system', message: `Nomor unit sistem "${row.no_unit_system}" sudah terdaftar` });
       }
     }
 
-    return { isValid: true, message: 'Data valid' };
+    const isValid = errors.length === 0;
+    const message = isValid ? 'Data valid' : `${errors.length} field(s) tidak valid`;
+
+    return { isValid, message, errors };
   }
 
   private async importCsvRow(row: ImportPopulationCsvRowDto): Promise<void> {
@@ -881,5 +974,71 @@ export class PopulationService {
       !isNaN(date.getTime()) &&
       !!dateString.match(/^\d{4}-\d{2}-\d{2}$/)
     );
+  }
+
+  private async generateErrorCsv(errorRows: any[], originalData: ImportPopulationCsvRowDto[]): Promise<Buffer> {
+    try {
+      // Header dengan kolom error
+      const headers = [
+        'row_number',
+        'error_details',
+        'date_arrive',
+        'status',
+        'unit_name',
+        'no_unit',
+        'vin_number',
+        'no_unit_system',
+        'serial_engine',
+        'engine_brand',
+        'activities_name',
+        'user_site',
+        'site_origin',
+        'remarks',
+        'site_name',
+        'company',
+        'last_unit_number',
+        'tyre_type'
+      ];
+      
+      // Buat CSV content secara manual
+      let csvContent = headers.join(',') + '\n';
+      
+      // Tambahkan data dengan error
+      errorRows.forEach(errorRow => {
+        const rowData = errorRow.data;
+        const errors = errorRow.errors;
+        
+        // Gabungkan semua error message
+        const errorMessages = errors.map(err => `${err.field}: ${err.message}`).join('; ');
+        
+        const csvRow = [
+          errorRow.row,
+          `"${errorMessages}"`, // Wrap dalam quotes untuk menghindari masalah dengan comma
+          rowData.date_arrive || '',
+          rowData.status || '',
+          rowData.unit_name || '',
+          rowData.no_unit || '',
+          rowData.vin_number || '',
+          rowData.no_unit_system || '',
+          rowData.serial_engine || '',
+          rowData.engine_brand || '',
+          rowData.activities_name || '',
+          rowData.user_site || '',
+          rowData.site_origin || '',
+          rowData.remarks || '',
+          rowData.site_name || '',
+          rowData.company || '',
+          rowData.last_unit_number || '',
+          rowData.tyre_type || ''
+        ];
+        
+        csvContent += csvRow.join(',') + '\n';
+      });
+      
+      return Buffer.from(csvContent, 'utf-8');
+    } catch (error) {
+      this.logger.error('Error in generateErrorCsv:', error);
+      throw error;
+    }
   }
 }

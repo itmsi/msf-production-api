@@ -1,0 +1,4 @@
+date_arrive,status,unit_name,no_unit,vin_number,no_unit_system,serial_engine,engine_brand,activities_name,user_site,site_origin,remarks,site_name,company,last_unit_number,tyre_type
+2025-01-01,active,Excavator,KFM-DT-0101,VIN014567890191,SYS-0101,ENG123456,cummins,P5M,user1,Site A,RFU,Site Jakarta,PT ABC,LUN001,6x4
+2025-01-02,active,Truck,KFM-DT-0102,VIN0145678901292,SYS-0102,ENG654321,weichai,Loading Barge,user2,Site B,BD,Site Jakarta,PT XYZ,LUN002,8x4
+2025-01-03,inactive,Compressor,KFM-DT-0103,VIN0145678901293,SYS-0103,ENG111222,cummins,Maintenance,user3,Site C,RFU,Site Jakarta,PT DEF,LUN003,6x4

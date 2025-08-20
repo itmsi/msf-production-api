@@ -35,6 +35,7 @@ import {
   ImportPopulationPreviewResponseDto,
   ImportPopulationRequestDto,
   ImportPopulationResponseDto,
+  ImportPopulationWithErrorResponseDto,
   FileUploadDto,
 } from './dto/population.dto';
 
@@ -659,23 +660,24 @@ export class PopulationController {
   })
   @SwaggerApiResponse({
     status: 201,
-    description: 'Import data berhasil',
+    description: 'Import data berhasil atau dibatalkan karena ada error',
+    type: ImportPopulationWithErrorResponseDto,
     schema: {
       example: {
         statusCode: 201,
-        message: 'Data berhasil diimport',
+        message: 'Import dibatalkan karena ada data yang tidak valid',
         data: {
           total: 10,
-          success: 8,
-          failed: 2,
+          success: 0,
+          failed: 10,
           details: [
             {
-              status: 'success',
-              message: 'Data berhasil diimport',
+              status: 'error',
+              message: '2 field(s) tidak valid',
               row: 1,
               data: {
                 date_arrive: '2025-01-01',
-                status: 'active',
+                status: 'invalid_status',
                 unit_name: 'Excavator',
                 no_unit: 'EXC001',
                 vin_number: 'VIN123456789',
@@ -693,6 +695,10 @@ export class PopulationController {
               },
             },
           ],
+          error_file: {
+            download_url: 'https://minio.example.com/download/error_file.csv',
+            message: 'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
+          },
         },
       },
     },
