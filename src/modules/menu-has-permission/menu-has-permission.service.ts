@@ -7,6 +7,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder, IsNull } from 'typeorm';
 import { MenuHasPermission } from './entities/menu-has-permission.entity';
 import { Permission } from '../permission/entities/permission.entity';
+import { Menu } from '../menu/entities/menu.entity';
+import { RoleHasPermission } from '../role-has-permission/entities/role-has-permission.entity';
 import {
   CreateMenuHasPermissionDto,
   UpdateMenuHasPermissionDto,
@@ -27,6 +29,10 @@ export class MenuHasPermissionService {
     private menuHasPermissionRepository: Repository<MenuHasPermission>,
     @InjectRepository(Permission)
     private permissionRepository: Repository<Permission>,
+    @InjectRepository(Menu)
+    private menuRepository: Repository<Menu>,
+    @InjectRepository(RoleHasPermission)
+    private roleHasPermissionRepository: Repository<RoleHasPermission>,
   ) {}
 
   async create(
@@ -288,6 +294,61 @@ export class MenuHasPermissionService {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(
         'Failed to fetch menu permissions by permission ID',
+      );
+    }
+  }
+
+  async findMenuPermissionsByRole(roleId: number): Promise<ApiResponse<any>> {
+    try {
+      // Ambil semua menus
+      const allMenus = await this.menuRepository.find({
+        where: { deletedAt: IsNull() },
+        order: { id: 'ASC' },
+      });
+
+      // Ambil role has permissions untuk role tertentu
+      const rolePermissions = await this.roleHasPermissionRepository.find({
+        where: { role_id: roleId },
+      });
+
+      // Buat map untuk permission yang dimiliki role
+      const rolePermissionMap = new Map();
+      rolePermissions.forEach(rhp => {
+        rolePermissionMap.set(rhp.permission_id, true);
+      });
+
+      // Buat response data
+      const responseData = await Promise.all(allMenus.map(async (menu) => {
+        // Ambil menu has permissions yang benar-benar ada untuk menu ini
+        const menuHasPermissions = await this.menuHasPermissionRepository.find({
+          where: { menu_id: menu.id },
+          relations: ['permission'],
+          order: { permission_id: 'ASC' },
+        });
+
+        // Buat array permissions yang hanya berisi permission yang di-assign ke menu
+        const menuPermissions = menuHasPermissions.map(mhp => ({
+          permission_id: mhp.permission_id,
+          permission_name: mhp.permission.permission_name,
+          role_has_status: rolePermissionMap.has(mhp.permission_id),
+          mhp_id: mhp.id, // Selalu ada value karena diambil dari r_menu_has_permission
+        }));
+
+        return {
+          menu_id: menu.id,
+          menu_name: menu.menu_name,
+          has_permission: menuPermissions,
+        };
+      }));
+
+      return successResponse(
+        responseData,
+        'Get menu permissions successfully',
+      );
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(
+        'Failed to fetch menu permissions by role',
       );
     }
   }

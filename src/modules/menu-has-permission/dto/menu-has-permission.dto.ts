@@ -292,3 +292,46 @@ export class MenuByMenuListResponseDto {
   })
   data: MenuByMenuResponseDto[];
 }
+
+// DTO untuk response menu permissions by role
+export class MenuPermissionByRoleDto {
+  @ApiProperty({ example: 1, description: 'ID permission' })
+  permission_id: number;
+
+  @ApiProperty({ example: 'Create', description: 'Nama permission' })
+  permission_name: string;
+
+  @ApiProperty({ example: true, description: 'Status apakah role memiliki permission ini' })
+  role_has_status: boolean;
+
+  @ApiProperty({ example: 1, description: 'ID menu has permission (selalu ada value)' })
+  mhp_id: number;
+}
+
+export class MenuByRoleResponseDto {
+  @ApiProperty({ example: 1, description: 'ID menu' })
+  menu_id: number;
+
+  @ApiProperty({ example: 'Dashboard', description: 'Nama menu' })
+  menu_name: string;
+
+  @ApiProperty({ 
+    type: [MenuPermissionByRoleDto], 
+    description: 'Array permissions dengan status role' 
+  })
+  has_permission: MenuPermissionByRoleDto[];
+}
+
+export class MenuByRoleListResponseDto {
+  @ApiProperty({ example: 200, description: 'HTTP status code' })
+  statusCode: number;
+
+  @ApiProperty({ example: 'Get menu permissions successfully', description: 'Pesan response' })
+  message: string;
+
+  @ApiProperty({ 
+    type: [MenuByRoleResponseDto], 
+    description: 'Array data menu dengan permissions berdasarkan role' 
+  })
+  data: MenuByRoleResponseDto[];
+}

@@ -28,6 +28,7 @@ import {
   MenuHasPermissionListResponseDto,
   SingleMenuHasPermissionResponseDto,
   MenuByMenuListResponseDto,
+  MenuByRoleListResponseDto,
 } from './dto/menu-has-permission.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 
@@ -262,6 +263,8 @@ export class MenuHasPermissionController {
     return this.menuHasPermissionService.findByMenuId(menuId);
   }
 
+
+
   @UseGuards(JwtAuthGuard)
   @Get('by-permission/:permissionId')
   @ApiOperation({
@@ -317,6 +320,85 @@ export class MenuHasPermissionController {
     @Param('permissionId', ParseIntPipe) permissionId: number,
   ) {
     return this.menuHasPermissionService.findByPermissionId(permissionId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('by-role/:roleId')
+  @ApiOperation({
+    summary: 'Mendapatkan menu permissions berdasarkan role ID',
+    description: 'Mengambil menu permissions yang di-assign ke menu dengan status role untuk role tertentu. Hanya permission yang benar-benar di-assign ke menu yang ditampilkan.',
+  })
+  @ApiParam({
+    name: 'roleId',
+    description: 'ID role yang akan dicari menu permissionsnya',
+    example: 1,
+    type: Number,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Data menu permissions berdasarkan role berhasil diambil',
+    type: MenuByRoleListResponseDto,
+    schema: {
+      example: {
+        statusCode: 200,
+        message: 'Get menu permissions successfully',
+        data: [
+          {
+            menu_id: 1,
+            menu_name: 'Dashboard',
+            has_permission: [
+              {
+                permission_id: 1,
+                permission_name: 'Create',
+                role_has_status: true,
+                mhp_id: 1,
+              },
+              {
+                permission_id: 3,
+                permission_name: 'Update',
+                role_has_status: false,
+                mhp_id: 3,
+              }
+            ]
+          },
+          {
+            menu_id: 2,
+            menu_name: 'Users',
+            has_permission: [
+              {
+                permission_id: 1,
+                permission_name: 'Create',
+                role_has_status: true,
+                mhp_id: 5,
+              },
+              {
+                permission_id: 2,
+                permission_name: 'Read',
+                role_has_status: false,
+                mhp_id: 6,
+              }
+            ]
+          }
+        ]
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Role ID tidak valid',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - JWT token tidak valid atau tidak ada',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal Server Error - Terjadi kesalahan pada server',
+  })
+  findMenuPermissionsByRole(
+    @Param('roleId', ParseIntPipe) roleId: number,
+  ) {
+    return this.menuHasPermissionService.findMenuPermissionsByRole(roleId);
   }
 
   @UseGuards(JwtAuthGuard)
