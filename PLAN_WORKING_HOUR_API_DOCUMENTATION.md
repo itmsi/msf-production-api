@@ -18,13 +18,18 @@ Semua endpoint memerlukan JWT Bearer Token yang valid.
 
 Membuat data plan working hour baru dengan detail activities.
 
+#### Validasi
+- `plan_date` tidak boleh duplikat (sudah ada di database)
+- `activities_id` harus valid
+- `activities_hour` harus > 0
+
 #### Request Body
 ```json
 {
   "plan_date": "2025-01-01",
   "working_day_longshift": 1,
   "working_hour_longshift": 1,
-        "activities_hour": 1,
+  "working_hour": 1,
   "mohh_per_month": 1,
   "detail": [
     {
@@ -60,27 +65,36 @@ Sistem akan otomatis mengisi field berikut berdasarkan `plan_date`:
 #### Response Success (201)
 ```json
 {
-  "statusCode": 201,
-  "message": "Plan working hour created successfully",
-  "data": {
-    "id": 1,
-    "plan_date": "2025-01-01",
-    "working_day_longshift": 1,
-    "working_hour_longshift": 1,
-        "activities_hour": 1,
-    "mohh_per_month": 1,
-    "is_available_to_edit": true,
-    "is_available_to_delete": true,
-    "details": [
-      {
-        "id": 1,
-        "activities_id": 1,
-        "activities_hour": 1
-      }
-    ],
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
-  }
+  "id": 1,
+  "plan_date": "2025-01-01",
+  "is_calender_day": true,
+  "is_holiday_day": false,
+  "is_schedule_day": true,
+  "working_day_longshift": 1,
+  "working_hour_longshift": 1,
+  "working_hour": 1,
+  "mohh_per_month": 1,
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "updatedAt": "2025-01-01T00:00:00.000Z",
+  "details": [
+    {
+      "id": 1,
+      "plant_working_hour_id": 1,
+      "activities_id": 1,
+      "activities_hour": 1,
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+#### Response Error (400) - Duplikasi Plan Date
+```json
+{
+  "statusCode": 400,
+  "message": "Data untuk tanggal 2025-08-25 sudah ada. Silakan gunakan tanggal yang berbeda.",
+  "error": "Bad Request"
 }
 ```
 
@@ -92,7 +106,9 @@ Mendapatkan semua data plan working hour dengan filtering.
 #### Query Parameters
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `plan_date` | string | false | Filter berdasarkan tanggal plan |
+| `plan_date` | string | false | Filter berdasarkan tanggal plan (format: YYYY-MM-DD) |
+| `start_date` | string | false | Filter berdasarkan tanggal mulai (format: YYYY-MM-DD) |
+| `end_date` | string | false | Filter berdasarkan tanggal akhir (format: YYYY-MM-DD) |
 | `is_calender_day` | boolean | false | Filter berdasarkan calendar day |
 | `is_holiday_day` | boolean | false | Filter berdasarkan holiday day |
 | `is_schedule_day` | boolean | false | Filter berdasarkan schedule day |
@@ -100,6 +116,8 @@ Mendapatkan semua data plan working hour dengan filtering.
 | `working_day_longshift` | number | false | Filter berdasarkan working day longshift |
 | `working_hour_longshift` | number | false | Filter berdasarkan working hour longshift |
 | `mohh_per_month` | number | false | Filter berdasarkan MOHH per month |
+| `page` | number | false | Halaman yang akan ditampilkan (default: 1) |
+| `limit` | number | false | Jumlah data per halaman (default: 10, max: 100) |
 
 #### Response Success (200)
 ```json
@@ -110,27 +128,38 @@ Mendapatkan semua data plan working hour dengan filtering.
     {
       "id": 1,
       "plan_date": "2025-01-01",
-      "working_day_longshift": 1,
-      "working_hour_longshift": 1,
-      "activities_hour": 1,
-      "mohh_per_month": 1,
+      "total_mohh": 160,
+      "total_delay": 8,
+      "total_idle": 4,
+      "total_repair": 2,
+      "ewh": 146,
+      "pa": 0.99,
+      "ma": 0.99,
+      "ua": 0.92,
+      "eu": 0.91,
       "is_available_to_edit": true,
-      "is_available_to_delete": true,
-      "details": [
-        {
-          "id": 1,
-          "activities_id": 1,
-          "activities_hour": 1
-        }
-      ],
-      "createdAt": "2024-01-01T00:00:00.000Z",
-      "updatedAt": "2025-01-01T00:00:00.000Z"
+      "is_available_to_delete": true
     }
-  ]
+  ],
+  "pagination": {
+    "total": 50,
+    "page": 1,
+    "limit": 10,
+    "lastPage": 5
+  }
 }
 ```
 
-#### Additional Response Fields
+#### Response Fields Description
+- `total_mohh`: Total MOHH per bulan dari kolom `mohh_per_month`
+- `total_delay`: Total jam delay (jumlah `activities_hour` dari activities dengan status 'delay')
+- `total_idle`: Total jam idle (jumlah `activities_hour` dari activities dengan status 'idle')
+- `total_repair`: Total jam repair/breakdown (jumlah `activities_hour` dari activities dengan status 'breakdown')
+- `ewh`: Effective Working Hours = `total_mohh - (total_delay + total_idle + total_repair)` (2 digit desimal)
+- `pa`: Production Availability = `(ewh + total_delay + total_idle) / total_mohh` (2 digit desimal)
+- `ma`: Mechanical Availability = `ewh / (ewh + total_repair)` (2 digit desimal)
+- `ua`: Utilization Availability = `ewh / (ewh + total_delay + total_idle)` (2 digit desimal)
+- `eu`: Equipment Utilization = `ewh / total_mohh` (2 digit desimal)
 - `is_available_to_edit`: `true` jika `plan_date` > hari ini
 - `is_available_to_delete`: `true` jika `plan_date` > hari ini
 

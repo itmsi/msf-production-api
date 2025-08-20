@@ -28,6 +28,7 @@ import {
   ApiQuery,
   ApiBody,
 } from '@nestjs/swagger';
+import { PlanWorkingHourListResponseDto } from './dto/plan-working-hour.dto';
 
 @ApiTags('Plan Working Hour')
 @ApiBearerAuth('jwt')
@@ -42,14 +43,17 @@ export class PlanWorkingHourController {
   @ApiOperation({
     summary: 'Membuat data plan working hour baru',
     description: `
-      Endpoint untuk membuat data plan working hour baru dengan detail activities.
+      Endpoint untuk membuat data plan working hour baru.
       
-      Field yang akan di-auto-fill oleh sistem:
+      Field yang akan diisi otomatis:
       - is_calender_day: true jika plan_date terisi
       - is_holiday_day: false jika plan_date terisi  
-      - is_schedule_day: true jika plan_date bukan hari minggu
+      - is_schedule_day: true jika bukan hari minggu
       
-      Detail activities akan disimpan ke table r_plan_working_hour_detail
+      Validasi:
+      - plan_date tidak boleh duplikat (sudah ada di database)
+      - activities_id harus valid
+      - activities_hour harus > 0
     `,
   })
   @ApiBody({
@@ -62,7 +66,7 @@ export class PlanWorkingHourController {
           plan_date: "2025-01-01",
           working_day_longshift: 1,
           working_hour_longshift: 1,
-                          activities_hour: 1,
+          working_hour: 1,
           mohh_per_month: 1,
           detail: [
             {
@@ -92,36 +96,51 @@ export class PlanWorkingHourController {
   })
   @ApiResponse({
     status: 201,
-    description: 'Plan working hour berhasil dibuat',
+    description: 'Data plan working hour berhasil dibuat',
     schema: {
       example: {
-        statusCode: 201,
-        message: 'Plan working hour created successfully',
-        data: {
-          id: 1,
-          plan_date: "2025-01-01",
-          working_day_longshift: 1,
-          working_hour_longshift: 1,
-                          activities_hour: 1,
-          mohh_per_month: 1,
-          is_available_to_edit: true,
-          is_available_to_delete: true,
-          details: [
-            {
-              id: 1,
-              activities_id: 1,
-              activities_hour: 1,
-            }
-          ],
-          createdAt: '2024-01-01T00:00:00.000Z',
-          updatedAt: '2024-01-01T00:00:00.000Z',
-        }
+        id: 1,
+        plan_date: "2025-01-01",
+        is_calender_day: true,
+        is_holiday_day: false,
+        is_schedule_day: true,
+        working_day_longshift: 1,
+        working_hour_longshift: 1,
+        working_hour: 1,
+        mohh_per_month: 1,
+        createdAt: "2025-01-01T00:00:00.000Z",
+        updatedAt: "2025-01-01T00:00:00.000Z",
+        details: [
+          {
+            id: 1,
+            plant_working_hour_id: 1,
+            activities_id: 1,
+            activities_hour: 1,
+            createdAt: "2025-01-01T00:00:00.000Z",
+            updatedAt: "2025-01-01T00:00:00.000Z"
+          }
+        ]
       }
     }
   })
   @ApiResponse({
     status: 400,
-    description: 'Bad Request - Data tidak valid',
+    description: 'Bad Request - Data untuk tanggal tersebut sudah ada',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: "Data untuk tanggal 2025-08-25 sudah ada. Silakan gunakan tanggal yang berbeda.",
+        error: "Bad Request"
+      }
+    }
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Token tidak valid atau expired'
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal Server Error'
   })
   async create(@Body() createDto: CreatePlanWorkingHourDto) {
     const result = await this.planWorkingHourService.create(createDto);
@@ -132,14 +151,25 @@ export class PlanWorkingHourController {
   @ApiOperation({
     summary: 'Mendapatkan semua data plan working hour',
     description: `
-      Endpoint untuk mendapatkan semua data plan working hour dengan filtering.
+      Endpoint untuk mendapatkan semua data plan working hour dengan filtering dan pagination.
       
       Response akan menambahkan field:
+      - total_mohh: Total MOHH per bulan
+      - total_delay: Total jam delay
+      - total_idle: Total jam idle
+      - total_repair: Total jam repair/breakdown
+      - ewh: Effective Working Hours
+      - pa: Production Availability
+      - ma: Mechanical Availability
+      - ua: Utilization Availability
+      - eu: Equipment Utilization
       - is_available_to_edit: true jika plan_date > hari ini
       - is_available_to_delete: true jika plan_date > hari ini
     `,
   })
-  @ApiQuery({ name: 'plan_date', required: false, type: String, description: 'Filter berdasarkan tanggal plan' })
+  @ApiQuery({ name: 'plan_date', required: false, type: String, description: 'Filter berdasarkan tanggal plan (format: YYYY-MM-DD)' })
+  @ApiQuery({ name: 'start_date', required: false, type: String, description: 'Filter berdasarkan tanggal mulai (format: YYYY-MM-DD)' })
+  @ApiQuery({ name: 'end_date', required: false, type: String, description: 'Filter berdasarkan tanggal akhir (format: YYYY-MM-DD)' })
   @ApiQuery({ name: 'is_calender_day', required: false, type: Boolean, description: 'Filter berdasarkan calendar day' })
   @ApiQuery({ name: 'is_holiday_day', required: false, type: Boolean, description: 'Filter berdasarkan holiday day' })
   @ApiQuery({ name: 'is_schedule_day', required: false, type: Boolean, description: 'Filter berdasarkan schedule day' })
@@ -147,40 +177,16 @@ export class PlanWorkingHourController {
   @ApiQuery({ name: 'working_day_longshift', required: false, type: Number, description: 'Filter berdasarkan working day longshift' })
   @ApiQuery({ name: 'working_hour_longshift', required: false, type: Number, description: 'Filter berdasarkan working hour longshift' })
   @ApiQuery({ name: 'mohh_per_month', required: false, type: Number, description: 'Filter berdasarkan MOHH per month' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Halaman yang akan ditampilkan (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Jumlah data per halaman (default: 10, max: 100)' })
   @ApiResponse({
     status: 200,
     description: 'Data plan working hour berhasil diambil',
-    schema: {
-      example: {
-        statusCode: 200,
-        message: 'Plan working hours retrieved successfully',
-        data: [
-          {
-            id: 1,
-            plan_date: "2025-01-01",
-            working_day_longshift: 1,
-            working_hour_longshift: 1,
-                            activities_hour: 1,
-            mohh_per_month: 1,
-            is_available_to_edit: true,
-            is_available_to_delete: true,
-            details: [
-              {
-                id: 1,
-                activities_id: 1,
-                activities_hour: 1,
-              }
-            ],
-            createdAt: '2024-01-01T00:00:00.000Z',
-            updatedAt: '2024-01-01T00:00:00.000Z',
-          }
-        ]
-      }
-    }
+    type: PlanWorkingHourListResponseDto
   })
   async findAll(@Query() query: QueryPlanWorkingHourDto) {
     const result = await this.planWorkingHourService.findAll(query);
-    return successResponse(result, 'Plan working hours retrieved successfully');
+    return result;
   }
 
   @Get('form')

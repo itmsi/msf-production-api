@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, IsNull } from 'typeorm';
+import { Repository, FindOptionsWhere, IsNull, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import { PlanWorkingHour } from './entities/plan-working-hour.entity';
 import { PlanWorkingHourDetail } from './entities/plan-working-hour-detail.entity';
 import { Activities } from '../activities/entities/activities.entity';
@@ -9,6 +9,7 @@ import {
   UpdatePlanWorkingHourDto,
   QueryPlanWorkingHourDto,
 } from './dto/plan-working-hour.dto';
+import { paginateResponse } from '../../common/helpers/public.helper';
 
 @Injectable()
 export class PlanWorkingHourService {
@@ -22,47 +23,82 @@ export class PlanWorkingHourService {
   ) {}
 
   async create(createDto: CreatePlanWorkingHourDto): Promise<PlanWorkingHour> {
-    
-    const planDate = new Date(createDto.plan_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    // Buat object untuk disimpan ke database dengan field auto-fill
-    const planWorkingHourData = {
-      ...createDto,
-      // is_calender_day: true jika plan_date terisi
-      is_calender_day: true,
-      // is_holiday_day: false jika plan_date terisi
-      is_holiday_day: false,
-      // is_schedule_day: true jika bukan hari minggu
-      is_schedule_day: planDate.getDay() !== 0, // 0 = Sunday
-    };
-
-    // Buat plan working hour
-    const planWorkingHour = this.planWorkingHourRepository.create(planWorkingHourData);
-    const savedPlan = await this.planWorkingHourRepository.save(planWorkingHour);
-
-    // Buat detail records
-    if (createDto.detail && createDto.detail.length > 0) {
-      const detailEntities = createDto.detail.map(detail => {
-        return this.planWorkingHourDetailRepository.create({
-          plant_working_hour_id: savedPlan.id,
-          activities_id: detail.activities_id,
-          activities_hour: detail.activities_hour,
-        });
+    try {
+      // Validasi duplikasi plan_date
+      const existingPlan = await this.planWorkingHourRepository.findOne({
+        where: { plan_date: createDto.plan_date }
       });
 
-      await this.planWorkingHourDetailRepository.save(detailEntities);
-    }
+      if (existingPlan) {
+        // Handle plan_date yang bisa berupa string atau Date
+        const planDateStr = createDto.plan_date instanceof Date 
+          ? createDto.plan_date.toISOString().split('T')[0]
+          : new Date(createDto.plan_date).toISOString().split('T')[0];
+          
+        throw new BadRequestException(`Data untuk tanggal ${planDateStr} sudah ada. Silakan gunakan tanggal yang berbeda.`);
+      }
+      
+      const planDate = new Date(createDto.plan_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    return await this.findOne(savedPlan.id);
+      // Buat object untuk disimpan ke database dengan field auto-fill
+      const planWorkingHourData = {
+        ...createDto,
+        // is_calender_day: true jika plan_date terisi
+        is_calender_day: true,
+        // is_holiday_day: false jika plan_date terisi
+        is_holiday_day: false,
+        // is_schedule_day: true jika bukan hari minggu
+        is_schedule_day: planDate.getDay() !== 0, // 0 = Sunday
+      };
+
+      // Buat plan working hour
+      const planWorkingHour = this.planWorkingHourRepository.create(planWorkingHourData);
+      const savedPlan = await this.planWorkingHourRepository.save(planWorkingHour);
+
+      // Buat detail records
+      if (createDto.detail && createDto.detail.length > 0) {
+        const detailEntities = createDto.detail.map(detail => {
+          return this.planWorkingHourDetailRepository.create({
+            plant_working_hour_id: savedPlan.id,
+            activities_id: detail.activities_id,
+            activities_hour: detail.activities_hour,
+          });
+        });
+
+        await this.planWorkingHourDetailRepository.save(detailEntities);
+      }
+
+      return await this.findOne(savedPlan.id);
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error in create plan working hour:', error);
+      throw new InternalServerErrorException(`Gagal membuat plan working hour: ${error.message}`);
+    }
   }
 
-  async findAll(queryDto: QueryPlanWorkingHourDto): Promise<any[]> {
+  async findAll(queryDto: QueryPlanWorkingHourDto): Promise<any> {
     const where: FindOptionsWhere<PlanWorkingHour> = {};
 
     if (queryDto.plan_date) {
       where.plan_date = queryDto.plan_date;
+    }
+
+    // Date range filter
+    if (queryDto.start_date || queryDto.end_date) {
+      if (queryDto.start_date && queryDto.end_date) {
+        where.plan_date = Between(
+          new Date(queryDto.start_date),
+          new Date(queryDto.end_date)
+        );
+      } else if (queryDto.start_date) {
+        where.plan_date = MoreThanOrEqual(new Date(queryDto.start_date));
+      } else if (queryDto.end_date) {
+        where.plan_date = LessThanOrEqual(new Date(queryDto.end_date));
+      }
     }
 
     if (queryDto.is_calender_day !== undefined) {
@@ -93,29 +129,92 @@ export class PlanWorkingHourService {
       where.mohh_per_month = queryDto.mohh_per_month;
     }
 
+    // Pagination
+    const page = queryDto.page || 1;
+    const limit = queryDto.limit || 10;
+    const skip = (page - 1) * limit;
+
+    // Get total count
+    const totalItems = await this.planWorkingHourRepository.count({ where });
+
+    // Get paginated data
     const plans = await this.planWorkingHourRepository.find({
       where,
-      relations: ['details'],
+      relations: ['details', 'details.activities'],
       order: { plan_date: 'DESC' },
+      skip,
+      take: limit,
     });
 
-    // Tambahkan field is_available_to_edit dan is_available_to_delete
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    return plans.map(plan => {
+    // Process data
+    const processedData = plans.map(plan => {
       const planDate = new Date(plan.plan_date);
       planDate.setHours(0, 0, 0, 0);
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
       const isAvailableToEdit = plan.plan_date && planDate > today;
       const isAvailableToDelete = plan.plan_date && planDate > today;
 
+      // Hitung metrics berdasarkan detail activities
+      const total_mohh = plan.mohh_per_month || 0;
+      
+      let total_delay = 0;
+      let total_idle = 0;
+      let total_repair = 0;
+
+      if (plan.details && plan.details.length > 0) {
+        plan.details.forEach(detail => {
+          if (detail.activities && detail.activities.status === 'delay') {
+            total_delay += detail.activities_hour || 0;
+          } else if (detail.activities && detail.activities.status === 'idle') {
+            total_idle += detail.activities_hour || 0;
+          } else if (detail.activities && detail.activities.status === 'breakdown') {
+            total_repair += detail.activities_hour || 0;
+          }
+        });
+      }
+
+      // Hitung EWH (Effective Working Hours)
+      const ewh = Math.round((total_mohh - (total_delay + total_idle + total_repair)) * 100) / 100;
+
+      // Hitung PA (Production Availability)
+      const pa = total_mohh > 0 ? Math.round(((ewh + total_delay + total_idle) / total_mohh) * 100) / 100 : 0;
+
+      // Hitung MA (Mechanical Availability)
+      const ma = (ewh + total_repair) > 0 ? Math.round((ewh / (ewh + total_repair)) * 100) / 100 : 0;
+
+      // Hitung UA (Utilization Availability)
+      const ua = (ewh + total_delay + total_idle) > 0 ? Math.round((ewh / (ewh + total_delay + total_idle)) * 100) / 100 : 0;
+
+      // Hitung EU (Equipment Utilization)
+      const eu = total_mohh > 0 ? Math.round((ewh / total_mohh) * 100) / 100 : 0;
+
       return {
-        ...plan,
+        id: plan.id,
+        plan_date: plan.plan_date,
+        total_mohh,
+        total_delay,
+        total_idle,
+        total_repair,
+        ewh,
+        pa,
+        ma,
+        ua,
+        eu,
         is_available_to_edit: isAvailableToEdit,
         is_available_to_delete: isAvailableToDelete,
       };
     });
+
+    return paginateResponse(
+      processedData,
+      totalItems,
+      page,
+      limit,
+      'Plan working hours retrieved successfully'
+    );
   }
 
   async findOne(id: number): Promise<any> {
