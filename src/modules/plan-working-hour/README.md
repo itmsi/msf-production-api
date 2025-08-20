@@ -1,123 +1,102 @@
 # Plan Working Hour Module
 
-Modul ini menangani operasi CRUD untuk tabel `r_plan_working_hour` dan `r_plan_working_hour_detail` yang berisi rencana jam kerja.
+## Overview
+Modul Plan Working Hour digunakan untuk mengelola data perencanaan jam kerja dengan detail activities. Data detail activities akan disimpan ke table `r_plan_working_hour_detail`.
 
-## Struktur Tabel
+## Features
+- CRUD operations untuk plan working hour
+- Auto-fill fields berdasarkan plan_date
+- Management detail activities
+- Availability checking untuk edit dan delete
+- Summary dan reporting berdasarkan range tanggal
 
-### Tabel Utama: `r_plan_working_hour`
+## Business Logic
 
-| Kolom | Tipe Data | Deskripsi |
-|-------|-----------|-----------|
-| `id` | int | Primary Key, auto increment |
-| `plan_date` | date | Tanggal rencana |
-| `is_calender_day` | bool | Apakah hari kalender |
-| `is_holiday_day` | bool | Apakah hari libur |
-| `is_scheduled_day` | bool | Apakah hari terjadwal |
-| `working_hour` | float | Jam kerja |
-| `working_day_longshift` | int | Hari kerja shift panjang |
-| `working_hour_longshift` | int | Jam kerja shift panjang |
-| `mohh_per_month` | float | MOHH per bulan |
-| `createdAt` | date | Waktu pembuatan |
-| `updatedAt` | date | Waktu update |
-| `deletedAt` | date | Waktu soft delete |
+### Auto-fill Fields
+1. **is_calender_day**: Otomatis `true` jika `plan_date` terisi
+2. **is_holiday_day**: Otomatis `false` jika `plan_date` terisi
+3. **is_schedule_day**: Otomatis `true` jika `plan_date` bukan hari minggu
 
-### Tabel Detail: `r_plan_working_hour_detail`
+### Availability Fields
+1. **is_available_to_edit**: `true` jika `plan_date` > hari ini
+2. **is_available_to_delete**: `true` jika `plan_date` > hari ini
 
-| Kolom | Tipe Data | Deskripsi |
-|-------|-----------|-----------|
-| `id` | int | Primary Key, auto increment |
-| `plant_working_hour_id` | int | Foreign Key ke tabel r_plan_working_hour |
-| `activities_id` | int | Foreign Key ke tabel m_activities |
-| `activities_hour` | float | Jam aktivitas |
-| `createdAt` | date | Waktu pembuatan |
-| `updatedAt` | date | Waktu update |
-| `deletedAt` | date | Waktu soft delete |
-
-## Fitur
-
-- **CRUD Operations**: Create, Read, Update, Delete plan working hour dan detail
-- **Query by Date Range**: Mencari data berdasarkan rentang tanggal
-- **Query by Activities**: Mencari data berdasarkan ID aktivitas
-- **Working Hours Summary**: Menghitung ringkasan jam kerja
-- **Soft Delete**: Data tidak benar-benar dihapus dari database
-- **Relasi One-to-Many**: Satu plan working hour dapat memiliki banyak detail aktivitas
+### Detail Management
+- Saat create: Detail activities akan disimpan ke table `r_plan_working_hour_detail`
+- Saat update: Detail lama akan dihapus dan diganti dengan detail baru
+- Saat delete: Detail akan dihapus terlebih dahulu sebelum menghapus plan working hour
 
 ## API Endpoints
 
-### POST `/plan-working-hour`
-Membuat data plan working hour baru.
+### Main Endpoints
+- `POST /api/plan-working-hour` - Create plan working hour
+- `GET /api/plan-working-hour` - Get all plan working hours
+- `GET /api/plan-working-hour/:id` - Get plan working hour by ID
+- `PATCH /api/plan-working-hour/:id` - Update plan working hour
+- `DELETE /api/plan-working-hour/:id` - Delete plan working hour
 
-**Body:**
+### Additional Endpoints
+- `GET /api/plan-working-hour/summary` - Get working hours summary
+- `GET /api/plan-working-hour/date-range` - Get by date range
+
+## Request Format
+
+### Create/Update Request
 ```json
 {
-  "plan_date": "2024-01-15",
+  "plan_date": "2025-01-01",
   "is_calender_day": true,
   "is_holiday_day": false,
-  "is_scheduled_day": true,
-  "working_hour": 8.0,
-  "working_day_longshift": 0,
-  "working_hour_longshift": 0,
-  "mohh_per_month": 160.0
+  "is_schedule_day": true,
+  "working_day_longshift": 1,
+  "working_hour_longshift": 1,
+  "working_hour": 1,
+  "mohh_per_month": 1,
+  "detail": [
+    {
+      "activities_id": 1,
+      "working_hour": 1
+    }
+  ]
 }
 ```
 
-### POST `/plan-working-hour-detail`
-Membuat data detail plan working hour baru.
-
-**Body:**
+### Response Format
 ```json
 {
-  "plant_working_hour_id": 1,
-  "activities_id": 1,
-  "activities_hour": 6.0
+  "statusCode": 200,
+  "message": "Success message",
+  "data": {
+    "id": 1,
+    "plan_date": "2025-01-01",
+    "is_calender_day": true,
+    "is_holiday_day": false,
+    "is_schedule_day": true,
+    "working_day_longshift": 1,
+    "working_hour_longshift": 1,
+    "working_hour": 1,
+    "mohh_per_month": 1,
+    "is_available_to_edit": true,
+    "is_available_to_delete": true,
+    "details": [...],
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
 }
 ```
 
-### GET `/plan-working-hour`
-Mengambil semua data plan working hour dengan filter opsional.
+## Dependencies
+- TypeORM
+- JWT Authentication
+- Activities Module
+- Validation (class-validator)
 
-**Query Parameters:**
-- `plan_date`: Filter berdasarkan tanggal
-- `is_calender_day`: Filter berdasarkan hari kalender
-- `is_holiday_day`: Filter berdasarkan hari libur
-- `is_scheduled_day`: Filter berdasarkan hari terjadwal
+## Database Tables
+- `r_plan_working_hour` - Main table untuk plan working hour
+- `r_plan_working_hour_detail` - Detail table untuk activities
 
-### GET `/plan-working-hour/:id`
-Mengambil data plan working hour berdasarkan ID.
-
-### GET `/plan-working-hour/summary`
-Mengambil ringkasan jam kerja berdasarkan rentang tanggal.
-
-**Query Parameters:**
-- `startDate`: Tanggal mulai (format: YYYY-MM-DD)
-- `endDate`: Tanggal akhir (format: YYYY-MM-DD)
-
-### GET `/plan-working-hour/date-range`
-Mengambil data plan working hour berdasarkan rentang tanggal.
-
-**Query Parameters:**
-- `startDate`: Tanggal mulai (format: YYYY-MM-DD)
-- `endDate`: Tanggal akhir (format: YYYY-MM-DD)
-
-### PATCH `/plan-working-hour/:id`
-Mengupdate data plan working hour berdasarkan ID.
-
-### DELETE `/plan-working-hour/:id`
-Menghapus data plan working hour berdasarkan ID (soft delete).
-
-## Relasi
-
-- **PlanWorkingHour** ↔ **PlanWorkingHourDetail**: One-to-Many
-- **PlanWorkingHourDetail** ↔ **Activities**: Many-to-One dengan tabel `m_activities`
-
-## Validasi
-
-Semua input akan divalidasi menggunakan class-validator:
-- `plan_date`: Harus berupa tanggal yang valid
-- `working_hour`, `mohh_per_month`, `activities_hour`: Harus berupa angka float
-- `working_day_longshift`, `working_hour_longshift`, `plant_working_hour_id`, `activities_id`: Harus berupa angka integer
-- `is_calender_day`, `is_holiday_day`, `is_scheduled_day`: Harus berupa boolean
-
-## Keamanan
-
-Semua endpoint dilindungi dengan JWT Authentication Guard.
+## Notes
+- Semua endpoint memerlukan authentication JWT
+- Field availability akan otomatis dihitung berdasarkan tanggal
+- Soft delete digunakan untuk semua operasi delete
+- Detail activities akan otomatis dikelola saat CRUD operations

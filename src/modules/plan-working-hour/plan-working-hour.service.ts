@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere } from 'typeorm';
 import { PlanWorkingHour } from './entities/plan-working-hour.entity';
+import { PlanWorkingHourDetail } from './entities/plan-working-hour-detail.entity';
 import {
   CreatePlanWorkingHourDto,
   UpdatePlanWorkingHourDto,
@@ -13,14 +14,47 @@ export class PlanWorkingHourService {
   constructor(
     @InjectRepository(PlanWorkingHour)
     private readonly planWorkingHourRepository: Repository<PlanWorkingHour>,
+    @InjectRepository(PlanWorkingHourDetail)
+    private readonly planWorkingHourDetailRepository: Repository<PlanWorkingHourDetail>,
   ) {}
 
   async create(createDto: CreatePlanWorkingHourDto): Promise<PlanWorkingHour> {
+    // Auto-fill fields berdasarkan plan_date
+    const planDate = new Date(createDto.plan_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // is_calender_day: true jika plan_date terisi
+    createDto.is_calender_day = true;
+
+    // is_holiday_day: false jika plan_date terisi
+    createDto.is_holiday_day = false;
+
+    // is_schedule_day: true jika bukan hari minggu
+    const dayOfWeek = planDate.getDay();
+    createDto.is_schedule_day = dayOfWeek !== 0; // 0 = Sunday
+
+    // Buat plan working hour
     const planWorkingHour = this.planWorkingHourRepository.create(createDto);
-    return await this.planWorkingHourRepository.save(planWorkingHour);
+    const savedPlan = await this.planWorkingHourRepository.save(planWorkingHour);
+
+    // Buat detail records
+    if (createDto.detail && createDto.detail.length > 0) {
+      const detailEntities = createDto.detail.map(detail => {
+        return this.planWorkingHourDetailRepository.create({
+          plant_working_hour_id: savedPlan.id,
+          activities_id: detail.activities_id,
+          working_hour: detail.working_hour,
+        });
+      });
+
+      await this.planWorkingHourDetailRepository.save(detailEntities);
+    }
+
+    return await this.findOne(savedPlan.id);
   }
 
-  async findAll(queryDto: QueryPlanWorkingHourDto): Promise<PlanWorkingHour[]> {
+  async findAll(queryDto: QueryPlanWorkingHourDto): Promise<any[]> {
     const where: FindOptionsWhere<PlanWorkingHour> = {};
 
     if (queryDto.plan_date) {
@@ -55,14 +89,32 @@ export class PlanWorkingHourService {
       where.mohh_per_month = queryDto.mohh_per_month;
     }
 
-    return await this.planWorkingHourRepository.find({
+    const plans = await this.planWorkingHourRepository.find({
       where,
       relations: ['details'],
       order: { plan_date: 'DESC' },
     });
+
+    // Tambahkan field is_available_to_edit dan is_available_to_delete
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return plans.map(plan => {
+      const planDate = new Date(plan.plan_date);
+      planDate.setHours(0, 0, 0, 0);
+
+      const isAvailableToEdit = plan.plan_date && planDate > today;
+      const isAvailableToDelete = plan.plan_date && planDate > today;
+
+      return {
+        ...plan,
+        is_available_to_edit: isAvailableToEdit,
+        is_available_to_delete: isAvailableToDelete,
+      };
+    });
   }
 
-  async findOne(id: number): Promise<PlanWorkingHour> {
+  async findOne(id: number): Promise<any> {
     const planWorkingHour = await this.planWorkingHourRepository.findOne({
       where: { id },
       relations: ['details'],
@@ -72,7 +124,21 @@ export class PlanWorkingHourService {
       throw new NotFoundException(`Plan working hour with ID ${id} not found`);
     }
 
-    return planWorkingHour;
+    // Tambahkan field is_available_to_edit dan is_available_to_delete
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const planDate = new Date(planWorkingHour.plan_date);
+    planDate.setHours(0, 0, 0, 0);
+
+    const isAvailableToEdit = planWorkingHour.plan_date && planDate > today;
+    const isAvailableToDelete = planWorkingHour.plan_date && planDate > today;
+
+    return {
+      ...planWorkingHour,
+      is_available_to_edit: isAvailableToEdit,
+      is_available_to_delete: isAvailableToDelete,
+    };
   }
 
   async update(
@@ -81,21 +147,49 @@ export class PlanWorkingHourService {
   ): Promise<PlanWorkingHour> {
     const planWorkingHour = await this.findOne(id);
     
+    // Update plan working hour
     Object.assign(planWorkingHour, updateDto);
-    
-    return await this.planWorkingHourRepository.save(planWorkingHour);
+    const updatedPlan = await this.planWorkingHourRepository.save(planWorkingHour);
+
+    // Update detail records jika ada
+    if (updateDto.detail && updateDto.detail.length > 0) {
+      // Hapus detail lama
+      await this.planWorkingHourDetailRepository.delete({
+        plant_working_hour_id: id,
+      });
+
+      // Buat detail baru
+      const detailEntities = updateDto.detail.map(detail => {
+        return this.planWorkingHourDetailRepository.create({
+          plant_working_hour_id: id,
+          activities_id: detail.activities_id,
+          working_hour: detail.working_hour,
+        });
+      });
+
+      await this.planWorkingHourDetailRepository.save(detailEntities);
+    }
+
+    return await this.findOne(id);
   }
 
   async remove(id: number): Promise<void> {
     const planWorkingHour = await this.findOne(id);
+    
+    // Hapus detail records terlebih dahulu
+    await this.planWorkingHourDetailRepository.delete({
+      plant_working_hour_id: id,
+    });
+
+    // Hapus plan working hour
     await this.planWorkingHourRepository.softRemove(planWorkingHour);
   }
 
   async findByDateRange(
     startDate: Date,
     endDate: Date,
-  ): Promise<PlanWorkingHour[]> {
-    return await this.planWorkingHourRepository
+  ): Promise<any[]> {
+    const plans = await this.planWorkingHourRepository
       .createQueryBuilder('plan')
       .leftJoinAndSelect('plan.details', 'details')
       .where('plan.plan_date BETWEEN :startDate AND :endDate', {
@@ -104,6 +198,24 @@ export class PlanWorkingHourService {
       })
       .orderBy('plan.plan_date', 'ASC')
       .getMany();
+
+    // Tambahkan field is_available_to_edit dan is_available_to_delete
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return plans.map(plan => {
+      const planDate = new Date(plan.plan_date);
+      planDate.setHours(0, 0, 0, 0);
+
+      const isAvailableToEdit = plan.plan_date && planDate > today;
+      const isAvailableToDelete = plan.plan_date && planDate > today;
+
+      return {
+        ...plan,
+        is_available_to_edit: isAvailableToEdit,
+        is_available_to_delete: isAvailableToDelete,
+      };
+    });
   }
 
   async getWorkingHoursSummary(
