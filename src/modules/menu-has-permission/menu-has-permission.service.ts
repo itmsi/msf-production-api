@@ -4,8 +4,9 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { Repository, SelectQueryBuilder, IsNull } from 'typeorm';
 import { MenuHasPermission } from './entities/menu-has-permission.entity';
+import { Permission } from '../permission/entities/permission.entity';
 import {
   CreateMenuHasPermissionDto,
   UpdateMenuHasPermissionDto,
@@ -24,6 +25,8 @@ export class MenuHasPermissionService {
   constructor(
     @InjectRepository(MenuHasPermission)
     private menuHasPermissionRepository: Repository<MenuHasPermission>,
+    @InjectRepository(Permission)
+    private permissionRepository: Repository<Permission>,
   ) {}
 
   async create(
@@ -223,15 +226,41 @@ export class MenuHasPermissionService {
 
   async findByMenuId(
     menuId: number,
-  ): Promise<ApiResponse<MenuHasPermission[]>> {
+  ): Promise<ApiResponse<any>> {
     try {
-      const result = await this.menuHasPermissionRepository.find({
+      // Ambil semua permissions dari tabel m_permission
+      const allPermissions = await this.permissionRepository.find({
+        where: { deletedAt: IsNull() },
+        order: { id: 'ASC' },
+      });
+
+      // Ambil menu has permissions yang sudah ada untuk menu ini
+      const existingMenuPermissions = await this.menuHasPermissionRepository.find({
         where: { menu_id: menuId },
         relations: ['permission'],
       });
 
+      // Buat map untuk permission yang sudah ada
+      const existingPermissionMap = new Map();
+      existingMenuPermissions.forEach(mhp => {
+        existingPermissionMap.set(mhp.permission_id, true);
+      });
+
+      // Buat response data dengan format yang diminta
+      const dataPermissions = allPermissions.map(permission => ({
+        permission_id: permission.id,
+        permission_name: permission.permission_name,
+        has_status: existingPermissionMap.has(permission.id),
+      }));
+
+      const responseData = {
+        id: existingMenuPermissions[0]?.id || null,
+        menu_id: menuId,
+        data_permission: dataPermissions,
+      };
+
       return successResponse(
-        result,
+        [responseData],
         'Get menu permissions by menu ID successfully',
       );
     } catch (error) {

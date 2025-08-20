@@ -252,3 +252,43 @@ export class SingleMenuHasPermissionResponseDto {
   @ApiProperty({ type: MenuHasPermissionResponseDto, description: 'Data menu has permission' })
   data: MenuHasPermissionResponseDto;
 }
+
+// DTO untuk response by-menu dengan format yang diminta
+export class MenuPermissionDataDto {
+  @ApiProperty({ example: 1, description: 'ID permission' })
+  permission_id: number;
+
+  @ApiProperty({ example: 'Create', description: 'Nama permission' })
+  permission_name: string;
+
+  @ApiProperty({ example: true, description: 'Status apakah permission dimiliki menu' })
+  has_status: boolean;
+}
+
+export class MenuByMenuResponseDto {
+  @ApiProperty({ example: 150, description: 'ID menu has permission (bisa null jika belum ada)' })
+  id: number | null;
+
+  @ApiProperty({ example: 72, description: 'ID menu' })
+  menu_id: number;
+
+  @ApiProperty({ 
+    type: [MenuPermissionDataDto], 
+    description: 'Array data permission dengan status' 
+  })
+  data_permission: MenuPermissionDataDto[];
+}
+
+export class MenuByMenuListResponseDto {
+  @ApiProperty({ example: 200, description: 'HTTP status code' })
+  statusCode: number;
+
+  @ApiProperty({ example: 'Get menu permissions by menu ID successfully', description: 'Pesan response' })
+  message: string;
+
+  @ApiProperty({ 
+    type: [MenuByMenuResponseDto], 
+    description: 'Array data menu dengan permissions' 
+  })
+  data: MenuByMenuResponseDto[];
+}

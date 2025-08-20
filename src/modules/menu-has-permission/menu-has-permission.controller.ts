@@ -27,6 +27,7 @@ import {
   GetMenuHasPermissionsQueryDto,
   MenuHasPermissionListResponseDto,
   SingleMenuHasPermissionResponseDto,
+  MenuByMenuListResponseDto,
 } from './dto/menu-has-permission.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 
@@ -213,28 +214,39 @@ export class MenuHasPermissionController {
   @ApiResponse({
     status: 200,
     description: 'Data menu has permissions berdasarkan menu ID berhasil diambil',
-    type: [MenuHasPermissionResponseDto],
+    type: MenuByMenuListResponseDto,
     schema: {
       example: {
         statusCode: 200,
         message: 'Get menu permissions by menu ID successfully',
         data: [
           {
-            id: 1,
-            menu_id: 1,
-            permission_id: 1,
-            createdAt: '2024-01-01T00:00:00.000Z',
-            createdBy: 1,
-            updatedAt: '2024-01-01T00:00:00.000Z',
-            updatedBy: 1,
-            permission: {
-              id: 1,
-              name: 'read',
-              description: 'Read permission',
-              slug: 'read',
-            },
-          },
-        ],
+            id: 150,
+            menu_id: 72,
+            data_permission: [
+              {
+                permission_id: 1,
+                permission_name: 'Create',
+                has_status: true,
+              },
+              {
+                permission_id: 2,
+                permission_name: 'Read',
+                has_status: false,
+              },
+              {
+                permission_id: 3,
+                permission_name: 'Update',
+                has_status: false,
+              },
+              {
+                permission_id: 4,
+                permission_name: 'Delete',
+                has_status: true,
+              }
+            ]
+          }
+        ]
       },
     },
   })
