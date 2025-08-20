@@ -172,6 +172,36 @@ export class QueryDailyPlanProductionDto {
   end_date?: string;
 
   @ApiProperty({
+    description: 'Keyword pencarian',
+    example: '2025-08',
+    type: String,
+    required: false,
+  })
+  @IsOptional()
+  search?: string;
+
+  @ApiProperty({
+    description: 'Field untuk sorting',
+    example: 'plan_date',
+    type: String,
+    required: false,
+    enum: ['id', 'plan_date', 'ob_target', 'ore_target', 'total_fleet', 'createdAt'],
+  })
+  @IsOptional()
+  sortBy?: string;
+
+  @ApiProperty({
+    description: 'Urutan sorting',
+    example: 'DESC',
+    type: String,
+    required: false,
+    enum: ['ASC', 'DESC'],
+    default: 'DESC',
+  })
+  @IsOptional()
+  sortOrder?: 'ASC' | 'DESC' = 'DESC';
+
+  @ApiProperty({
     description: 'Nomor halaman',
     example: 1,
     type: Number,
@@ -343,4 +373,148 @@ export class DailyPlanProductionResponseDto {
     type: Date,
   })
   updatedAt: Date;
+}
+
+// DTO untuk response list dengan format yang diminta
+export class DailyPlanProductionListResponseDto {
+  @ApiProperty({
+    description: 'ID unik',
+    example: 2,
+    type: Number,
+  })
+  id: number;
+
+  @ApiProperty({
+    description: 'Tanggal rencana',
+    example: '2025-08-21',
+    type: String,
+  })
+  plan_date: string;
+
+  @ApiProperty({
+    description: 'Rata-rata EWH per hari',
+    example: '1.5',
+    type: String,
+  })
+  ewh: string;
+
+  @ApiProperty({
+    description: 'Target OB (Overburden)',
+    example: 1000,
+    type: Number,
+  })
+  ob_target: number;
+
+  @ApiProperty({
+    description: 'Target ore',
+    example: 800,
+    type: Number,
+  })
+  ore_target: number;
+
+  @ApiProperty({
+    description: 'Target quarry',
+    example: 200,
+    type: Number,
+  })
+  quarry: number;
+
+  @ApiProperty({
+    description: 'Target SR (ob_target / ore_target)',
+    example: 1.25,
+    type: Number,
+  })
+  sr_target: number;
+
+  @ApiProperty({
+    description: 'Target pengiriman ore',
+    example: 750,
+    type: Number,
+  })
+  ore_shipment_target: number;
+
+  @ApiProperty({
+    description: 'Sisa stock (daily_old_stock - remaining_stock)',
+    example: 0,
+    type: Number,
+  })
+  sisa_stock: number;
+
+  @ApiProperty({
+    description: 'Total armada',
+    example: 15,
+    type: Number,
+  })
+  total_fleet: number;
+
+  @ApiProperty({
+    description: 'Tonnage per fleet (ore_target / total_fleet)',
+    example: 1.1,
+    type: Number,
+  })
+  tonnage_per_fleet: number;
+
+  @ApiProperty({
+    description: 'Vessel per fleet (tonnage_per_fleet / 35)',
+    example: 1.1,
+    type: Number,
+  })
+  vessel_per_fleet: number;
+}
+
+// DTO untuk response pagination - konsisten dengan module lainnya
+export class DailyPlanProductionPaginationDto {
+  @ApiProperty({
+    description: 'Total data',
+    example: 1,
+    type: Number,
+  })
+  total: number;
+
+  @ApiProperty({
+    description: 'Nomor halaman',
+    example: 1,
+    type: Number,
+  })
+  page: number;
+
+  @ApiProperty({
+    description: 'Limit per halaman',
+    example: 10,
+    type: Number,
+  })
+  limit: number;
+
+  @ApiProperty({
+    description: 'Total halaman',
+    example: 5,
+    type: Number,
+  })
+  lastPage: number;
+}
+
+// DTO untuk response utama
+export class DailyPlanProductionListResponseMainDto {
+  @ApiProperty({
+    description: 'Status code',
+    example: 200,
+    type: Number,
+  })
+  statusCode: number;
+
+  @ApiProperty({
+    description: 'Pesan response',
+    example: 'Data daily plan production berhasil diambil',
+    type: String,
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Data response',
+    type: Object,
+  })
+  data: {
+    data: DailyPlanProductionListResponseDto[];
+    pagination: DailyPlanProductionPaginationDto;
+  };
 }

@@ -1,9 +1,10 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere } from 'typeorm';
+import { Repository, FindOptionsWhere, Raw } from 'typeorm';
 import { DailyPlanProduction } from './entities/daily-plan-production.entity';
-import { CreateDailyPlanProductionDto, UpdateDailyPlanProductionDto, QueryDailyPlanProductionDto } from './dto/daily-plan-production.dto';
+import { CreateDailyPlanProductionDto, UpdateDailyPlanProductionDto, QueryDailyPlanProductionDto, DailyPlanProductionListResponseDto } from './dto/daily-plan-production.dto';
 import { successResponse } from '../../common/helpers/response.helper';
+import { paginateResponse } from '../../common/helpers/public.helper';
 
 @Injectable()
 export class DailyPlanProductionService {
@@ -58,7 +59,7 @@ export class DailyPlanProductionService {
   }
 
   async findAll(queryDto: QueryDailyPlanProductionDto): Promise<any> {
-    const { start_date, end_date, page = 1, limit = 10 } = queryDto;
+    const { start_date, end_date, search, sortBy = 'plan_date', sortOrder = 'DESC', page = 1, limit = 10 } = queryDto;
     const skip = (page - 1) * limit;
 
     const where: FindOptionsWhere<DailyPlanProduction> = {};
@@ -78,39 +79,66 @@ export class DailyPlanProductionService {
       } as any;
     }
 
+    // Handle search parameter - sementara dinonaktifkan karena ada masalah dengan TypeORM
+    // if (search) {
+    //   // Search berdasarkan plan_date menggunakan Raw operator untuk string search
+    //   where.plan_date = Raw((alias) => `CAST(${alias} AS CHAR) LIKE '%${search}%'`);
+    // }
+
+    // Build order object
+    const order: any = {};
+    if (sortBy && sortOrder) {
+      order[sortBy] = sortOrder;
+    }
+
     const [plans, total] = await this.dailyPlanProductionRepository.findAndCount({
       where,
-      order: { plan_date: 'DESC' },
+      order,
       skip,
       take: limit,
     });
 
     const processedData = plans.map(plan => {
-      const planDate = new Date(plan.plan_date);
-      planDate.setHours(0, 0, 0, 0);
+      // Hitung nilai-nilai yang diminta
+      const sr_target = plan.ob_target / plan.ore_target;
+      const sisa_stock = (plan.daily_old_stock || 0) - (plan.remaining_stock || 0);
+      const tonnage_per_fleet = plan.ore_target / plan.total_fleet;
+      const vessel_per_fleet = tonnage_per_fleet / 35;
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const isAvailableToEdit = plan.plan_date && planDate > today;
-      const isAvailableToDelete = plan.plan_date && planDate > today;
+      // Handle plan_date yang mungkin bukan Date object
+      let planDateStr = '';
+      if (plan.plan_date instanceof Date) {
+        planDateStr = plan.plan_date.toISOString().split('T')[0];
+      } else if (typeof plan.plan_date === 'string') {
+        planDateStr = (plan.plan_date as string).split('T')[0];
+      } else {
+        // Fallback jika format tidak dikenali
+        planDateStr = new Date(plan.plan_date as any).toISOString().split('T')[0];
+      }
 
       return {
-        ...plan,
-        isAvailableToEdit,
-        isAvailableToDelete,
+        id: plan.id,
+        plan_date: planDateStr,
+        ewh: plan.average_day_ewh.toString(),
+        ob_target: plan.ob_target,
+        ore_target: plan.ore_target,
+        quarry: plan.quarry,
+        sr_target: Number(sr_target.toFixed(2)),
+        ore_shipment_target: plan.ore_shipment_target,
+        sisa_stock: Math.max(0, sisa_stock), // Pastikan tidak negatif
+        total_fleet: plan.total_fleet,
+        tonnage_per_fleet: Number(tonnage_per_fleet.toFixed(2)),
+        vessel_per_fleet: Number(vessel_per_fleet.toFixed(2)),
       };
     });
 
-    return successResponse({
-      data: processedData,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    }, 'Data daily plan production berhasil diambil');
+    return paginateResponse(
+      processedData,
+      total,
+      page,
+      limit,
+      'Data daily plan production berhasil diambil',
+    );
   }
 
   async findOne(id: number): Promise<any> {

@@ -24,18 +24,19 @@ import {
   UpdateDailyPlanProductionDto,
   QueryDailyPlanProductionDto,
   DailyPlanProductionResponseDto,
+  DailyPlanProductionListResponseMainDto,
 } from './dto/daily-plan-production.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 
 @ApiTags('Daily Plan Production')
-@ApiBearerAuth()
+@ApiBearerAuth('jwt')
 @Controller('daily-plan-production')
-@UseGuards(JwtAuthGuard)
 export class DailyPlanProductionController {
   constructor(
     private readonly dailyPlanProductionService: DailyPlanProductionService,
   ) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post()
   @ApiOperation({
     summary: 'Create Daily Plan Production',
@@ -86,10 +87,11 @@ export class DailyPlanProductionController {
     return this.dailyPlanProductionService.create(createDto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
     summary: 'Get All Daily Plan Production',
-    description: 'Mengambil semua data rencana produksi dengan pagination dan filter',
+    description: 'Mengambil semua data rencana produksi dengan pagination, filter, pencarian, dan sorting',
   })
   @ApiQuery({
     name: 'start_date',
@@ -102,6 +104,26 @@ export class DailyPlanProductionController {
     required: false,
     description: 'Filter tanggal akhir (YYYY-MM-DD)',
     example: '2025-01-31',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Keyword pencarian',
+    example: '2025-08',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    description: 'Field untuk sorting',
+    example: 'plan_date',
+    enum: ['id', 'plan_date', 'ob_target', 'ore_target', 'total_fleet', 'createdAt'],
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    description: 'Urutan sorting',
+    example: 'DESC',
+    enum: ['ASC', 'DESC'],
   })
   @ApiQuery({
     name: 'page',
@@ -118,31 +140,7 @@ export class DailyPlanProductionController {
   @ApiResponse({
     status: 200,
     description: 'Data daily plan production berhasil diambil',
-    schema: {
-      type: 'object',
-      properties: {
-        statusCode: { type: 'number', example: 200 },
-        message: { type: 'string', example: 'Data daily plan production berhasil diambil' },
-        data: {
-          type: 'object',
-          properties: {
-            data: {
-              type: 'array',
-              items: { $ref: '#/components/schemas/DailyPlanProductionResponseDto' },
-            },
-            pagination: {
-              type: 'object',
-              properties: {
-                page: { type: 'number', example: 1 },
-                limit: { type: 'number', example: 10 },
-                total: { type: 'number', example: 25 },
-                totalPages: { type: 'number', example: 3 },
-              },
-            },
-          },
-        },
-      },
-    },
+    type: DailyPlanProductionListResponseMainDto,
   })
   @ApiResponse({
     status: 401,
@@ -152,6 +150,7 @@ export class DailyPlanProductionController {
     return this.dailyPlanProductionService.findAll(queryDto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   @ApiOperation({
     summary: 'Get Daily Plan Production by ID',
@@ -188,6 +187,7 @@ export class DailyPlanProductionController {
     return this.dailyPlanProductionService.findOne(+id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   @ApiOperation({
     summary: 'Update Daily Plan Production',
@@ -242,6 +242,7 @@ export class DailyPlanProductionController {
     return this.dailyPlanProductionService.update(+id, updateDto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   @ApiOperation({
     summary: 'Delete Daily Plan Production',
