@@ -192,6 +192,61 @@ export class PlanWorkingHourController {
     return successResponse(result, 'Plan working hours retrieved successfully');
   }
 
+  @Get('form')
+  @ApiOperation({
+    summary: 'Mendapatkan data activities untuk form plan working hour',
+    description: `
+      Endpoint untuk mendapatkan data activities yang dikelompokkan berdasarkan status.
+      
+      Data akan dikelompokkan secara dinamis berdasarkan status yang ada:
+      - data_working: activities dengan status 'working'
+      - data_delay: activities dengan status 'delay'
+      - data_idle: activities dengan status 'idle'  
+      - data_breakdown: activities dengan status 'breakdown'
+      - data_[status]: activities dengan status lainnya (otomatis)
+    `,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Data activities berhasil diambil',
+    schema: {
+      example: {
+        statusCode: 200,
+        message: 'Plan working hour form data',
+        data: {
+          data_working: [
+            {
+              id: 1,
+              name: "Loading Barge"
+            }
+          ],
+          data_delay: [
+            {
+              id: 2,
+              name: "P5M"
+            }
+          ],
+          data_idle: [
+            {
+              id: 3,
+              name: "Waiting"
+            }
+          ],
+          data_breakdown: [
+            {
+              id: 4,
+              name: "Maintenance"
+            }
+          ]
+        }
+      }
+    }
+  })
+  async getFormData() {
+    const result = await this.planWorkingHourService.getFormData();
+    return successResponse(result, 'Plan working hour form data');
+  }
+
   @Get('summary')
   @ApiOperation({
     summary: 'Mendapatkan summary working hours berdasarkan range tanggal',

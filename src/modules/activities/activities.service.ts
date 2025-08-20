@@ -151,7 +151,7 @@ export class ActivitiesService {
     try {
       // Set default status if not provided
       if (!data.status) {
-        data.status = ActivityStatus.ACTIVE;
+        data.status = ActivityStatus.WORKING;
       }
 
       const existing = await this.activitiesRepository.findOne({
@@ -162,7 +162,11 @@ export class ActivitiesService {
         throwError('Nama aktivitas sudah terdaftar', 409);
       }
 
-      const newActivity = this.activitiesRepository.create(data);
+      const newActivity = this.activitiesRepository.create({
+        name: data.name,
+        status: data.status,
+      });
+      
       const result = await this.activitiesRepository.save(newActivity);
 
       // Transform to DTO format

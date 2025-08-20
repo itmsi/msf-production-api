@@ -11,7 +11,7 @@ Modul Plan Working Hour digunakan untuk mengelola data perencanaan jam kerja den
 ## Authentication
 Semua endpoint memerlukan JWT Bearer Token yang valid.
 
-## Endpoints
+## API Endpoints
 
 ### 1. Create Plan Working Hour
 **POST** `/api/plan-working-hour`
@@ -143,7 +143,54 @@ Mendapatkan semua data plan working hour dengan filtering.
 - `is_available_to_edit`: `true` jika `plan_date` > hari ini
 - `is_available_to_delete`: `true` jika `plan_date` > hari ini
 
-### 3. Get Working Hours Summary
+### 3. Get Form Data
+**GET** `/api/plan-working-hour/form`
+
+Mendapatkan data activities yang dikelompokkan berdasarkan status untuk form plan working hour.
+
+#### Response Success (200)
+```json
+{
+  "statusCode": 200,
+  "message": "Plan working hour form data",
+          "data": {
+          "data_working": [
+            {
+              "id": 1,
+              "name": "Loading Barge"
+            }
+          ],
+          "data_delay": [
+            {
+              "id": 2,
+              "name": "P5M"
+            }
+          ],
+          "data_idle": [
+            {
+              "id": 3,
+              "name": "Waiting"
+            }
+          ],
+          "data_breakdown": [
+            {
+              "id": 4,
+              "name": "Maintenance"
+            }
+          ]
+        }
+}
+```
+
+#### Response Description
+Data akan dikelompokkan secara dinamis berdasarkan status yang ada:
+- `data_working`: activities dengan status 'working'
+- `data_delay`: activities dengan status 'delay'
+- `data_idle`: activities dengan status 'idle'
+- `data_breakdown`: activities dengan status 'breakdown'
+- `data_[status]`: activities dengan status lainnya (otomatis ditambahkan)
+
+### 4. Get Working Hours Summary
 **GET** `/api/plan-working-hour/summary`
 
 Mendapatkan summary working hours berdasarkan range tanggal.
@@ -168,7 +215,7 @@ Mendapatkan summary working hours berdasarkan range tanggal.
 }
 ```
 
-### 4. Get Plan Working Hours by Date Range
+### 5. Get Plan Working Hours by Date Range
 **GET** `/api/plan-working-hour/date-range`
 
 Mendapatkan data plan working hour berdasarkan range tanggal.
@@ -211,7 +258,7 @@ Mendapatkan data plan working hour berdasarkan range tanggal.
 }
 ```
 
-### 5. Get Plan Working Hour by ID
+### 6. Get Plan Working Hour by ID
 **GET** `/api/plan-working-hour/:id`
 
 Mendapatkan data plan working hour berdasarkan ID tertentu.
@@ -259,7 +306,7 @@ Mendapatkan data plan working hour berdasarkan ID tertentu.
 }
 ```
 
-### 6. Update Plan Working Hour
+### 7. Update Plan Working Hour
 **PATCH** `/api/plan-working-hour/:id`
 
 Mengupdate data plan working hour berdasarkan ID tertentu.
@@ -322,7 +369,7 @@ Mengupdate data plan working hour berdasarkan ID tertentu.
 }
 ```
 
-### 7. Delete Plan Working Hour
+### 8. Delete Plan Working Hour
 **DELETE** `/api/plan-working-hour/:id`
 
 Menghapus data plan working hour berdasarkan ID tertentu (soft delete).

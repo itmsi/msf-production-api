@@ -8,9 +8,10 @@ import {
 } from 'class-validator';
 
 export enum ActivityStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  PENDING = 'pending',
+  WORKING = 'working',
+  BREAKDOWN = 'breakdown',
+  IDLE = 'idle',
+  DELAY = 'delay',
 }
 
 export class CreateActivitiesDto {
@@ -25,10 +26,10 @@ export class CreateActivitiesDto {
   name: string;
 
   @ApiProperty({
-    example: 'active',
+    example: 'working',
     description: 'Status aktivitas',
     enum: ActivityStatus,
-    default: ActivityStatus.ACTIVE,
+    default: ActivityStatus.WORKING,
   })
   @IsString()
   @IsNotEmpty()

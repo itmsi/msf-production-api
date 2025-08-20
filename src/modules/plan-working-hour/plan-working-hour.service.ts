@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere } from 'typeorm';
+import { Repository, FindOptionsWhere, IsNull } from 'typeorm';
 import { PlanWorkingHour } from './entities/plan-working-hour.entity';
 import { PlanWorkingHourDetail } from './entities/plan-working-hour-detail.entity';
+import { Activities } from '../activities/entities/activities.entity';
 import {
   CreatePlanWorkingHourDto,
   UpdatePlanWorkingHourDto,
@@ -16,6 +17,8 @@ export class PlanWorkingHourService {
     private readonly planWorkingHourRepository: Repository<PlanWorkingHour>,
     @InjectRepository(PlanWorkingHourDetail)
     private readonly planWorkingHourDetailRepository: Repository<PlanWorkingHourDetail>,
+    @InjectRepository(Activities)
+    private readonly activitiesRepository: Repository<Activities>,
   ) {}
 
   async create(createDto: CreatePlanWorkingHourDto): Promise<PlanWorkingHour> {
@@ -252,5 +255,40 @@ export class PlanWorkingHourService {
       totalHolidayDays,
       averageWorkingHoursPerDay,
     };
+  }
+
+  async getFormData(): Promise<{
+    [key: string]: Array<{ id: number; name: string }>;
+  }> {
+    // Ambil semua activities yang aktif
+    const activities = await this.activitiesRepository.find({
+      where: { deletedAt: IsNull() },
+      select: ['id', 'name', 'status'],
+    });
+
+    // Kelompokkan berdasarkan status
+    const groupedData: { [key: string]: Array<{ id: number; name: string }> } = {
+      data_working: [],
+      data_delay: [],
+      data_idle: [],
+      data_breakdown: [],
+    };
+
+    activities.forEach(activity => {
+      if (activity.status) {
+        const statusKey = `data_${activity.status.toLowerCase()}`;
+        
+        if (!groupedData[statusKey]) {
+          groupedData[statusKey] = [];
+        }
+        
+        groupedData[statusKey].push({
+          id: activity.id,
+          name: activity.name,
+        });
+      }
+    });
+
+    return groupedData;
   }
 }

@@ -31,6 +31,7 @@ Modul Plan Working Hour digunakan untuk mengelola data perencanaan jam kerja den
 ### Main Endpoints
 - `POST /api/plan-working-hour` - Create plan working hour
 - `GET /api/plan-working-hour` - Get all plan working hours
+- `GET /api/plan-working-hour/form` - Get activities grouped by status for form
 - `GET /api/plan-working-hour/:id` - Get plan working hour by ID
 - `PATCH /api/plan-working-hour/:id` - Update plan working hour
 - `DELETE /api/plan-working-hour/:id` - Delete plan working hour

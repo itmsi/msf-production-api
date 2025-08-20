@@ -283,6 +283,7 @@ export class ActivitiesController {
     },
   })
   create(@Body() dto: CreateActivitiesDto) {
+    console.log('Controller received:', dto);
     return this.activitiesService.create(dto);
   }
 
