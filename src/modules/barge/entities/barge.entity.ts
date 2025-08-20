@@ -5,35 +5,39 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
-  ManyToOne,
-  JoinColumn,
 } from 'typeorm';
-import { Sites } from '../../sites/entities/sites.entity';
 
 @Entity('m_barge')
 export class Barge {
   @PrimaryGeneratedColumn()
   id: number;
 
-  // sites_id removed - not in migration
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  shipment: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   name: string;
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
+  @Column({ type: 'int', nullable: true })
+  capacity: number;
+
+  @Column({ type: 'text', nullable: true })
   remarks: string;
 
   @CreateDateColumn()
   createdAt: Date;
 
+  @Column({ type: 'int', nullable: true })
+  createdBy: number;
+
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Column({ type: 'int', nullable: true })
+  updatedBy: number;
 
   @DeleteDateColumn()
   deletedAt: Date;
 
-  // site relationship removed - not in migration
+  @Column({ type: 'int', nullable: true })
+  deletedBy: number;
 }

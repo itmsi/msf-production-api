@@ -19,12 +19,6 @@ export class CreateTableMBarge1700000000005 implements MigrationInterface {
             generationStrategy: 'increment',
           },
           {
-            name: 'shipment',
-            type: 'varchar',
-            length: '255',
-            isNullable: true,
-          },
-          {
             name: 'name',
             type: 'varchar',
             length: '255',

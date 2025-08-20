@@ -1,92 +1,62 @@
 import { DataSource } from 'typeorm';
+import { Barge } from '../../modules/barge/entities/barge.entity';
 
 export class BargeSeeder {
   constructor(private dataSource: DataSource) {}
 
   async run(): Promise<void> {
-    const bargeRepository = this.dataSource.getRepository('m_barge');
+    const bargeRepository = this.dataSource.getRepository(Barge);
 
-    const bargesData = [
+    // Check if data already exists
+    const existingBarges = await bargeRepository.find();
+    if (existingBarges.length > 0) {
+      console.log('Barge data already exists, skipping seeder...');
+      return;
+    }
+
+    const bargeData = [
       {
-        name: 'Barge-001',
-        description: 'Large capacity barge for material transport',
+        name: 'Barge Kalimantan',
         capacity: 1000,
-        unit: 'ton',
-        length: 50,
-        width: 15,
-        depth: 3,
-        status: 'active',
-        isActive: true,
+        remarks: 'Barge untuk pengangkutan batu bara dari Kalimantan',
+        createdBy: 1,
+        updatedBy: 1,
       },
       {
-        name: 'Barge-002',
-        description: 'Medium capacity barge for equipment transport',
-        capacity: 500,
-        unit: 'ton',
-        length: 35,
-        width: 12,
-        depth: 2.5,
-        status: 'active',
-        isActive: true,
+        name: 'Barge Sumatra',
+        capacity: 1500,
+        remarks: 'Barge untuk pengangkutan CPO dari Sumatra',
+        createdBy: 1,
+        updatedBy: 1,
       },
       {
-        name: 'Barge-003',
-        description: 'Small barge for personnel transport',
-        capacity: 100,
-        unit: 'ton',
-        length: 25,
-        width: 8,
-        depth: 2,
-        status: 'active',
-        isActive: true,
+        name: 'Barge Sulawesi',
+        capacity: 800,
+        remarks: 'Barge untuk pengangkutan nikel dari Sulawesi',
+        createdBy: 1,
+        updatedBy: 1,
       },
       {
-        name: 'Barge-004',
-        description: 'Specialized barge for fuel transport',
-        capacity: 300,
-        unit: 'ton',
-        length: 30,
-        width: 10,
-        depth: 2.5,
-        status: 'active',
-        isActive: true,
+        name: 'Barge Papua',
+        capacity: 1200,
+        remarks: 'Barge untuk pengangkutan tembaga dari Papua',
+        createdBy: 1,
+        updatedBy: 1,
       },
       {
-        name: 'Barge-005',
-        description: 'Multi-purpose barge for various cargo',
-        capacity: 750,
-        unit: 'ton',
-        length: 40,
-        width: 13,
-        depth: 2.8,
-        status: 'active',
-        isActive: true,
-      },
-      {
-        name: 'Barge-006',
-        description: 'Emergency response barge',
-        capacity: 200,
-        unit: 'ton',
-        length: 28,
-        width: 9,
-        depth: 2.2,
-        status: 'active',
-        isActive: true,
+        name: 'Barge Jawa',
+        capacity: 600,
+        remarks: 'Barge untuk pengangkutan semen dari Jawa',
+        createdBy: 1,
+        updatedBy: 1,
       },
     ];
 
-    for (const bargeData of bargesData) {
-      const existingBarge = await bargeRepository.findOne({
-        where: { name: bargeData.name },
-      });
-
-      if (!existingBarge) {
-        const barge = bargeRepository.create(bargeData);
-        await bargeRepository.save(barge);
-        console.log(`✅ Barge "${bargeData.name}" created`);
-      } else {
-        console.log(`⏭️  Barge "${bargeData.name}" already exists`);
-      }
+    for (const bargeDataItem of bargeData) {
+      const barge = bargeRepository.create(bargeDataItem);
+      await bargeRepository.save(barge);
     }
+
+    console.log('Barge seeder completed successfully!');
   }
 }
