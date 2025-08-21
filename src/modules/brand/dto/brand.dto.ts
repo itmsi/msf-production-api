@@ -7,16 +7,17 @@ import {
   MinLength,
   MaxLength,
 } from 'class-validator';
+import { IsNotEmptyString } from '../../../common/validators';
 
 export class CreateBrandDto {
   @ApiProperty({
     example: 'Toyota',
-    description: 'Nama brand yang akan dibuat',
+    description: 'Nama brand yang akan dibuat (mandatory)',
     minLength: 1,
     maxLength: 100,
   })
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmptyString()
   @MinLength(1)
   @MaxLength(100)
   brand_name: string;
@@ -30,11 +31,12 @@ export class UpdateBrandDto {
     maxLength: 100,
     required: false,
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmptyString()
   @MinLength(1)
   @MaxLength(100)
-  brand_name: string;
+  brand_name?: string;
 }
 
 export class BrandResponseDto {

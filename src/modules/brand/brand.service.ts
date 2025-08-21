@@ -14,6 +14,12 @@ import {
 } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import {
+  validateNotEmptyString,
+  validateEnum,
+  validateMultipleFields,
+  ValidationResult,
+} from '../../common/helpers/validation.helper';
+import {
   CreateBrandDto,
   BrandResponseDto,
   GetBrandsQueryDto,
@@ -26,6 +32,46 @@ export class BrandService {
     @InjectRepository(Brand)
     private brandRepository: Repository<Brand>,
   ) {}
+
+  /**
+   * Validasi tambahan untuk data brand sebelum disimpan
+   */
+  private validateBrandData(data: CreateBrandDto | UpdateBrandDto): ValidationResult {
+    const validations: ValidationResult[] = [];
+
+    // Validasi untuk create (brand_name mandatory)
+    if ('brand_name' in data && data.brand_name !== undefined) {
+      validations.push(validateNotEmptyString(data.brand_name, 'brand_name'));
+    }
+
+    return validateMultipleFields(validations);
+  }
+
+  /**
+   * Validasi business rules khusus
+   */
+  private async validateBusinessRules(data: CreateBrandDto | UpdateBrandDto, excludeId?: number): Promise<ValidationResult> {
+    const errors: string[] = [];
+
+    // Validasi nama brand tidak boleh duplikat
+    if ('brand_name' in data && data.brand_name !== undefined) {
+      const existingBrand = await this.brandRepository.findOne({
+        where: {
+          brand_name: data.brand_name,
+          ...(excludeId && { id: Not(excludeId) })
+        }
+      });
+
+      if (existingBrand) {
+        errors.push(`Nama brand '${data.brand_name}' sudah ada`);
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
 
   async findById(id: number): Promise<ApiResponse<BrandResponseDto | null>> {
     try {
@@ -124,12 +170,16 @@ export class BrandService {
 
   async create(data: CreateBrandDto): Promise<ApiResponse<BrandResponseDto>> {
     try {
-      const existing = await this.brandRepository.findOne({
-        where: { brand_name: data.brand_name },
-      });
+      // Validasi tambahan menggunakan helper functions
+      const validationResult = this.validateBrandData(data);
+      if (!validationResult.isValid) {
+        throwError(`Validasi gagal: ${validationResult.errors.join(', ')}`, 400);
+      }
 
-      if (existing) {
-        throwError('Brand name sudah terdaftar', 409);
+      // Validasi business rules
+      const businessValidation = await this.validateBusinessRules(data);
+      if (!businessValidation.isValid) {
+        throwError(`Business rule validation gagal: ${businessValidation.errors.join(', ')}`, 409);
       }
 
       const newBrand = this.brandRepository.create(data);
@@ -155,21 +205,16 @@ export class BrandService {
         return emptyDataResponse('Brand tidak ditemukan', null);
       }
 
-      // Check if brand_name already exists for other brands
-      if (updateDto.brand_name) {
-        const existingBrand = await this.brandRepository.findOne({
-          where: {
-            brand_name: updateDto.brand_name,
-            id: Not(id),
-          },
-        });
+      // Validasi tambahan menggunakan helper functions (hanya untuk field yang diisi)
+      const validationResult = this.validateBrandData(updateDto);
+      if (!validationResult.isValid) {
+        throwError(`Validasi gagal: ${validationResult.errors.join(', ')}`, 400);
+      }
 
-        if (existingBrand) {
-          throwError(
-            `Brand name ${updateDto.brand_name} sudah digunakan oleh brand lain`,
-            409,
-          );
-        }
+      // Validasi business rules (exclude current brand ID)
+      const businessValidation = await this.validateBusinessRules(updateDto, id);
+      if (!businessValidation.isValid) {
+        throwError(`Business rule validation gagal: ${businessValidation.errors.join(', ')}`, 409);
       }
 
       const updatedBrand = this.brandRepository.merge(brand, updateDto);
