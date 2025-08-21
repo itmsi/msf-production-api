@@ -4,24 +4,21 @@ export class UpdatePopulationEntityConstraints1700000000033 implements Migration
   name = 'UpdatePopulationEntityConstraints1700000000033';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Update serial_engine column to enum
+    // Update remarks values to valid enum values
+    await queryRunner.query(`
+      UPDATE m_population 
+      SET remarks = 'RFU' 
+      WHERE remarks NOT IN ('RFU', 'BD') 
+      OR remarks IS NULL
+    `);
+
+    // Update serial_engine column type (just change type, no constraint needed)
     await queryRunner.query(`
       ALTER TABLE m_population 
       ALTER COLUMN serial_engine TYPE VARCHAR(100)
     `);
-    
-    await queryRunner.query(`
-      ALTER TABLE m_population 
-      ADD CONSTRAINT check_serial_engine 
-      CHECK (serial_engine IN ('cummins', 'weichai'))
-    `);
 
-    // Update remarks column to enum
-    await queryRunner.query(`
-      ALTER TABLE m_population 
-      ALTER COLUMN remarks TYPE VARCHAR(500)
-    `);
-    
+    // Add constraint only for remarks (enum values)
     await queryRunner.query(`
       ALTER TABLE m_population 
       ADD CONSTRAINT check_remarks 
@@ -31,11 +28,6 @@ export class UpdatePopulationEntityConstraints1700000000033 implements Migration
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Remove constraints
-    await queryRunner.query(`
-      ALTER TABLE m_population 
-      DROP CONSTRAINT IF EXISTS check_serial_engine
-    `);
-    
     await queryRunner.query(`
       ALTER TABLE m_population 
       DROP CONSTRAINT IF EXISTS check_remarks
