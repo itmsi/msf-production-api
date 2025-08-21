@@ -23,7 +23,7 @@ export class Population {
   @Column({ type: 'varchar', length: 100, nullable: true })
   vin_number: string;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   date_arrive: Date;
 
   @Column({ type: 'enum', enum: ['active', 'inactive'], default: 'active' })

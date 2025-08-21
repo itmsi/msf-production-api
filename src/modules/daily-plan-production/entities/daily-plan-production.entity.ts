@@ -12,7 +12,7 @@ export class DailyPlanProduction {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   plan_date: Date;
 
   @Column({ type: 'boolean', default: true, nullable: true })
