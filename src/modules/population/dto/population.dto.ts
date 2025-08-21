@@ -6,6 +6,7 @@ import {
   IsDateString,
   IsInt,
   IsIn,
+  IsNotEmpty,
 } from 'class-validator';
 
 export class CreatePopulationDto {
@@ -64,6 +65,7 @@ export class CreatePopulationDto {
     description: 'Serial engine',
     example: 'ENG123456',
   })
+  @IsNotEmpty()
   @IsString()
   serial_engine: string;
 
@@ -83,11 +85,11 @@ export class CreatePopulationDto {
 
   @ApiProperty({
     description: 'Remarks',
-    example: 'Unit dalam kondisi baik',
+    example: 'RFU',
+    enum: ['RFU', 'BD'],
   })
-  @IsOptional()
-  @IsString()
-  remarks?: string;
+  @IsEnum(['RFU', 'BD'])
+  remarks: string;
 
   @ApiProperty({
     description: 'ID site',
@@ -106,11 +108,9 @@ export class CreatePopulationDto {
   @ApiProperty({
     description: 'Last unit number',
     example: 'LUN001',
-    required: false,
   })
-  @IsOptional()
   @IsString()
-  last_unit_number?: string;
+  last_unit_number: string;
 
   @ApiProperty({
     description: 'Tipe ban',
@@ -193,6 +193,7 @@ export class UpdatePopulationDto {
     required: false,
   })
   @IsOptional()
+  @IsNotEmpty()
   @IsString()
   serial_engine?: string;
 
@@ -216,11 +217,12 @@ export class UpdatePopulationDto {
 
   @ApiProperty({
     description: 'Remarks',
-    example: 'Unit dalam kondisi baik',
+    example: 'RFU',
+    enum: ['RFU', 'BD'],
     required: false,
   })
   @IsOptional()
-  @IsString()
+  @IsEnum(['RFU', 'BD'])
   remarks?: string;
 
   @ApiProperty({

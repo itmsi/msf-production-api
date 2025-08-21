@@ -18,26 +18,26 @@ export class CreateBargeDto {
     description: 'Nama barge',
     minLength: 1,
     maxLength: 255,
-    required: false,
+    required: true,
   })
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
   @MinLength(1)
   @MaxLength(255)
-  name?: string;
+  name: string;
 
   @ApiProperty({
     example: 1000,
     description: 'Kapasitas barge dalam ton',
     minimum: 1,
     maximum: 999999,
-    required: false,
+    required: true,
   })
-  @IsOptional()
+  @IsNotEmpty()
   @IsNumber()
   @Min(1)
   @Max(999999)
-  capacity?: number;
+  capacity: number;
 
   @ApiProperty({
     example: 'Barge untuk pengangkutan batu bara',

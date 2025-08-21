@@ -47,7 +47,7 @@ export class Population {
   @Column({ type: 'varchar', length: 255, nullable: true })
   site_origin: string;
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
+  @Column({ type: 'enum', enum: ['RFU', 'BD'], nullable: true })
   remarks: string;
 
   @Column({ type: 'int', nullable: true })

@@ -294,6 +294,28 @@ export class PopulationService {
     data: CreatePopulationDto,
   ): Promise<ApiResponse<PopulationResponseDto>> {
     try {
+      // Validate foreign key constraints
+      const unitType = await this.unitTypeRepository.findOne({
+        where: { id: data.unit_type_id },
+      });
+      if (!unitType) {
+        throwError('Unit type tidak ditemukan', 400);
+      }
+
+      const activities = await this.activitiesRepository.findOne({
+        where: { id: data.activities_id },
+      });
+      if (!activities) {
+        throwError('Activities tidak ditemukan', 400);
+      }
+
+      const site = await this.sitesRepository.findOne({
+        where: { id: data.site_id },
+      });
+      if (!site) {
+        throwError('Site tidak ditemukan', 400);
+      }
+
       // Check if VIN number already exists
       const existingVin = await this.populationRepository.findOne({
         where: { vin_number: data.vin_number },
@@ -401,6 +423,34 @@ export class PopulationService {
 
       if (!population) {
         return emptyDataResponse('Population tidak ditemukan', null);
+      }
+
+      // Validate foreign key constraints
+      if (updateDto.unit_type_id) {
+        const unitType = await this.unitTypeRepository.findOne({
+          where: { id: updateDto.unit_type_id },
+        });
+        if (!unitType) {
+          throwError('Unit type tidak ditemukan', 400);
+        }
+      }
+
+      if (updateDto.activities_id) {
+        const activities = await this.activitiesRepository.findOne({
+          where: { id: updateDto.activities_id },
+        });
+        if (!activities) {
+          throwError('Activities tidak ditemukan', 400);
+        }
+      }
+
+      if (updateDto.site_id) {
+        const site = await this.sitesRepository.findOne({
+          where: { id: updateDto.site_id },
+        });
+        if (!site) {
+          throwError('Site tidak ditemukan', 400);
+        }
       }
 
       // Check if VIN number already exists for other populations
