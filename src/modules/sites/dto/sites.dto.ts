@@ -14,6 +14,12 @@ import {
   Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { 
+  IsNotEmptyString,
+  IsValidFloat,
+  IsFloatInRange,
+  IsNullableFloatInRange
+} from '../../../common/validators';
 
 export enum OperatorPointType {
   DUMPING = 'dumping',
@@ -27,7 +33,7 @@ export class OperatorPointDto {
     enum: OperatorPointType,
   })
   @IsEnum(OperatorPointType)
-  @IsNotEmpty()
+  @IsNotEmptyString()
   type: OperatorPointType;
 
   @ApiProperty({
@@ -37,83 +43,77 @@ export class OperatorPointDto {
     maxLength: 100,
   })
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmptyString()
   @MinLength(1)
   @MaxLength(100)
   name: string;
 
   @ApiProperty({
     example: 106.8456,
-    description: 'Longitude operator point',
+    description: 'Longitude operator point (nullable)',
     minimum: -180,
     maximum: 180,
+    required: false,
   })
-  @IsNumber()
-  @IsNotEmpty()
-  @Min(-180)
-  @Max(180)
-  longitude: number;
+  @IsOptional()
+  @IsNullableFloatInRange(-180, 180)
+  longitude?: number;
 
   @ApiProperty({
     example: -6.2088,
-    description: 'Latitude operator point',
+    description: 'Latitude operator point (nullable)',
     minimum: -90,
     maximum: 90,
+    required: false,
   })
-  @IsNumber()
-  @IsNotEmpty()
-  @Min(-90)
-  @Max(90)
-  latitude: number;
+  @IsOptional()
+  @IsNullableFloatInRange(-90, 90)
+  latitude?: number;
 }
 
 export class CreateSitesDto {
   @ApiProperty({
     example: 'Site Jakarta',
-    description: 'Nama site yang akan dibuat',
+    description: 'Nama site yang akan dibuat (mandatory)',
     minLength: 1,
     maxLength: 100,
   })
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmptyString()
   @MinLength(1)
   @MaxLength(100)
   name: string;
 
   @ApiProperty({
     example: 'Jakarta Selatan',
-    description: 'Lokasi site',
+    description: 'Lokasi site (mandatory)',
     minLength: 1,
     maxLength: 200,
   })
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmptyString()
   @MinLength(1)
   @MaxLength(200)
   location: string;
 
   @ApiProperty({
     example: 106.8456,
-    description: 'Longitude site',
+    description: 'Longitude site (mandatory)',
     minimum: -180,
     maximum: 180,
   })
-  @IsNumber()
-  @IsNotEmpty()
-  @Min(-180)
-  @Max(180)
+  @IsValidFloat()
+  @IsFloatInRange(-180, 180)
   longitude: number;
 
   @ApiProperty({
     example: -6.2088,
-    description: 'Latitude site',
+    description: 'Latitude site (mandatory)',
     minimum: -90,
     maximum: 90,
   })
-  @IsNumber()
-  @IsNotEmpty()
-  @Min(-90)
-  @Max(90)
+  @IsValidFloat()
+  @IsFloatInRange(-90, 90)
   latitude: number;
 
   @ApiProperty({
@@ -125,11 +125,12 @@ export class CreateSitesDto {
         latitude: -6.2088,
       },
     ],
-    description: 'Array operator points yang akan dibuat',
+    description: 'Array operator points yang akan dibuat (mandatory)',
     type: [OperatorPointDto],
     minLength: 1,
   })
   @IsArray()
+  @IsNotEmpty()
   @ValidateNested({ each: true })
   @Type(() => OperatorPointDto)
   operator_point: OperatorPointDto[];
@@ -145,6 +146,7 @@ export class UpdateSitesDto {
   })
   @IsOptional()
   @IsString()
+  @IsNotEmptyString()
   @MinLength(1)
   @MaxLength(100)
   name?: string;
@@ -158,6 +160,7 @@ export class UpdateSitesDto {
   })
   @IsOptional()
   @IsString()
+  @IsNotEmptyString()
   @MinLength(1)
   @MaxLength(200)
   location?: string;
@@ -170,9 +173,8 @@ export class UpdateSitesDto {
     maximum: 180,
   })
   @IsOptional()
-  @IsNumber()
-  @Min(-180)
-  @Max(180)
+  @IsValidFloat()
+  @IsFloatInRange(-180, 180)
   longitude?: number;
 
   @ApiProperty({
@@ -183,9 +185,8 @@ export class UpdateSitesDto {
     maximum: 90,
   })
   @IsOptional()
-  @IsNumber()
-  @Min(-90)
-  @Max(90)
+  @IsValidFloat()
+  @IsFloatInRange(-90, 90)
   latitude?: number;
 
   @ApiProperty({

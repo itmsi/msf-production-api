@@ -18,19 +18,19 @@ export class Sites {
   id: number;
 
   @Expose()
-  @Column({ nullable: true })
+  @Column({ nullable: false })
   name: string;
 
   @Expose()
-  @Column({ nullable: true })
+  @Column({ nullable: false })
   location: string;
 
   @Expose()
-  @Column({ type: 'float', nullable: true })
+  @Column({ type: 'float', nullable: false })
   longitude: number;
 
   @Expose()
-  @Column({ type: 'float', nullable: true })
+  @Column({ type: 'float', nullable: false })
   latitude: number;
 
   @CreateDateColumn()

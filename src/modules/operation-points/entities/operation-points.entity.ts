@@ -22,11 +22,11 @@ export class OperationPoints {
   sites_id: number;
 
   @Expose()
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: false })
   type: string;
 
   @Expose()
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: false })
   name: string;
 
   @Expose()

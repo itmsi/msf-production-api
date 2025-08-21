@@ -15,6 +15,17 @@ import {
 } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import {
+  validateNotEmptyString,
+  validateNotEmptyArray,
+  validateLongitude,
+  validateLatitude,
+  validateNullableLongitude,
+  validateNullableLatitude,
+  validateEnum,
+  validateMultipleFields,
+  ValidationResult,
+} from '../../common/helpers/validation.helper';
+import {
   CreateSitesDto,
   SitesResponseDto,
   GetSitesQueryDto,
@@ -30,6 +41,93 @@ export class SitesService {
     @InjectRepository(OperationPoints)
     private operationPointsRepository: Repository<OperationPoints>,
   ) {}
+
+  /**
+   * Validasi tambahan untuk data sites sebelum disimpan
+   * Bisa digunakan untuk validasi business logic yang lebih kompleks
+   */
+  private validateSiteData(data: CreateSitesDto | UpdateSitesDto): ValidationResult {
+    const validations: ValidationResult[] = [];
+
+    // Validasi untuk create (semua field mandatory)
+    if ('name' in data && data.name !== undefined) {
+      validations.push(validateNotEmptyString(data.name, 'name'));
+    }
+
+    if ('location' in data && data.location !== undefined) {
+      validations.push(validateNotEmptyString(data.location, 'location'));
+    }
+
+    if ('longitude' in data && data.longitude !== undefined) {
+      validations.push(validateLongitude(data.longitude, 'longitude'));
+    }
+
+    if ('latitude' in data && data.latitude !== undefined) {
+      validations.push(validateLatitude(data.latitude, 'latitude'));
+    }
+
+    // Validasi operator points jika ada
+    if ('operator_point' in data && data.operator_point !== undefined) {
+      validations.push(validateNotEmptyArray(data.operator_point, 'operator_point'));
+      
+      // Validasi setiap operator point
+      if (Array.isArray(data.operator_point)) {
+        data.operator_point.forEach((op, index) => {
+          validations.push(validateNotEmptyString(op.type, `operator_point[${index}].type`));
+          validations.push(validateNotEmptyString(op.name, `operator_point[${index}].name`));
+          
+          // Longitude dan latitude nullable, gunakan helper functions khusus
+          validations.push(validateNullableLongitude(op.longitude, `operator_point[${index}].longitude`));
+          validations.push(validateNullableLatitude(op.latitude, `operator_point[${index}].latitude`));
+        });
+      }
+    }
+
+    return validateMultipleFields(validations);
+  }
+
+  /**
+   * Validasi business logic khusus
+   * Contoh: nama site tidak boleh duplikat
+   */
+  private async validateBusinessRules(data: CreateSitesDto | UpdateSitesDto, excludeId?: number): Promise<ValidationResult> {
+    const errors: string[] = [];
+
+    // Validasi nama site tidak boleh duplikat
+    if ('name' in data && data.name !== undefined) {
+      const existingSite = await this.sitesRepository.findOne({
+        where: {
+          name: data.name,
+          ...(excludeId && { id: Not(excludeId) })
+        }
+      });
+
+      if (existingSite) {
+        errors.push(`Nama site '${data.name}' sudah ada`);
+      }
+    }
+
+    // Validasi koordinat tidak boleh sama dengan site lain
+    if ('longitude' in data && 'latitude' in data && 
+        data.longitude !== undefined && data.latitude !== undefined) {
+      const existingSite = await this.sitesRepository.findOne({
+        where: {
+          longitude: data.longitude,
+          latitude: data.latitude,
+          ...(excludeId && { id: Not(excludeId) })
+        }
+      });
+
+      if (existingSite) {
+        errors.push(`Koordinat (${data.longitude}, ${data.latitude}) sudah digunakan oleh site lain`);
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
 
   async findById(id: number): Promise<ApiResponse<SitesResponseDto | null>> {
     try {
@@ -150,6 +248,18 @@ export class SitesService {
 
   async create(data: CreateSitesDto): Promise<ApiResponse<SitesResponseDto>> {
     try {
+      // Validasi tambahan menggunakan helper functions
+      const validationResult = this.validateSiteData(data);
+      if (!validationResult.isValid) {
+        throwError(`Validasi gagal: ${validationResult.errors.join(', ')}`, 400);
+      }
+
+      // Validasi business rules
+      const businessValidation = await this.validateBusinessRules(data);
+      if (!businessValidation.isValid) {
+        throwError(`Business rule validation gagal: ${businessValidation.errors.join(', ')}`, 400);
+      }
+
       // Create site first
       const newSite = this.sitesRepository.create({
         name: data.name,
@@ -206,6 +316,18 @@ export class SitesService {
 
       if (!site) {
         return emptyDataResponse('Site tidak ditemukan', null);
+      }
+
+      // Validasi tambahan menggunakan helper functions (hanya untuk field yang diisi)
+      const validationResult = this.validateSiteData(updateDto);
+      if (!validationResult.isValid) {
+        throwError(`Validasi gagal: ${validationResult.errors.join(', ')}`, 400);
+      }
+
+      // Validasi business rules (exclude current site ID)
+      const businessValidation = await this.validateBusinessRules(updateDto, id);
+      if (!businessValidation.isValid) {
+        throwError(`Business rule validation gagal: ${businessValidation.errors.join(', ')}`, 400);
       }
 
       // Update site data
