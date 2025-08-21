@@ -161,8 +161,14 @@ date_arrive,status,unit_name,no_unit,vin_number,no_unit_system,serial_engine,act
   "data": [
     {
       "status": "error",
-      "message": "unit_name tidak ada",
+      "message": "Field \"status\" tidak valid: Status harus active atau inactive",
       "row": 1,
+      "data": { ... }
+    },
+    {
+      "status": "error",
+      "message": "3 field(s) tidak valid: \"date_arrive\": Format tanggal tidak valid (yyyy-mm-dd), \"unit_name\": Unit type \"InvalidUnit\" tidak ditemukan, \"tyre_type\": Tyre type harus 6x4 atau 8x4",
+      "row": 2,
       "data": { ... }
     }
   ]

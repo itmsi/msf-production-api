@@ -1,0 +1,4 @@
+date_arrive,status,unit_name,no_unit,vin_number,no_unit_system,serial_engine,engine_brand,activities_name,user_site,site_origin,remarks,site_name,company,last_unit_number,tyre_type
+2025-01-01,invalid_status,Excavator,EXC001,VIN123456789,SYS001,ENG123456,invalid_brand,Mining,user_site,Site A,invalid_remarks,Site A,PT ABC,LUN001,invalid_tyre
+2025-01-02,active,InvalidUnit,DT001,VIN987654321,SYS002,ENG654321,cummins,InvalidActivity,user_site,Site B,RFU,InvalidSite,PT XYZ,LUN002,6x4
+2025-01-03,active,Excavator,EXC002,VIN111222333,SYS003,ENG111222,weichai,Mining,user_site,Site A,BD,Site A,PT ABC,LUN003,8x4

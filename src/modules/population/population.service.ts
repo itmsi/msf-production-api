@@ -824,11 +824,41 @@ export class PopulationService {
     if (!row.unit_name) {
       errors.push({ field: 'unit_name', message: 'Nama unit wajib diisi' });
     }
+    if (!row.no_unit) {
+      errors.push({ field: 'no_unit', message: 'Nomor unit wajib diisi' });
+    }
+    if (!row.vin_number) {
+      errors.push({ field: 'vin_number', message: 'VIN number wajib diisi' });
+    }
+    if (!row.no_unit_system) {
+      errors.push({ field: 'no_unit_system', message: 'Nomor unit sistem wajib diisi' });
+    }
+    if (!row.serial_engine) {
+      errors.push({ field: 'serial_engine', message: 'Serial engine wajib diisi' });
+    }
+    if (!row.engine_brand) {
+      errors.push({ field: 'engine_brand', message: 'Engine brand wajib diisi' });
+    }
     if (!row.activities_name) {
       errors.push({ field: 'activities_name', message: 'Nama aktivitas wajib diisi' });
     }
+    if (!row.user_site) {
+      errors.push({ field: 'user_site', message: 'User site wajib diisi' });
+    }
+    if (!row.site_origin) {
+      errors.push({ field: 'site_origin', message: 'Site origin wajib diisi' });
+    }
+    if (!row.remarks) {
+      errors.push({ field: 'remarks', message: 'Remarks wajib diisi' });
+    }
     if (!row.site_name) {
       errors.push({ field: 'site_name', message: 'Nama site wajib diisi' });
+    }
+    if (!row.company) {
+      errors.push({ field: 'company', message: 'Company wajib diisi' });
+    }
+    if (!row.tyre_type) {
+      errors.push({ field: 'tyre_type', message: 'Tyre type wajib diisi' });
     }
 
     // Validasi format date
@@ -844,6 +874,11 @@ export class PopulationService {
     // Validasi tyre_type
     if (row.tyre_type && !['6x4', '8x4'].includes(row.tyre_type)) {
       errors.push({ field: 'tyre_type', message: 'Tyre type harus 6x4 atau 8x4' });
+    }
+
+    // Validasi engine_brand
+    if (row.engine_brand && !['cummins', 'weichai'].includes(row.engine_brand)) {
+      errors.push({ field: 'engine_brand', message: 'Engine brand harus cummins atau weichai' });
     }
 
     // Validasi remarks
@@ -912,7 +947,18 @@ export class PopulationService {
     }
 
     const isValid = errors.length === 0;
-    const message = isValid ? 'Data valid' : `${errors.length} field(s) tidak valid`;
+    
+    // Buat message yang lebih detail
+    let message = 'Data valid';
+    if (!isValid) {
+      if (errors.length === 1) {
+        const error = errors[0];
+        message = `Field "${error.field}" tidak valid: ${error.message}`;
+      } else {
+        const errorDetails = errors.map(err => `"${err.field}": ${err.message}`).join(', ');
+        message = `${errors.length} field(s) tidak valid: ${errorDetails}`;
+      }
+    }
 
     return { isValid, message, errors };
   }
