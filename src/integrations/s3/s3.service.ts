@@ -13,13 +13,18 @@ export class S3Service {
   constructor(private configService: ConfigService) {
     this.bucketName = this.configService.get<string>('MINIO_BUCKET_NAME') || 'msf-production';
     this.region = this.configService.get<string>('MINIO_REGION') || 'us-east-1';
+    const endpoint = this.configService.get<string>('MINIO_ENDPOINT') || 'http://localhost:9000';
+    const accessKey = this.configService.get<string>('MINIO_ACCESS_KEY_ID') || 'minioadmin';
+    const secretKey = this.configService.get<string>('MINIO_SECRET_ACCESS_KEY') || 'minioadmin';
+
+    this.logger.log(`Initializing S3Service with endpoint: ${endpoint}, bucket: ${this.bucketName}, region: ${this.region}`);
 
     this.s3Client = new S3Client({
       region: this.region,
-      endpoint: this.configService.get<string>('MINIO_ENDPOINT') || 'http://localhost:9000',
+      endpoint: endpoint,
       credentials: {
-        accessKeyId: this.configService.get<string>('MINIO_ACCESS_KEY_ID') || 'minioadmin',
-        secretAccessKey: this.configService.get<string>('MINIO_SECRET_ACCESS_KEY') || 'minioadmin',
+        accessKeyId: accessKey,
+        secretAccessKey: secretKey,
       },
       forcePathStyle: true, // Required for MinIO
     });
@@ -66,13 +71,33 @@ export class S3Service {
   async uploadErrorFile(
     fileName: string,
     fileBuffer: Buffer,
-  ): Promise<{ key: string; downloadUrl: string }> {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const key = `population_import_error/${timestamp}_${fileName}`;
-    
-    await this.uploadFile(key, fileBuffer);
-    const downloadUrl = await this.generateDownloadUrl(key);
-    
-    return { key, downloadUrl };
+  ): Promise<{ key: string; downloadUrl: string } | null> {
+    try {
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const key = `population_import_error/${timestamp}_${fileName}`;
+      
+      await this.uploadFile(key, fileBuffer);
+      const downloadUrl = await this.generateDownloadUrl(key);
+      
+      this.logger.log(`Error file uploaded successfully: ${key}`);
+      return { key, downloadUrl };
+    } catch (error) {
+      this.logger.error(`Failed to upload error file ${fileName}:`, error);
+      return null; // Return null instead of throwing error
+    }
+  }
+
+  // Method untuk test koneksi MinIO
+  async testConnection(): Promise<boolean> {
+    try {
+      // Coba list buckets untuk test koneksi
+      const { ListBucketsCommand } = await import('@aws-sdk/client-s3');
+      const command = new ListBucketsCommand({});
+      await this.s3Client.send(command);
+      return true;
+    } catch (error) {
+      this.logger.error('MinIO connection test failed:', error);
+      return false;
+    }
   }
 }

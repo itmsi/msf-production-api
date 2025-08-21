@@ -745,56 +745,62 @@ export class PopulationController {
 
   @UseGuards(JwtAuthGuard)
   @Get('import/template')
-  @ApiOperation({ 
-    summary: 'Download template CSV untuk import data population',
-    description: 'Mendownload template CSV yang berisi format kolom yang diperlukan untuk import data population'
+  @ApiOperation({
+    summary: 'Download template CSV untuk import population',
+    description: 'Mendownload template CSV yang berisi format kolom yang diperlukan',
   })
-  @SwaggerApiResponse({ 
-    status: 200, 
+  @SwaggerApiResponse({
+    status: 200,
     description: 'Template CSV berhasil didownload',
-    schema: {
-      example: {
-        description: 'File CSV template'
-      }
-    }
-  })
-  @SwaggerApiResponse({ 
-    status: 401, 
-    description: 'Unauthorized - JWT token tidak valid atau tidak ada',
-    schema: {
-      example: {
-        statusCode: 401,
-        message: 'Unauthorized',
-        error: true,
-        timestamp: '2024-01-01T00:00:00.000Z'
-      }
-    }
-  })
-  @SwaggerApiResponse({ 
-    status: 500, 
-    description: 'Internal Server Error - Terjadi kesalahan pada server',
-    schema: {
-      example: {
-        statusCode: 500,
-        message: 'Internal server error',
-        error: true,
-        timestamp: '2024-01-01T00:00:00.000Z'
-      }
-    }
   })
   async downloadTemplate(@Res() res: Response) {
     try {
-      const templateBuffer = await this.populationService.downloadTemplate();
+      const buffer = await this.populationService.downloadTemplate();
       
       res.set({
         'Content-Type': 'text/csv',
         'Content-Disposition': 'attachment; filename="template-population-import.csv"',
-        'Content-Length': templateBuffer.length,
+        'Content-Length': buffer.length,
       });
       
-      res.send(templateBuffer);
+      res.end(buffer);
     } catch (error) {
       throw new InternalServerErrorException('Gagal download template CSV');
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('minio/status')
+  @ApiOperation({
+    summary: 'Cek status koneksi MinIO',
+    description: 'Mengecek apakah MinIO tersedia dan bisa diakses',
+  })
+  @SwaggerApiResponse({
+    status: 200,
+    description: 'Status MinIO berhasil dicek',
+    schema: {
+      example: {
+        statusCode: 200,
+        message: 'MinIO status checked successfully',
+        data: {
+          available: true,
+          message: 'MinIO is available'
+        }
+      }
+    }
+  })
+  async checkMinioStatus() {
+    try {
+      const isAvailable = await this.populationService.checkMinioStatus();
+      return {
+        available: isAvailable,
+        message: isAvailable ? 'MinIO is available' : 'MinIO is not available'
+      };
+    } catch (error) {
+      return {
+        available: false,
+        message: 'Failed to check MinIO status'
+      };
     }
   }
 }

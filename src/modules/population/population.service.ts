@@ -658,14 +658,30 @@ export class PopulationService {
           
           // Coba upload ke MinIO, jika gagal gunakan fallback
           let errorFileInfo: { key: string; downloadUrl: string } | null = null;
+          let minioAvailable = false;
+          
           try {
-            errorFileInfo = await this.s3Service.uploadErrorFile(
-              `import_error_${Date.now()}.csv`,
-              errorCsvBuffer
-            );
-            this.logger.log('Error file uploaded to MinIO successfully');
+            // Test koneksi MinIO terlebih dahulu
+            minioAvailable = await this.s3Service.testConnection();
+            
+            if (minioAvailable) {
+              errorFileInfo = await this.s3Service.uploadErrorFile(
+                `import_error_${Date.now()}.csv`,
+                errorCsvBuffer
+              );
+              
+              if (errorFileInfo) {
+                this.logger.log('Error file uploaded to MinIO successfully');
+              } else {
+                this.logger.warn('MinIO upload failed, using fallback response');
+                minioAvailable = false;
+              }
+            } else {
+              this.logger.warn('MinIO tidak tersedia, menggunakan fallback response');
+            }
           } catch (s3Error) {
-            this.logger.warn('MinIO tidak tersedia, menggunakan fallback response:', s3Error.message);
+            this.logger.warn('MinIO error, menggunakan fallback response:', s3Error.message);
+            minioAvailable = false;
           }
 
           const response = {
@@ -673,7 +689,7 @@ export class PopulationService {
             success: 0,
             failed: failedCount,
             details: importResults,
-            error_file: errorFileInfo ? {
+            error_file: errorFileInfo && minioAvailable ? {
               download_url: errorFileInfo.downloadUrl,
               message: 'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
             } : {
@@ -768,6 +784,15 @@ export class PopulationService {
     } catch (error) {
       console.error('Error downloading template:', error);
       throw new InternalServerErrorException('Gagal download template CSV: ' + error.message);
+    }
+  }
+
+  async checkMinioStatus(): Promise<boolean> {
+    try {
+      return await this.s3Service.testConnection();
+    } catch (error) {
+      this.logger.error('Error checking MinIO status:', error);
+      return false;
     }
   }
 
