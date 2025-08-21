@@ -12,6 +12,7 @@ import {
   UploadedFile,
   Res,
   InternalServerErrorException,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
@@ -253,7 +254,7 @@ export class PopulationController {
       },
     },
   })
-  findOne(@Param('id') id: number) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.populationService.findById(id);
   }
 
@@ -482,7 +483,7 @@ export class PopulationController {
       },
     },
   })
-  update(@Param('id') id: number, @Body() dto: UpdatePopulationDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePopulationDto) {
     return this.populationService.update(id, dto);
   }
 
@@ -552,7 +553,7 @@ export class PopulationController {
       },
     },
   })
-  remove(@Param('id') id: number) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.populationService.remove(id);
   }
 

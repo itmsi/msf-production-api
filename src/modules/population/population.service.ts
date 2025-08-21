@@ -500,15 +500,12 @@ export class PopulationService {
         updateData.date_arrive = new Date(updateDto.date_arrive);
       }
 
-      const updatedPopulation = this.populationRepository.merge(
-        population,
-        updateData,
-      );
-      const result = await this.populationRepository.save(updatedPopulation);
+      // Update data menggunakan repository
+      await this.populationRepository.update(id, updateData);
 
       // Fetch updated data with relations
       const updatedData = await this.populationRepository.findOne({
-        where: { id: result.id },
+        where: { id },
         relations: ['unitType', 'unitType.brand', 'activities', 'site'],
       });
 
