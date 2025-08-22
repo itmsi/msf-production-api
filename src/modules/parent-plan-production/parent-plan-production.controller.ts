@@ -212,6 +212,7 @@ export class ParentPlanProductionController {
         message: 'Data parent plan production berhasil diambil',
         data: [
           {
+            id: 1,
             month_year: '2025-01',
             available_day: 26,
             holiday_day: 5,

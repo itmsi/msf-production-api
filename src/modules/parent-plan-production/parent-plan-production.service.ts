@@ -315,6 +315,7 @@ export class ParentPlanProductionService {
         }
 
         return {
+          id: parent.id,
           month_year: `${planYear.toString().padStart(4, '0')}-${(planMonth + 1).toString().padStart(2, '0')}`,
           available_day: availableDay,
           holiday_day: holidayDay,

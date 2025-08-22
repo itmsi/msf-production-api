@@ -424,6 +424,12 @@ export class GetParentPlanProductionQueryDto {
 
 export class ParentPlanProductionSummaryResponseDto {
   @ApiProperty({
+    description: 'ID dari parent plan production',
+    example: 1,
+  })
+  id: number;
+
+  @ApiProperty({
     description: 'Bulan dan tahun dari plan_date',
     example: '2025-01',
   })
