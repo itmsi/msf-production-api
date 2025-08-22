@@ -534,4 +534,63 @@ export class ParentPlanProductionService {
     // Simpan semua data yang sudah diupdate
     await this.planProductionRepository.save(existingPlanProductions);
   }
+
+  /**
+   * Delete parent plan production dan data plan production harian
+   */
+  async delete(id: number) {
+    // Cari parent plan production yang akan dihapus
+    const existingParent = await this.parentPlanProductionRepository.findOne({
+      where: { id },
+      relations: ['planProductions'],
+    });
+
+    if (!existingParent) {
+      throw new BadRequestException('Parent plan production tidak ditemukan');
+    }
+
+    // Validasi apakah data bisa dihapus (berdasarkan tanggal)
+    const planDate = new Date(existingParent.plan_date);
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+    const planMonth = planDate.getMonth();
+    const planYear = planDate.getFullYear();
+
+    let isAvailableToDelete = false;
+
+    if (planDate && planDate.toString() !== '0' && planDate.toString() !== '') {
+      if (planYear > currentYear || (planYear === currentYear && planMonth > currentMonth)) {
+        isAvailableToDelete = true;
+      } else if (planYear === currentYear && planMonth === currentMonth) {
+        // Jika bulan sama, cek apakah tanggal lebih dari hari ini
+        const planDay = planDate.getDate();
+        const currentDay = currentDate.getDate();
+        if (planDay > currentDay) {
+          isAvailableToDelete = true;
+        }
+      }
+    }
+
+    if (!isAvailableToDelete) {
+      throw new BadRequestException('Data tidak dapat dihapus karena tanggal sudah lewat atau hari ini');
+    }
+
+    // Hapus semua plan production harian terlebih dahulu
+    if (existingParent.planProductions && existingParent.planProductions.length > 0) {
+      await this.planProductionRepository.remove(existingParent.planProductions);
+      console.log(`Deleted ${existingParent.planProductions.length} daily plan productions`);
+    }
+
+    // Hapus parent plan production
+    await this.parentPlanProductionRepository.remove(existingParent);
+    console.log(`Deleted parent plan production with ID: ${id}`);
+
+    return {
+      message: 'Parent plan production dan data harian berhasil dihapus',
+      deletedId: id,
+      deletedPlanDate: existingParent.plan_date,
+      deletedDailyRecords: existingParent.planProductions?.length || 0,
+    };
+  }
 }

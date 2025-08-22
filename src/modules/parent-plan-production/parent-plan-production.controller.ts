@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Delete,
   Body,
   Param,
   Query,
@@ -262,6 +263,66 @@ export class ParentPlanProductionController {
     @Body() updateDto: UpdateParentPlanProductionDto,
   ) {
     return this.parentPlanProductionService.update(+id, updateDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Delete parent plan production',
+    description: 'Delete parent plan production dan semua data plan production harian yang terkait. Data hanya dapat dihapus jika tanggal plan_date belum lewat.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID parent plan production yang akan dihapus',
+    example: 1,
+    type: 'integer',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Parent plan production berhasil dihapus',
+    schema: {
+      example: {
+        statusCode: 200,
+        message: 'Parent plan production dan data harian berhasil dihapus',
+        data: {
+          message: 'Parent plan production dan data harian berhasil dihapus',
+          deletedId: 1,
+          deletedPlanDate: '2025-08-01T00:00:00.000Z',
+          deletedDailyRecords: 31,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Data tidak valid, parent plan production tidak ditemukan, atau tidak dapat dihapus',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'Data tidak dapat dihapus karena tanggal sudah lewat atau hari ini',
+        error: 'Bad Request',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - JWT token tidak valid atau tidak ada',
+    schema: {
+      example: {
+        statusCode: 401,
+        message: 'Unauthorized',
+        error: 'Unauthorized',
+      },
+    },
+  })
+  async delete(@Param('id') id: string) {
+    const result = await this.parentPlanProductionService.delete(+id);
+    return {
+      statusCode: 200,
+      message: 'Parent plan production berhasil dihapus',
+      data: result,
+    };
   }
 
   @UseGuards(JwtAuthGuard)
