@@ -45,7 +45,7 @@ export class PlanProduction {
   @Column({ type: 'float', nullable: false })
   remaining_stock: number;
 
-  @Column({ type: 'float', nullable: false, comment: 'Calculated: (ore_target / ob_target)' })
+  @Column({ type: 'float', nullable: false, comment: 'Calculated: (ob_target / ore_target)' })
   sr_target: number;
 
   @Column({ type: 'float', nullable: false })

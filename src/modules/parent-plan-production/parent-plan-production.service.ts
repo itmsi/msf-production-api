@@ -44,7 +44,7 @@ export class ParentPlanProductionService {
       total_average_month_ewh: createDto.total_average_month_ewh,
       total_ob_target: createDto.total_ob_target,
       total_ore_target: createDto.total_ore_target,
-      total_quary_target: createDto.total_quarry_target,
+      total_quarry_target: createDto.total_quarry_target,
       total_sr_target: createDto.total_sr_target || 2.0, // Default value jika tidak diisi
       total_ore_shipment_target: createDto.total_ore_shipment_target,
       total_remaining_stock: createDto.total_remaining_stock || 0, // Default value jika tidak diisi
@@ -75,11 +75,11 @@ export class ParentPlanProductionService {
     const totalDays = parentPlanProduction.total_calender_day;
     
     // Hitung nilai per hari
-    const averageDayEwh = createDto.total_average_day_ewh / totalDays;
-    const averageShiftEwh = createDto.total_average_month_ewh / totalDays;
+    const averageDayEwh = createDto.total_average_day_ewh;
+    const averageMonthEwh = createDto.total_average_month_ewh / totalDays;
     const obTarget = createDto.total_ob_target / totalDays;
     const oreTarget = createDto.total_ore_target / totalDays;
-    const quarry = createDto.total_quarry_target / totalDays;
+    const quarry = createDto.total_quarry_target; // Diambil langsung dari body request, tidak dibagi jumlah hari
     const oreShipmentTarget = createDto.total_ore_shipment_target / totalDays;
 
     // Ambil old stock global
@@ -107,7 +107,7 @@ export class ParentPlanProductionService {
         is_holiday_day: isSunday, // True jika hari minggu
         is_available_day: !isSunday, // False jika hari minggu
         average_day_ewh: averageDayEwh,
-        average_shift_ewh: averageShiftEwh,
+        average_shift_ewh: averageMonthEwh,
         ob_target: obTarget,
         ore_target: oreTarget,
         quarry: quarry,
@@ -120,6 +120,7 @@ export class ParentPlanProductionService {
         shift_quarry: shiftQuarry,
         shift_sr_target: shiftSrTarget,
         remaining_stock: remainingStock,
+        average_moth_ewh: averageMonthEwh,
         parent_plan_production_id: parentPlanProduction.id,
       };
 

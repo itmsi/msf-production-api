@@ -39,15 +39,15 @@ export class ParentPlanProduction {
   total_ore_target: number;
 
   @Column({ type: 'float', nullable: false })
-  total_quary_target: number;
+  total_quarry_target: number;
 
-  @Column({ type: 'float', nullable: false })
+  @Column({ type: 'float', nullable: false, default: 2.0 })
   total_sr_target: number;
 
   @Column({ type: 'float', nullable: false })
   total_ore_shipment_target: number;
 
-  @Column({ type: 'float', nullable: false })
+  @Column({ type: 'float', nullable: false, default: 0 })
   total_remaining_stock: number;
 
   @Column({ type: 'int', nullable: false, default: 0, comment: 'Total sisa stock yang tersedia' })
