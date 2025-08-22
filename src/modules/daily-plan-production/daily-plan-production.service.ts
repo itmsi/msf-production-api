@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, Raw } from 'typeorm';
-import { DailyPlanProduction } from './entities/daily-plan-production.entity';
+import { Repository, FindOptionsWhere, Raw, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import { PlanProduction } from '../plan-production/entities/plan-production.entity';
 import { CreateDailyPlanProductionDto, UpdateDailyPlanProductionDto, QueryDailyPlanProductionDto, DailyPlanProductionListResponseDto } from './dto/daily-plan-production.dto';
 import { successResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
@@ -9,8 +9,8 @@ import { paginateResponse } from '../../common/helpers/public.helper';
 @Injectable()
 export class DailyPlanProductionService {
   constructor(
-    @InjectRepository(DailyPlanProduction)
-    private readonly dailyPlanProductionRepository: Repository<DailyPlanProduction>,
+    @InjectRepository(PlanProduction)
+    private readonly dailyPlanProductionRepository: Repository<PlanProduction>,
   ) {}
 
   async create(createDto: CreateDailyPlanProductionDto): Promise<any> {
@@ -27,7 +27,7 @@ export class DailyPlanProductionService {
     const oldStockGlobal = await this.getOldStockGlobal();
 
     // 3. Buat entity baru dengan perhitungan otomatis
-    const dailyPlanProduction = new DailyPlanProduction();
+    const dailyPlanProduction = new PlanProduction();
     dailyPlanProduction.plan_date = new Date(createDto.plan_date);
     dailyPlanProduction.average_day_ewh = createDto.average_day_ewh;
     dailyPlanProduction.average_shift_ewh = createDto.average_shift_ewh;
@@ -36,6 +36,8 @@ export class DailyPlanProductionService {
     dailyPlanProduction.quarry = createDto.quarry;
     dailyPlanProduction.ore_shipment_target = createDto.ore_shipment_target;
     dailyPlanProduction.total_fleet = createDto.total_fleet;
+    dailyPlanProduction.average_moth_ewh = createDto.average_day_ewh; // Set default value
+    dailyPlanProduction.parent_plan_production_id = 1; // Set default parent ID
 
     // 4. Set nilai boolean berdasarkan plan_date
     const planDate = new Date(createDto.plan_date);
@@ -50,7 +52,7 @@ export class DailyPlanProductionService {
     dailyPlanProduction.daily_old_stock = oldStockGlobal;
     dailyPlanProduction.shift_ob_target = createDto.ob_target / 2;
     dailyPlanProduction.shift_ore_target = createDto.ore_target / 2;
-    dailyPlanProduction.shift_quarrt = createDto.quarry / 2;
+    dailyPlanProduction.shift_quarry = createDto.quarry / 2;
     dailyPlanProduction.shift_sr_target = dailyPlanProduction.shift_ob_target / dailyPlanProduction.shift_ore_target;
     dailyPlanProduction.remaining_stock = oldStockGlobal - createDto.ore_shipment_target + createDto.ore_target;
 
@@ -62,21 +64,14 @@ export class DailyPlanProductionService {
     const { start_date, end_date, search, sortBy = 'plan_date', sortOrder = 'DESC', page = 1, limit = 10 } = queryDto;
     const skip = (page - 1) * limit;
 
-    const where: FindOptionsWhere<DailyPlanProduction> = {};
+    const where: FindOptionsWhere<PlanProduction> = {};
 
     if (start_date && end_date) {
-      where.plan_date = {
-        $gte: new Date(start_date),
-        $lte: new Date(end_date),
-      } as any;
+      where.plan_date = Between(new Date(start_date), new Date(end_date));
     } else if (start_date) {
-      where.plan_date = {
-        $gte: new Date(start_date),
-      } as any;
+      where.plan_date = MoreThanOrEqual(new Date(start_date));
     } else if (end_date) {
-      where.plan_date = {
-        $lte: new Date(end_date),
-      } as any;
+      where.plan_date = LessThanOrEqual(new Date(end_date));
     }
 
     // Handle search parameter - sementara dinonaktifkan karena ada masalah dengan TypeORM
@@ -98,28 +93,44 @@ export class DailyPlanProductionService {
       take: limit,
     });
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const processedData = plans.map(plan => {
       // Hitung nilai-nilai yang diminta
       const sr_target = plan.ob_target / plan.ore_target;
-      const sisa_stock = (plan.daily_old_stock || 0) - (plan.remaining_stock || 0);
+      const sisa_stock = plan.ore_target - plan.ore_shipment_target;
       const tonnage_per_fleet = plan.ore_target / plan.total_fleet;
       const vessel_per_fleet = tonnage_per_fleet / 35;
 
       // Handle plan_date yang mungkin bukan Date object
-      let planDateStr = '';
+      let planDate: Date;
       if (plan.plan_date instanceof Date) {
-        planDateStr = plan.plan_date.toISOString().split('T')[0];
+        planDate = plan.plan_date;
       } else if (typeof plan.plan_date === 'string') {
-        planDateStr = (plan.plan_date as string).split('T')[0];
+        planDate = new Date(plan.plan_date);
       } else {
         // Fallback jika format tidak dikenali
-        planDateStr = new Date(plan.plan_date as any).toISOString().split('T')[0];
+        planDate = new Date(plan.plan_date as any);
       }
+
+      // Set planDate ke awal hari untuk perbandingan yang akurat
+      const planDateStart = new Date(planDate);
+      planDateStart.setHours(0, 0, 0, 0);
+
+      // Cek apakah tersedia untuk edit dan delete
+      const isAvailableToEdit = planDateStart > today;
+      const isAvailableToDelete = planDateStart > today;
+
+      // Format calender_day
+      const calenderDay = plan.is_calender_day ? 'available' : 'not holiday';
 
       return {
         id: plan.id,
-        plan_date: planDateStr,
-        ewh: plan.average_day_ewh.toString(),
+        date: planDate.toISOString().split('T')[0],
+        calender_day: calenderDay,
+        average_month_ewh: plan.average_moth_ewh || plan.average_day_ewh, // Menggunakan average_moth_ewh jika ada, fallback ke average_day_ewh
+        average_day_ewh: plan.average_day_ewh,
         ob_target: plan.ob_target,
         ore_target: plan.ore_target,
         quarry: plan.quarry,
@@ -129,6 +140,8 @@ export class DailyPlanProductionService {
         total_fleet: plan.total_fleet,
         tonnage_per_fleet: Number(tonnage_per_fleet.toFixed(2)),
         vessel_per_fleet: Number(vessel_per_fleet.toFixed(2)),
+        is_available_to_edit: isAvailableToEdit,
+        is_available_to_delete: isAvailableToDelete,
       };
     });
 
@@ -199,7 +212,7 @@ export class DailyPlanProductionService {
     }
 
     if (updateDto.quarry !== undefined) {
-      plan.shift_quarrt = plan.quarry / 2;
+      plan.shift_quarry = plan.quarry / 2;
     }
 
     if (updateDto.ore_target !== undefined || updateDto.ore_shipment_target !== undefined) {

@@ -72,6 +72,9 @@ export class PlanProduction {
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, comment: 'Average month EWH (Equivalent Working Hours)' })
   average_moth_ewh: number;
 
+  @Column({ type: 'float', nullable: true, default: 1, comment: 'Schedule day value with default 1' })
+  schedule_day: number;
+
   @CreateDateColumn()
   createdAt: Date;
 

@@ -389,14 +389,28 @@ export class DailyPlanProductionListResponseDto {
     example: '2025-08-21',
     type: String,
   })
-  plan_date: string;
+  date: string;
+
+  @ApiProperty({
+    description: 'Status hari kalender (available/not holiday)',
+    example: 'available',
+    type: String,
+  })
+  calender_day: string;
+
+  @ApiProperty({
+    description: 'Rata-rata EWH per bulan',
+    example: 1.5,
+    type: Number,
+  })
+  average_month_ewh: number;
 
   @ApiProperty({
     description: 'Rata-rata EWH per hari',
-    example: '1.5',
-    type: String,
+    example: 1.5,
+    type: Number,
   })
-  ewh: string;
+  average_day_ewh: number;
 
   @ApiProperty({
     description: 'Target OB (Overburden)',
@@ -434,8 +448,8 @@ export class DailyPlanProductionListResponseDto {
   ore_shipment_target: number;
 
   @ApiProperty({
-    description: 'Sisa stock (daily_old_stock - remaining_stock)',
-    example: 0,
+    description: 'Sisa stock (ore_target - ore_shipment_target)',
+    example: 50,
     type: Number,
   })
   sisa_stock: number;
@@ -449,17 +463,31 @@ export class DailyPlanProductionListResponseDto {
 
   @ApiProperty({
     description: 'Tonnage per fleet (ore_target / total_fleet)',
-    example: 1.1,
+    example: 53.33,
     type: Number,
   })
   tonnage_per_fleet: number;
 
   @ApiProperty({
     description: 'Vessel per fleet (tonnage_per_fleet / 35)',
-    example: 1.1,
+    example: 1.52,
     type: Number,
   })
   vessel_per_fleet: number;
+
+  @ApiProperty({
+    description: 'Apakah tersedia untuk edit',
+    example: true,
+    type: Boolean,
+  })
+  is_available_to_edit: boolean;
+
+  @ApiProperty({
+    description: 'Apakah tersedia untuk hapus',
+    example: true,
+    type: Boolean,
+  })
+  is_available_to_delete: boolean;
 }
 
 // DTO untuk response pagination - konsisten dengan module lainnya
