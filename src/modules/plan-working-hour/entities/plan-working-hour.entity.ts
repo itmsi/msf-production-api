@@ -6,8 +6,11 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { PlanWorkingHourDetail } from './plan-working-hour-detail.entity';
+import { ParentPlanWorkingHour } from './parent-plan-working-hour.entity';
 
 @Entity('r_plan_working_hour')
 export class PlanWorkingHour {
@@ -38,6 +41,9 @@ export class PlanWorkingHour {
   @Column({ type: 'float', nullable: true })
   mohh_per_month: number;
 
+  @Column({ type: 'int', nullable: true })
+  parent_plan_working_hour_id: number;
+
   @CreateDateColumn()
   createdAt: Date;
 
@@ -48,6 +54,10 @@ export class PlanWorkingHour {
   deletedAt: Date;
 
   // Relations
+  @ManyToOne(() => ParentPlanWorkingHour, (parent) => parent.planWorkingHours)
+  @JoinColumn({ name: 'parent_plan_working_hour_id' })
+  parentPlanWorkingHour: ParentPlanWorkingHour;
+
   @OneToMany(() => PlanWorkingHourDetail, (detail) => detail.planWorkingHour)
   details: PlanWorkingHourDetail[];
 }
