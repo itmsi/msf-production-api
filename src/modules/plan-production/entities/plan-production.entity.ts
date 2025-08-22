@@ -69,6 +69,9 @@ export class PlanProduction {
   @Column({ type: 'float', nullable: false, comment: 'Calculated: (shift ob target / shift ore target)' })
   shift_sr_target: number;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, comment: 'Average month EWH (Equivalent Working Hours)' })
+  average_moth_ewh: number;
+
   @CreateDateColumn()
   createdAt: Date;
 

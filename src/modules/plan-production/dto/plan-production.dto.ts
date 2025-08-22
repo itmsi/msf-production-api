@@ -147,6 +147,15 @@ export class CreatePlanProductionDto {
   shift_sr_target: number;
 
   @ApiProperty({
+    description: 'Rata-rata EWH bulanan',
+    example: 150.0,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  average_moth_ewh?: number;
+
+  @ApiProperty({
     description: 'ID parent plan production',
     example: 1,
   })
@@ -319,6 +328,15 @@ export class UpdatePlanProductionDto {
   shift_sr_target?: number;
 
   @ApiProperty({
+    description: 'Rata-rata EWH bulanan',
+    example: 150.0,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  average_moth_ewh?: number;
+
+  @ApiProperty({
     description: 'ID parent plan production',
     example: 1,
     required: false,
@@ -442,6 +460,13 @@ export class PlanProductionResponseDto {
     example: 2.0,
   })
   shift_sr_target: number;
+
+  @ApiProperty({
+    description: 'Rata-rata EWH bulanan',
+    example: 150.0,
+    required: false,
+  })
+  average_moth_ewh?: number;
 
   @ApiProperty({
     description: 'Tanggal dibuat',
