@@ -191,7 +191,32 @@ export class DailyPlanProductionController {
   @Patch(':id')
   @ApiOperation({
     summary: 'Update Daily Plan Production',
-    description: 'Update data rencana produksi berdasarkan ID',
+    description: `Update data rencana produksi berdasarkan ID dengan validasi dan perhitungan otomatis.
+
+**Proses Update:**
+1. Validasi duplikasi plan_date (jika diupdate)
+2. Set boolean fields otomatis berdasarkan plan_date:
+   - is_calender_day: true jika plan_date terisi
+   - is_holiday_day: true jika plan_date kosong
+   - is_available_day: true jika bukan hari minggu
+3. Perhitungan otomatis:
+   - sr_target = ob_target / ore_target
+   - shift_ob_target = ob_target / 2
+   - shift_ore_target = ore_target / 2
+   - shift_quarry = quarry / 2
+   - shift_sr_target = shift_ob_target / shift_ore_target
+   - daily_old_stock dan remaining_stock berdasarkan old_stock_global
+
+**Field yang tersedia untuk update:**
+- plan_date: Tanggal rencana (YYYY-MM-DD)
+- average_day_ewh: Rata-rata EWH per hari
+- average_month_ewh: Rata-rata EWH per bulan
+- schedule_day: Schedule day (default: 1)
+- ob_target: Target OB (Overburden)
+- ore_target: Target ore
+- quarry: Target quarry
+- ore_shipment_target: Target pengiriman ore
+- total_fleet: Total armada`,
   })
   @ApiParam({
     name: 'id',
@@ -200,17 +225,32 @@ export class DailyPlanProductionController {
   })
   @ApiBody({
     type: UpdateDailyPlanProductionDto,
-    description: 'Data untuk update daily plan production',
+    description: 'Data untuk update daily plan production. Semua field bersifat opsional.',
     examples: {
       example1: {
-        summary: 'Update target OB dan ore',
+        summary: 'Update lengkap dengan semua field',
+        value: {
+          plan_date: "2025-08-21",
+          average_day_ewh: 1.5,
+          average_month_ewh: 1.5,
+          schedule_day: 1,
+          sisa_stock: 100,
+          ob_target: 1200,
+          ore_target: 900,
+          quarry: 200,
+          ore_shipment_target: 750,
+          total_fleet: 15
+        },
+      },
+      example2: {
+        summary: 'Update target OB dan ore saja',
         value: {
           ob_target: 1200,
           ore_target: 900,
         },
       },
-      example2: {
-        summary: 'Update quarry dan fleet',
+      example3: {
+        summary: 'Update quarry dan fleet saja',
         value: {
           quarry: 250,
           total_fleet: 18,
@@ -226,10 +266,28 @@ export class DailyPlanProductionController {
   @ApiResponse({
     status: 400,
     description: 'Bad Request - Validasi gagal atau data duplikat',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 400 },
+        message: { type: 'string', example: 'Plan date sudah ada dalam database' },
+        error: { type: 'boolean', example: true },
+        timestamp: { type: 'string', example: '2025-01-01T00:00:00.000Z' },
+      },
+    },
   })
   @ApiResponse({
     status: 404,
     description: 'Not Found - Data tidak ditemukan',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 404 },
+        message: { type: 'string', example: 'Daily plan production tidak ditemukan' },
+        error: { type: 'boolean', example: true },
+        timestamp: { type: 'string', example: '2025-01-01T00:00:00.000Z' },
+      },
+    },
   })
   @ApiResponse({
     status: 401,

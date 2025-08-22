@@ -71,7 +71,7 @@ export class CreateDailyPlanProductionDto {
 export class UpdateDailyPlanProductionDto {
   @ApiProperty({
     description: 'Tanggal rencana (format: YYYY-MM-DD)',
-    example: '2025-01-01',
+    example: '2025-08-21',
     type: String,
     required: false,
   })
@@ -90,18 +90,38 @@ export class UpdateDailyPlanProductionDto {
   average_day_ewh?: number;
 
   @ApiProperty({
-    description: 'Rata-rata EWH per shift',
-    example: 0.75,
+    description: 'Rata-rata EWH per bulan',
+    example: 1.5,
     type: Number,
     required: false,
   })
   @IsOptional()
   @IsNumber()
-  average_shift_ewh?: number;
+  average_month_ewh?: number;
+
+  @ApiProperty({
+    description: 'Schedule day',
+    example: 1,
+    type: Number,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  schedule_day?: number;
+
+  @ApiProperty({
+    description: 'Sisa stock',
+    example: 100,
+    type: Number,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  sisa_stock?: number;
 
   @ApiProperty({
     description: 'Target OB (Overburden)',
-    example: 1000,
+    example: 1200,
     type: Number,
     required: false,
   })
@@ -111,7 +131,7 @@ export class UpdateDailyPlanProductionDto {
 
   @ApiProperty({
     description: 'Target ore',
-    example: 800,
+    example: 900,
     type: Number,
     required: false,
   })

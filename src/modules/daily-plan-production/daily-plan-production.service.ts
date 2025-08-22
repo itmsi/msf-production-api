@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere, Raw, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import { PlanProduction } from '../plan-production/entities/plan-production.entity';
+import { ParentPlanProduction } from '../parent-plan-production/entities/parent-plan-production.entity';
 import { CreateDailyPlanProductionDto, UpdateDailyPlanProductionDto, QueryDailyPlanProductionDto, DailyPlanProductionListResponseDto } from './dto/daily-plan-production.dto';
 import { successResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
@@ -11,6 +12,8 @@ export class DailyPlanProductionService {
   constructor(
     @InjectRepository(PlanProduction)
     private readonly dailyPlanProductionRepository: Repository<PlanProduction>,
+    @InjectRepository(ParentPlanProduction)
+    private readonly parentPlanProductionRepository: Repository<ParentPlanProduction>,
   ) {}
 
   async create(createDto: CreateDailyPlanProductionDto): Promise<any> {
@@ -175,49 +178,79 @@ export class DailyPlanProductionService {
       throw new NotFoundException('Daily plan production tidak ditemukan');
     }
 
-    if (updateDto.plan_date && updateDto.plan_date !== plan.plan_date.toISOString().split('T')[0]) {
-      const existingPlan = await this.dailyPlanProductionRepository.findOne({
-        where: { plan_date: new Date(updateDto.plan_date) },
-      });
+    // 1. Cek apakah plan_date sudah ada di tabel r_plan_production, jika sudah ada maka kena validasi
+    if (updateDto.plan_date) {
+      // Handle plan_date yang mungkin bukan Date object
+      let currentPlanDateStr = '';
+      if (plan.plan_date instanceof Date) {
+        currentPlanDateStr = plan.plan_date.toISOString().split('T')[0];
+      } else if (typeof plan.plan_date === 'string') {
+        currentPlanDateStr = (plan.plan_date as string).split('T')[0];
+      } else {
+        // Fallback jika format tidak dikenali
+        currentPlanDateStr = new Date(plan.plan_date as any).toISOString().split('T')[0];
+      }
 
-      if (existingPlan && existingPlan.id !== id) {
-        throw new BadRequestException('Plan date sudah ada dalam database');
+      if (updateDto.plan_date !== currentPlanDateStr) {
+        const existingPlan = await this.dailyPlanProductionRepository.findOne({
+          where: { plan_date: new Date(updateDto.plan_date) },
+        });
+
+        if (existingPlan && existingPlan.id !== id) {
+          throw new BadRequestException('Plan date sudah ada dalam database');
+        }
       }
     }
 
+    // 2. Update plan_date dan set boolean values
     if (updateDto.plan_date) {
       plan.plan_date = new Date(updateDto.plan_date);
       
       const planDate = new Date(updateDto.plan_date);
       const dayOfWeek = planDate.getDay();
 
+      // is_calender_day: bernilai true jika plan_date terisi (bukan 0 atau null atau string kosong)
       plan.is_calender_day = planDate.getTime() > 0;
+      // is_holiday_day: bernilai true jika plan_date tidak terisi (0 atau null atau string kosong)
       plan.is_holiday_day = !plan.is_calender_day;
+      // is_available_day: bernilai true jika hari yang dipilih plan_date itu bukan hari minggu
       plan.is_available_day = dayOfWeek !== 0;
     }
 
+    // Update field-field yang ada di body request
     if (updateDto.average_day_ewh !== undefined) plan.average_day_ewh = updateDto.average_day_ewh;
-    if (updateDto.average_shift_ewh !== undefined) plan.average_shift_ewh = updateDto.average_shift_ewh;
+    if (updateDto.average_month_ewh !== undefined) plan.average_moth_ewh = updateDto.average_month_ewh;
+    if (updateDto.schedule_day !== undefined) plan.schedule_day = updateDto.schedule_day;
     if (updateDto.ob_target !== undefined) plan.ob_target = updateDto.ob_target;
     if (updateDto.ore_target !== undefined) plan.ore_target = updateDto.ore_target;
     if (updateDto.quarry !== undefined) plan.quarry = updateDto.quarry;
     if (updateDto.ore_shipment_target !== undefined) plan.ore_shipment_target = updateDto.ore_shipment_target;
     if (updateDto.total_fleet !== undefined) plan.total_fleet = updateDto.total_fleet;
 
+    // 3. Hitung nilai-nilai yang dihitung otomatis
     if (updateDto.ob_target !== undefined || updateDto.ore_target !== undefined) {
+      // sr_target: (rumusnya yaitu (ob_target / ore_target))
       plan.sr_target = plan.ob_target / plan.ore_target;
+      // shift_ob_target: (rumusnya yaitu (ob_target / 2))
       plan.shift_ob_target = plan.ob_target / 2;
+      // shift_ore_target: (rumusnya yaitu (ore_target / 2))
       plan.shift_ore_target = plan.ore_target / 2;
+      // shift_sr_target: (rumusnya yaitu (shift_ob_target / shift_ore_target))
       plan.shift_sr_target = plan.shift_ob_target / plan.shift_ore_target;
     }
 
     if (updateDto.quarry !== undefined) {
+      // shift_quarry: (rumusnya yaitu (quarry / 2))
       plan.shift_quarry = plan.quarry / 2;
     }
 
     if (updateDto.ore_target !== undefined || updateDto.ore_shipment_target !== undefined) {
+      // Cara mencari old_stock_global: ambil data dari tabel r_plan_production di kolom daily_old_stock 
+      // tapi untuk data sebelumnya, jika tidak ada maka ambil dari tabel r_parent_plan_production di kolom total_sisa_stock
       const oldStockGlobal = await this.getOldStockGlobal();
+      // daily_old_stock: (rumusnya yaitu (old_stock_global - ore_shipment_target) + ore_target)
       plan.daily_old_stock = oldStockGlobal;
+      // remaining_stock: (rumusnya yaitu (old_stock_global - ore_shipment_target) + ore_target)
       plan.remaining_stock = oldStockGlobal - plan.ore_shipment_target + plan.ore_target;
     }
 
@@ -239,15 +272,30 @@ export class DailyPlanProductionService {
   }
 
   private async getOldStockGlobal(): Promise<number> {
+    // Cara mencari old_stock_global: ambil data dari tabel r_plan_production di kolom daily_old_stock 
+    // tapi untuk data sebelumnya, jika tidak ada maka ambil dari tabel r_parent_plan_production di kolom total_sisa_stock
+    
+    // 1. Coba ambil dari r_plan_production terlebih dahulu
     const previousPlan = await this.dailyPlanProductionRepository.findOne({
       where: {},
       order: { plan_date: 'DESC' },
     });
 
-    if (!previousPlan) {
-      return 0;
+    if (previousPlan && previousPlan.daily_old_stock !== undefined) {
+      return previousPlan.daily_old_stock;
     }
 
-    return previousPlan.daily_old_stock || 0;
+    // 2. Jika tidak ada, ambil dari r_parent_plan_production
+    const parentPlan = await this.parentPlanProductionRepository.findOne({
+      where: {},
+      order: { plan_date: 'DESC' },
+    });
+
+    if (parentPlan && parentPlan.total_sisa_stock !== undefined) {
+      return parentPlan.total_sisa_stock;
+    }
+
+    // 3. Jika tidak ada sama sekali, return 0
+    return 0;
   }
 }
