@@ -1,10 +1,10 @@
 import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { Repository, SelectQueryBuilder, Not } from 'typeorm';
 import { ParentPlanProduction } from './entities/parent-plan-production.entity';
 import { PlanProduction } from '../plan-production/entities/plan-production.entity';
 import { CreateParentPlanProductionDto } from './dto/create-parent-plan-production.dto';
-import { GetParentPlanProductionQueryDto } from './dto/parent-plan-production.dto';
+import { GetParentPlanProductionQueryDto, UpdateParentPlanProductionDto } from './dto/parent-plan-production.dto';
 import { paginateResponse } from '../../common/helpers/public.helper';
 
 @Injectable()
@@ -376,5 +376,162 @@ export class ParentPlanProductionService {
     }
 
     return parentPlanProduction;
+  }
+
+  /**
+   * Update parent plan production dan update data plan production harian
+   */
+  async update(id: number, updateDto: UpdateParentPlanProductionDto) {
+    // Cari parent plan production yang akan diupdate
+    const existingParent = await this.parentPlanProductionRepository.findOne({
+      where: { id },
+      relations: ['planProductions'],
+    });
+
+    if (!existingParent) {
+      throw new BadRequestException('Parent plan production tidak ditemukan');
+    }
+
+    // Jika plan_date diupdate, validasi apakah tanggal baru sudah ada
+    if (updateDto.plan_date) {
+      const newPlanDate = new Date(updateDto.plan_date);
+      const existingWithNewDate = await this.parentPlanProductionRepository.findOne({
+        where: { plan_date: newPlanDate, id: Not(id) }
+      });
+
+      if (existingWithNewDate) {
+        throw new ConflictException('Plan date baru sudah ada dalam sistem');
+      }
+    }
+
+    // Update parent plan production
+    const planDate = updateDto.plan_date ? new Date(updateDto.plan_date) : existingParent.plan_date;
+    
+    // Hitung ulang jumlah hari dalam bulan jika plan_date berubah
+    let totalCalendarDays = existingParent.total_calender_day;
+    let totalHolidayDays = existingParent.total_holiday_day;
+    let totalAvailableDays = existingParent.total_available_day;
+
+    if (updateDto.plan_date) {
+      totalCalendarDays = this.getDaysInMonth(planDate);
+      totalHolidayDays = this.getSundaysInMonth(planDate);
+      totalAvailableDays = totalCalendarDays - totalHolidayDays;
+    }
+
+    // Update fields
+    const updatedParent = {
+      ...existingParent,
+      plan_date: planDate,
+      total_calender_day: totalCalendarDays,
+      total_holiday_day: totalHolidayDays,
+      total_available_day: totalAvailableDays,
+      total_average_day_ewh: updateDto.total_average_day_ewh ?? existingParent.total_average_day_ewh,
+      total_average_month_ewh: updateDto.total_average_month_ewh ?? existingParent.total_average_month_ewh,
+      total_ob_target: updateDto.total_ob_target ?? existingParent.total_ob_target,
+      total_ore_target: updateDto.total_ore_target ?? existingParent.total_ore_target,
+      total_quarry_target: updateDto.total_quary_target ?? existingParent.total_quarry_target,
+      total_sr_target: updateDto.total_sr_target ?? existingParent.total_sr_target,
+      total_ore_shipment_target: updateDto.total_ore_shipment_target ?? existingParent.total_ore_shipment_target,
+      total_remaining_stock: updateDto.total_remaining_stock ?? existingParent.total_remaining_stock,
+      total_sisa_stock: updateDto.total_sisa_stock ?? existingParent.total_sisa_stock,
+      total_fleet: updateDto.total_fleet ?? existingParent.total_fleet,
+    };
+
+    const savedParent = await this.parentPlanProductionRepository.save(updatedParent);
+
+    // Update data plan production harian yang sudah ada (bukan delete dan insert ulang)
+    if (existingParent.planProductions && existingParent.planProductions.length > 0) {
+      await this.updateDailyPlanProductions(existingParent.planProductions, savedParent, updateDto);
+      console.log(`Updated ${existingParent.planProductions.length} existing daily plan productions`);
+    } else {
+      // Jika tidak ada data harian, generate baru
+      const createDto = {
+        plan_date: savedParent.plan_date.toISOString(),
+        total_average_day_ewh: savedParent.total_average_day_ewh,
+        total_average_month_ewh: savedParent.total_average_month_ewh,
+        total_ob_target: savedParent.total_ob_target,
+        total_ore_target: savedParent.total_ore_target,
+        total_quarry_target: savedParent.total_quarry_target,
+        total_sr_target: savedParent.total_sr_target,
+        total_ore_shipment_target: savedParent.total_ore_shipment_target,
+        total_remaining_stock: savedParent.total_remaining_stock,
+        total_sisa_stock: savedParent.total_sisa_stock,
+        total_fleet: savedParent.total_fleet,
+      };
+
+      const generatedDailyData = await this.generateDailyPlanProductions(savedParent, createDto);
+      console.log(`Generated ${generatedDailyData.length} new daily plan productions`);
+    }
+
+    // Log hasil update
+    console.log(`Parent Plan Production updated with ID: ${savedParent.id}`);
+
+    return savedParent;
+  }
+
+  /**
+   * Update data plan production harian yang sudah ada
+   */
+  private async updateDailyPlanProductions(
+    existingPlanProductions: PlanProduction[],
+    parentPlanProduction: ParentPlanProduction,
+    updateDto: UpdateParentPlanProductionDto,
+  ) {
+    const planDate = parentPlanProduction.plan_date;
+    const totalDays = parentPlanProduction.total_calender_day;
+    
+    // Hitung nilai per hari
+    const averageDayEwh = updateDto.total_average_day_ewh ?? parentPlanProduction.total_average_day_ewh;
+    const averageMonthEwh = (updateDto.total_average_month_ewh ?? parentPlanProduction.total_average_month_ewh) / totalDays;
+    const obTarget = (updateDto.total_ob_target ?? parentPlanProduction.total_ob_target) / totalDays;
+    const oreTarget = (updateDto.total_ore_target ?? parentPlanProduction.total_ore_target) / totalDays;
+    const quarry = updateDto.total_quary_target ?? parentPlanProduction.total_quarry_target; // Diambil langsung dari body request, tidak dibagi jumlah hari
+    const oreShipmentTarget = (updateDto.total_ore_shipment_target ?? parentPlanProduction.total_ore_shipment_target) / totalDays;
+
+    // Ambil old stock global
+    const oldStockGlobal = await this.getOldStockGlobal(planDate);
+
+    // Update setiap data harian yang sudah ada
+    for (let i = 0; i < existingPlanProductions.length; i++) {
+      const existingPlan = existingPlanProductions[i];
+      const day = i + 1;
+      
+      // Buat tanggal untuk hari tertentu dalam bulan
+      const currentDate = new Date(planDate.getFullYear(), planDate.getMonth(), day);
+      const isSunday = currentDate.getDay() === 0; // 0 = Sunday
+
+      // Hitung nilai-nilai berdasarkan logika yang diminta
+      const dailyOldStock = oldStockGlobal;
+      const shiftObTarget = obTarget / 2;
+      const shiftOreTarget = oreTarget / 2;
+      const shiftQuarry = quarry / 2;
+      const shiftSrTarget = shiftObTarget / shiftOreTarget;
+      const remainingStock = oldStockGlobal - oreShipmentTarget + oreTarget;
+
+      // Update fields pada data yang sudah ada
+      existingPlan.plan_date = currentDate;
+      existingPlan.is_calender_day = true; // Selalu true karena ada tanggal
+      existingPlan.is_holiday_day = isSunday; // True jika hari minggu
+      existingPlan.is_available_day = !isSunday; // False jika hari minggu
+      existingPlan.average_day_ewh = averageDayEwh;
+      existingPlan.average_shift_ewh = averageMonthEwh;
+      existingPlan.ob_target = obTarget;
+      existingPlan.ore_target = oreTarget;
+      existingPlan.quarry = quarry;
+      existingPlan.sr_target = obTarget / oreTarget; // Sesuai rumus yang diminta
+      existingPlan.ore_shipment_target = oreShipmentTarget;
+      existingPlan.total_fleet = updateDto.total_fleet ?? parentPlanProduction.total_fleet;
+      existingPlan.daily_old_stock = dailyOldStock;
+      existingPlan.shift_ob_target = shiftObTarget;
+      existingPlan.shift_ore_target = shiftOreTarget;
+      existingPlan.shift_quarry = shiftQuarry;
+      existingPlan.shift_sr_target = shiftSrTarget;
+      existingPlan.remaining_stock = remainingStock;
+      existingPlan.average_moth_ewh = averageMonthEwh;
+      existingPlan.parent_plan_production_id = parentPlanProduction.id;
+    }
+
+    // Simpan semua data yang sudah diupdate
+    await this.planProductionRepository.save(existingPlanProductions);
   }
 }
