@@ -60,6 +60,9 @@ async function bootstrap() {
         whitelist: true,
         forbidNonWhitelisted: false,
         transform: true,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
         exceptionFactory: (errors) => {
           const firstError = errors[0];
           const constraint = firstError?.constraints

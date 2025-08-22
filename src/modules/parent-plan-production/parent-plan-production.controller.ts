@@ -12,7 +12,9 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody, ApiExtraModels, ApiBearerAuth } from '@nestjs/swagger';
 import { ParentPlanProductionService } from './parent-plan-production.service';
 import { CreateParentPlanProductionDto } from './dto/create-parent-plan-production.dto';
+import { GetParentPlanProductionQueryDto, ParentPlanProductionSummaryResponseDto } from './dto/parent-plan-production.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
+import { Pagination } from '../../common/helpers/public.helper';
 
 @ApiTags('Parent Plan Production')
 @ApiBearerAuth('jwt')
@@ -150,8 +152,31 @@ export class ParentPlanProductionController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary: 'Mendapatkan semua parent plan production',
-    description: 'Mengambil semua data parent plan production dengan relasi plan production harian yang telah di-generate otomatis',
+    summary: 'Mendapatkan semua parent plan production dengan pagination dan filter',
+    description: 'Mengambil data parent plan production dengan pagination, filter tanggal, filter bulan, dan response format yang disesuaikan',
+  })
+  @ApiQuery({
+    name: 'month',
+    required: false,
+    description: 'Filter bulan (1-12) untuk menampilkan data sesuai bulan tersebut walaupun tahunnya beda',
+    example: 8,
+    schema: {
+      type: 'integer',
+      minimum: 1,
+      maximum: 12,
+    },
+  })
+  @ApiQuery({
+    name: 'date_from',
+    required: false,
+    description: 'Filter tanggal dari (format: YYYY-MM-DD)',
+    example: '2025-01-01',
+  })
+  @ApiQuery({
+    name: 'date_to',
+    required: false,
+    description: 'Filter tanggal sampai (format: YYYY-MM-DD)',
+    example: '2025-12-31',
   })
   @ApiQuery({
     name: 'page',
@@ -168,103 +193,58 @@ export class ParentPlanProductionController {
   @ApiQuery({
     name: 'sort',
     required: false,
-    description: 'Urutan sorting (default: plan_date DESC)',
+    description: 'Field untuk sorting (default: plan_date)',
     example: 'plan_date',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    description: 'Urutan sorting (default: DESC)',
+    example: 'DESC',
+    enum: ['ASC', 'DESC'],
   })
   @ApiResponse({
     status: 200,
     description: 'Daftar parent plan production berhasil diambil',
     schema: {
-      example: [
-        {
-          id: 1,
-          plan_date: '2025-08-01T00:00:00.000Z',
-          total_calender_day: 31,
-          total_holiday_day: 5,
-          total_available_day: 26,
-          total_average_month_ewh: 4500.0,
-          total_average_day_ewh: 150.0,
-          total_ob_target: 1500000.0,
-          total_ore_target: 750000.0,
-          total_quarry_target: 300000.0,
-          total_sr_target: 2.0,
-          total_ore_shipment_target: 600000.0,
-          total_remaining_stock: 100000.0,
-          total_sisa_stock: 50000.0,
-          total_fleet: 25,
-          created_at: '2025-01-15T10:30:00.000Z',
-          updated_at: '2025-01-15T10:30:00.000Z',
-          planProductions: [
-            {
-              id: 1,
-              plan_date: '2025-08-01T00:00:00.000Z',
-              is_calender_day: true,
-              is_holiday_day: false,
-              is_available_day: true,
-              average_day_ewh: 150.0,
-              average_shift_ewh: 145.16,
-              ob_target: 48387.1,
-              ore_target: 24193.55,
-              quarry: 9677.42,
-              sr_target: 2.0,
-              ore_shipment_target: 19354.84,
-              total_fleet: 25,
-              daily_old_stock: 50000.0,
-              shift_ob_target: 24193.55,
-              shift_ore_target: 12096.77,
-              shift_quarry: 4838.71,
-              shift_sr_target: 2.0,
-              remaining_stock: 54838.71,
-              average_moth_ewh: 145.16,
-            },
-            {
-              id: 2,
-              plan_date: '2025-08-02T00:00:00.000Z',
-              is_calender_day: true,
-              is_holiday_day: false,
-              is_available_day: true,
-              average_day_ewh: 150.0,
-              average_shift_ewh: 145.16,
-              ob_target: 48387.1,
-              ore_target: 24193.55,
-              quarry: 9677.42,
-              sr_target: 2.0,
-              ore_shipment_target: 19354.84,
-              total_fleet: 25,
-              daily_old_stock: 50000.0,
-              shift_ob_target: 24193.55,
-              shift_ore_target: 12096.77,
-              shift_quarry: 4838.71,
-              shift_sr_target: 2.0,
-              remaining_stock: 54838.71,
-              average_moth_ewh: 145.16,
-            },
-            {
-              id: 3,
-              plan_date: '2025-08-03T00:00:00.000Z',
-              is_calender_day: true,
-              is_holiday_day: true,
-              is_available_day: false,
-              average_day_ewh: 150.0,
-              average_shift_ewh: 145.16,
-              ob_target: 48387.1,
-              ore_target: 24193.55,
-              quarry: 9677.42,
-              sr_target: 2.0,
-              ore_shipment_target: 19354.84,
-              total_fleet: 25,
-              daily_old_stock: 50000.0,
-              shift_ob_target: 24193.55,
-              shift_ore_target: 12096.77,
-              shift_quarry: 4838.71,
-              shift_sr_target: 2.0,
-              remaining_stock: 54838.71,
-              average_moth_ewh: 145.16,
-            },
-            // ... dan 28 data harian lainnya
-          ],
+      example: {
+        statusCode: 200,
+        message: 'Data parent plan production berhasil diambil',
+        data: [
+          {
+            month_year: '2025-01',
+            available_day: 26,
+            holiday_day: 5,
+            average_month_ewh: 4500.0,
+            average_day_ewh: 150.0,
+            ob_target: 1500000.0,
+            ore_target: 750000.0,
+            quarry_target: 300000.0,
+            sr_target: 2.0,
+            ore_shipment_target: 600000.0,
+            sisa_stock: 50000.0,
+            is_available_to_edit: true,
+            is_available_to_delete: true,
+          },
+        ],
+        pagination: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          lastPage: 1,
         },
-      ],
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Data tidak valid atau gagal mengambil data',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'Gagal mengambil data parent plan production',
+        error: 'Bad Request',
+      },
     },
   })
   @ApiResponse({
@@ -278,8 +258,13 @@ export class ParentPlanProductionController {
       },
     },
   })
-  async findAll() {
-    return this.parentPlanProductionService.findAll();
+  async findAll(@Query() query: GetParentPlanProductionQueryDto): Promise<{
+    statusCode: number;
+    message: string;
+    data: ParentPlanProductionSummaryResponseDto[];
+    pagination: Pagination;
+  }> {
+    return this.parentPlanProductionService.findAll(query);
   }
 
   @UseGuards(JwtAuthGuard)

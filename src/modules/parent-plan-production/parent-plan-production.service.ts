@@ -1,9 +1,11 @@
 import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { ParentPlanProduction } from './entities/parent-plan-production.entity';
 import { PlanProduction } from '../plan-production/entities/plan-production.entity';
 import { CreateParentPlanProductionDto } from './dto/create-parent-plan-production.dto';
+import { GetParentPlanProductionQueryDto } from './dto/parent-plan-production.dto';
+import { paginateResponse } from '../../common/helpers/public.helper';
 
 @Injectable()
 export class ParentPlanProductionService {
@@ -205,13 +207,141 @@ export class ParentPlanProductionService {
   }
 
   /**
-   * Mendapatkan semua parent plan production
+   * Mendapatkan semua parent plan production dengan pagination dan filter
    */
-  async findAll() {
-    return this.parentPlanProductionRepository.find({
-      relations: ['planProductions'],
-      order: { plan_date: 'DESC' },
-    });
+  async findAll(query?: GetParentPlanProductionQueryDto) {
+    try {
+      const page = parseInt(query?.page?.toString() ?? '1', 10);
+      const limit = parseInt(query?.limit?.toString() ?? '10', 10);
+      const skip = (page - 1) * limit;
+      const sortBy = query?.sort ?? 'plan_date';
+      const sortOrder = query?.sortOrder ?? 'DESC';
+      const dateFrom = query?.date_from;
+      const dateTo = query?.date_to;
+      const month = query?.month ? parseInt(query.month, 10) : null;
+
+      // Validate limit
+      if (limit > 100) {
+        throw new BadRequestException('Limit tidak boleh lebih dari 100');
+      }
+
+      // Validate month
+      if (month !== null && month !== undefined && (month < 1 || month > 12)) {
+        throw new BadRequestException('Bulan harus antara 1-12');
+      }
+
+      const qb: SelectQueryBuilder<ParentPlanProduction> = this.parentPlanProductionRepository
+        .createQueryBuilder('parent')
+        .leftJoinAndSelect('parent.planProductions', 'planProductions');
+
+      // Filter by month (1-12) - akan filter data sesuai bulan tersebut walaupun tahunnya beda
+      if (month) {
+        qb.andWhere('EXTRACT(MONTH FROM parent.plan_date) = :month', { month });
+      }
+
+      // Filter by date range
+      if (dateFrom && dateTo) {
+        qb.andWhere('parent.plan_date >= :dateFrom AND parent.plan_date <= :dateTo', {
+          dateFrom: new Date(dateFrom),
+          dateTo: new Date(dateTo),
+        });
+      } else if (dateFrom) {
+        qb.andWhere('parent.plan_date >= :dateFrom', {
+          dateFrom: new Date(dateFrom),
+        });
+      } else if (dateTo) {
+        qb.andWhere('parent.plan_date <= :dateTo', {
+          dateTo: new Date(dateTo),
+        });
+      }
+
+      // Validate sortBy field to prevent SQL injection
+      const allowedSortFields = [
+        'id',
+        'plan_date',
+        'total_calender_day',
+        'total_holiday_day',
+        'total_available_day',
+        'total_average_month_ewh',
+        'total_average_day_ewh',
+        'total_ob_target',
+        'total_ore_target',
+        'total_quarry_target',
+        'total_sr_target',
+        'total_ore_shipment_target',
+        'total_remaining_stock',
+        'total_sisa_stock',
+        'total_fleet',
+        'created_at',
+        'updated_at',
+      ];
+      const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'plan_date';
+      const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
+      qb.orderBy(`parent.${validSortBy}`, validSortOrder).skip(skip).take(limit);
+
+      const [result, total] = await qb.getManyAndCount();
+
+      // Transform result to new response format
+      const transformedResult = result.map((parent) => {
+        const planDate = new Date(parent.plan_date);
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth();
+        const currentYear = currentDate.getFullYear();
+        const planMonth = planDate.getMonth();
+        const planYear = planDate.getFullYear();
+
+        // Hitung jumlah hari tersedia dan libur dari planProductions
+        const availableDay = parent.planProductions?.filter(p => p.is_available_day).length || 0;
+        const holidayDay = parent.planProductions?.filter(p => p.is_holiday_day).length || 0;
+
+        // Logic untuk is_available_to_edit dan is_available_to_delete
+        let isAvailableToEdit = false;
+        let isAvailableToDelete = false;
+
+        if (parent.plan_date && parent.plan_date.toString() !== '0' && parent.plan_date.toString() !== '') {
+          if (planYear > currentYear || (planYear === currentYear && planMonth > currentMonth)) {
+            isAvailableToEdit = true;
+            isAvailableToDelete = true;
+          } else if (planYear === currentYear && planMonth === currentMonth) {
+            // Jika bulan sama, cek apakah tanggal lebih dari hari ini
+            const planDay = planDate.getDate();
+            const currentDay = currentDate.getDate();
+            if (planDay > currentDay) {
+              isAvailableToEdit = true;
+              isAvailableToDelete = true;
+            }
+          }
+        }
+
+        return {
+          month_year: `${planYear.toString().padStart(4, '0')}-${(planMonth + 1).toString().padStart(2, '0')}`,
+          available_day: availableDay,
+          holiday_day: holidayDay,
+          average_month_ewh: parent.total_average_month_ewh,
+          average_day_ewh: parent.total_average_day_ewh,
+          ob_target: parent.total_ob_target,
+          ore_target: parent.total_ore_target,
+          quarry_target: parent.total_quarry_target,
+          sr_target: parent.total_ore_target / parent.total_ob_target,
+          ore_shipment_target: parent.total_ore_shipment_target,
+          sisa_stock: parent.total_sisa_stock,
+          is_available_to_edit: isAvailableToEdit,
+          is_available_to_delete: isAvailableToDelete,
+        };
+      });
+
+      return paginateResponse(
+        transformedResult,
+        total,
+        page,
+        limit,
+        'Data parent plan production berhasil diambil',
+      );
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      throw new BadRequestException('Gagal mengambil data parent plan production');
+    }
   }
 
   /**

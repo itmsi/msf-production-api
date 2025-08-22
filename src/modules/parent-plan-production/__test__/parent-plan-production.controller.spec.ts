@@ -72,27 +72,47 @@ describe('ParentPlanProductionController', () => {
 
   describe('findAll', () => {
     it('should return all parent plan productions', async () => {
-      const mockResult = [
-        {
-          id: 1,
-          total_calender_day: 31,
-          total_holiday_day: 5,
-          total_available_day: 26,
+      const mockQuery = {
+        page: '1',
+        limit: '10',
+        sort: 'plan_date',
+        sortOrder: 'DESC' as const,
+      };
+
+      const mockResult = {
+        statusCode: 200,
+        message: 'Data parent plan production berhasil diambil',
+        data: [
+          {
+            month_year: '2025-01',
+            available_day: 26,
+            holiday_day: 5,
+            average_month_ewh: 4500.0,
+            average_day_ewh: 150.0,
+            ob_target: 1500000.0,
+            ore_target: 750000.0,
+            quarry_target: 300000.0,
+            sr_target: 2.0,
+            ore_shipment_target: 600000.0,
+            sisa_stock: 50000.0,
+            is_available_to_edit: true,
+            is_available_to_delete: true,
+          },
+        ],
+        pagination: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          lastPage: 1,
         },
-        {
-          id: 2,
-          total_calender_day: 30,
-          total_holiday_day: 4,
-          total_available_day: 26,
-        },
-      ];
+      };
 
       mockParentPlanProductionService.findAll.mockResolvedValue(mockResult);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll(mockQuery);
 
       expect(result).toEqual(mockResult);
-      expect(service.findAll).toHaveBeenCalled();
+      expect(service.findAll).toHaveBeenCalledWith(mockQuery);
     });
   });
 
