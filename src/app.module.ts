@@ -18,6 +18,7 @@ import { UserRoleModule } from './modules/user-role/user-role.module';
 import { PlanWorkingHourModule } from './modules/plan-working-hour/plan-working-hour.module';
 import { BargeModule } from './modules/barge/barge.module';
 import { DailyPlanProductionModule } from './modules/daily-plan-production/daily-plan-production.module';
+import { ParentPlanProductionModule } from './modules/parent-plan-production/parent-plan-production.module';
 import { S3Module } from './integrations/s3/s3.module';
 
 @Module({
@@ -54,6 +55,7 @@ import { S3Module } from './integrations/s3/s3.module';
     PlanWorkingHourModule,
     BargeModule,
     DailyPlanProductionModule,
+    ParentPlanProductionModule,
     S3Module,
   ],
 })

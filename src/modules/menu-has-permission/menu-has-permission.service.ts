@@ -253,11 +253,17 @@ export class MenuHasPermissionService {
       });
 
       // Buat response data dengan format yang diminta
-      const dataPermissions = allPermissions.map(permission => ({
-        permission_id: permission.id,
-        permission_name: permission.permission_name,
-        has_status: existingPermissionMap.has(permission.id),
-      }));
+      const dataPermissions = allPermissions.map(permission => {
+        // Cari menu has permission yang sesuai untuk permission ini
+        const existingMhp = existingMenuPermissions.find(mhp => mhp.permission_id === permission.id);
+        
+        return {
+          permission_id: permission.id,
+          permission_name: permission.permission_name,
+          has_status: existingPermissionMap.has(permission.id),
+          mhp_id: existingMhp ? existingMhp.id : null, // ID dari tabel r_menu_has_permission jika ada, null jika tidak ada
+        };
+      });
 
       const responseData = {
         id: existingMenuPermissions[0]?.id || null,

@@ -263,6 +263,13 @@ export class MenuPermissionDataDto {
 
   @ApiProperty({ example: true, description: 'Status apakah permission dimiliki menu' })
   has_status: boolean;
+
+  @ApiProperty({ 
+    example: 150, 
+    description: 'ID menu has permission (menu_has_permission_id, kolom id di tabel r_menu_has_permission, jika ada kl tidak ada maka null)',
+    nullable: true 
+  })
+  mhp_id: number | null;
 }
 
 export class MenuByMenuResponseDto {

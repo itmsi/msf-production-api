@@ -1,0 +1,248 @@
+import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { ParentPlanProduction } from './entities/parent-plan-production.entity';
+import { PlanProduction } from '../plan-production/entities/plan-production.entity';
+import { CreateParentPlanProductionDto } from './dto/create-parent-plan-production.dto';
+
+@Injectable()
+export class ParentPlanProductionService {
+  constructor(
+    @InjectRepository(ParentPlanProduction)
+    private parentPlanProductionRepository: Repository<ParentPlanProduction>,
+    @InjectRepository(PlanProduction)
+    private planProductionRepository: Repository<PlanProduction>,
+  ) {}
+
+  /**
+   * Membuat parent plan production dan generate data plan production harian
+   */
+  async create(createDto: CreateParentPlanProductionDto) {
+    const planDate = new Date(createDto.plan_date);
+    
+    // Validasi apakah plan_date sudah ada
+    const existingParent = await this.parentPlanProductionRepository.findOne({
+      where: { plan_date: planDate }
+    });
+
+    if (existingParent) {
+      throw new ConflictException('Plan date sudah ada dalam sistem');
+    }
+
+    // Hitung jumlah hari dalam bulan
+    const totalCalendarDays = this.getDaysInMonth(planDate);
+    const totalHolidayDays = this.getSundaysInMonth(planDate);
+    const totalAvailableDays = totalCalendarDays - totalHolidayDays;
+
+    // Buat parent plan production
+    const parentPlanProduction = this.parentPlanProductionRepository.create({
+      plan_date: planDate,
+      total_calender_day: totalCalendarDays,
+      total_holiday_day: totalHolidayDays,
+      total_available_day: totalAvailableDays,
+      total_average_day_ewh: createDto.total_average_day_ewh,
+      total_average_month_ewh: createDto.total_average_month_ewh,
+      total_ob_target: createDto.total_ob_target,
+      total_ore_target: createDto.total_ore_target,
+      total_quary_target: createDto.total_quarry_target,
+      total_sr_target: createDto.total_sr_target || 2.0, // Default value jika tidak diisi
+      total_ore_shipment_target: createDto.total_ore_shipment_target,
+      total_remaining_stock: createDto.total_remaining_stock || 0, // Default value jika tidak diisi
+      total_sisa_stock: createDto.total_sisa_stock,
+      total_fleet: createDto.total_fleet,
+    });
+
+    const savedParent = await this.parentPlanProductionRepository.save(parentPlanProduction);
+
+    // Generate data plan production harian
+    const generatedDailyData = await this.generateDailyPlanProductions(savedParent, createDto);
+
+    // Log hasil generate
+    console.log(`Parent Plan Production created with ID: ${savedParent.id}`);
+    console.log(`Generated ${generatedDailyData.length} daily plan productions`);
+
+    return savedParent;
+  }
+
+  /**
+   * Generate data plan production harian berdasarkan parent
+   */
+  private async generateDailyPlanProductions(
+    parentPlanProduction: ParentPlanProduction,
+    createDto: CreateParentPlanProductionDto,
+  ) {
+    const planDate = parentPlanProduction.plan_date;
+    const totalDays = parentPlanProduction.total_calender_day;
+    
+    // Hitung nilai per hari
+    const averageDayEwh = createDto.total_average_day_ewh / totalDays;
+    const averageShiftEwh = createDto.total_average_month_ewh / totalDays;
+    const obTarget = createDto.total_ob_target / totalDays;
+    const oreTarget = createDto.total_ore_target / totalDays;
+    const quarry = createDto.total_quarry_target / totalDays;
+    const oreShipmentTarget = createDto.total_ore_shipment_target / totalDays;
+
+    // Ambil old stock global
+    const oldStockGlobal = await this.getOldStockGlobal(planDate);
+
+    const planProductions: Partial<PlanProduction>[] = [];
+
+    // Generate data untuk setiap hari dalam bulan (dari tanggal 1 sampai akhir bulan)
+    for (let day = 1; day <= totalDays; day++) {
+      // Buat tanggal untuk hari tertentu dalam bulan
+      const currentDate = new Date(planDate.getFullYear(), planDate.getMonth(), day);
+      const isSunday = currentDate.getDay() === 0; // 0 = Sunday
+
+      // Hitung nilai-nilai berdasarkan logika yang diminta
+      const dailyOldStock = oldStockGlobal;
+      const shiftObTarget = obTarget / 2;
+      const shiftOreTarget = oreTarget / 2;
+      const shiftQuarry = quarry / 2;
+      const shiftSrTarget = shiftObTarget / shiftOreTarget;
+      const remainingStock = oldStockGlobal - oreShipmentTarget + oreTarget;
+
+      const planProduction: Partial<PlanProduction> = {
+        plan_date: currentDate,
+        is_calender_day: true, // Selalu true karena ada tanggal
+        is_holiday_day: isSunday, // True jika hari minggu
+        is_available_day: !isSunday, // False jika hari minggu
+        average_day_ewh: averageDayEwh,
+        average_shift_ewh: averageShiftEwh,
+        ob_target: obTarget,
+        ore_target: oreTarget,
+        quarry: quarry,
+        sr_target: obTarget / oreTarget, // Sesuai rumus yang diminta
+        ore_shipment_target: oreShipmentTarget,
+        total_fleet: createDto.total_fleet,
+        daily_old_stock: dailyOldStock,
+        shift_ob_target: shiftObTarget,
+        shift_ore_target: shiftOreTarget,
+        shift_quarry: shiftQuarry,
+        shift_sr_target: shiftSrTarget,
+        remaining_stock: remainingStock,
+        parent_plan_production_id: parentPlanProduction.id,
+      };
+
+      planProductions.push(planProduction);
+    }
+
+    // Log untuk debugging
+    console.log(`Generating ${planProductions.length} daily plan productions for month ${planDate.getMonth() + 1}/${planDate.getFullYear()}`);
+    console.log(`Date range: ${planProductions[0]?.plan_date} to ${planProductions[planProductions.length - 1]?.plan_date}`);
+
+    // Simpan semua plan production
+    const savedPlanProductions = await this.planProductionRepository.save(planProductions);
+    console.log(`Successfully saved ${savedPlanProductions.length} daily plan productions`);
+
+    return savedPlanProductions;
+  }
+
+  /**
+   * Mendapatkan old stock global
+   */
+  private async getOldStockGlobal(planDate: Date): Promise<number> {
+    // Cari data sebelumnya di r_plan_production
+    const previousPlan = await this.planProductionRepository.findOne({
+      where: {
+        plan_date: new Date(planDate.getFullYear(), planDate.getMonth() - 1, 1),
+      },
+      order: { plan_date: 'DESC' },
+    });
+
+    if (previousPlan) {
+      return previousPlan.daily_old_stock;
+    }
+
+    // Jika tidak ada, ambil dari parent plan production
+    const previousParent = await this.parentPlanProductionRepository.findOne({
+      where: {
+        plan_date: new Date(planDate.getFullYear(), planDate.getMonth() - 1, 1),
+      },
+      order: { plan_date: 'DESC' },
+    });
+
+    if (previousParent) {
+      return previousParent.total_sisa_stock;
+    }
+
+    // Default value jika tidak ada data sebelumnya
+    return 0;
+  }
+
+  /**
+   * Mendapatkan jumlah hari dalam bulan
+   */
+  private getDaysInMonth(date: Date): number {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    console.log(`Month: ${month + 1}, Year: ${year}, Days: ${daysInMonth}`);
+    
+    return daysInMonth;
+  }
+
+  /**
+   * Mendapatkan jumlah hari minggu dalam bulan
+   */
+  private getSundaysInMonth(date: Date): number {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const daysInMonth = this.getDaysInMonth(date);
+    let sundayCount = 0;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const currentDate = new Date(year, month, day);
+      if (currentDate.getDay() === 0) { // 0 = Sunday
+        sundayCount++;
+      }
+    }
+
+    console.log(`Sundays in month ${month + 1}/${year}: ${sundayCount}`);
+    
+    return sundayCount;
+  }
+
+  /**
+   * Mendapatkan semua parent plan production
+   */
+  async findAll() {
+    return this.parentPlanProductionRepository.find({
+      relations: ['planProductions'],
+      order: { plan_date: 'DESC' },
+    });
+  }
+
+  /**
+   * Mendapatkan parent plan production by ID
+   */
+  async findOne(id: number) {
+    const parentPlanProduction = await this.parentPlanProductionRepository.findOne({
+      where: { id },
+      relations: ['planProductions'],
+    });
+
+    if (!parentPlanProduction) {
+      throw new BadRequestException('Parent plan production tidak ditemukan');
+    }
+
+    return parentPlanProduction;
+  }
+
+  /**
+   * Mendapatkan parent plan production by date
+   */
+  async findByDate(planDate: string) {
+    const date = new Date(planDate);
+    const parentPlanProduction = await this.parentPlanProductionRepository.findOne({
+      where: { plan_date: date },
+      relations: ['planProductions'],
+    });
+
+    if (!parentPlanProduction) {
+      throw new BadRequestException('Parent plan production tidak ditemukan untuk tanggal tersebut');
+    }
+
+    return parentPlanProduction;
+  }
+}

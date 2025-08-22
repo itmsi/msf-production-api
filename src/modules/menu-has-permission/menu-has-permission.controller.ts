@@ -229,21 +229,25 @@ export class MenuHasPermissionController {
                 permission_id: 1,
                 permission_name: 'Create',
                 has_status: true,
+                mhp_id: 150,
               },
               {
                 permission_id: 2,
                 permission_name: 'Read',
                 has_status: false,
+                mhp_id: null,
               },
               {
                 permission_id: 3,
                 permission_name: 'Update',
                 has_status: false,
+                mhp_id: null,
               },
               {
                 permission_id: 4,
                 permission_name: 'Delete',
                 has_status: true,
+                mhp_id: 151,
               }
             ]
           }
