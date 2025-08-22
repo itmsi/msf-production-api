@@ -359,7 +359,12 @@ export class PlanWorkingHourService {
 
   async getFormData(): Promise<Array<{
     name: string;
-    group_detail: Array<{ id: number; name: string }>;
+    group_detail: Array<{ 
+      id: number; 
+      name: string; 
+      type_data: string; 
+      type_field: string; 
+    }>;
   }>> {
     // Ambil semua activities yang aktif
     const activities = await this.activitiesRepository.find({
@@ -368,7 +373,12 @@ export class PlanWorkingHourService {
     });
 
     // Kelompokkan berdasarkan status
-    const groupedData: { [key: string]: Array<{ id: number; name: string }> } = {};
+    const groupedData: { [key: string]: Array<{ 
+      id: number; 
+      name: string; 
+      type_data: string; 
+      type_field: string; 
+    }> } = {};
 
     activities.forEach(activity => {
       if (activity.status) {
@@ -381,6 +391,8 @@ export class PlanWorkingHourService {
         groupedData[statusKey].push({
           id: activity.id,
           name: activity.name,
+          type_data: 'number',
+          type_field: 'input',
         });
       }
     });

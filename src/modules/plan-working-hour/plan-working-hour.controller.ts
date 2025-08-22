@@ -201,6 +201,10 @@ export class PlanWorkingHourController {
       - idle: activities dengan status 'idle'  
       - breakdown: activities dengan status 'breakdown'
       - [status]: activities dengan status lainnya (otomatis)
+      
+      Setiap activity memiliki field tambahan:
+      - type_data: tipe data yang diharapkan (default: 'number')
+      - type_field: tipe field input (default: 'input')
     `,
   })
   @ApiResponse({
@@ -216,11 +220,15 @@ export class PlanWorkingHourController {
             "group_detail": [
               {
                 "id": 1,
-                "name": "P5M"
+                "name": "P5M",
+                "type_data": "number",
+                "type_field": "input"
               },
               {
                 "id": 2,
-                "name": "P2H"
+                "name": "P2H",
+                "type_data": "number",
+                "type_field": "input"
               }
             ]
           },
@@ -229,11 +237,15 @@ export class PlanWorkingHourController {
             "group_detail": [
               {
                 "id": 3,
-                "name": "P1H"
+                "name": "P1H",
+                "type_data": "number",
+                "type_field": "input"
               },
               {
                 "id": 4,
-                "name": "P7H"
+                "name": "P7H",
+                "type_data": "number",
+                "type_field": "input"
               }
             ]
           }
