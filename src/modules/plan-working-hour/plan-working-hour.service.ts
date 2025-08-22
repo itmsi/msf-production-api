@@ -357,9 +357,10 @@ export class PlanWorkingHourService {
     };
   }
 
-  async getFormData(): Promise<{
-    [key: string]: Array<{ id: number; name: string }>;
-  }> {
+  async getFormData(): Promise<Array<{
+    name: string;
+    group_detail: Array<{ id: number; name: string }>;
+  }>> {
     // Ambil semua activities yang aktif
     const activities = await this.activitiesRepository.find({
       where: { deletedAt: IsNull() },
@@ -367,16 +368,11 @@ export class PlanWorkingHourService {
     });
 
     // Kelompokkan berdasarkan status
-    const groupedData: { [key: string]: Array<{ id: number; name: string }> } = {
-      data_working: [],
-      data_delay: [],
-      data_idle: [],
-      data_breakdown: [],
-    };
+    const groupedData: { [key: string]: Array<{ id: number; name: string }> } = {};
 
     activities.forEach(activity => {
       if (activity.status) {
-        const statusKey = `data_${activity.status.toLowerCase()}`;
+        const statusKey = activity.status.toLowerCase();
         
         if (!groupedData[statusKey]) {
           groupedData[statusKey] = [];
@@ -389,6 +385,12 @@ export class PlanWorkingHourService {
       }
     });
 
-    return groupedData;
+    // Transform ke format yang diminta
+    const result = Object.entries(groupedData).map(([status, activities]) => ({
+      name: status.charAt(0).toUpperCase() + status.slice(1), // Capitalize first letter
+      group_detail: activities,
+    }));
+
+    return result;
   }
 }

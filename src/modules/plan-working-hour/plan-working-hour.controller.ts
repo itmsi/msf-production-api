@@ -196,11 +196,11 @@ export class PlanWorkingHourController {
       Endpoint untuk mendapatkan data activities yang dikelompokkan berdasarkan status.
       
       Data akan dikelompokkan secara dinamis berdasarkan status yang ada:
-      - data_working: activities dengan status 'working'
-      - data_delay: activities dengan status 'delay'
-      - data_idle: activities dengan status 'idle'  
-      - data_breakdown: activities dengan status 'breakdown'
-      - data_[status]: activities dengan status lainnya (otomatis)
+      - working: activities dengan status 'working'
+      - delay: activities dengan status 'delay'
+      - idle: activities dengan status 'idle'  
+      - breakdown: activities dengan status 'breakdown'
+      - [status]: activities dengan status lainnya (otomatis)
     `,
   })
   @ApiResponse({
@@ -210,32 +210,34 @@ export class PlanWorkingHourController {
       example: {
         statusCode: 200,
         message: 'Plan working hour form data',
-        data: {
-          data_working: [
-            {
-              id: 1,
-              name: "Loading Barge"
-            }
-          ],
-          data_delay: [
-            {
-              id: 2,
-              name: "P5M"
-            }
-          ],
-          data_idle: [
-            {
-              id: 3,
-              name: "Waiting"
-            }
-          ],
-          data_breakdown: [
-            {
-              id: 4,
-              name: "Maintenance"
-            }
-          ]
-        }
+        data: [
+          {
+            "name": "Delay",
+            "group_detail": [
+              {
+                "id": 1,
+                "name": "P5M"
+              },
+              {
+                "id": 2,
+                "name": "P2H"
+              }
+            ]
+          },
+          {
+            "name": "Idle",
+            "group_detail": [
+              {
+                "id": 3,
+                "name": "P1H"
+              },
+              {
+                "id": 4,
+                "name": "P7H"
+              }
+            ]
+          }
+        ]
       }
     }
   })
