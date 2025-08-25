@@ -99,12 +99,17 @@ export class DailyPlanProductionService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Helper function untuk rounding ke 2 digit
+    const roundToTwoDecimals = (value: number): number => {
+      return Math.round(value * 100) / 100;
+    };
+
     const processedData = plans.map(plan => {
       // Hitung nilai-nilai yang diminta
-      const sr_target = plan.ob_target / plan.ore_target;
-      const sisa_stock = plan.ore_target - plan.ore_shipment_target;
-      const tonnage_per_fleet = plan.ore_target / plan.total_fleet;
-      const vessel_per_fleet = tonnage_per_fleet / 35;
+      const sr_target = roundToTwoDecimals(plan.ob_target / plan.ore_target);
+      const sisa_stock = roundToTwoDecimals(plan.ore_target - plan.ore_shipment_target);
+      const tonnage_per_fleet = roundToTwoDecimals(plan.ore_target / plan.total_fleet);
+      const vessel_per_fleet = roundToTwoDecimals(tonnage_per_fleet / 35);
 
       // Handle plan_date yang mungkin bukan Date object
       let planDate: Date;
@@ -132,17 +137,17 @@ export class DailyPlanProductionService {
         id: plan.id,
         date: planDate.toISOString().split('T')[0],
         calender_day: calenderDay,
-        average_month_ewh: plan.average_moth_ewh || plan.average_day_ewh, // Menggunakan average_moth_ewh jika ada, fallback ke average_day_ewh
-        average_day_ewh: plan.average_day_ewh,
-        ob_target: plan.ob_target,
-        ore_target: plan.ore_target,
-        quarry: plan.quarry,
-        sr_target: Number(sr_target.toFixed(2)),
-        ore_shipment_target: plan.ore_shipment_target,
-        sisa_stock: Math.max(0, sisa_stock), // Pastikan tidak negatif
-        total_fleet: plan.total_fleet,
-        tonnage_per_fleet: Number(tonnage_per_fleet.toFixed(2)),
-        vessel_per_fleet: Number(vessel_per_fleet.toFixed(2)),
+        average_month_ewh: roundToTwoDecimals(plan.average_moth_ewh || plan.average_day_ewh), // Menggunakan average_moth_ewh jika ada, fallback ke average_day_ewh
+        average_day_ewh: roundToTwoDecimals(plan.average_day_ewh),
+        ob_target: roundToTwoDecimals(plan.ob_target),
+        ore_target: roundToTwoDecimals(plan.ore_target),
+        quarry: roundToTwoDecimals(plan.quarry),
+        sr_target: roundToTwoDecimals(sr_target),
+        ore_shipment_target: roundToTwoDecimals(plan.ore_shipment_target),
+        sisa_stock: Math.max(0, roundToTwoDecimals(sisa_stock)), // Pastikan tidak negatif
+        total_fleet: plan.total_fleet, // Integer tidak perlu di-round
+        tonnage_per_fleet: roundToTwoDecimals(tonnage_per_fleet),
+        vessel_per_fleet: roundToTwoDecimals(vessel_per_fleet),
         is_available_to_edit: isAvailableToEdit,
         is_available_to_delete: isAvailableToDelete,
       };
