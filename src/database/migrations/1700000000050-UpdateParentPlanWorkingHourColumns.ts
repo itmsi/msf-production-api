@@ -1,6 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class UpdateParentPlanWorkingHourColumns1700000000039
+export class UpdateParentPlanWorkingHourColumns1700000000050
   implements MigrationInterface
 {
   public async up(queryRunner: QueryRunner): Promise<void> {
