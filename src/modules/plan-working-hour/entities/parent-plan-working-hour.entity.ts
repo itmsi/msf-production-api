@@ -27,16 +27,16 @@ export class ParentPlanWorkingHour {
   total_available_day: number;
 
   @Column({ type: 'float', nullable: true })
-  total_working_hour: number;
+  total_working_hour_month: number;
 
   @Column({ type: 'int', nullable: true })
   total_working_day_longshift: number;
 
   @Column({ type: 'int', nullable: true })
-  working_hour_longshift: number;
+  total_working_hour_day: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  working_hour_longshift_day: number;
+  total_working_hour_longshift: number;
 
   @Column({ type: 'int', nullable: true })
   total_mohh_per_month: number;

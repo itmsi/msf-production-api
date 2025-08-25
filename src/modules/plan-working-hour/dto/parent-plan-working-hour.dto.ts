@@ -66,7 +66,7 @@ export class CreateParentPlanWorkingHourDto {
     minimum: 0
   })
   @IsNumber()
-  total_working_hour: number;
+  total_working_hour_month: number;
 
   @ApiProperty({ 
     description: 'Total hari kerja dengan long shift', 
@@ -85,41 +85,38 @@ export class CreateParentPlanWorkingHourDto {
   total_working_day_longshift: number;
 
   @ApiProperty({ 
-    description: 'Jam kerja per hari untuk long shift', 
-    example: 12,
+    description: 'Total jam kerja per hari', 
+    example: 8,
     type: 'number',
     required: true,
     minimum: 0,
     maximum: 24,
     examples: {
-      '12': { summary: '12 jam per hari', value: 12 },
-      '10': { summary: '10 jam per hari', value: 10 },
       '8': { summary: '8 jam per hari', value: 8 },
+      '10': { summary: '10 jam per hari', value: 10 },
+      '12': { summary: '12 jam per hari', value: 12 },
       '16': { summary: '16 jam per hari', value: 16 }
     }
   })
   @IsNumber()
-  working_hour_longshift: number;
+  total_working_hour_day: number;
 
   @ApiProperty({ 
-    description: 'Jam kerja long shift per hari (opsional)', 
-    example: 8.5,
-    required: false,
+    description: 'Total jam kerja long shift', 
+    example: 12,
+    required: true,
     type: 'number',
-    format: 'float',
-    nullable: true,
-    default: null,
+    minimum: 0,
+    maximum: 24,
     examples: {
-      '8.5': { summary: '8 jam 30 menit', value: 8.5 },
-      '9.0': { summary: '9 jam penuh', value: 9.0 },
-      '7.5': { summary: '7 jam 30 menit', value: 7.5 },
-      '10.0': { summary: '10 jam penuh', value: 10.0 },
-      'null': { summary: 'Tidak ada long shift per hari', value: null }
+      '12': { summary: '12 jam long shift', value: 12 },
+      '10': { summary: '10 jam long shift', value: 10 },
+      '8': { summary: '8 jam long shift', value: 8 },
+      '16': { summary: '16 jam long shift', value: 16 }
     }
   })
   @IsNumber()
-  @IsOptional()
-  working_hour_longshift_day: number;
+  total_working_hour_longshift: number;
 
   @ApiProperty({ 
     description: 'Total MOHH (Man Operating Hour per Hour) per bulan', 
@@ -164,16 +161,16 @@ export class ParentPlanWorkingHourResponseDto {
   total_available_day: number;
 
   @ApiProperty({ description: 'Total jam kerja dalam bulan', example: 184 })
-  total_working_hour: number;
+  total_working_hour_month: number;
 
   @ApiProperty({ description: 'Total hari kerja dengan long shift', example: 5 })
   total_working_day_longshift: number;
 
-  @ApiProperty({ description: 'Jam kerja per hari untuk long shift', example: 12 })
-  working_hour_longshift: number;
+  @ApiProperty({ description: 'Total jam kerja per hari', example: 8 })
+  total_working_hour_day: number;
 
-  @ApiProperty({ description: 'Jam kerja long shift per hari', example: 8.5 })
-  working_hour_longshift_day: number;
+  @ApiProperty({ description: 'Total jam kerja long shift', example: 12 })
+  total_working_hour_longshift: number;
 
   @ApiProperty({ description: 'Total MOHH per bulan', example: 1000 })
   total_mohh_per_month: number;

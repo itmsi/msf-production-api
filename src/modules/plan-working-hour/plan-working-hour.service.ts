@@ -113,8 +113,12 @@ export class PlanWorkingHourService {
       where.is_schedule_day = queryDto.is_schedule_day;
     }
 
-    if (queryDto.working_hour !== undefined) {
-      where.working_hour = queryDto.working_hour;
+    if (queryDto.working_hour_month !== undefined) {
+      where.working_hour_month = queryDto.working_hour_month;
+    }
+
+    if (queryDto.working_hour_day !== undefined) {
+      where.working_hour_day = queryDto.working_hour_day;
     }
 
     if (queryDto.working_day_longshift !== undefined) {

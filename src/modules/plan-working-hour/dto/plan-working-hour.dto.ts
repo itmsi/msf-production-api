@@ -44,6 +44,26 @@ export class CreatePlanWorkingHourDto {
   working_hour?: number;
 
   @ApiProperty({
+    description: 'Jam kerja per bulan',
+    example: 1,
+    type: Number,
+    required: false
+  })
+  @IsOptional()
+  @IsNumber()
+  working_hour_month?: number;
+
+  @ApiProperty({
+    description: 'Jam kerja per hari',
+    example: 8,
+    type: Number,
+    required: false
+  })
+  @IsOptional()
+  @IsNumber()
+  working_hour_day?: number;
+
+  @ApiProperty({
     description: 'Hari kerja shift panjang',
     example: 1,
     type: Number,
@@ -144,6 +164,26 @@ export class UpdatePlanWorkingHourDto {
   @IsOptional()
   @IsNumber()
   working_hour?: number;
+
+  @ApiProperty({
+    description: 'Jam kerja per bulan',
+    example: 1,
+    type: Number,
+    required: false
+  })
+  @IsOptional()
+  @IsNumber()
+  working_hour_month?: number;
+
+  @ApiProperty({
+    description: 'Jam kerja per hari',
+    example: 8,
+    type: Number,
+    required: false
+  })
+  @IsOptional()
+  @IsNumber()
+  working_hour_day?: number;
 
   @ApiProperty({
     description: 'Hari kerja shift panjang',
@@ -260,14 +300,24 @@ export class QueryPlanWorkingHourDto {
   is_schedule_day?: boolean;
 
   @ApiProperty({
-    description: 'Filter berdasarkan working hour',
+    description: 'Filter berdasarkan working hour per bulan',
+    example: 160,
+    type: Number,
+    required: false
+  })
+  @IsOptional()
+  @IsNumber()
+  working_hour_month?: number;
+
+  @ApiProperty({
+    description: 'Filter berdasarkan working hour per hari',
     example: 8,
     type: Number,
     required: false
   })
   @IsOptional()
   @IsNumber()
-  working_hour?: number;
+  working_hour_day?: number;
 
   @ApiProperty({
     description: 'Filter berdasarkan working day longshift',

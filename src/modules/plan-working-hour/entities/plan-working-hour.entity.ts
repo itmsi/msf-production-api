@@ -30,7 +30,10 @@ export class PlanWorkingHour {
   is_schedule_day: boolean;
 
   @Column({ type: 'float', nullable: true })
-  working_hour: number;
+  working_hour_month: number;
+
+  @Column({ type: 'int', nullable: true })
+  working_hour_day: number;
 
   @Column({ type: 'int', nullable: true })
   working_day_longshift: number;

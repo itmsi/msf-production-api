@@ -30,10 +30,10 @@ export class ParentPlanWorkingHourService {
         total_calendar_day: createDto.total_calendar_day,
         total_holiday_day: createDto.total_holiday_day,
         total_available_day: createDto.total_available_day,
-        total_working_hour: createDto.total_working_hour,
+        total_working_hour_month: createDto.total_working_hour_month,
         total_working_day_longshift: createDto.total_working_day_longshift,
-        working_hour_longshift: createDto.working_hour_longshift,
-        working_hour_longshift_day: createDto.working_hour_longshift_day,
+        total_working_hour_day: createDto.total_working_hour_day,
+        total_working_hour_longshift: createDto.total_working_hour_longshift,
         total_mohh_per_month: createDto.total_mohh_per_month,
       });
 
@@ -58,8 +58,9 @@ export class ParentPlanWorkingHourService {
           is_holiday_day: isSunday,
           is_schedule_day: !isSunday,
           working_day_longshift: createDto.total_working_day_longshift,
-          working_hour_longshift: createDto.working_hour_longshift,
-          working_hour: createDto.total_working_hour / daysInMonth,
+          working_hour_longshift: createDto.total_working_hour_longshift,
+          working_hour_month: createDto.total_working_hour_month / daysInMonth,
+          working_hour_day: createDto.total_working_hour_day,
           mohh_per_month: createDto.total_mohh_per_month,
           parent_plan_working_hour_id: savedParentPlan.id,
         });
