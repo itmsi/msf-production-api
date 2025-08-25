@@ -33,6 +33,7 @@ async function bootstrap() {
     .addTag('Unit Type', 'Unit type management endpoints')
     .addTag('Activities', 'Activities management endpoints')
     .addTag('Population', 'Population management endpoints')
+    .addTag('Base Data Production', 'Base data production management endpoints')
     .addBearerAuth(
       {
         type: 'http',
@@ -40,13 +41,21 @@ async function bootstrap() {
         bearerFormat: 'JWT',
         name: 'Authorization',
         in: 'header',
+        description: 'Enter JWT token',
       },
       'jwt', // This is the name used for @ApiBearerAuth()
     )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document); // http://localhost:3000/docs
+  SwaggerModule.setup('api/docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      filter: true,
+      showRequestHeaders: true,
+    },
+  }); // http://localhost:3000/docs
   app.enableCors({
     origin: ['*'],
     methods: 'GET,POST,PUT,DELETE',
