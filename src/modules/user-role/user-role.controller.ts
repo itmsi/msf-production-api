@@ -11,13 +11,13 @@ import {
   Request,
   Query,
 } from '@nestjs/common';
-import { 
-  ApiBearerAuth, 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
-  ApiParam, 
-  ApiQuery 
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { UserRoleService } from './user-role.service';
 import {
@@ -42,7 +42,8 @@ export class UserRoleController {
   @Post()
   @ApiOperation({
     summary: 'Membuat user role baru',
-    description: 'Memberikan role kepada user. Kombinasi user_id dan role_id harus unik.',
+    description:
+      'Memberikan role kepada user. Kombinasi user_id dan role_id harus unik.',
   })
   @ApiResponse({
     status: 201,
@@ -135,7 +136,8 @@ export class UserRoleController {
   @Post('assign')
   @ApiOperation({
     summary: 'Memberikan role kepada user',
-    description: 'Endpoint khusus untuk memberikan role kepada user. Alternative dari POST /user-roles.',
+    description:
+      'Endpoint khusus untuk memberikan role kepada user. Alternative dari POST /user-roles.',
   })
   @ApiResponse({
     status: 201,
@@ -173,10 +175,7 @@ export class UserRoleController {
     status: 500,
     description: 'Internal Server Error - Terjadi kesalahan pada server',
   })
-  assignRoleToUser(
-    @Body() body: AssignRoleDto,
-    @Request() req: any,
-  ) {
+  assignRoleToUser(@Body() body: AssignRoleDto, @Request() req: any) {
     const createdBy = req.user?.id;
     return this.userRoleService.assignRoleToUser(
       body.user_id,
@@ -233,7 +232,8 @@ export class UserRoleController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary: 'Mendapatkan semua data user roles dengan pagination, filtering, dan sorting',
+    summary:
+      'Mendapatkan semua data user roles dengan pagination, filtering, dan sorting',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -242,12 +242,42 @@ export class UserRoleController {
       - Urutan sorting ASC atau DESC
     `,
   })
-  @ApiQuery({ name: 'page', required: false, type: String, description: 'Nomor halaman (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, type: String, description: 'Jumlah data per halaman (default: 10, max: 100)' })
-  @ApiQuery({ name: 'user_id', required: false, type: String, description: 'Filter berdasarkan user ID' })
-  @ApiQuery({ name: 'role_id', required: false, type: String, description: 'Filter berdasarkan role ID' })
-  @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Field untuk sorting' })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'], description: 'Urutan sorting' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: String,
+    description: 'Nomor halaman (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: String,
+    description: 'Jumlah data per halaman (default: 10, max: 100)',
+  })
+  @ApiQuery({
+    name: 'user_id',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan user ID',
+  })
+  @ApiQuery({
+    name: 'role_id',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan role ID',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    description: 'Field untuk sorting',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Urutan sorting',
+  })
   @ApiResponse({
     status: 200,
     description: 'Data user roles berhasil diambil',
@@ -483,7 +513,8 @@ export class UserRoleController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data user role berdasarkan ID',
-    description: 'Mengupdate data user role dengan validasi duplikasi kombinasi user_id dan role_id',
+    description:
+      'Mengupdate data user role dengan validasi duplikasi kombinasi user_id dan role_id',
   })
   @ApiParam({
     name: 'id',

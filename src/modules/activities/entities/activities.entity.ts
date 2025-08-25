@@ -16,11 +16,11 @@ export class Activities {
   @Column({ type: 'varchar', length: 255, nullable: true })
   name: string;
 
-  @Column({ 
-    type: 'enum', 
+  @Column({
+    type: 'enum',
     enum: ActivityStatus,
     default: ActivityStatus.WORKING,
-    nullable: true 
+    nullable: true,
   })
   status: ActivityStatus;
 

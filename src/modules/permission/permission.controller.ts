@@ -11,13 +11,13 @@ import {
   Request,
   Query,
 } from '@nestjs/common';
-import { 
-  ApiBearerAuth, 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
-  ApiParam, 
-  ApiQuery 
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { PermissionService } from './permission.service';
 import {
@@ -40,7 +40,8 @@ export class PermissionController {
   @Post()
   @ApiOperation({
     summary: 'Membuat permission baru',
-    description: 'Membuat permission baru dengan nama dan kode yang unik. Permission code harus unik dalam sistem.',
+    description:
+      'Membuat permission baru dengan nama dan kode yang unik. Permission code harus unik dalam sistem.',
   })
   @ApiResponse({
     status: 201,
@@ -124,7 +125,8 @@ export class PermissionController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary: 'Mendapatkan semua data permissions dengan pagination, filtering, dan sorting',
+    summary:
+      'Mendapatkan semua data permissions dengan pagination, filtering, dan sorting',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -133,11 +135,36 @@ export class PermissionController {
       - Urutan sorting ASC atau DESC
     `,
   })
-  @ApiQuery({ name: 'page', required: false, type: String, description: 'Nomor halaman (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, type: String, description: 'Jumlah data per halaman (default: 10, max: 100)' })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search berdasarkan permission_name atau permission_code' })
-  @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Field untuk sorting' })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'], description: 'Urutan sorting' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: String,
+    description: 'Nomor halaman (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: String,
+    description: 'Jumlah data per halaman (default: 10, max: 100)',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search berdasarkan permission_name atau permission_code',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    description: 'Field untuk sorting',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Urutan sorting',
+  })
   @ApiResponse({
     status: 200,
     description: 'Data permissions berhasil diambil',
@@ -257,7 +284,8 @@ export class PermissionController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data permission berdasarkan ID',
-    description: 'Mengupdate data permission dengan validasi duplikasi permission_code',
+    description:
+      'Mengupdate data permission dengan validasi duplikasi permission_code',
   })
   @ApiParam({
     name: 'id',
@@ -321,7 +349,8 @@ export class PermissionController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Menghapus data permission berdasarkan ID',
-    description: 'Soft delete permission (marks as deleted but keeps in database)',
+    description:
+      'Soft delete permission (marks as deleted but keeps in database)',
   })
   @ApiParam({
     name: 'id',

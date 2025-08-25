@@ -55,7 +55,9 @@ describe('DailyPlanProduction (e2e)', () => {
         .send(createDto)
         .expect(201)
         .expect((res) => {
-          expect(res.body.message).toBe('Daily plan production berhasil dibuat');
+          expect(res.body.message).toBe(
+            'Daily plan production berhasil dibuat',
+          );
           expect(res.body.data).toBeDefined();
           expect(res.body.data.plan_date).toBeDefined();
           expect(res.body.data.sr_target).toBe(1.25);
@@ -133,7 +135,9 @@ describe('DailyPlanProduction (e2e)', () => {
         .get('/daily-plan-production')
         .expect(200)
         .expect((res) => {
-          expect(res.body.message).toBe('Data daily plan production berhasil diambil');
+          expect(res.body.message).toBe(
+            'Data daily plan production berhasil diambil',
+          );
           expect(res.body.data).toBeDefined();
           expect(res.body.data.data).toBeInstanceOf(Array);
           expect(res.body.data.pagination).toBeDefined();
@@ -187,7 +191,9 @@ describe('DailyPlanProduction (e2e)', () => {
         .get(`/daily-plan-production/${createdId}`)
         .expect(200)
         .expect((res) => {
-          expect(res.body.message).toBe('Data daily plan production berhasil diambil');
+          expect(res.body.message).toBe(
+            'Data daily plan production berhasil diambil',
+          );
           expect(res.body.data.id).toBe(createdId);
         });
     });
@@ -232,7 +238,9 @@ describe('DailyPlanProduction (e2e)', () => {
         .send(updateDto)
         .expect(200)
         .expect((res) => {
-          expect(res.body.message).toBe('Daily plan production berhasil diupdate');
+          expect(res.body.message).toBe(
+            'Daily plan production berhasil diupdate',
+          );
           expect(res.body.data.ob_target).toBe(1200);
           expect(res.body.data.ore_target).toBe(900);
           expect(res.body.data.sr_target).toBe(1.33);
@@ -278,7 +286,9 @@ describe('DailyPlanProduction (e2e)', () => {
         .delete(`/daily-plan-production/${createdId}`)
         .expect(200)
         .expect((res) => {
-          expect(res.body.message).toBe('Daily plan production berhasil dihapus');
+          expect(res.body.message).toBe(
+            'Daily plan production berhasil dihapus',
+          );
         });
     });
 

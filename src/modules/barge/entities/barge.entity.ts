@@ -12,8 +12,6 @@ export class Barge {
   @PrimaryGeneratedColumn()
   id: number;
 
-
-
   @Column({ type: 'varchar', length: 255, nullable: true })
   name: string;
 

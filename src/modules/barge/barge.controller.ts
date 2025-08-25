@@ -39,7 +39,8 @@ export class BargeController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary: 'Mendapatkan semua data barge dengan pagination, filtering, dan sorting',
+    summary:
+      'Mendapatkan semua data barge dengan pagination, filtering, dan sorting',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -49,14 +50,54 @@ export class BargeController {
       - Urutan sorting ASC atau DESC
     `,
   })
-  @ApiQuery({ name: 'page', required: false, type: String, description: 'Nomor halaman (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, type: String, description: 'Jumlah data per halaman (default: 10, max: 100)' })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Pencarian umum di field name dan remarks' })
-  @ApiQuery({ name: 'name', required: false, type: String, description: 'Filter berdasarkan nama barge' })
-  @ApiQuery({ name: 'minCapacity', required: false, type: String, description: 'Filter berdasarkan kapasitas minimum' })
-  @ApiQuery({ name: 'maxCapacity', required: false, type: String, description: 'Filter berdasarkan kapasitas maksimum' })
-  @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Field untuk sorting' })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'], description: 'Urutan sorting' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: String,
+    description: 'Nomor halaman (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: String,
+    description: 'Jumlah data per halaman (default: 10, max: 100)',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Pencarian umum di field name dan remarks',
+  })
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan nama barge',
+  })
+  @ApiQuery({
+    name: 'minCapacity',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan kapasitas minimum',
+  })
+  @ApiQuery({
+    name: 'maxCapacity',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan kapasitas maksimum',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    description: 'Field untuk sorting',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Urutan sorting',
+  })
   @SwaggerApiResponse({
     status: 200,
     description: 'Data barge berhasil diambil',
@@ -139,7 +180,8 @@ export class BargeController {
   @Get(':id')
   @ApiOperation({
     summary: 'Mendapatkan data barge berdasarkan ID',
-    description: 'Endpoint untuk mengambil data barge spesifik berdasarkan ID yang diberikan',
+    description:
+      'Endpoint untuk mengambil data barge spesifik berdasarkan ID yang diberikan',
   })
   @ApiParam({
     name: 'id',
@@ -382,7 +424,8 @@ export class BargeController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Menghapus data barge berdasarkan ID (Soft Delete)',
-    description: 'Endpoint untuk menghapus data barge secara soft delete (tidak benar-benar dihapus dari database)',
+    description:
+      'Endpoint untuk menghapus data barge secara soft delete (tidak benar-benar dihapus dari database)',
   })
   @ApiParam({
     name: 'id',
@@ -458,7 +501,8 @@ export class BargeController {
   @Post(':id/restore')
   @ApiOperation({
     summary: 'Memulihkan data barge yang sudah dihapus (Soft Delete)',
-    description: 'Endpoint untuk memulihkan data barge yang sudah di-soft delete',
+    description:
+      'Endpoint untuk memulihkan data barge yang sudah di-soft delete',
   })
   @ApiParam({
     name: 'id',
@@ -513,7 +557,8 @@ export class BargeController {
   })
   @SwaggerApiResponse({
     status: 404,
-    description: 'Not Found - Barge tidak ditemukan atau tidak dalam status deleted',
+    description:
+      'Not Found - Barge tidak ditemukan atau tidak dalam status deleted',
     schema: {
       example: {
         statusCode: 404,

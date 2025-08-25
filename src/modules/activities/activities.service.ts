@@ -54,7 +54,7 @@ export class ActivitiesService {
   ): Promise<ApiResponse<ActivitiesResponseDto[]>> {
     try {
       console.log('ActivitiesService.findAll - Query:', query);
-      
+
       const page = parseInt(query.page ?? '1', 10);
       const limit = parseInt(query.limit ?? '10', 10);
       const skip = (page - 1) * limit;
@@ -65,7 +65,14 @@ export class ActivitiesService {
       const sortOrder = query.sortOrder ?? 'DESC';
 
       console.log('ActivitiesService.findAll - Parsed params:', {
-        page, limit, skip, search, name, status, sortBy, sortOrder
+        page,
+        limit,
+        skip,
+        search,
+        name,
+        status,
+        sortBy,
+        sortOrder,
       });
 
       // Validate limit
@@ -96,7 +103,10 @@ export class ActivitiesService {
 
       // Filter by status
       if (status) {
-        console.log('ActivitiesService.findAll - Adding status filter:', status);
+        console.log(
+          'ActivitiesService.findAll - Adding status filter:',
+          status,
+        );
         qb.andWhere('activities.status = :status', {
           status: status,
         });
@@ -118,20 +128,23 @@ export class ActivitiesService {
         .take(limit);
 
       console.log('ActivitiesService.findAll - Query builder:', qb.getQuery());
-      console.log('ActivitiesService.findAll - Query parameters:', qb.getParameters());
+      console.log(
+        'ActivitiesService.findAll - Query parameters:',
+        qb.getParameters(),
+      );
 
       const [result, total] = await qb.getManyAndCount();
-      
+
       console.log('ActivitiesService.findAll - Result count:', result.length);
       console.log('ActivitiesService.findAll - Total count:', total);
-      
+
       // Log sample data untuk debugging
       if (result.length > 0) {
         console.log('ActivitiesService.findAll - Sample result:', {
           id: result[0].id,
           name: result[0].name,
           status: result[0].status,
-          type: typeof result[0].status
+          type: typeof result[0].status,
         });
       }
 
@@ -139,7 +152,7 @@ export class ActivitiesService {
       const transformedResult = result.map((activity) => ({
         id: activity.id,
         name: activity.name,
-        status: activity.status as ActivityStatus,
+        status: activity.status,
         createdAt: activity.createdAt,
         updatedAt: activity.updatedAt,
       }));
@@ -189,14 +202,14 @@ export class ActivitiesService {
         name: data.name,
         status: data.status,
       });
-      
+
       const result = await this.activitiesRepository.save(newActivity);
 
       // Transform to DTO format
       const responseData: ActivitiesResponseDto = {
         id: result.id,
         name: result.name,
-        status: result.status as ActivityStatus,
+        status: result.status,
         createdAt: result.createdAt,
         updatedAt: result.updatedAt,
       };
@@ -250,7 +263,7 @@ export class ActivitiesService {
       const responseData: ActivitiesResponseDto = {
         id: result.id,
         name: result.name,
-        status: result.status as ActivityStatus,
+        status: result.status,
         createdAt: result.createdAt,
         updatedAt: result.updatedAt,
       };

@@ -1,4 +1,10 @@
-import { IsDateString, IsNumber, IsOptional, IsBoolean, ValidateNested } from 'class-validator';
+import {
+  IsDateString,
+  IsNumber,
+  IsOptional,
+  IsBoolean,
+  ValidateNested,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -205,7 +211,14 @@ export class QueryDailyPlanProductionDto {
     example: 'plan_date',
     type: String,
     required: false,
-    enum: ['id', 'plan_date', 'ob_target', 'ore_target', 'total_fleet', 'createdAt'],
+    enum: [
+      'id',
+      'plan_date',
+      'ob_target',
+      'ore_target',
+      'total_fleet',
+      'createdAt',
+    ],
   })
   @IsOptional()
   sortBy?: string;
@@ -244,6 +257,16 @@ export class QueryDailyPlanProductionDto {
   @IsNumber()
   @Type(() => Number)
   limit?: number = 10;
+
+  @ApiProperty({
+    description: 'Filter berdasarkan status hari kalender',
+    example: 'available',
+    type: String,
+    required: false,
+    enum: ['available', 'holiday', 'one-shift'],
+  })
+  @IsOptional()
+  calendar_day?: string;
 }
 
 export class DailyPlanProductionResponseDto {
@@ -360,7 +383,8 @@ export class DailyPlanProductionResponseDto {
   shift_quarrt: number;
 
   @ApiProperty({
-    description: 'Target SR per shift (dihitung otomatis: shift_ob_target / shift_ore_target)',
+    description:
+      'Target SR per shift (dihitung otomatis: shift_ob_target / shift_ore_target)',
     example: 1.25,
     type: Number,
   })
@@ -374,7 +398,8 @@ export class DailyPlanProductionResponseDto {
   total_fleet: number;
 
   @ApiProperty({
-    description: 'Stock tersisa (dihitung otomatis: old_stock_global - ore_shipment_target + ore_target)',
+    description:
+      'Stock tersisa (dihitung otomatis: old_stock_global - ore_shipment_target + ore_target)',
     example: 50,
     type: Number,
   })
@@ -412,9 +437,10 @@ export class DailyPlanProductionListResponseDto {
   date: string;
 
   @ApiProperty({
-    description: 'Status hari kalender (available/not holiday)',
+    description: 'Status hari kalender berdasarkan schedule_day',
     example: 'available',
     type: String,
+    enum: ['available', 'one-shift', 'holiday'],
   })
   calender_day: string;
 

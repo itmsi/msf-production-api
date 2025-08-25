@@ -17,13 +17,25 @@ export class ParentPlanProduction {
   @Column({ type: 'timestamp', nullable: false })
   plan_date: Date;
 
-  @Column({ type: 'int', nullable: false, comment: 'Calculated from total days on month' })
+  @Column({
+    type: 'int',
+    nullable: false,
+    comment: 'Calculated from total days on month',
+  })
   total_calender_day: number;
 
-  @Column({ type: 'int', nullable: false, comment: 'Calculated from total sunday on month' })
+  @Column({
+    type: 'int',
+    nullable: false,
+    comment: 'Calculated from total sunday on month',
+  })
   total_holiday_day: number;
 
-  @Column({ type: 'int', nullable: false, comment: 'Calculated from total days on month' })
+  @Column({
+    type: 'int',
+    nullable: false,
+    comment: 'Calculated from total days on month',
+  })
   total_available_day: number;
 
   @Column({ type: 'float', nullable: false })
@@ -50,10 +62,20 @@ export class ParentPlanProduction {
   @Column({ type: 'float', nullable: false, default: 0 })
   total_remaining_stock: number;
 
-  @Column({ type: 'int', nullable: false, default: 0, comment: 'Total sisa stock yang tersedia' })
+  @Column({
+    type: 'int',
+    nullable: false,
+    default: 0,
+    comment: 'Total sisa stock yang tersedia',
+  })
   total_sisa_stock: number;
 
-  @Column({ type: 'int', nullable: false, default: 0, comment: 'Total fleet yang tersedia' })
+  @Column({
+    type: 'int',
+    nullable: false,
+    default: 0,
+    comment: 'Total fleet yang tersedia',
+  })
   total_fleet: number;
 
   @CreateDateColumn()
@@ -66,6 +88,9 @@ export class ParentPlanProduction {
   deleted_at: Date;
 
   // Relationship with PlanProduction
-  @OneToMany(() => PlanProduction, (planProduction) => planProduction.parentPlanProduction)
+  @OneToMany(
+    () => PlanProduction,
+    (planProduction) => planProduction.parentPlanProduction,
+  )
   planProductions: PlanProduction[];
 }

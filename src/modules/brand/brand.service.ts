@@ -36,7 +36,9 @@ export class BrandService {
   /**
    * Validasi tambahan untuk data brand sebelum disimpan
    */
-  private validateBrandData(data: CreateBrandDto | UpdateBrandDto): ValidationResult {
+  private validateBrandData(
+    data: CreateBrandDto | UpdateBrandDto,
+  ): ValidationResult {
     const validations: ValidationResult[] = [];
 
     // Validasi untuk create (brand_name mandatory)
@@ -50,7 +52,10 @@ export class BrandService {
   /**
    * Validasi business rules khusus
    */
-  private async validateBusinessRules(data: CreateBrandDto | UpdateBrandDto, excludeId?: number): Promise<ValidationResult> {
+  private async validateBusinessRules(
+    data: CreateBrandDto | UpdateBrandDto,
+    excludeId?: number,
+  ): Promise<ValidationResult> {
     const errors: string[] = [];
 
     // Validasi nama brand tidak boleh duplikat
@@ -58,8 +63,8 @@ export class BrandService {
       const existingBrand = await this.brandRepository.findOne({
         where: {
           brand_name: data.brand_name,
-          ...(excludeId && { id: Not(excludeId) })
-        }
+          ...(excludeId && { id: Not(excludeId) }),
+        },
       });
 
       if (existingBrand) {
@@ -69,7 +74,7 @@ export class BrandService {
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -173,13 +178,19 @@ export class BrandService {
       // Validasi tambahan menggunakan helper functions
       const validationResult = this.validateBrandData(data);
       if (!validationResult.isValid) {
-        throwError(`Validasi gagal: ${validationResult.errors.join(', ')}`, 400);
+        throwError(
+          `Validasi gagal: ${validationResult.errors.join(', ')}`,
+          400,
+        );
       }
 
       // Validasi business rules
       const businessValidation = await this.validateBusinessRules(data);
       if (!businessValidation.isValid) {
-        throwError(`Business rule validation gagal: ${businessValidation.errors.join(', ')}`, 409);
+        throwError(
+          `Business rule validation gagal: ${businessValidation.errors.join(', ')}`,
+          409,
+        );
       }
 
       const newBrand = this.brandRepository.create(data);
@@ -208,13 +219,22 @@ export class BrandService {
       // Validasi tambahan menggunakan helper functions (hanya untuk field yang diisi)
       const validationResult = this.validateBrandData(updateDto);
       if (!validationResult.isValid) {
-        throwError(`Validasi gagal: ${validationResult.errors.join(', ')}`, 400);
+        throwError(
+          `Validasi gagal: ${validationResult.errors.join(', ')}`,
+          400,
+        );
       }
 
       // Validasi business rules (exclude current brand ID)
-      const businessValidation = await this.validateBusinessRules(updateDto, id);
+      const businessValidation = await this.validateBusinessRules(
+        updateDto,
+        id,
+      );
       if (!businessValidation.isValid) {
-        throwError(`Business rule validation gagal: ${businessValidation.errors.join(', ')}`, 409);
+        throwError(
+          `Business rule validation gagal: ${businessValidation.errors.join(', ')}`,
+          409,
+        );
       }
 
       const updatedBrand = this.brandRepository.merge(brand, updateDto);

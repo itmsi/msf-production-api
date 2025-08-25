@@ -1,7 +1,7 @@
-import { 
-  IsInt, 
-  IsNotEmpty, 
-  IsOptional, 
+import {
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
   IsNumberString,
   IsString,
   Min,
@@ -9,8 +9,8 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateMenuHasPermissionDto {
-  @ApiProperty({ 
-    description: 'ID menu yang akan diberikan permission', 
+  @ApiProperty({
+    description: 'ID menu yang akan diberikan permission',
     example: 1,
     minimum: 1,
   })
@@ -19,8 +19,8 @@ export class CreateMenuHasPermissionDto {
   @Min(1)
   menu_id: number;
 
-  @ApiProperty({ 
-    description: 'ID permission yang akan diberikan kepada menu', 
+  @ApiProperty({
+    description: 'ID permission yang akan diberikan kepada menu',
     example: 1,
     minimum: 1,
   })
@@ -29,7 +29,7 @@ export class CreateMenuHasPermissionDto {
   @Min(1)
   permission_id: number;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'ID user yang membuat record ini',
     minimum: 1,
   })
@@ -40,8 +40,8 @@ export class CreateMenuHasPermissionDto {
 }
 
 export class UpdateMenuHasPermissionDto {
-  @ApiPropertyOptional({ 
-    description: 'ID menu yang akan diberikan permission', 
+  @ApiPropertyOptional({
+    description: 'ID menu yang akan diberikan permission',
     example: 1,
     minimum: 1,
   })
@@ -50,8 +50,8 @@ export class UpdateMenuHasPermissionDto {
   @Min(1)
   menu_id?: number;
 
-  @ApiPropertyOptional({ 
-    description: 'ID permission yang akan diberikan kepada menu', 
+  @ApiPropertyOptional({
+    description: 'ID permission yang akan diberikan kepada menu',
     example: 1,
     minimum: 1,
   })
@@ -60,7 +60,7 @@ export class UpdateMenuHasPermissionDto {
   @Min(1)
   permission_id?: number;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'ID user yang mengupdate record ini',
     minimum: 1,
   })
@@ -167,7 +167,10 @@ export class PermissionDto {
   @ApiProperty({ example: 'read', description: 'Nama permission' })
   name: string;
 
-  @ApiProperty({ example: 'Read permission', description: 'Deskripsi permission' })
+  @ApiProperty({
+    example: 'Read permission',
+    description: 'Deskripsi permission',
+  })
   description: string;
 
   @ApiProperty({ example: 'read', description: 'Slug permission' })
@@ -184,33 +187,36 @@ export class MenuHasPermissionResponseDto {
   @ApiProperty({ example: 1, description: 'ID permission yang dimiliki menu' })
   permission_id: number;
 
-  @ApiProperty({ 
-    example: '2024-01-01T00:00:00.000Z', 
-    description: 'Waktu pembuatan menu has permission' 
+  @ApiProperty({
+    example: '2024-01-01T00:00:00.000Z',
+    description: 'Waktu pembuatan menu has permission',
   })
   createdAt: Date;
 
   @ApiProperty({ example: 1, description: 'ID user yang membuat record ini' })
   createdBy: number;
 
-  @ApiProperty({ 
-    example: '2024-01-01T00:00:00.000Z', 
-    description: 'Waktu terakhir update menu has permission' 
+  @ApiProperty({
+    example: '2024-01-01T00:00:00.000Z',
+    description: 'Waktu terakhir update menu has permission',
   })
   updatedAt: Date;
 
-  @ApiProperty({ example: 1, description: 'ID user yang terakhir mengupdate record ini' })
+  @ApiProperty({
+    example: 1,
+    description: 'ID user yang terakhir mengupdate record ini',
+  })
   updatedBy: number;
 
-  @ApiProperty({ 
-    type: MenuDto, 
+  @ApiProperty({
+    type: MenuDto,
     description: 'Data menu yang terkait',
     required: false,
   })
   menu?: MenuDto;
 
-  @ApiProperty({ 
-    type: PermissionDto, 
+  @ApiProperty({
+    type: PermissionDto,
     description: 'Data permission yang terkait',
     required: false,
   })
@@ -232,10 +238,16 @@ export class MenuHasPermissionListResponseDto {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 
-  @ApiProperty({ example: 'Get menu permissions successfully', description: 'Pesan response' })
+  @ApiProperty({
+    example: 'Get menu permissions successfully',
+    description: 'Pesan response',
+  })
   message: string;
 
-  @ApiProperty({ type: [MenuHasPermissionResponseDto], description: 'Array data menu has permissions' })
+  @ApiProperty({
+    type: [MenuHasPermissionResponseDto],
+    description: 'Array data menu has permissions',
+  })
   data: MenuHasPermissionResponseDto[];
 
   @ApiProperty({ type: PaginationMetaDto, description: 'Informasi pagination' })
@@ -246,10 +258,16 @@ export class SingleMenuHasPermissionResponseDto {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 
-  @ApiProperty({ example: 'Get menu permission successfully', description: 'Pesan response' })
+  @ApiProperty({
+    example: 'Get menu permission successfully',
+    description: 'Pesan response',
+  })
   message: string;
 
-  @ApiProperty({ type: MenuHasPermissionResponseDto, description: 'Data menu has permission' })
+  @ApiProperty({
+    type: MenuHasPermissionResponseDto,
+    description: 'Data menu has permission',
+  })
   data: MenuHasPermissionResponseDto;
 }
 
@@ -261,27 +279,34 @@ export class MenuPermissionDataDto {
   @ApiProperty({ example: 'Create', description: 'Nama permission' })
   permission_name: string;
 
-  @ApiProperty({ example: true, description: 'Status apakah permission dimiliki menu' })
+  @ApiProperty({
+    example: true,
+    description: 'Status apakah permission dimiliki menu',
+  })
   has_status: boolean;
 
-  @ApiProperty({ 
-    example: 150, 
-    description: 'ID menu has permission (menu_has_permission_id, kolom id di tabel r_menu_has_permission, jika ada kl tidak ada maka null)',
-    nullable: true 
+  @ApiProperty({
+    example: 150,
+    description:
+      'ID menu has permission (menu_has_permission_id, kolom id di tabel r_menu_has_permission, jika ada kl tidak ada maka null)',
+    nullable: true,
   })
   mhp_id: number | null;
 }
 
 export class MenuByMenuResponseDto {
-  @ApiProperty({ example: 150, description: 'ID menu has permission (bisa null jika belum ada)' })
+  @ApiProperty({
+    example: 150,
+    description: 'ID menu has permission (bisa null jika belum ada)',
+  })
   id: number | null;
 
   @ApiProperty({ example: 72, description: 'ID menu' })
   menu_id: number;
 
-  @ApiProperty({ 
-    type: [MenuPermissionDataDto], 
-    description: 'Array data permission dengan status' 
+  @ApiProperty({
+    type: [MenuPermissionDataDto],
+    description: 'Array data permission dengan status',
   })
   data_permission: MenuPermissionDataDto[];
 }
@@ -290,12 +315,15 @@ export class MenuByMenuListResponseDto {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 
-  @ApiProperty({ example: 'Get menu permissions by menu ID successfully', description: 'Pesan response' })
+  @ApiProperty({
+    example: 'Get menu permissions by menu ID successfully',
+    description: 'Pesan response',
+  })
   message: string;
 
-  @ApiProperty({ 
-    type: [MenuByMenuResponseDto], 
-    description: 'Array data menu dengan permissions' 
+  @ApiProperty({
+    type: [MenuByMenuResponseDto],
+    description: 'Array data menu dengan permissions',
   })
   data: MenuByMenuResponseDto[];
 }
@@ -308,10 +336,16 @@ export class MenuPermissionByRoleDto {
   @ApiProperty({ example: 'Create', description: 'Nama permission' })
   permission_name: string;
 
-  @ApiProperty({ example: true, description: 'Status apakah role memiliki permission ini' })
+  @ApiProperty({
+    example: true,
+    description: 'Status apakah role memiliki permission ini',
+  })
   role_has_status: boolean;
 
-  @ApiProperty({ example: 1, description: 'ID menu has permission (selalu ada value)' })
+  @ApiProperty({
+    example: 1,
+    description: 'ID menu has permission (selalu ada value)',
+  })
   mhp_id: number;
 }
 
@@ -322,9 +356,9 @@ export class MenuByRoleResponseDto {
   @ApiProperty({ example: 'Dashboard', description: 'Nama menu' })
   menu_name: string;
 
-  @ApiProperty({ 
-    type: [MenuPermissionByRoleDto], 
-    description: 'Array permissions dengan status role' 
+  @ApiProperty({
+    type: [MenuPermissionByRoleDto],
+    description: 'Array permissions dengan status role',
   })
   has_permission: MenuPermissionByRoleDto[];
 }
@@ -333,12 +367,15 @@ export class MenuByRoleListResponseDto {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 
-  @ApiProperty({ example: 'Get menu permissions successfully', description: 'Pesan response' })
+  @ApiProperty({
+    example: 'Get menu permissions successfully',
+    description: 'Pesan response',
+  })
   message: string;
 
-  @ApiProperty({ 
-    type: [MenuByRoleResponseDto], 
-    description: 'Array data menu dengan permissions berdasarkan role' 
+  @ApiProperty({
+    type: [MenuByRoleResponseDto],
+    description: 'Array data menu dengan permissions berdasarkan role',
   })
   data: MenuByRoleResponseDto[];
 }

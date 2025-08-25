@@ -766,7 +766,8 @@ export class ImportPopulationErrorFileDto {
 
   @ApiProperty({
     description: 'Pesan informasi file error',
-    example: 'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
+    example:
+      'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
   })
   message: string;
 }

@@ -24,7 +24,11 @@ export class PlanProduction {
   @Column({ type: 'boolean', nullable: false })
   is_holiday_day: boolean;
 
-  @Column({ type: 'boolean', nullable: false, comment: 'is_available_day == is_scheduled_day' })
+  @Column({
+    type: 'boolean',
+    nullable: false,
+    comment: 'is_available_day == is_scheduled_day',
+  })
   is_available_day: boolean;
 
   @Column({ type: 'float', nullable: false })
@@ -45,7 +49,11 @@ export class PlanProduction {
   @Column({ type: 'float', nullable: false })
   remaining_stock: number;
 
-  @Column({ type: 'float', nullable: false, comment: 'Calculated: (ob_target / ore_target)' })
+  @Column({
+    type: 'float',
+    nullable: false,
+    comment: 'Calculated: (ob_target / ore_target)',
+  })
   sr_target: number;
 
   @Column({ type: 'float', nullable: false })
@@ -54,25 +62,56 @@ export class PlanProduction {
   @Column({ type: 'int', nullable: false })
   total_fleet: number;
 
-  @Column({ type: 'float', nullable: false, comment: 'Calculated: (old stock global - ore shipment + ore target)' })
+  @Column({
+    type: 'float',
+    nullable: false,
+    comment: 'Calculated: (old stock global - ore shipment + ore target)',
+  })
   daily_old_stock: number;
 
-  @Column({ type: 'float', nullable: false, comment: 'Calculated: (ob target / 2)' })
+  @Column({
+    type: 'float',
+    nullable: false,
+    comment: 'Calculated: (ob target / 2)',
+  })
   shift_ob_target: number;
 
-  @Column({ type: 'float', nullable: false, comment: 'Calculated: (ore target / 2)' })
+  @Column({
+    type: 'float',
+    nullable: false,
+    comment: 'Calculated: (ore target / 2)',
+  })
   shift_ore_target: number;
 
-  @Column({ type: 'float', nullable: false, comment: 'Calculated: (quarry / 2)' })
+  @Column({
+    type: 'float',
+    nullable: false,
+    comment: 'Calculated: (quarry / 2)',
+  })
   shift_quarry: number;
 
-  @Column({ type: 'float', nullable: false, comment: 'Calculated: (shift ob target / shift ore target)' })
+  @Column({
+    type: 'float',
+    nullable: false,
+    comment: 'Calculated: (shift ob target / shift ore target)',
+  })
   shift_sr_target: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, comment: 'Average month EWH (Equivalent Working Hours)' })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    comment: 'Average month EWH (Equivalent Working Hours)',
+  })
   average_moth_ewh: number;
 
-  @Column({ type: 'float', nullable: true, default: 1, comment: 'Schedule day value with default 1' })
+  @Column({
+    type: 'float',
+    nullable: true,
+    default: 1,
+    comment: 'Schedule day value with default 1',
+  })
   schedule_day: number;
 
   @CreateDateColumn()
@@ -88,7 +127,10 @@ export class PlanProduction {
   @Column({ type: 'int', nullable: false })
   parent_plan_production_id: number;
 
-  @ManyToOne(() => ParentPlanProduction, (parentPlanProduction) => parentPlanProduction.planProductions)
+  @ManyToOne(
+    () => ParentPlanProduction,
+    (parentPlanProduction) => parentPlanProduction.planProductions,
+  )
   @JoinColumn({ name: 'parent_plan_production_id' })
   parentPlanProduction: ParentPlanProduction;
 }

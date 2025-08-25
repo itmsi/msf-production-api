@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateParentPlanProductionTable1700000000035 implements MigrationInterface {
+export class CreateParentPlanProductionTable1700000000035
+  implements MigrationInterface
+{
   name = 'CreateParentPlanProductionTable1700000000035';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

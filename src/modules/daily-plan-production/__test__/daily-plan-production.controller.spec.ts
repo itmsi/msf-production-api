@@ -1,7 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DailyPlanProductionController } from '../daily-plan-production.controller';
 import { DailyPlanProductionService } from '../daily-plan-production.service';
-import { CreateDailyPlanProductionDto, UpdateDailyPlanProductionDto } from '../dto/daily-plan-production.dto';
+import {
+  CreateDailyPlanProductionDto,
+  UpdateDailyPlanProductionDto,
+} from '../dto/daily-plan-production.dto';
 
 describe('DailyPlanProductionController', () => {
   let controller: DailyPlanProductionController;
@@ -26,8 +29,12 @@ describe('DailyPlanProductionController', () => {
       ],
     }).compile();
 
-    controller = module.get<DailyPlanProductionController>(DailyPlanProductionController);
-    service = module.get<DailyPlanProductionService>(DailyPlanProductionService);
+    controller = module.get<DailyPlanProductionController>(
+      DailyPlanProductionController,
+    );
+    service = module.get<DailyPlanProductionService>(
+      DailyPlanProductionService,
+    );
   });
 
   it('should be defined', () => {

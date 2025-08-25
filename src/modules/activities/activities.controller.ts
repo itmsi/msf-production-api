@@ -39,7 +39,8 @@ export class ActivitiesController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary: 'Mendapatkan semua data aktivitas dengan pagination, filtering, dan sorting',
+    summary:
+      'Mendapatkan semua data aktivitas dengan pagination, filtering, dan sorting',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -49,13 +50,48 @@ export class ActivitiesController {
       - Urutan sorting ASC atau DESC
     `,
   })
-  @ApiQuery({ name: 'page', required: false, type: String, description: 'Nomor halaman (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, type: String, description: 'Jumlah data per halaman (default: 10, max: 100)' })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Pencarian umum di semua field' })
-  @ApiQuery({ name: 'name', required: false, type: String, description: 'Filter berdasarkan nama aktivitas' })
-  @ApiQuery({ name: 'status', required: false, enum: ActivityStatus, description: 'Filter berdasarkan status aktivitas' })
-  @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Field untuk sorting' })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'], description: 'Urutan sorting' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: String,
+    description: 'Nomor halaman (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: String,
+    description: 'Jumlah data per halaman (default: 10, max: 100)',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Pencarian umum di semua field',
+  })
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan nama aktivitas',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ActivityStatus,
+    description: 'Filter berdasarkan status aktivitas',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    description: 'Field untuk sorting',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Urutan sorting',
+  })
   @SwaggerApiResponse({
     status: 200,
     description: 'Data aktivitas berhasil diambil',
@@ -214,7 +250,8 @@ export class ActivitiesController {
   @Post()
   @ApiOperation({
     summary: 'Membuat aktivitas baru',
-    description: 'Membuat aktivitas baru dengan validasi duplikasi name. Status default adalah active.',
+    description:
+      'Membuat aktivitas baru dengan validasi duplikasi name. Status default adalah active.',
   })
   @SwaggerApiResponse({
     status: 201,
@@ -291,7 +328,8 @@ export class ActivitiesController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data aktivitas berdasarkan ID',
-    description: 'Mengupdate data aktivitas dengan validasi duplikasi name. Hanya field yang dikirim yang akan diupdate.',
+    description:
+      'Mengupdate data aktivitas dengan validasi duplikasi name. Hanya field yang dikirim yang akan diupdate.',
   })
   @ApiParam({
     name: 'id',
@@ -378,7 +416,10 @@ export class ActivitiesController {
       },
     },
   })
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateActivitiesDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateActivitiesDto,
+  ) {
     return this.activitiesService.update(id, dto);
   }
 

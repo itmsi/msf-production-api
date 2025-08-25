@@ -12,7 +12,7 @@ describe('Barge Entity', () => {
 
   it('should have all required properties', () => {
     const barge = new Barge();
-    
+
     expect(barge).toHaveProperty('id');
     expect(barge).toHaveProperty('name');
     expect(barge).toHaveProperty('capacity');
@@ -47,7 +47,7 @@ describe('Barge Entity', () => {
 
   it('should handle nullable fields correctly', () => {
     const barge = new Barge();
-    
+
     // These fields should be nullable
     expect(barge.name).toBeUndefined();
     expect(barge.capacity).toBeUndefined();
@@ -60,7 +60,7 @@ describe('Barge Entity', () => {
 
   it('should have correct data types', () => {
     const barge = new Barge();
-    
+
     expect(typeof barge.id).toBe('number');
     expect(typeof barge.name).toBe('string');
     expect(typeof barge.capacity).toBe('number');

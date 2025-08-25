@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreatePlanProductionTable1700000000036 implements MigrationInterface {
+export class CreatePlanProductionTable1700000000036
+  implements MigrationInterface
+{
   name = 'CreatePlanProductionTable1700000000036';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -78,7 +80,7 @@ export class CreatePlanProductionTable1700000000036 implements MigrationInterfac
       ALTER TABLE "TB_R_Plan_Production" 
       DROP CONSTRAINT "FK_PlanProduction_ParentPlanProduction"
     `);
-    
+
     await queryRunner.query(`DROP TABLE "TB_R_Plan_Production"`);
   }
 }

@@ -14,11 +14,28 @@ import { ActivitiesModule } from '../activities/activities.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ParentPlanWorkingHour, PlanWorkingHour, PlanWorkingHourDetail, Activities]),
+    TypeOrmModule.forFeature([
+      ParentPlanWorkingHour,
+      PlanWorkingHour,
+      PlanWorkingHourDetail,
+      Activities,
+    ]),
     ActivitiesModule,
   ],
-  controllers: [PlanWorkingHourController, PlanWorkingHourDetailController, ParentPlanWorkingHourController],
-  providers: [PlanWorkingHourService, PlanWorkingHourDetailService, ParentPlanWorkingHourService],
-  exports: [PlanWorkingHourService, PlanWorkingHourDetailService, ParentPlanWorkingHourService],
+  controllers: [
+    PlanWorkingHourController,
+    PlanWorkingHourDetailController,
+    ParentPlanWorkingHourController,
+  ],
+  providers: [
+    PlanWorkingHourService,
+    PlanWorkingHourDetailService,
+    ParentPlanWorkingHourService,
+  ],
+  exports: [
+    PlanWorkingHourService,
+    PlanWorkingHourDetailService,
+    ParentPlanWorkingHourService,
+  ],
 })
 export class PlanWorkingHourModule {}

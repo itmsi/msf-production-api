@@ -62,7 +62,9 @@ export class RoleHasPermissionService {
     }
   }
 
-  async findAll(query?: GetRoleHasPermissionsQueryDto): Promise<ApiResponse<RoleHasPermission[]>> {
+  async findAll(
+    query?: GetRoleHasPermissionsQueryDto,
+  ): Promise<ApiResponse<RoleHasPermission[]>> {
     try {
       if (!query) {
         // Fallback untuk kompatibilitas backward
@@ -78,7 +80,9 @@ export class RoleHasPermissionService {
       const skip = (page - 1) * limit;
       const role_id = query.role_id ? parseInt(query.role_id, 10) : null;
       const mhp_id = query.mhp_id ? parseInt(query.mhp_id, 10) : null;
-      const permission_id = query.permission_id ? parseInt(query.permission_id, 10) : null;
+      const permission_id = query.permission_id
+        ? parseInt(query.permission_id, 10)
+        : null;
       const sortBy = query.sortBy ?? 'id';
       const sortOrder = query.sortOrder ?? 'DESC';
 
@@ -87,11 +91,12 @@ export class RoleHasPermissionService {
         throwError('Limit tidak boleh lebih dari 100', 400);
       }
 
-      const qb: SelectQueryBuilder<RoleHasPermission> = this.roleHasPermissionRepository
-        .createQueryBuilder('rhp')
-        .leftJoinAndSelect('rhp.role', 'role')
-        .leftJoinAndSelect('rhp.menuHasPermission', 'menuHasPermission')
-        .leftJoinAndSelect('rhp.permission', 'permission');
+      const qb: SelectQueryBuilder<RoleHasPermission> =
+        this.roleHasPermissionRepository
+          .createQueryBuilder('rhp')
+          .leftJoinAndSelect('rhp.role', 'role')
+          .leftJoinAndSelect('rhp.menuHasPermission', 'menuHasPermission')
+          .leftJoinAndSelect('rhp.permission', 'permission');
 
       // Filter by role_id
       if (role_id) {

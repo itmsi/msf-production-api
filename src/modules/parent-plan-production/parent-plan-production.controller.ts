@@ -11,10 +11,23 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody, ApiExtraModels, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiBody,
+  ApiExtraModels,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { ParentPlanProductionService } from './parent-plan-production.service';
 import { CreateParentPlanProductionDto } from './dto/create-parent-plan-production.dto';
-import { GetParentPlanProductionQueryDto, ParentPlanProductionSummaryResponseDto, UpdateParentPlanProductionDto } from './dto/parent-plan-production.dto';
+import {
+  GetParentPlanProductionQueryDto,
+  ParentPlanProductionSummaryResponseDto,
+  UpdateParentPlanProductionDto,
+} from './dto/parent-plan-production.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { Pagination } from '../../common/helpers/public.helper';
 
@@ -32,7 +45,8 @@ export class ParentPlanProductionController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Membuat parent plan production baru',
-    description: 'Membuat parent plan production dan generate data plan production harian secara otomatis. Sistem akan otomatis menghitung jumlah hari dalam bulan, hari libur, dan generate data harian untuk setiap tanggal dalam bulan tersebut.\n\n**Field Mandatory:** plan_date, total_average_day_ewh, total_average_month_ewh, total_ob_target, total_ore_target, total_quarry_target, total_ore_shipment_target, total_sisa_stock, total_fleet\n\n**Field Optional:** total_sr_target (default: 2.0), total_remaining_stock (default: 0)\n\n**Catatan Khusus:** Field quarry akan diambil langsung dari body request tanpa dibagi jumlah hari dalam bulan',
+    description:
+      'Membuat parent plan production dan generate data plan production harian secara otomatis. Sistem akan otomatis menghitung jumlah hari dalam bulan, hari libur, dan generate data harian untuk setiap tanggal dalam bulan tersebut.\n\n**Field Mandatory:** plan_date, total_average_day_ewh, total_average_month_ewh, total_ob_target, total_ore_target, total_quarry_target, total_ore_shipment_target, total_sisa_stock, total_fleet\n\n**Field Optional:** total_sr_target (default: 2.0), total_remaining_stock (default: 0)\n\n**Catatan Khusus:** Field quarry akan diambil langsung dari body request tanpa dibagi jumlah hari dalam bulan',
   })
   @ApiBody({
     type: CreateParentPlanProductionDto,
@@ -87,7 +101,8 @@ export class ParentPlanProductionController {
   })
   @ApiResponse({
     status: 201,
-    description: 'Parent plan production berhasil dibuat dan data harian berhasil di-generate',
+    description:
+      'Parent plan production berhasil dibuat dan data harian berhasil di-generate',
     schema: {
       example: {
         id: 1,
@@ -156,7 +171,8 @@ export class ParentPlanProductionController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Update parent plan production',
-    description: 'Update parent plan production dan regenerate data plan production harian secara otomatis. Sistem akan otomatis menghitung ulang jumlah hari dalam bulan, hari libur, dan generate ulang data harian untuk setiap tanggal dalam bulan tersebut.\n\n**Field yang dapat diupdate:** Semua field yang ada di CreateParentPlanProductionDto\n\n**Catatan Khusus:** Field quarry akan diambil langsung dari body request tanpa dibagi jumlah hari dalam bulan',
+    description:
+      'Update parent plan production dan regenerate data plan production harian secara otomatis. Sistem akan otomatis menghitung ulang jumlah hari dalam bulan, hari libur, dan generate ulang data harian untuk setiap tanggal dalam bulan tersebut.\n\n**Field yang dapat diupdate:** Semua field yang ada di CreateParentPlanProductionDto\n\n**Catatan Khusus:** Field quarry akan diambil langsung dari body request tanpa dibagi jumlah hari dalam bulan',
   })
   @ApiParam({
     name: 'id',
@@ -202,7 +218,8 @@ export class ParentPlanProductionController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Parent plan production berhasil diupdate dan data harian berhasil di-regenerate',
+    description:
+      'Parent plan production berhasil diupdate dan data harian berhasil di-regenerate',
     schema: {
       example: {
         id: 1,
@@ -270,7 +287,8 @@ export class ParentPlanProductionController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Delete parent plan production',
-    description: 'Delete parent plan production dan semua data plan production harian yang terkait. Data hanya dapat dihapus jika tanggal plan_date belum lewat.',
+    description:
+      'Delete parent plan production dan semua data plan production harian yang terkait. Data hanya dapat dihapus jika tanggal plan_date belum lewat.',
   })
   @ApiParam({
     name: 'id',
@@ -296,11 +314,13 @@ export class ParentPlanProductionController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Data tidak valid, parent plan production tidak ditemukan, atau tidak dapat dihapus',
+    description:
+      'Data tidak valid, parent plan production tidak ditemukan, atau tidak dapat dihapus',
     schema: {
       example: {
         statusCode: 400,
-        message: 'Data tidak dapat dihapus karena tanggal sudah lewat atau hari ini',
+        message:
+          'Data tidak dapat dihapus karena tanggal sudah lewat atau hari ini',
         error: 'Bad Request',
       },
     },
@@ -328,13 +348,16 @@ export class ParentPlanProductionController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary: 'Mendapatkan semua parent plan production dengan pagination dan filter',
-    description: 'Mengambil data parent plan production dengan pagination, filter tanggal, filter bulan, dan response format yang disesuaikan',
+    summary:
+      'Mendapatkan semua parent plan production dengan pagination dan filter',
+    description:
+      'Mengambil data parent plan production dengan pagination, filter tanggal, filter bulan, dan response format yang disesuaikan',
   })
   @ApiQuery({
     name: 'month',
     required: false,
-    description: 'Filter bulan (1-12) untuk menampilkan data sesuai bulan tersebut walaupun tahunnya beda',
+    description:
+      'Filter bulan (1-12) untuk menampilkan data sesuai bulan tersebut walaupun tahunnya beda',
     example: 8,
     schema: {
       type: 'integer',
@@ -448,7 +471,8 @@ export class ParentPlanProductionController {
   @Get(':id')
   @ApiOperation({
     summary: 'Mendapatkan parent plan production by ID',
-    description: 'Mengambil data parent plan production berdasarkan ID dengan relasi plan production harian yang telah di-generate otomatis',
+    description:
+      'Mengambil data parent plan production berdasarkan ID dengan relasi plan production harian yang telah di-generate otomatis',
   })
   @ApiParam({
     name: 'id',
@@ -527,11 +551,13 @@ export class ParentPlanProductionController {
   @Get('date/:planDate')
   @ApiOperation({
     summary: 'Mendapatkan parent plan production by date',
-    description: 'Mengambil data parent plan production berdasarkan tanggal dengan relasi plan production harian yang telah di-generate otomatis',
+    description:
+      'Mengambil data parent plan production berdasarkan tanggal dengan relasi plan production harian yang telah di-generate otomatis',
   })
   @ApiParam({
     name: 'planDate',
-    description: 'Tanggal rencana produksi (format: YYYY-MM-DD). Sistem akan mencari berdasarkan bulan dari tanggal tersebut.',
+    description:
+      'Tanggal rencana produksi (format: YYYY-MM-DD). Sistem akan mencari berdasarkan bulan dari tanggal tersebut.',
     example: '2025-08-21',
     type: 'string',
   })
@@ -578,11 +604,13 @@ export class ParentPlanProductionController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Parent plan production tidak ditemukan untuk tanggal tersebut',
+    description:
+      'Parent plan production tidak ditemukan untuk tanggal tersebut',
     schema: {
       example: {
         statusCode: 400,
-        message: 'Parent plan production tidak ditemukan untuk tanggal tersebut',
+        message:
+          'Parent plan production tidak ditemukan untuk tanggal tersebut',
         error: 'Bad Request',
       },
     },

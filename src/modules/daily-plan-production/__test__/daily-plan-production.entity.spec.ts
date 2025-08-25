@@ -12,7 +12,7 @@ describe('DailyPlanProduction Entity', () => {
 
   it('should have all required properties', () => {
     const entity = new DailyPlanProduction();
-    
+
     expect(entity.id).toBeUndefined();
     expect(entity.plan_date).toBeUndefined();
     expect(entity.is_calender_day).toBeUndefined();
@@ -40,12 +40,12 @@ describe('DailyPlanProduction Entity', () => {
   it('should be able to set and get values', () => {
     const entity = new DailyPlanProduction();
     const testDate = new Date('2025-01-01');
-    
+
     entity.plan_date = testDate;
     entity.ob_target = 1000;
     entity.ore_target = 800;
     entity.quarry = 200;
-    
+
     expect(entity.plan_date).toBe(testDate);
     expect(entity.ob_target).toBe(1000);
     expect(entity.ore_target).toBe(800);

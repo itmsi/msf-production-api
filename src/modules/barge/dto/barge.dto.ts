@@ -12,7 +12,6 @@ import {
 } from 'class-validator';
 
 export class CreateBargeDto {
-
   @ApiProperty({
     example: 'Barge Kalimantan',
     description: 'Nama barge',
@@ -50,7 +49,6 @@ export class CreateBargeDto {
 }
 
 export class UpdateBargeDto {
-
   @ApiProperty({
     example: 'Barge Kalimantan Updated',
     description: 'Nama barge',

@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, MinLength, MaxLength } from 'class-validator';
 
 export class LoginDto {
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'usertest',
     description: 'Username untuk login',
     minLength: 1,
@@ -14,7 +14,7 @@ export class LoginDto {
   @MaxLength(50)
   username: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'admin123',
     description: 'Password untuk login',
     minLength: 6,
@@ -41,9 +41,9 @@ export class LoginResponseDto {
       access_token: {
         type: 'string',
         example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-        description: 'JWT access token untuk autentikasi'
-      }
-    }
+        description: 'JWT access token untuk autentikasi',
+      },
+    },
   })
   data: {
     access_token: string;
@@ -66,14 +66,14 @@ export class UserProfileDto {
   @ApiProperty({ example: 1, description: 'ID employee yang terkait' })
   employee_id: number;
 
-  @ApiProperty({ 
-    example: '2024-01-01T00:00:00.000Z', 
-    description: 'Waktu pembuatan user' 
+  @ApiProperty({
+    example: '2024-01-01T00:00:00.000Z',
+    description: 'Waktu pembuatan user',
   })
   createdAt: Date;
 
-  @ApiProperty({ 
-    example: '2024-01-01T00:00:00.000Z', 
+  @ApiProperty({
+    example: '2024-01-01T00:00:00.000Z',
     description: 'Waktu terakhir update user',
     required: false,
   })
@@ -87,8 +87,8 @@ export class UserProfileDto {
       properties: {
         id: { type: 'number', example: 1 },
         role_code: { type: 'string', example: 'ADMIN' },
-        position_name: { type: 'string', example: 'Administrator' }
-      }
+        position_name: { type: 'string', example: 'Administrator' },
+      },
     },
     required: false,
   })
@@ -102,7 +102,7 @@ export class UserProfileDto {
       firstName: { type: 'string', example: 'John' },
       lastName: { type: 'string', example: 'Doe' },
       department: { type: 'string', example: 'IT' },
-      position: { type: 'string', example: 'Developer' }
+      position: { type: 'string', example: 'Developer' },
     },
   })
   employees?: any;
@@ -112,7 +112,10 @@ export class ProfileResponseDto {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 
-  @ApiProperty({ example: 'Get profile successfully!', description: 'Pesan response' })
+  @ApiProperty({
+    example: 'Get profile successfully!',
+    description: 'Pesan response',
+  })
   message: string;
 
   @ApiProperty({ type: UserProfileDto, description: 'Data profile user' })

@@ -14,11 +14,11 @@ import {
   Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { 
+import {
   IsNotEmptyString,
   IsValidFloat,
   IsFloatInRange,
-  IsNullableFloatInRange
+  IsNullableFloatInRange,
 } from '../../../common/validators';
 
 export enum OperatorPointType {
@@ -217,14 +217,17 @@ export class OperatorPointResponseDto {
   @ApiProperty({ example: 1, description: 'ID site yang terkait' })
   sites_id: number;
 
-  @ApiProperty({ 
-    example: 'dumping', 
+  @ApiProperty({
+    example: 'dumping',
     description: 'Tipe operator point',
     enum: OperatorPointType,
   })
   type: string;
 
-  @ApiProperty({ example: 'Dumping Point A', description: 'Nama operator point' })
+  @ApiProperty({
+    example: 'Dumping Point A',
+    description: 'Nama operator point',
+  })
   name: string;
 
   @ApiProperty({ example: 106.8456, description: 'Longitude operator point' })
@@ -233,15 +236,15 @@ export class OperatorPointResponseDto {
   @ApiProperty({ example: -6.2088, description: 'Latitude operator point' })
   latitude: number;
 
-  @ApiProperty({ 
-    example: '2024-01-01T00:00:00.000Z', 
-    description: 'Waktu pembuatan operator point' 
+  @ApiProperty({
+    example: '2024-01-01T00:00:00.000Z',
+    description: 'Waktu pembuatan operator point',
   })
   createdAt: Date;
 
-  @ApiProperty({ 
-    example: '2024-01-01T00:00:00.000Z', 
-    description: 'Waktu terakhir update operator point' 
+  @ApiProperty({
+    example: '2024-01-01T00:00:00.000Z',
+    description: 'Waktu terakhir update operator point',
   })
   updatedAt: Date;
 }
@@ -262,20 +265,20 @@ export class SitesResponseDto {
   @ApiProperty({ example: -6.2088, description: 'Latitude site' })
   latitude: number;
 
-  @ApiProperty({ 
-    example: '2024-01-01T00:00:00.000Z', 
-    description: 'Waktu pembuatan site' 
+  @ApiProperty({
+    example: '2024-01-01T00:00:00.000Z',
+    description: 'Waktu pembuatan site',
   })
   createdAt: Date;
 
-  @ApiProperty({ 
-    example: '2024-01-01T00:00:00.000Z', 
-    description: 'Waktu terakhir update site' 
+  @ApiProperty({
+    example: '2024-01-01T00:00:00.000Z',
+    description: 'Waktu terakhir update site',
   })
   updatedAt: Date;
 
-  @ApiProperty({ 
-    type: [OperatorPointResponseDto], 
+  @ApiProperty({
+    type: [OperatorPointResponseDto],
     description: 'Array operator points yang terkait dengan site',
     required: false,
   })
@@ -344,7 +347,15 @@ export class GetSitesQueryDto {
     example: 'name',
     description:
       'Field untuk sorting (id, name, location, longitude, latitude, createdAt, updatedAt)',
-    enum: ['id', 'name', 'location', 'longitude', 'latitude', 'createdAt', 'updatedAt'],
+    enum: [
+      'id',
+      'name',
+      'location',
+      'longitude',
+      'latitude',
+      'createdAt',
+      'updatedAt',
+    ],
     default: 'id',
   })
   @IsOptional()
@@ -378,7 +389,10 @@ export class SitesListResponseDto {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 
-  @ApiProperty({ example: 'Data sites berhasil diambil', description: 'Pesan response' })
+  @ApiProperty({
+    example: 'Data sites berhasil diambil',
+    description: 'Pesan response',
+  })
   message: string;
 
   @ApiProperty({ type: [SitesResponseDto], description: 'Array data sites' })
@@ -392,7 +406,10 @@ export class SingleSiteResponseDto {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 
-  @ApiProperty({ example: 'Retrieve data success', description: 'Pesan response' })
+  @ApiProperty({
+    example: 'Retrieve data success',
+    description: 'Pesan response',
+  })
   message: string;
 
   @ApiProperty({ type: SitesResponseDto, description: 'Data site' })

@@ -69,7 +69,9 @@ export class UsersService {
         'createdAt',
         'updatedAt',
       ];
-      const validSortBy = allowedSortFields.includes(sortBy || '') ? sortBy : 'id';
+      const validSortBy = allowedSortFields.includes(sortBy || '')
+        ? sortBy
+        : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
       qb.orderBy(`user.${validSortBy}`, validSortOrder);
@@ -84,17 +86,20 @@ export class UsersService {
         employee_id: user.employee_id,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt || undefined,
-        roles: user.userRoles?.map((ur) => ({
-          id: ur.role.id,
-          role_code: ur.role.role_code,
-          position_name: ur.role.position_name,
-        })) || [],
-        employees: user.employees ? {
-          id: user.employees.id,
-          firstName: user.employees.firstName,
-          lastName: user.employees.lastName,
-          email: `${user.employees.firstName.toLowerCase()}.${user.employees.lastName.toLowerCase()}@company.com`,
-        } : undefined,
+        roles:
+          user.userRoles?.map((ur) => ({
+            id: ur.role.id,
+            role_code: ur.role.role_code,
+            position_name: ur.role.position_name,
+          })) || [],
+        employees: user.employees
+          ? {
+              id: user.employees.id,
+              firstName: user.employees.firstName,
+              lastName: user.employees.lastName,
+              email: `${user.employees.firstName.toLowerCase()}.${user.employees.lastName.toLowerCase()}@company.com`,
+            }
+          : undefined,
       }));
 
       return paginateResponse(

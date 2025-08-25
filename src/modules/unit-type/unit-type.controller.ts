@@ -38,7 +38,8 @@ export class UnitTypeController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary: 'Mendapatkan semua data unit type dengan pagination, filtering, dan sorting',
+    summary:
+      'Mendapatkan semua data unit type dengan pagination, filtering, dan sorting',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -48,15 +49,60 @@ export class UnitTypeController {
       - Urutan sorting ASC atau DESC
     `,
   })
-  @ApiQuery({ name: 'page', required: false, type: String, description: 'Nomor halaman (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, type: String, description: 'Jumlah data per halaman (default: 10, max: 100)' })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Pencarian umum di semua field' })
-  @ApiQuery({ name: 'brand_id', required: false, type: String, description: 'Filter berdasarkan brand ID' })
-  @ApiQuery({ name: 'unit_name', required: false, type: String, description: 'Filter berdasarkan nama unit' })
-  @ApiQuery({ name: 'type_name', required: false, type: String, description: 'Filter berdasarkan tipe unit' })
-  @ApiQuery({ name: 'model_name', required: false, type: String, description: 'Filter berdasarkan model unit' })
-  @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Field untuk sorting' })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'], description: 'Urutan sorting' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: String,
+    description: 'Nomor halaman (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: String,
+    description: 'Jumlah data per halaman (default: 10, max: 100)',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Pencarian umum di semua field',
+  })
+  @ApiQuery({
+    name: 'brand_id',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan brand ID',
+  })
+  @ApiQuery({
+    name: 'unit_name',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan nama unit',
+  })
+  @ApiQuery({
+    name: 'type_name',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan tipe unit',
+  })
+  @ApiQuery({
+    name: 'model_name',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan model unit',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    description: 'Field untuk sorting',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Urutan sorting',
+  })
   @SwaggerApiResponse({
     status: 200,
     description: 'Data unit type berhasil diambil',
@@ -419,7 +465,10 @@ export class UnitTypeController {
       },
     },
   })
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUnitTypeDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateUnitTypeDto,
+  ) {
     return this.unitTypeService.update(id, dto);
   }
 

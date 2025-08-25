@@ -51,6 +51,9 @@ export class ParentPlanWorkingHour {
   deletedAt: Date;
 
   // Relations
-  @OneToMany(() => PlanWorkingHour, (planWorkingHour) => planWorkingHour.parentPlanWorkingHour)
+  @OneToMany(
+    () => PlanWorkingHour,
+    (planWorkingHour) => planWorkingHour.parentPlanWorkingHour,
+  )
   planWorkingHours: PlanWorkingHour[];
 }

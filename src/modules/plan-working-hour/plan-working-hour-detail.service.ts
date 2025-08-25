@@ -15,12 +15,16 @@ export class PlanWorkingHourDetailService {
     private readonly planWorkingHourDetailRepository: Repository<PlanWorkingHourDetail>,
   ) {}
 
-  async create(createDto: CreatePlanWorkingHourDetailDto): Promise<PlanWorkingHourDetail> {
+  async create(
+    createDto: CreatePlanWorkingHourDetailDto,
+  ): Promise<PlanWorkingHourDetail> {
     const detail = this.planWorkingHourDetailRepository.create(createDto);
     return await this.planWorkingHourDetailRepository.save(detail);
   }
 
-  async findAll(queryDto: QueryPlanWorkingHourDetailDto): Promise<PlanWorkingHourDetail[]> {
+  async findAll(
+    queryDto: QueryPlanWorkingHourDetailDto,
+  ): Promise<PlanWorkingHourDetail[]> {
     const where: FindOptionsWhere<PlanWorkingHourDetail> = {};
 
     if (queryDto.plant_working_hour_id) {
@@ -48,29 +52,38 @@ export class PlanWorkingHourDetailService {
     });
 
     if (!detail) {
-      throw new NotFoundException(`Plan Working Hour Detail with ID ${id} not found`);
+      throw new NotFoundException(
+        `Plan Working Hour Detail with ID ${id} not found`,
+      );
     }
 
     return detail;
   }
 
-  async findByPlanWorkingHourId(planWorkingHourId: number): Promise<PlanWorkingHourDetail[]> {
+  async findByPlanWorkingHourId(
+    planWorkingHourId: number,
+  ): Promise<PlanWorkingHourDetail[]> {
     return await this.planWorkingHourDetailRepository.find({
       where: { plant_working_hour_id: planWorkingHourId },
       relations: ['activities'],
     });
   }
 
-  async findByActivitiesId(activitiesId: number): Promise<PlanWorkingHourDetail[]> {
+  async findByActivitiesId(
+    activitiesId: number,
+  ): Promise<PlanWorkingHourDetail[]> {
     return await this.planWorkingHourDetailRepository.find({
       where: { activities_id: activitiesId },
       relations: ['planWorkingHour'],
     });
   }
 
-  async update(id: number, updateDto: UpdatePlanWorkingHourDetailDto): Promise<PlanWorkingHourDetail> {
+  async update(
+    id: number,
+    updateDto: UpdatePlanWorkingHourDetailDto,
+  ): Promise<PlanWorkingHourDetail> {
     const detail = await this.findOne(id);
-    
+
     Object.assign(detail, updateDto);
     return await this.planWorkingHourDetailRepository.save(detail);
   }
@@ -90,11 +103,14 @@ export class PlanWorkingHourDetailService {
     }>;
   }> {
     const details = await this.findByPlanWorkingHourId(planWorkingHourId);
-    
+
     const totalActivities = details.length;
-    const totalHours = details.reduce((sum, detail) => sum + (detail.activities_hour || 0), 0);
-    
-    const activities = details.map(detail => ({
+    const totalHours = details.reduce(
+      (sum, detail) => sum + (detail.activities_hour || 0),
+      0,
+    );
+
+    const activities = details.map((detail) => ({
       activities_id: detail.activities_id,
       activities_name: detail.activities?.name || 'Unknown',
       activities_hour: detail.activities_hour || 0,

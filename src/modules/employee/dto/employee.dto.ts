@@ -19,8 +19,8 @@ export enum EmployeeStatus {
 }
 
 export class CreateEmployeeDto {
-  @ApiProperty({ 
-    description: 'First name of employee', 
+  @ApiProperty({
+    description: 'First name of employee',
     example: 'John',
     minLength: 1,
     maxLength: 100,
@@ -30,8 +30,8 @@ export class CreateEmployeeDto {
   @MaxLength(100)
   firstName: string;
 
-  @ApiProperty({ 
-    description: 'Last name of employee', 
+  @ApiProperty({
+    description: 'Last name of employee',
     example: 'Doe',
     minLength: 1,
     maxLength: 100,
@@ -41,8 +41,8 @@ export class CreateEmployeeDto {
   @MaxLength(100)
   lastName: string;
 
-  @ApiProperty({ 
-    description: 'Department of employee', 
+  @ApiProperty({
+    description: 'Department of employee',
     example: 'IT',
     minLength: 1,
     maxLength: 100,
@@ -63,8 +63,8 @@ export class CreateEmployeeDto {
   @MaxLength(100)
   position: string;
 
-  @ApiProperty({ 
-    description: 'NIP (Employee ID)', 
+  @ApiProperty({
+    description: 'NIP (Employee ID)',
     example: 123456789,
     minimum: 100000000,
     maximum: 999999999,
@@ -220,13 +220,13 @@ export class EmployeeResponseDto {
   @ApiProperty({ description: 'Employee salary', example: '5000000' })
   salary?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Creation date',
     example: '2024-01-01T00:00:00.000Z',
   })
   createdAt: Date;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Last update date',
     example: '2024-01-01T00:00:00.000Z',
   })
@@ -234,9 +234,9 @@ export class EmployeeResponseDto {
 }
 
 export class GetEmployeesQueryDto {
-  @ApiProperty({ 
-    description: 'Page number', 
-    example: '1', 
+  @ApiProperty({
+    description: 'Page number',
+    example: '1',
     required: false,
     minimum: 1,
     default: 1,
@@ -246,9 +246,9 @@ export class GetEmployeesQueryDto {
   @IsNumberString()
   page?: string;
 
-  @ApiProperty({ 
-    description: 'Items per page', 
-    example: '10', 
+  @ApiProperty({
+    description: 'Items per page',
+    example: '10',
     required: false,
     minimum: 1,
     maximum: 100,
@@ -270,8 +270,8 @@ export class GetEmployeesQueryDto {
   @MinLength(1)
   search?: string;
 
-  @ApiProperty({ 
-    description: 'Filter by department', 
+  @ApiProperty({
+    description: 'Filter by department',
     required: false,
     minLength: 1,
     example: 'IT',
@@ -294,7 +294,17 @@ export class GetEmployeesQueryDto {
 
   @ApiProperty({
     description: 'Field for sorting',
-    enum: ['id', 'firstName', 'lastName', 'department', 'position', 'nip', 'status', 'createdAt', 'updatedAt'],
+    enum: [
+      'id',
+      'firstName',
+      'lastName',
+      'department',
+      'position',
+      'nip',
+      'status',
+      'createdAt',
+      'updatedAt',
+    ],
     required: false,
     default: 'id',
   })

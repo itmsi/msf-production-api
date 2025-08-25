@@ -112,7 +112,7 @@ describe('DailyPlanProduction DTOs', () => {
 
     it('should use default values', () => {
       const dto = plainToClass(QueryDailyPlanProductionDto, {});
-      
+
       expect(dto.page).toBe(1);
       expect(dto.limit).toBe(10);
     });

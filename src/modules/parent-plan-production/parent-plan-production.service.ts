@@ -1,10 +1,17 @@
-import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder, Not } from 'typeorm';
 import { ParentPlanProduction } from './entities/parent-plan-production.entity';
 import { PlanProduction } from '../plan-production/entities/plan-production.entity';
 import { CreateParentPlanProductionDto } from './dto/create-parent-plan-production.dto';
-import { GetParentPlanProductionQueryDto, UpdateParentPlanProductionDto } from './dto/parent-plan-production.dto';
+import {
+  GetParentPlanProductionQueryDto,
+  UpdateParentPlanProductionDto,
+} from './dto/parent-plan-production.dto';
 import { paginateResponse } from '../../common/helpers/public.helper';
 
 @Injectable()
@@ -21,10 +28,10 @@ export class ParentPlanProductionService {
    */
   async create(createDto: CreateParentPlanProductionDto) {
     const planDate = new Date(createDto.plan_date);
-    
+
     // Validasi apakah plan_date sudah ada
     const existingParent = await this.parentPlanProductionRepository.findOne({
-      where: { plan_date: planDate }
+      where: { plan_date: planDate },
     });
 
     if (existingParent) {
@@ -54,14 +61,20 @@ export class ParentPlanProductionService {
       total_fleet: createDto.total_fleet,
     });
 
-    const savedParent = await this.parentPlanProductionRepository.save(parentPlanProduction);
+    const savedParent =
+      await this.parentPlanProductionRepository.save(parentPlanProduction);
 
     // Generate data plan production harian
-    const generatedDailyData = await this.generateDailyPlanProductions(savedParent, createDto);
+    const generatedDailyData = await this.generateDailyPlanProductions(
+      savedParent,
+      createDto,
+    );
 
     // Log hasil generate
     console.log(`Parent Plan Production created with ID: ${savedParent.id}`);
-    console.log(`Generated ${generatedDailyData.length} daily plan productions`);
+    console.log(
+      `Generated ${generatedDailyData.length} daily plan productions`,
+    );
 
     return savedParent;
   }
@@ -75,7 +88,7 @@ export class ParentPlanProductionService {
   ) {
     const planDate = parentPlanProduction.plan_date;
     const totalDays = parentPlanProduction.total_calender_day;
-    
+
     // Hitung nilai per hari
     const averageDayEwh = createDto.total_average_day_ewh;
     const averageMonthEwh = createDto.total_average_month_ewh / totalDays;
@@ -92,7 +105,11 @@ export class ParentPlanProductionService {
     // Generate data untuk setiap hari dalam bulan (dari tanggal 1 sampai akhir bulan)
     for (let day = 1; day <= totalDays; day++) {
       // Buat tanggal untuk hari tertentu dalam bulan
-      const currentDate = new Date(planDate.getFullYear(), planDate.getMonth(), day);
+      const currentDate = new Date(
+        planDate.getFullYear(),
+        planDate.getMonth(),
+        day,
+      );
       const isSunday = currentDate.getDay() === 0; // 0 = Sunday
 
       // Hitung nilai-nilai berdasarkan logika yang diminta
@@ -130,12 +147,19 @@ export class ParentPlanProductionService {
     }
 
     // Log untuk debugging
-    console.log(`Generating ${planProductions.length} daily plan productions for month ${planDate.getMonth() + 1}/${planDate.getFullYear()}`);
-    console.log(`Date range: ${planProductions[0]?.plan_date} to ${planProductions[planProductions.length - 1]?.plan_date}`);
+    console.log(
+      `Generating ${planProductions.length} daily plan productions for month ${planDate.getMonth() + 1}/${planDate.getFullYear()}`,
+    );
+    console.log(
+      `Date range: ${planProductions[0]?.plan_date} to ${planProductions[planProductions.length - 1]?.plan_date}`,
+    );
 
     // Simpan semua plan production
-    const savedPlanProductions = await this.planProductionRepository.save(planProductions);
-    console.log(`Successfully saved ${savedPlanProductions.length} daily plan productions`);
+    const savedPlanProductions =
+      await this.planProductionRepository.save(planProductions);
+    console.log(
+      `Successfully saved ${savedPlanProductions.length} daily plan productions`,
+    );
 
     return savedPlanProductions;
   }
@@ -179,9 +203,9 @@ export class ParentPlanProductionService {
     const year = date.getFullYear();
     const month = date.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    
+
     console.log(`Month: ${month + 1}, Year: ${year}, Days: ${daysInMonth}`);
-    
+
     return daysInMonth;
   }
 
@@ -196,13 +220,14 @@ export class ParentPlanProductionService {
 
     for (let day = 1; day <= daysInMonth; day++) {
       const currentDate = new Date(year, month, day);
-      if (currentDate.getDay() === 0) { // 0 = Sunday
+      if (currentDate.getDay() === 0) {
+        // 0 = Sunday
         sundayCount++;
       }
     }
 
     console.log(`Sundays in month ${month + 1}/${year}: ${sundayCount}`);
-    
+
     return sundayCount;
   }
 
@@ -230,9 +255,10 @@ export class ParentPlanProductionService {
         throw new BadRequestException('Bulan harus antara 1-12');
       }
 
-      const qb: SelectQueryBuilder<ParentPlanProduction> = this.parentPlanProductionRepository
-        .createQueryBuilder('parent')
-        .leftJoinAndSelect('parent.planProductions', 'planProductions');
+      const qb: SelectQueryBuilder<ParentPlanProduction> =
+        this.parentPlanProductionRepository
+          .createQueryBuilder('parent')
+          .leftJoinAndSelect('parent.planProductions', 'planProductions');
 
       // Filter by month (1-12) - akan filter data sesuai bulan tersebut walaupun tahunnya beda
       if (month) {
@@ -241,10 +267,13 @@ export class ParentPlanProductionService {
 
       // Filter by date range
       if (dateFrom && dateTo) {
-        qb.andWhere('parent.plan_date >= :dateFrom AND parent.plan_date <= :dateTo', {
-          dateFrom: new Date(dateFrom),
-          dateTo: new Date(dateTo),
-        });
+        qb.andWhere(
+          'parent.plan_date >= :dateFrom AND parent.plan_date <= :dateTo',
+          {
+            dateFrom: new Date(dateFrom),
+            dateTo: new Date(dateTo),
+          },
+        );
       } else if (dateFrom) {
         qb.andWhere('parent.plan_date >= :dateFrom', {
           dateFrom: new Date(dateFrom),
@@ -275,10 +304,14 @@ export class ParentPlanProductionService {
         'created_at',
         'updated_at',
       ];
-      const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'plan_date';
+      const validSortBy = allowedSortFields.includes(sortBy)
+        ? sortBy
+        : 'plan_date';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
-      qb.orderBy(`parent.${validSortBy}`, validSortOrder).skip(skip).take(limit);
+      qb.orderBy(`parent.${validSortBy}`, validSortOrder)
+        .skip(skip)
+        .take(limit);
 
       const [result, total] = await qb.getManyAndCount();
 
@@ -292,15 +325,24 @@ export class ParentPlanProductionService {
         const planYear = planDate.getFullYear();
 
         // Hitung jumlah hari tersedia dan libur dari planProductions
-        const availableDay = parent.planProductions?.filter(p => p.is_available_day).length || 0;
-        const holidayDay = parent.planProductions?.filter(p => p.is_holiday_day).length || 0;
+        const availableDay =
+          parent.planProductions?.filter((p) => p.is_available_day).length || 0;
+        const holidayDay =
+          parent.planProductions?.filter((p) => p.is_holiday_day).length || 0;
 
         // Logic untuk is_available_to_edit dan is_available_to_delete
         let isAvailableToEdit = false;
         let isAvailableToDelete = false;
 
-        if (parent.plan_date && parent.plan_date.toString() !== '0' && parent.plan_date.toString() !== '') {
-          if (planYear > currentYear || (planYear === currentYear && planMonth > currentMonth)) {
+        if (
+          parent.plan_date &&
+          parent.plan_date.toString() !== '0' &&
+          parent.plan_date.toString() !== ''
+        ) {
+          if (
+            planYear > currentYear ||
+            (planYear === currentYear && planMonth > currentMonth)
+          ) {
             isAvailableToEdit = true;
             isAvailableToDelete = true;
           } else if (planYear === currentYear && planMonth === currentMonth) {
@@ -341,7 +383,9 @@ export class ParentPlanProductionService {
       );
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
-      throw new BadRequestException('Gagal mengambil data parent plan production');
+      throw new BadRequestException(
+        'Gagal mengambil data parent plan production',
+      );
     }
   }
 
@@ -349,10 +393,11 @@ export class ParentPlanProductionService {
    * Mendapatkan parent plan production by ID
    */
   async findOne(id: number) {
-    const parentPlanProduction = await this.parentPlanProductionRepository.findOne({
-      where: { id },
-      relations: ['planProductions'],
-    });
+    const parentPlanProduction =
+      await this.parentPlanProductionRepository.findOne({
+        where: { id },
+        relations: ['planProductions'],
+      });
 
     if (!parentPlanProduction) {
       throw new BadRequestException('Parent plan production tidak ditemukan');
@@ -366,13 +411,16 @@ export class ParentPlanProductionService {
    */
   async findByDate(planDate: string) {
     const date = new Date(planDate);
-    const parentPlanProduction = await this.parentPlanProductionRepository.findOne({
-      where: { plan_date: date },
-      relations: ['planProductions'],
-    });
+    const parentPlanProduction =
+      await this.parentPlanProductionRepository.findOne({
+        where: { plan_date: date },
+        relations: ['planProductions'],
+      });
 
     if (!parentPlanProduction) {
-      throw new BadRequestException('Parent plan production tidak ditemukan untuk tanggal tersebut');
+      throw new BadRequestException(
+        'Parent plan production tidak ditemukan untuk tanggal tersebut',
+      );
     }
 
     return parentPlanProduction;
@@ -395,9 +443,10 @@ export class ParentPlanProductionService {
     // Jika plan_date diupdate, validasi apakah tanggal baru sudah ada
     if (updateDto.plan_date) {
       const newPlanDate = new Date(updateDto.plan_date);
-      const existingWithNewDate = await this.parentPlanProductionRepository.findOne({
-        where: { plan_date: newPlanDate, id: Not(id) }
-      });
+      const existingWithNewDate =
+        await this.parentPlanProductionRepository.findOne({
+          where: { plan_date: newPlanDate, id: Not(id) },
+        });
 
       if (existingWithNewDate) {
         throw new ConflictException('Plan date baru sudah ada dalam sistem');
@@ -405,8 +454,10 @@ export class ParentPlanProductionService {
     }
 
     // Update parent plan production
-    const planDate = updateDto.plan_date ? new Date(updateDto.plan_date) : existingParent.plan_date;
-    
+    const planDate = updateDto.plan_date
+      ? new Date(updateDto.plan_date)
+      : existingParent.plan_date;
+
     // Hitung ulang jumlah hari dalam bulan jika plan_date berubah
     let totalCalendarDays = existingParent.total_calender_day;
     let totalHolidayDays = existingParent.total_holiday_day;
@@ -425,24 +476,45 @@ export class ParentPlanProductionService {
       total_calender_day: totalCalendarDays,
       total_holiday_day: totalHolidayDays,
       total_available_day: totalAvailableDays,
-      total_average_day_ewh: updateDto.total_average_day_ewh ?? existingParent.total_average_day_ewh,
-      total_average_month_ewh: updateDto.total_average_month_ewh ?? existingParent.total_average_month_ewh,
-      total_ob_target: updateDto.total_ob_target ?? existingParent.total_ob_target,
-      total_ore_target: updateDto.total_ore_target ?? existingParent.total_ore_target,
-      total_quarry_target: updateDto.total_quary_target ?? existingParent.total_quarry_target,
-      total_sr_target: updateDto.total_sr_target ?? existingParent.total_sr_target,
-      total_ore_shipment_target: updateDto.total_ore_shipment_target ?? existingParent.total_ore_shipment_target,
-      total_remaining_stock: updateDto.total_remaining_stock ?? existingParent.total_remaining_stock,
-      total_sisa_stock: updateDto.total_sisa_stock ?? existingParent.total_sisa_stock,
+      total_average_day_ewh:
+        updateDto.total_average_day_ewh ?? existingParent.total_average_day_ewh,
+      total_average_month_ewh:
+        updateDto.total_average_month_ewh ??
+        existingParent.total_average_month_ewh,
+      total_ob_target:
+        updateDto.total_ob_target ?? existingParent.total_ob_target,
+      total_ore_target:
+        updateDto.total_ore_target ?? existingParent.total_ore_target,
+      total_quarry_target:
+        updateDto.total_quary_target ?? existingParent.total_quarry_target,
+      total_sr_target:
+        updateDto.total_sr_target ?? existingParent.total_sr_target,
+      total_ore_shipment_target:
+        updateDto.total_ore_shipment_target ??
+        existingParent.total_ore_shipment_target,
+      total_remaining_stock:
+        updateDto.total_remaining_stock ?? existingParent.total_remaining_stock,
+      total_sisa_stock:
+        updateDto.total_sisa_stock ?? existingParent.total_sisa_stock,
       total_fleet: updateDto.total_fleet ?? existingParent.total_fleet,
     };
 
-    const savedParent = await this.parentPlanProductionRepository.save(updatedParent);
+    const savedParent =
+      await this.parentPlanProductionRepository.save(updatedParent);
 
     // Update data plan production harian yang sudah ada (bukan delete dan insert ulang)
-    if (existingParent.planProductions && existingParent.planProductions.length > 0) {
-      await this.updateDailyPlanProductions(existingParent.planProductions, savedParent, updateDto);
-      console.log(`Updated ${existingParent.planProductions.length} existing daily plan productions`);
+    if (
+      existingParent.planProductions &&
+      existingParent.planProductions.length > 0
+    ) {
+      await this.updateDailyPlanProductions(
+        existingParent.planProductions,
+        savedParent,
+        updateDto,
+      );
+      console.log(
+        `Updated ${existingParent.planProductions.length} existing daily plan productions`,
+      );
     } else {
       // Jika tidak ada data harian, generate baru
       const createDto = {
@@ -459,8 +531,13 @@ export class ParentPlanProductionService {
         total_fleet: savedParent.total_fleet,
       };
 
-      const generatedDailyData = await this.generateDailyPlanProductions(savedParent, createDto);
-      console.log(`Generated ${generatedDailyData.length} new daily plan productions`);
+      const generatedDailyData = await this.generateDailyPlanProductions(
+        savedParent,
+        createDto,
+      );
+      console.log(
+        `Generated ${generatedDailyData.length} new daily plan productions`,
+      );
     }
 
     // Log hasil update
@@ -479,14 +556,25 @@ export class ParentPlanProductionService {
   ) {
     const planDate = parentPlanProduction.plan_date;
     const totalDays = parentPlanProduction.total_calender_day;
-    
+
     // Hitung nilai per hari
-    const averageDayEwh = updateDto.total_average_day_ewh ?? parentPlanProduction.total_average_day_ewh;
-    const averageMonthEwh = (updateDto.total_average_month_ewh ?? parentPlanProduction.total_average_month_ewh) / totalDays;
-    const obTarget = (updateDto.total_ob_target ?? parentPlanProduction.total_ob_target) / totalDays;
-    const oreTarget = (updateDto.total_ore_target ?? parentPlanProduction.total_ore_target) / totalDays;
-    const quarry = updateDto.total_quary_target ?? parentPlanProduction.total_quarry_target; // Diambil langsung dari body request, tidak dibagi jumlah hari
-    const oreShipmentTarget = (updateDto.total_ore_shipment_target ?? parentPlanProduction.total_ore_shipment_target) / totalDays;
+    const averageDayEwh =
+      updateDto.total_average_day_ewh ??
+      parentPlanProduction.total_average_day_ewh;
+    const averageMonthEwh =
+      (updateDto.total_average_month_ewh ??
+        parentPlanProduction.total_average_month_ewh) / totalDays;
+    const obTarget =
+      (updateDto.total_ob_target ?? parentPlanProduction.total_ob_target) /
+      totalDays;
+    const oreTarget =
+      (updateDto.total_ore_target ?? parentPlanProduction.total_ore_target) /
+      totalDays;
+    const quarry =
+      updateDto.total_quary_target ?? parentPlanProduction.total_quarry_target; // Diambil langsung dari body request, tidak dibagi jumlah hari
+    const oreShipmentTarget =
+      (updateDto.total_ore_shipment_target ??
+        parentPlanProduction.total_ore_shipment_target) / totalDays;
 
     // Ambil old stock global
     const oldStockGlobal = await this.getOldStockGlobal(planDate);
@@ -495,9 +583,13 @@ export class ParentPlanProductionService {
     for (let i = 0; i < existingPlanProductions.length; i++) {
       const existingPlan = existingPlanProductions[i];
       const day = i + 1;
-      
+
       // Buat tanggal untuk hari tertentu dalam bulan
-      const currentDate = new Date(planDate.getFullYear(), planDate.getMonth(), day);
+      const currentDate = new Date(
+        planDate.getFullYear(),
+        planDate.getMonth(),
+        day,
+      );
       const isSunday = currentDate.getDay() === 0; // 0 = Sunday
 
       // Hitung nilai-nilai berdasarkan logika yang diminta
@@ -520,7 +612,8 @@ export class ParentPlanProductionService {
       existingPlan.quarry = quarry;
       existingPlan.sr_target = obTarget / oreTarget; // Sesuai rumus yang diminta
       existingPlan.ore_shipment_target = oreShipmentTarget;
-      existingPlan.total_fleet = updateDto.total_fleet ?? parentPlanProduction.total_fleet;
+      existingPlan.total_fleet =
+        updateDto.total_fleet ?? parentPlanProduction.total_fleet;
       existingPlan.daily_old_stock = dailyOldStock;
       existingPlan.shift_ob_target = shiftObTarget;
       existingPlan.shift_ore_target = shiftOreTarget;
@@ -560,7 +653,10 @@ export class ParentPlanProductionService {
     let isAvailableToDelete = false;
 
     if (planDate && planDate.toString() !== '0' && planDate.toString() !== '') {
-      if (planYear > currentYear || (planYear === currentYear && planMonth > currentMonth)) {
+      if (
+        planYear > currentYear ||
+        (planYear === currentYear && planMonth > currentMonth)
+      ) {
         isAvailableToDelete = true;
       } else if (planYear === currentYear && planMonth === currentMonth) {
         // Jika bulan sama, cek apakah tanggal lebih dari hari ini
@@ -573,13 +669,22 @@ export class ParentPlanProductionService {
     }
 
     if (!isAvailableToDelete) {
-      throw new BadRequestException('Data tidak dapat dihapus karena tanggal sudah lewat atau hari ini');
+      throw new BadRequestException(
+        'Data tidak dapat dihapus karena tanggal sudah lewat atau hari ini',
+      );
     }
 
     // Hapus semua plan production harian terlebih dahulu
-    if (existingParent.planProductions && existingParent.planProductions.length > 0) {
-      await this.planProductionRepository.remove(existingParent.planProductions);
-      console.log(`Deleted ${existingParent.planProductions.length} daily plan productions`);
+    if (
+      existingParent.planProductions &&
+      existingParent.planProductions.length > 0
+    ) {
+      await this.planProductionRepository.remove(
+        existingParent.planProductions,
+      );
+      console.log(
+        `Deleted ${existingParent.planProductions.length} daily plan productions`,
+      );
     }
 
     // Hapus parent plan production

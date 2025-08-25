@@ -8,21 +8,21 @@ import {
   Request,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { 
-  LoginDto, 
-  LoginResponseDto, 
-  ProfileResponseDto 
+import {
+  LoginDto,
+  LoginResponseDto,
+  ProfileResponseDto,
 } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto, CheckTokenDto } from './dto/reset-password.dto';
 import { successResponse } from '../../common/helpers/response.helper';
 import { AuthGuard } from '@nestjs/passport';
-import { 
-  ApiBearerAuth, 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
-  ApiBody 
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 
 @ApiTags('Auth')
@@ -34,7 +34,8 @@ export class AuthController {
   @HttpCode(200)
   @ApiOperation({
     summary: 'Login user ke sistem',
-    description: 'Melakukan autentikasi user dengan username dan password, mengembalikan JWT access token',
+    description:
+      'Melakukan autentikasi user dengan username dan password, mengembalikan JWT access token',
   })
   @ApiBody({
     type: LoginDto,
@@ -67,7 +68,8 @@ export class AuthController {
         statusCode: 200,
         message: 'Login succesfully!',
         data: {
-          access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXJ0ZXN0Iiwic3ViIjoxLCJpc0FjdGl2ZSI6dHJ1ZSwicm9sZXMiOltdLCJpYXQiOjE2MjM5Mjk5MDYsImV4cCI6MTYyMzk3MzEwNn0.example',
+          access_token:
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXJ0ZXN0Iiwic3ViIjoxLCJpc0FjdGl2ZSI6dHJ1ZSwicm9sZXMiOltdLCJpYXQiOjE2MjM5Mjk5MDYsImV4cCI6MTYyMzk3MzEwNn0.example',
         },
       },
     },
@@ -122,7 +124,8 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt'))
   @ApiOperation({
     summary: 'Mendapatkan profile user yang sedang login',
-    description: 'Mengambil data profile user berdasarkan JWT token yang diberikan, termasuk role dan employee data',
+    description:
+      'Mengambil data profile user berdasarkan JWT token yang diberikan, termasuk role dan employee data',
   })
   @ApiResponse({
     status: 200,

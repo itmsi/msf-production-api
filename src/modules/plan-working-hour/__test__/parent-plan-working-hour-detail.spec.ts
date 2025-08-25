@@ -23,8 +23,12 @@ describe('ParentPlanWorkingHourController - Detail Endpoint', () => {
       ],
     }).compile();
 
-    controller = module.get<ParentPlanWorkingHourController>(ParentPlanWorkingHourController);
-    service = module.get<ParentPlanWorkingHourService>(ParentPlanWorkingHourService);
+    controller = module.get<ParentPlanWorkingHourController>(
+      ParentPlanWorkingHourController,
+    );
+    service = module.get<ParentPlanWorkingHourService>(
+      ParentPlanWorkingHourService,
+    );
   });
 
   it('should be defined', () => {
@@ -49,18 +53,18 @@ describe('ParentPlanWorkingHourController - Detail Endpoint', () => {
             r_plan_working_hour_id: 1,
             plan_date: '2025-08-01',
             calendar_day: 'available',
-            working_hour_day: 8.00,
-            working_hour_month: 216.00,
-            working_hour_longshift: 14.40,
-            working_day_longshift: 1.50,
-            mohh_per_month: 100.00,
-            total_delay: 10.00,
-            total_idle: 10.00,
-            total_breakdown: 10.00,
-            ewh: 80.00,
-            pa: 1.00,
+            working_hour_day: 8.0,
+            working_hour_month: 216.0,
+            working_hour_longshift: 14.4,
+            working_day_longshift: 1.5,
+            mohh_per_month: 100.0,
+            total_delay: 10.0,
+            total_idle: 10.0,
+            total_breakdown: 10.0,
+            ewh: 80.0,
+            pa: 1.0,
             ma: 0.89,
-            ua: 0.80,
+            ua: 0.8,
             eu: 0.67,
             is_available_to_edit: true,
             is_available_to_delete: true,
@@ -147,18 +151,18 @@ describe('ParentPlanWorkingHourController - Detail Endpoint', () => {
           id: 9,
           plan_date: '2025-08-01',
           calendar_day: 'available',
-          working_hour_day: 8.00,
-          working_hour_month: 216.00,
-          working_hour_longshift: 14.40,
-          working_day_longshift: 1.50,
-          mohh_per_month: 100.00,
-          total_delay: 10.00,
-          total_idle: 10.00,
-          total_breakdown: 10.00,
-          ewh: 80.00,
-          pa: 1.00,
+          working_hour_day: 8.0,
+          working_hour_month: 216.0,
+          working_hour_longshift: 14.4,
+          working_day_longshift: 1.5,
+          mohh_per_month: 100.0,
+          total_delay: 10.0,
+          total_idle: 10.0,
+          total_breakdown: 10.0,
+          ewh: 80.0,
+          pa: 1.0,
           ma: 0.89,
-          ua: 0.80,
+          ua: 0.8,
           eu: 0.67,
           is_available_to_edit: true,
           is_available_to_delete: true,
@@ -166,7 +170,7 @@ describe('ParentPlanWorkingHourController - Detail Endpoint', () => {
             {
               id: 1,
               activities_id: 1,
-              activities_hour: 5.00,
+              activities_hour: 5.0,
               activity_name: 'Loading Barge',
               activity_status: 'working',
               activities_group_id: 1,
@@ -182,7 +186,9 @@ describe('ParentPlanWorkingHourController - Detail Endpoint', () => {
 
       expect(service.getDetailById).toHaveBeenCalledWith(id);
       expect(result.statusCode).toBe(200);
-      expect(result.message).toBe('Detail parent plan working hour berhasil diambil');
+      expect(result.message).toBe(
+        'Detail parent plan working hour berhasil diambil',
+      );
       expect(result.data).toEqual(mockResponse.data);
     });
   });

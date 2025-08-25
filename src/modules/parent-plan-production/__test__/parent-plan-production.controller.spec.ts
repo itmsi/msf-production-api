@@ -25,8 +25,12 @@ describe('ParentPlanProductionController', () => {
       ],
     }).compile();
 
-    controller = module.get<ParentPlanProductionController>(ParentPlanProductionController);
-    service = module.get<ParentPlanProductionService>(ParentPlanProductionService);
+    controller = module.get<ParentPlanProductionController>(
+      ParentPlanProductionController,
+    );
+    service = module.get<ParentPlanProductionService>(
+      ParentPlanProductionService,
+    );
   });
 
   afterEach(() => {

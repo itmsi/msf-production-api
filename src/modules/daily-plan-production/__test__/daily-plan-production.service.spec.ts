@@ -28,7 +28,9 @@ describe('DailyPlanProductionService', () => {
       ],
     }).compile();
 
-    service = module.get<DailyPlanProductionService>(DailyPlanProductionService);
+    service = module.get<DailyPlanProductionService>(
+      DailyPlanProductionService,
+    );
     repository = module.get<Repository<DailyPlanProduction>>(
       getRepositoryToken(DailyPlanProduction),
     );
@@ -112,7 +114,9 @@ describe('DailyPlanProductionService', () => {
 
       const result = await service.findAll({ page: 1, limit: 10 });
 
-      expect(result.message).toBe('Data daily plan production berhasil diambil');
+      expect(result.message).toBe(
+        'Data daily plan production berhasil diambil',
+      );
       expect(result.data.pagination.total).toBe(1);
     });
   });
@@ -130,7 +134,9 @@ describe('DailyPlanProductionService', () => {
 
       const result = await service.findOne(1);
 
-      expect(result.message).toBe('Data daily plan production berhasil diambil');
+      expect(result.message).toBe(
+        'Data daily plan production berhasil diambil',
+      );
       expect(result.data.id).toBe(1);
     });
 

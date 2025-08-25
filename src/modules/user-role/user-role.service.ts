@@ -6,9 +6,9 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { UserRole } from './entities/user-role.entity';
-import { 
-  CreateUserRoleDto, 
-  UpdateUserRoleDto, 
+import {
+  CreateUserRoleDto,
+  UpdateUserRoleDto,
   GetUserRolesQueryDto,
 } from './dto/user-role.dto';
 import {
@@ -52,7 +52,9 @@ export class UserRoleService {
     }
   }
 
-  async findAll(query?: GetUserRolesQueryDto): Promise<ApiResponse<UserRole[]>> {
+  async findAll(
+    query?: GetUserRolesQueryDto,
+  ): Promise<ApiResponse<UserRole[]>> {
     try {
       if (!query) {
         // Fallback untuk kompatibilitas backward
@@ -102,7 +104,9 @@ export class UserRoleService {
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
-      qb.orderBy(`userRole.${validSortBy}`, validSortOrder).skip(skip).take(limit);
+      qb.orderBy(`userRole.${validSortBy}`, validSortOrder)
+        .skip(skip)
+        .take(limit);
 
       const [result, total] = await qb.getManyAndCount();
 

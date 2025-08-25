@@ -50,8 +50,13 @@ describe('BrandService', () => {
     };
 
     it('should create brand successfully', async () => {
-      const mockBrand = { id: 1, ...createDto, createdAt: new Date(), updatedAt: new Date() };
-      
+      const mockBrand = {
+        id: 1,
+        ...createDto,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
       mockRepository.findOne.mockResolvedValue(null); // No duplicate
       mockRepository.create.mockReturnValue(mockBrand);
       mockRepository.save.mockResolvedValue(mockBrand);
@@ -68,21 +73,27 @@ describe('BrandService', () => {
     it('should fail when brand_name is empty string', async () => {
       const invalidDto = { brand_name: '' };
 
-      await expect(service.create(invalidDto)).rejects.toThrow('Validasi gagal: brand_name tidak boleh kosong atau hanya berisi whitespace');
+      await expect(service.create(invalidDto)).rejects.toThrow(
+        'Validasi gagal: brand_name tidak boleh kosong atau hanya berisi whitespace',
+      );
     });
 
     it('should fail when brand_name is whitespace only', async () => {
       const invalidDto = { brand_name: '   ' };
 
-      await expect(service.create(invalidDto)).rejects.toThrow('Validasi gagal: brand_name tidak boleh kosong atau hanya berisi whitespace');
+      await expect(service.create(invalidDto)).rejects.toThrow(
+        'Validasi gagal: brand_name tidak boleh kosong atau hanya berisi whitespace',
+      );
     });
 
     it('should fail when brand_name already exists', async () => {
       const existingBrand = { id: 1, brand_name: 'Toyota' };
-      
+
       mockRepository.findOne.mockResolvedValue(existingBrand);
 
-      await expect(service.create(createDto)).rejects.toThrow('Business rule validation gagal: Nama brand \'Toyota\' sudah ada');
+      await expect(service.create(createDto)).rejects.toThrow(
+        "Business rule validation gagal: Nama brand 'Toyota' sudah ada",
+      );
     });
   });
 
@@ -91,16 +102,16 @@ describe('BrandService', () => {
       brand_name: 'Toyota Motor',
     };
 
-    const existingBrand = { 
-      id: 1, 
-      brand_name: 'Toyota', 
-      createdAt: new Date(), 
-      updatedAt: new Date() 
+    const existingBrand = {
+      id: 1,
+      brand_name: 'Toyota',
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
 
     it('should update brand successfully', async () => {
       const updatedBrand = { ...existingBrand, ...updateDto };
-      
+
       mockRepository.findOne
         .mockResolvedValueOnce(existingBrand) // Find existing brand
         .mockResolvedValueOnce(null); // No duplicate name
@@ -124,12 +135,14 @@ describe('BrandService', () => {
 
     it('should fail when new brand_name already exists', async () => {
       const duplicateBrand = { id: 2, brand_name: 'Toyota Motor' };
-      
+
       mockRepository.findOne
         .mockResolvedValueOnce(existingBrand) // Find existing brand
         .mockResolvedValueOnce(duplicateBrand); // Find duplicate name
 
-      await expect(service.update(1, updateDto)).rejects.toThrow('Business rule validation gagal: Nama brand \'Toyota Motor\' sudah ada');
+      await expect(service.update(1, updateDto)).rejects.toThrow(
+        "Business rule validation gagal: Nama brand 'Toyota Motor' sudah ada",
+      );
     });
 
     it('should fail when brand_name is empty string', async () => {
@@ -137,7 +150,9 @@ describe('BrandService', () => {
 
       mockRepository.findOne.mockResolvedValue(existingBrand);
 
-      await expect(service.update(1, invalidDto)).rejects.toThrow('Validasi gagal: brand_name tidak boleh kosong atau hanya berisi whitespace');
+      await expect(service.update(1, invalidDto)).rejects.toThrow(
+        'Validasi gagal: brand_name tidak boleh kosong atau hanya berisi whitespace',
+      );
     });
 
     it('should fail when brand_name is whitespace only', async () => {
@@ -145,14 +160,21 @@ describe('BrandService', () => {
 
       mockRepository.findOne.mockResolvedValue(existingBrand);
 
-      await expect(service.update(1, invalidDto)).rejects.toThrow('Validasi gagal: brand_name tidak boleh kosong atau hanya berisi whitespace');
+      await expect(service.update(1, invalidDto)).rejects.toThrow(
+        'Validasi gagal: brand_name tidak boleh kosong atau hanya berisi whitespace',
+      );
     });
   });
 
   describe('findById', () => {
     it('should return brand when found', async () => {
-      const mockBrand = { id: 1, brand_name: 'Toyota', createdAt: new Date(), updatedAt: new Date() };
-      
+      const mockBrand = {
+        id: 1,
+        brand_name: 'Toyota',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
       mockRepository.findOne.mockResolvedValue(mockBrand);
 
       const result = await service.findById(1);
@@ -174,7 +196,7 @@ describe('BrandService', () => {
   describe('remove', () => {
     it('should remove brand successfully', async () => {
       const mockBrand = { id: 1, brand_name: 'Toyota' };
-      
+
       mockRepository.findOne.mockResolvedValue(mockBrand);
       mockRepository.softRemove.mockResolvedValue(undefined);
 

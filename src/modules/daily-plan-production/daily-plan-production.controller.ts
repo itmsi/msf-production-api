@@ -40,7 +40,8 @@ export class DailyPlanProductionController {
   @Post()
   @ApiOperation({
     summary: 'Create Daily Plan Production',
-    description: 'Membuat rencana produksi harian baru dengan validasi dan perhitungan otomatis',
+    description:
+      'Membuat rencana produksi harian baru dengan validasi dan perhitungan otomatis',
   })
   @ApiBody({
     type: CreateDailyPlanProductionDto,
@@ -73,7 +74,10 @@ export class DailyPlanProductionController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 400 },
-        message: { type: 'string', example: 'Plan date sudah ada dalam database' },
+        message: {
+          type: 'string',
+          example: 'Plan date sudah ada dalam database',
+        },
         error: { type: 'boolean', example: true },
         timestamp: { type: 'string', example: '2025-01-01T00:00:00.000Z' },
       },
@@ -91,7 +95,8 @@ export class DailyPlanProductionController {
   @Get()
   @ApiOperation({
     summary: 'Get All Daily Plan Production',
-    description: 'Mengambil semua data rencana produksi dengan pagination, filter, pencarian, dan sorting',
+    description:
+      'Mengambil semua data rencana produksi dengan pagination, filter, pencarian, dan sorting',
   })
   @ApiQuery({
     name: 'start_date',
@@ -116,7 +121,14 @@ export class DailyPlanProductionController {
     required: false,
     description: 'Field untuk sorting',
     example: 'plan_date',
-    enum: ['id', 'plan_date', 'ob_target', 'ore_target', 'total_fleet', 'createdAt'],
+    enum: [
+      'id',
+      'plan_date',
+      'ob_target',
+      'ore_target',
+      'total_fleet',
+      'createdAt',
+    ],
   })
   @ApiQuery({
     name: 'sortOrder',
@@ -136,6 +148,13 @@ export class DailyPlanProductionController {
     required: false,
     description: 'Limit per halaman',
     example: 10,
+  })
+  @ApiQuery({
+    name: 'calendar_day',
+    required: false,
+    description: 'Filter berdasarkan status hari kalender',
+    example: 'available',
+    enum: ['available', 'holiday', 'one-shift'],
   })
   @ApiResponse({
     status: 200,
@@ -173,7 +192,10 @@ export class DailyPlanProductionController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 404 },
-        message: { type: 'string', example: 'Daily plan production tidak ditemukan' },
+        message: {
+          type: 'string',
+          example: 'Daily plan production tidak ditemukan',
+        },
         error: { type: 'boolean', example: true },
         timestamp: { type: 'string', example: '2025-01-01T00:00:00.000Z' },
       },
@@ -225,12 +247,13 @@ export class DailyPlanProductionController {
   })
   @ApiBody({
     type: UpdateDailyPlanProductionDto,
-    description: 'Data untuk update daily plan production. Semua field bersifat opsional.',
+    description:
+      'Data untuk update daily plan production. Semua field bersifat opsional.',
     examples: {
       example1: {
         summary: 'Update lengkap dengan semua field',
         value: {
-          plan_date: "2025-08-21",
+          plan_date: '2025-08-21',
           average_day_ewh: 1.5,
           average_month_ewh: 1.5,
           schedule_day: 1,
@@ -239,7 +262,7 @@ export class DailyPlanProductionController {
           ore_target: 900,
           quarry: 200,
           ore_shipment_target: 750,
-          total_fleet: 15
+          total_fleet: 15,
         },
       },
       example2: {
@@ -270,7 +293,10 @@ export class DailyPlanProductionController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 400 },
-        message: { type: 'string', example: 'Plan date sudah ada dalam database' },
+        message: {
+          type: 'string',
+          example: 'Plan date sudah ada dalam database',
+        },
         error: { type: 'boolean', example: true },
         timestamp: { type: 'string', example: '2025-01-01T00:00:00.000Z' },
       },
@@ -283,7 +309,10 @@ export class DailyPlanProductionController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 404 },
-        message: { type: 'string', example: 'Daily plan production tidak ditemukan' },
+        message: {
+          type: 'string',
+          example: 'Daily plan production tidak ditemukan',
+        },
         error: { type: 'boolean', example: true },
         timestamp: { type: 'string', example: '2025-01-01T00:00:00.000Z' },
       },
@@ -318,7 +347,10 @@ export class DailyPlanProductionController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 200 },
-        message: { type: 'string', example: 'Daily plan production berhasil dihapus' },
+        message: {
+          type: 'string',
+          example: 'Daily plan production berhasil dihapus',
+        },
         data: { type: 'null', example: null },
       },
     },

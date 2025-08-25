@@ -118,7 +118,9 @@ export class EmployeeService {
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
-      qb.orderBy(`employee.${validSortBy}`, validSortOrder).skip(skip).take(limit);
+      qb.orderBy(`employee.${validSortBy}`, validSortOrder)
+        .skip(skip)
+        .take(limit);
 
       const [result, total] = await qb.getManyAndCount();
 

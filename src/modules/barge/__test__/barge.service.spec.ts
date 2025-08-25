@@ -60,7 +60,7 @@ describe('BargeService', () => {
       mockRepository.findOne.mockResolvedValue(mockBarge);
 
       const result = await service.findById(1);
-      
+
       expect(result.statusCode).toBe(200);
       expect(result.data).toEqual(mockBarge);
       expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
@@ -70,7 +70,7 @@ describe('BargeService', () => {
       mockRepository.findOne.mockResolvedValue(null);
 
       const result = await service.findById(1);
-      
+
       expect(result.statusCode).toBe(200);
       expect(result.data).toBeNull();
       expect(result.message).toBe('Barge tidak ditemukan');
@@ -97,7 +97,7 @@ describe('BargeService', () => {
       mockQueryBuilder.getManyAndCount.mockResolvedValue([mockBarges, 1]);
 
       const result = await service.findAll({ page: '1', limit: '10' });
-      
+
       expect(result.statusCode).toBe(200);
       expect(result.data).toHaveLength(1);
       expect(result.meta.total).toBe(1);
@@ -108,10 +108,10 @@ describe('BargeService', () => {
       mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
 
       await service.findAll({ search: 'test' });
-      
+
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         '(barge.shipment ILIKE :search OR barge.name ILIKE :search OR barge.remarks ILIKE :search)',
-        { search: '%test%' }
+        { search: '%test%' },
       );
     });
   });
@@ -138,7 +138,7 @@ describe('BargeService', () => {
       mockRepository.save.mockResolvedValue(mockBarge);
 
       const result = await service.create(createBargeDto, 1);
-      
+
       expect(result.statusCode).toBe(200);
       expect(result.data).toEqual(mockBarge);
       expect(result.message).toBe('Barge berhasil dibuat');
@@ -181,7 +181,7 @@ describe('BargeService', () => {
       mockRepository.save.mockResolvedValue(updatedBarge);
 
       const result = await service.update(1, updateBargeDto, 1);
-      
+
       expect(result.statusCode).toBe(200);
       expect(result.data).toEqual(updatedBarge);
       expect(result.message).toBe('Barge berhasil diupdate');
@@ -211,7 +211,7 @@ describe('BargeService', () => {
       mockRepository.save.mockResolvedValue(existingBarge);
 
       const result = await service.delete(1, 1);
-      
+
       expect(result.statusCode).toBe(200);
       expect(result.data).toBeNull();
       expect(result.message).toBe('Barge berhasil dihapus');
@@ -239,13 +239,17 @@ describe('BargeService', () => {
         deletedBy: 1,
       };
 
-      const restoredBarge = { ...deletedBarge, deletedAt: null, deletedBy: null };
+      const restoredBarge = {
+        ...deletedBarge,
+        deletedAt: null,
+        deletedBy: null,
+      };
 
       mockRepository.findOne.mockResolvedValue(deletedBarge);
       mockRepository.save.mockResolvedValue(restoredBarge);
 
       const result = await service.restore(1, 1);
-      
+
       expect(result.statusCode).toBe(200);
       expect(result.data).toEqual(restoredBarge);
       expect(result.message).toBe('Barge berhasil dipulihkan');

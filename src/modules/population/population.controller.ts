@@ -483,7 +483,10 @@ export class PopulationController {
       },
     },
   })
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePopulationDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdatePopulationDto,
+  ) {
     return this.populationService.update(id, dto);
   }
 
@@ -698,7 +701,8 @@ export class PopulationController {
           ],
           error_file: {
             download_url: 'https://minio.example.com/download/error_file.csv',
-            message: 'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
+            message:
+              'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
           },
         },
       },
@@ -748,7 +752,8 @@ export class PopulationController {
   @Get('import/template')
   @ApiOperation({
     summary: 'Download template CSV untuk import population',
-    description: 'Mendownload template CSV yang berisi format kolom yang diperlukan',
+    description:
+      'Mendownload template CSV yang berisi format kolom yang diperlukan',
   })
   @SwaggerApiResponse({
     status: 200,
@@ -757,13 +762,14 @@ export class PopulationController {
   async downloadTemplate(@Res() res: Response) {
     try {
       const buffer = await this.populationService.downloadTemplate();
-      
+
       res.set({
         'Content-Type': 'text/csv',
-        'Content-Disposition': 'attachment; filename="template-population-import.csv"',
+        'Content-Disposition':
+          'attachment; filename="template-population-import.csv"',
         'Content-Length': buffer.length,
       });
-      
+
       res.end(buffer);
     } catch (error) {
       throw new InternalServerErrorException('Gagal download template CSV');
@@ -785,22 +791,22 @@ export class PopulationController {
         message: 'MinIO status checked successfully',
         data: {
           available: true,
-          message: 'MinIO is available'
-        }
-      }
-    }
+          message: 'MinIO is available',
+        },
+      },
+    },
   })
   async checkMinioStatus() {
     try {
       const isAvailable = await this.populationService.checkMinioStatus();
       return {
         available: isAvailable,
-        message: isAvailable ? 'MinIO is available' : 'MinIO is not available'
+        message: isAvailable ? 'MinIO is available' : 'MinIO is not available',
       };
     } catch (error) {
       return {
         available: false,
-        message: 'Failed to check MinIO status'
+        message: 'Failed to check MinIO status',
       };
     }
   }

@@ -46,7 +46,9 @@ export class SitesService {
    * Validasi tambahan untuk data sites sebelum disimpan
    * Bisa digunakan untuk validasi business logic yang lebih kompleks
    */
-  private validateSiteData(data: CreateSitesDto | UpdateSitesDto): ValidationResult {
+  private validateSiteData(
+    data: CreateSitesDto | UpdateSitesDto,
+  ): ValidationResult {
     const validations: ValidationResult[] = [];
 
     // Validasi untuk create (semua field mandatory)
@@ -68,17 +70,33 @@ export class SitesService {
 
     // Validasi operator points jika ada
     if ('operator_point' in data && data.operator_point !== undefined) {
-      validations.push(validateNotEmptyArray(data.operator_point, 'operator_point'));
-      
+      validations.push(
+        validateNotEmptyArray(data.operator_point, 'operator_point'),
+      );
+
       // Validasi setiap operator point
       if (Array.isArray(data.operator_point)) {
         data.operator_point.forEach((op, index) => {
-          validations.push(validateNotEmptyString(op.type, `operator_point[${index}].type`));
-          validations.push(validateNotEmptyString(op.name, `operator_point[${index}].name`));
-          
+          validations.push(
+            validateNotEmptyString(op.type, `operator_point[${index}].type`),
+          );
+          validations.push(
+            validateNotEmptyString(op.name, `operator_point[${index}].name`),
+          );
+
           // Longitude dan latitude nullable, gunakan helper functions khusus
-          validations.push(validateNullableLongitude(op.longitude, `operator_point[${index}].longitude`));
-          validations.push(validateNullableLatitude(op.latitude, `operator_point[${index}].latitude`));
+          validations.push(
+            validateNullableLongitude(
+              op.longitude,
+              `operator_point[${index}].longitude`,
+            ),
+          );
+          validations.push(
+            validateNullableLatitude(
+              op.latitude,
+              `operator_point[${index}].latitude`,
+            ),
+          );
         });
       }
     }
@@ -90,7 +108,10 @@ export class SitesService {
    * Validasi business logic khusus
    * Contoh: nama site tidak boleh duplikat
    */
-  private async validateBusinessRules(data: CreateSitesDto | UpdateSitesDto, excludeId?: number): Promise<ValidationResult> {
+  private async validateBusinessRules(
+    data: CreateSitesDto | UpdateSitesDto,
+    excludeId?: number,
+  ): Promise<ValidationResult> {
     const errors: string[] = [];
 
     // Validasi nama site tidak boleh duplikat
@@ -98,8 +119,8 @@ export class SitesService {
       const existingSite = await this.sitesRepository.findOne({
         where: {
           name: data.name,
-          ...(excludeId && { id: Not(excludeId) })
-        }
+          ...(excludeId && { id: Not(excludeId) }),
+        },
       });
 
       if (existingSite) {
@@ -108,24 +129,30 @@ export class SitesService {
     }
 
     // Validasi koordinat tidak boleh sama dengan site lain
-    if ('longitude' in data && 'latitude' in data && 
-        data.longitude !== undefined && data.latitude !== undefined) {
+    if (
+      'longitude' in data &&
+      'latitude' in data &&
+      data.longitude !== undefined &&
+      data.latitude !== undefined
+    ) {
       const existingSite = await this.sitesRepository.findOne({
         where: {
           longitude: data.longitude,
           latitude: data.latitude,
-          ...(excludeId && { id: Not(excludeId) })
-        }
+          ...(excludeId && { id: Not(excludeId) }),
+        },
       });
 
       if (existingSite) {
-        errors.push(`Koordinat (${data.longitude}, ${data.latitude}) sudah digunakan oleh site lain`);
+        errors.push(
+          `Koordinat (${data.longitude}, ${data.latitude}) sudah digunakan oleh site lain`,
+        );
       }
     }
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -251,13 +278,19 @@ export class SitesService {
       // Validasi tambahan menggunakan helper functions
       const validationResult = this.validateSiteData(data);
       if (!validationResult.isValid) {
-        throwError(`Validasi gagal: ${validationResult.errors.join(', ')}`, 400);
+        throwError(
+          `Validasi gagal: ${validationResult.errors.join(', ')}`,
+          400,
+        );
       }
 
       // Validasi business rules
       const businessValidation = await this.validateBusinessRules(data);
       if (!businessValidation.isValid) {
-        throwError(`Business rule validation gagal: ${businessValidation.errors.join(', ')}`, 400);
+        throwError(
+          `Business rule validation gagal: ${businessValidation.errors.join(', ')}`,
+          400,
+        );
       }
 
       // Create site first
@@ -321,13 +354,22 @@ export class SitesService {
       // Validasi tambahan menggunakan helper functions (hanya untuk field yang diisi)
       const validationResult = this.validateSiteData(updateDto);
       if (!validationResult.isValid) {
-        throwError(`Validasi gagal: ${validationResult.errors.join(', ')}`, 400);
+        throwError(
+          `Validasi gagal: ${validationResult.errors.join(', ')}`,
+          400,
+        );
       }
 
       // Validasi business rules (exclude current site ID)
-      const businessValidation = await this.validateBusinessRules(updateDto, id);
+      const businessValidation = await this.validateBusinessRules(
+        updateDto,
+        id,
+      );
       if (!businessValidation.isValid) {
-        throwError(`Business rule validation gagal: ${businessValidation.errors.join(', ')}`, 400);
+        throwError(
+          `Business rule validation gagal: ${businessValidation.errors.join(', ')}`,
+          400,
+        );
       }
 
       // Update site data

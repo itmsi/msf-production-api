@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
 
-export class AddScheduleDayToRPlanProduction1700000000042 implements MigrationInterface {
+export class AddScheduleDayToRPlanProduction1700000000042
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.addColumn(
       'r_plan_production',

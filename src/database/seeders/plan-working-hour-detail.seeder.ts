@@ -2,9 +2,7 @@ import { DataSource } from 'typeorm';
 import { PlanWorkingHourDetail } from '../../modules/plan-working-hour/entities/plan-working-hour-detail.entity';
 
 export default class PlanWorkingHourDetailSeeder {
-  public async run(
-    dataSource: DataSource,
-  ): Promise<any> {
+  public async run(dataSource: DataSource): Promise<any> {
     const repository = dataSource.getRepository(PlanWorkingHourDetail);
 
     // Data sample untuk plan working hour detail

@@ -8,7 +8,14 @@ import { Menu } from '../menu/entities/menu.entity';
 import { RoleHasPermission } from '../role-has-permission/entities/role-has-permission.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([MenuHasPermission, Permission, Menu, RoleHasPermission])],
+  imports: [
+    TypeOrmModule.forFeature([
+      MenuHasPermission,
+      Permission,
+      Menu,
+      RoleHasPermission,
+    ]),
+  ],
   controllers: [MenuHasPermissionController],
   providers: [MenuHasPermissionService],
   exports: [MenuHasPermissionService],

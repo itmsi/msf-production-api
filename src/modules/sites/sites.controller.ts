@@ -50,13 +50,48 @@ export class SitesController {
       - Urutan sorting ASC atau DESC
     `,
   })
-  @ApiQuery({ name: 'page', required: false, type: String, description: 'Nomor halaman (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, type: String, description: 'Jumlah data per halaman (default: 10, max: 100)' })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Pencarian umum di field name dan location' })
-  @ApiQuery({ name: 'name', required: false, type: String, description: 'Filter berdasarkan nama site' })
-  @ApiQuery({ name: 'location', required: false, type: String, description: 'Filter berdasarkan lokasi site' })
-  @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Field untuk sorting' })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'], description: 'Urutan sorting' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: String,
+    description: 'Nomor halaman (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: String,
+    description: 'Jumlah data per halaman (default: 10, max: 100)',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Pencarian umum di field name dan location',
+  })
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan nama site',
+  })
+  @ApiQuery({
+    name: 'location',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan lokasi site',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    description: 'Field untuk sorting',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Urutan sorting',
+  })
   @SwaggerApiResponse({
     status: 200,
     description: 'Data sites berhasil diambil',

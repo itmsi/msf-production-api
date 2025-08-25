@@ -39,10 +39,12 @@ describe('ParentPlanProductionService', () => {
       ],
     }).compile();
 
-    service = module.get<ParentPlanProductionService>(ParentPlanProductionService);
-    parentPlanProductionRepository = module.get<Repository<ParentPlanProduction>>(
-      getRepositoryToken(ParentPlanProduction),
+    service = module.get<ParentPlanProductionService>(
+      ParentPlanProductionService,
     );
+    parentPlanProductionRepository = module.get<
+      Repository<ParentPlanProduction>
+    >(getRepositoryToken(ParentPlanProduction));
     planProductionRepository = module.get<Repository<PlanProduction>>(
       getRepositoryToken(PlanProduction),
     );
@@ -104,9 +106,13 @@ describe('ParentPlanProductionService', () => {
 
     it('should throw ConflictException if plan_date already exists', async () => {
       const existingParent = { id: 1, plan_date: new Date('2025-08-21') };
-      mockParentPlanProductionRepository.findOne.mockResolvedValue(existingParent);
+      mockParentPlanProductionRepository.findOne.mockResolvedValue(
+        existingParent,
+      );
 
-      await expect(service.create(createDto)).rejects.toThrow(ConflictException);
+      await expect(service.create(createDto)).rejects.toThrow(
+        ConflictException,
+      );
       expect(mockParentPlanProductionRepository.findOne).toHaveBeenCalled();
     });
   });
@@ -171,7 +177,9 @@ describe('ParentPlanProductionService', () => {
     it('should throw BadRequestException if parent not found for date', async () => {
       mockParentPlanProductionRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findByDate('2025-08-21')).rejects.toThrow(BadRequestException);
+      await expect(service.findByDate('2025-08-21')).rejects.toThrow(
+        BadRequestException,
+      );
       expect(mockParentPlanProductionRepository.findOne).toHaveBeenCalledWith({
         where: { plan_date: new Date('2025-08-21') },
         relations: ['planProductions'],
@@ -248,14 +256,19 @@ describe('ParentPlanProductionService', () => {
       mockParentPlanProductionRepository.findOne.mockResolvedValue(null);
 
       // Mock save daily plan productions
-      const mockDailyData = Array(31).fill(null).map((_, index) => ({
-        id: index + 1,
-        plan_date: new Date(2025, 7, index + 1), // August 2025
-        parent_plan_production_id: 1,
-      }));
+      const mockDailyData = Array(31)
+        .fill(null)
+        .map((_, index) => ({
+          id: index + 1,
+          plan_date: new Date(2025, 7, index + 1), // August 2025
+          parent_plan_production_id: 1,
+        }));
       mockPlanProductionRepository.save.mockResolvedValue(mockDailyData);
 
-      const result = await (service as any).generateDailyPlanProductions(mockParent, createDto);
+      const result = await (service as any).generateDailyPlanProductions(
+        mockParent,
+        createDto,
+      );
 
       expect(result).toHaveLength(31);
       expect(mockPlanProductionRepository.save).toHaveBeenCalledWith(
@@ -268,7 +281,7 @@ describe('ParentPlanProductionService', () => {
             plan_date: new Date(2025, 7, 31), // August 31, 2025
             parent_plan_production_id: 1,
           }),
-        ])
+        ]),
       );
     });
   });

@@ -6,9 +6,7 @@ import { ParentPlanProduction } from './entities/parent-plan-production.entity';
 import { PlanProduction } from '../plan-production/entities/plan-production.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([ParentPlanProduction, PlanProduction]),
-  ],
+  imports: [TypeOrmModule.forFeature([ParentPlanProduction, PlanProduction])],
   controllers: [ParentPlanProductionController],
   providers: [ParentPlanProductionService],
   exports: [ParentPlanProductionService],

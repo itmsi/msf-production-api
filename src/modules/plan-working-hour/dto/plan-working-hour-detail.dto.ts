@@ -5,7 +5,7 @@ export class CreatePlanWorkingHourDetailDto {
   @ApiProperty({
     description: 'ID plan working hour',
     example: 1,
-    type: Number
+    type: Number,
   })
   @IsInt()
   plant_working_hour_id: number;
@@ -13,7 +13,7 @@ export class CreatePlanWorkingHourDetailDto {
   @ApiProperty({
     description: 'ID activities',
     example: 1,
-    type: Number
+    type: Number,
   })
   @IsInt()
   activities_id: number;
@@ -22,7 +22,7 @@ export class CreatePlanWorkingHourDetailDto {
     description: 'Jam kerja untuk activities',
     example: 1,
     type: Number,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsNumber()
@@ -34,7 +34,7 @@ export class UpdatePlanWorkingHourDetailDto {
     description: 'ID plan working hour',
     example: 1,
     type: Number,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsInt()
@@ -44,7 +44,7 @@ export class UpdatePlanWorkingHourDetailDto {
     description: 'ID activities',
     example: 1,
     type: Number,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsInt()
@@ -54,7 +54,7 @@ export class UpdatePlanWorkingHourDetailDto {
     description: 'Jam kerja untuk activities',
     example: 1,
     type: Number,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsNumber()
@@ -66,7 +66,7 @@ export class QueryPlanWorkingHourDetailDto {
     description: 'Filter berdasarkan ID plan working hour',
     example: 1,
     type: Number,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsInt()
@@ -76,7 +76,7 @@ export class QueryPlanWorkingHourDetailDto {
     description: 'Filter berdasarkan ID activities',
     example: 1,
     type: Number,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsInt()
@@ -86,7 +86,7 @@ export class QueryPlanWorkingHourDetailDto {
     description: 'Filter berdasarkan jam kerja',
     example: 1,
     type: Number,
-    required: false
+    required: false,
   })
   @IsOptional()
   @IsNumber()

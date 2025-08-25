@@ -24,7 +24,7 @@ async function seedPlanWorkingHour() {
 
     const seeder = new PlanWorkingHourSeeder();
     await seeder.run(dataSource);
-    
+
     console.log('✅ Plan Working Hour seeding completed');
   } catch (error) {
     console.error('❌ Plan Working Hour Seeding failed:', error);

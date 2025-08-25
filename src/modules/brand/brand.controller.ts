@@ -38,7 +38,8 @@ export class BrandController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary: 'Mendapatkan semua data brand dengan pagination, filtering, dan sorting',
+    summary:
+      'Mendapatkan semua data brand dengan pagination, filtering, dan sorting',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -48,12 +49,42 @@ export class BrandController {
       - Urutan sorting ASC atau DESC
     `,
   })
-  @ApiQuery({ name: 'page', required: false, type: String, description: 'Nomor halaman (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, type: String, description: 'Jumlah data per halaman (default: 10, max: 100)' })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Pencarian umum di field brand_name' })
-  @ApiQuery({ name: 'brand_name', required: false, type: String, description: 'Filter berdasarkan nama brand' })
-  @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Field untuk sorting' })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'], description: 'Urutan sorting' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: String,
+    description: 'Nomor halaman (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: String,
+    description: 'Jumlah data per halaman (default: 10, max: 100)',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Pencarian umum di field brand_name',
+  })
+  @ApiQuery({
+    name: 'brand_name',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan nama brand',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    description: 'Field untuk sorting',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Urutan sorting',
+  })
   @SwaggerApiResponse({
     status: 200,
     description: 'Data brand berhasil diambil',
@@ -209,7 +240,8 @@ export class BrandController {
   @Post()
   @ApiOperation({
     summary: 'Membuat brand baru',
-    description: 'Membuat brand baru dengan validasi duplikasi brand_name. Nama brand harus unik dalam sistem.',
+    description:
+      'Membuat brand baru dengan validasi duplikasi brand_name. Nama brand harus unik dalam sistem.',
   })
   @SwaggerApiResponse({
     status: 201,
@@ -284,7 +316,8 @@ export class BrandController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data brand berdasarkan ID',
-    description: 'Mengupdate data brand dengan validasi duplikasi brand_name. Hanya field yang dikirim yang akan diupdate.',
+    description:
+      'Mengupdate data brand dengan validasi duplikasi brand_name. Hanya field yang dikirim yang akan diupdate.',
   })
   @ApiParam({
     name: 'id',

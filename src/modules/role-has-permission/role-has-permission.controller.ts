@@ -11,13 +11,13 @@ import {
   Request,
   Query,
 } from '@nestjs/common';
-import { 
-  ApiBearerAuth, 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
-  ApiParam, 
-  ApiQuery 
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { RoleHasPermissionService } from './role-has-permission.service';
 import {
@@ -42,7 +42,8 @@ export class RoleHasPermissionController {
   @Post()
   @ApiOperation({
     summary: 'Membuat role has permission baru',
-    description: 'Memberikan permission kepada role untuk menu tertentu. Kombinasi role_id, mhp_id, dan permission_id harus unik.',
+    description:
+      'Memberikan permission kepada role untuk menu tertentu. Kombinasi role_id, mhp_id, dan permission_id harus unik.',
   })
   @ApiResponse({
     status: 201,
@@ -126,7 +127,8 @@ export class RoleHasPermissionController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary: 'Mendapatkan semua data role has permissions dengan pagination, filtering, dan sorting',
+    summary:
+      'Mendapatkan semua data role has permissions dengan pagination, filtering, dan sorting',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -135,13 +137,48 @@ export class RoleHasPermissionController {
       - Urutan sorting ASC atau DESC
     `,
   })
-  @ApiQuery({ name: 'page', required: false, type: String, description: 'Nomor halaman (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, type: String, description: 'Jumlah data per halaman (default: 10, max: 100)' })
-  @ApiQuery({ name: 'role_id', required: false, type: String, description: 'Filter berdasarkan role ID' })
-  @ApiQuery({ name: 'mhp_id', required: false, type: String, description: 'Filter berdasarkan menu has permission ID' })
-  @ApiQuery({ name: 'permission_id', required: false, type: String, description: 'Filter berdasarkan permission ID' })
-  @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Field untuk sorting' })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'], description: 'Urutan sorting' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: String,
+    description: 'Nomor halaman (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: String,
+    description: 'Jumlah data per halaman (default: 10, max: 100)',
+  })
+  @ApiQuery({
+    name: 'role_id',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan role ID',
+  })
+  @ApiQuery({
+    name: 'mhp_id',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan menu has permission ID',
+  })
+  @ApiQuery({
+    name: 'permission_id',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan permission ID',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    description: 'Field untuk sorting',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Urutan sorting',
+  })
   @ApiResponse({
     status: 200,
     description: 'Data role has permissions berhasil diambil',
@@ -219,7 +256,8 @@ export class RoleHasPermissionController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Data role has permissions berdasarkan role ID berhasil diambil',
+    description:
+      'Data role has permissions berdasarkan role ID berhasil diambil',
     type: [RoleHasPermissionResponseDto],
     schema: {
       example: {
@@ -279,7 +317,8 @@ export class RoleHasPermissionController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Data role has permissions berdasarkan permission ID berhasil diambil',
+    description:
+      'Data role has permissions berdasarkan permission ID berhasil diambil',
     type: [RoleHasPermissionResponseDto],
     schema: {
       example: {
@@ -331,7 +370,8 @@ export class RoleHasPermissionController {
   @Get('by-menu-has-permission/:mhpId')
   @ApiOperation({
     summary: 'Mendapatkan semua roles berdasarkan menu has permission ID',
-    description: 'Mengambil semua roles yang memiliki permission untuk menu tertentu',
+    description:
+      'Mengambil semua roles yang memiliki permission untuk menu tertentu',
   })
   @ApiParam({
     name: 'mhpId',
@@ -341,7 +381,8 @@ export class RoleHasPermissionController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Data role has permissions berdasarkan menu has permission ID berhasil diambil',
+    description:
+      'Data role has permissions berdasarkan menu has permission ID berhasil diambil',
     type: [RoleHasPermissionResponseDto],
     schema: {
       example: {
@@ -390,7 +431,8 @@ export class RoleHasPermissionController {
   @Get(':id')
   @ApiOperation({
     summary: 'Mendapatkan data role has permission berdasarkan ID',
-    description: 'Mengambil data role has permission berdasarkan ID yang diberikan',
+    description:
+      'Mengambil data role has permission berdasarkan ID yang diberikan',
   })
   @ApiParam({
     name: 'id',
@@ -470,7 +512,8 @@ export class RoleHasPermissionController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data role has permission berdasarkan ID',
-    description: 'Mengupdate data role has permission dengan validasi duplikasi kombinasi role_id, mhp_id, dan permission_id',
+    description:
+      'Mengupdate data role has permission dengan validasi duplikasi kombinasi role_id, mhp_id, dan permission_id',
   })
   @ApiParam({
     name: 'id',
@@ -534,7 +577,8 @@ export class RoleHasPermissionController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Menghapus data role has permission berdasarkan ID',
-    description: 'Menghapus data role has permission secara permanen dari database',
+    description:
+      'Menghapus data role has permission secara permanen dari database',
   })
   @ApiParam({
     name: 'id',

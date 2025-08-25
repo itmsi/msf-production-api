@@ -64,7 +64,7 @@ describe('BargeController (e2e)', () => {
         .expect(201)
         .expect((res) => {
           expect(res.body.statusCode).toBe(201);
-                  expect(res.body.data.name).toBe(createBargeDto.name);
+          expect(res.body.data.name).toBe(createBargeDto.name);
           expect(res.body.data.capacity).toBe(createBargeDto.capacity);
           expect(res.body.data.remarks).toBe(createBargeDto.remarks);
           expect(res.body.data.id).toBeDefined();
@@ -86,9 +86,7 @@ describe('BargeController (e2e)', () => {
 
   describe('/barges/:id (GET)', () => {
     it('should return 404 for non-existent barge', () => {
-      return request(app.getHttpServer())
-        .get('/barges/999')
-        .expect(404);
+      return request(app.getHttpServer()).get('/barges/999').expect(404);
     });
 
     it('should return barge by id after creation', async () => {
@@ -112,8 +110,8 @@ describe('BargeController (e2e)', () => {
         .expect(200)
         .expect((res) => {
           expect(res.body.statusCode).toBe(200);
-                  expect(res.body.data.id).toBe(bargeId);
-      });
+          expect(res.body.data.id).toBe(bargeId);
+        });
     });
   });
 
@@ -191,9 +189,7 @@ describe('BargeController (e2e)', () => {
     });
 
     it('should return 404 for non-existent barge', () => {
-      return request(app.getHttpServer())
-        .delete('/barges/999')
-        .expect(404);
+      return request(app.getHttpServer()).delete('/barges/999').expect(404);
     });
   });
 

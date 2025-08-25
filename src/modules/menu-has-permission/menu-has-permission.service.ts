@@ -70,7 +70,9 @@ export class MenuHasPermissionService {
     }
   }
 
-  async findAll(query?: GetMenuHasPermissionsQueryDto): Promise<ApiResponse<MenuHasPermission[]>> {
+  async findAll(
+    query?: GetMenuHasPermissionsQueryDto,
+  ): Promise<ApiResponse<MenuHasPermission[]>> {
     try {
       if (!query) {
         // Fallback untuk kompatibilitas backward
@@ -85,7 +87,9 @@ export class MenuHasPermissionService {
       const limit = parseInt(query.limit ?? '10', 10);
       const skip = (page - 1) * limit;
       const menu_id = query.menu_id ? parseInt(query.menu_id, 10) : null;
-      const permission_id = query.permission_id ? parseInt(query.permission_id, 10) : null;
+      const permission_id = query.permission_id
+        ? parseInt(query.permission_id, 10)
+        : null;
       const sortBy = query.sortBy ?? 'id';
       const sortOrder = query.sortOrder ?? 'DESC';
 
@@ -94,10 +98,11 @@ export class MenuHasPermissionService {
         throwError('Limit tidak boleh lebih dari 100', 400);
       }
 
-      const qb: SelectQueryBuilder<MenuHasPermission> = this.menuHasPermissionRepository
-        .createQueryBuilder('mhp')
-        .leftJoinAndSelect('mhp.menu', 'menu')
-        .leftJoinAndSelect('mhp.permission', 'permission');
+      const qb: SelectQueryBuilder<MenuHasPermission> =
+        this.menuHasPermissionRepository
+          .createQueryBuilder('mhp')
+          .leftJoinAndSelect('mhp.menu', 'menu')
+          .leftJoinAndSelect('mhp.permission', 'permission');
 
       // Filter by menu_id
       if (menu_id) {
@@ -230,9 +235,7 @@ export class MenuHasPermissionService {
     }
   }
 
-  async findByMenuId(
-    menuId: number,
-  ): Promise<ApiResponse<any>> {
+  async findByMenuId(menuId: number): Promise<ApiResponse<any>> {
     try {
       // Ambil semua permissions dari tabel m_permission
       const allPermissions = await this.permissionRepository.find({
@@ -241,22 +244,25 @@ export class MenuHasPermissionService {
       });
 
       // Ambil menu has permissions yang sudah ada untuk menu ini
-      const existingMenuPermissions = await this.menuHasPermissionRepository.find({
-        where: { menu_id: menuId },
-        relations: ['permission'],
-      });
+      const existingMenuPermissions =
+        await this.menuHasPermissionRepository.find({
+          where: { menu_id: menuId },
+          relations: ['permission'],
+        });
 
       // Buat map untuk permission yang sudah ada
       const existingPermissionMap = new Map();
-      existingMenuPermissions.forEach(mhp => {
+      existingMenuPermissions.forEach((mhp) => {
         existingPermissionMap.set(mhp.permission_id, true);
       });
 
       // Buat response data dengan format yang diminta
-      const dataPermissions = allPermissions.map(permission => {
+      const dataPermissions = allPermissions.map((permission) => {
         // Cari menu has permission yang sesuai untuk permission ini
-        const existingMhp = existingMenuPermissions.find(mhp => mhp.permission_id === permission.id);
-        
+        const existingMhp = existingMenuPermissions.find(
+          (mhp) => mhp.permission_id === permission.id,
+        );
+
         return {
           permission_id: permission.id,
           permission_name: permission.permission_name,
@@ -319,38 +325,38 @@ export class MenuHasPermissionService {
 
       // Buat map untuk permission yang dimiliki role
       const rolePermissionMap = new Map();
-      rolePermissions.forEach(rhp => {
+      rolePermissions.forEach((rhp) => {
         rolePermissionMap.set(rhp.permission_id, true);
       });
 
       // Buat response data
-      const responseData = await Promise.all(allMenus.map(async (menu) => {
-        // Ambil menu has permissions yang benar-benar ada untuk menu ini
-        const menuHasPermissions = await this.menuHasPermissionRepository.find({
-          where: { menu_id: menu.id },
-          relations: ['permission'],
-          order: { permission_id: 'ASC' },
-        });
+      const responseData = await Promise.all(
+        allMenus.map(async (menu) => {
+          // Ambil menu has permissions yang benar-benar ada untuk menu ini
+          const menuHasPermissions =
+            await this.menuHasPermissionRepository.find({
+              where: { menu_id: menu.id },
+              relations: ['permission'],
+              order: { permission_id: 'ASC' },
+            });
 
-        // Buat array permissions yang hanya berisi permission yang di-assign ke menu
-        const menuPermissions = menuHasPermissions.map(mhp => ({
-          permission_id: mhp.permission_id,
-          permission_name: mhp.permission.permission_name,
-          role_has_status: rolePermissionMap.has(mhp.permission_id),
-          mhp_id: mhp.id, // Selalu ada value karena diambil dari r_menu_has_permission
-        }));
+          // Buat array permissions yang hanya berisi permission yang di-assign ke menu
+          const menuPermissions = menuHasPermissions.map((mhp) => ({
+            permission_id: mhp.permission_id,
+            permission_name: mhp.permission.permission_name,
+            role_has_status: rolePermissionMap.has(mhp.permission_id),
+            mhp_id: mhp.id, // Selalu ada value karena diambil dari r_menu_has_permission
+          }));
 
-        return {
-          menu_id: menu.id,
-          menu_name: menu.menu_name,
-          has_permission: menuPermissions,
-        };
-      }));
-
-      return successResponse(
-        responseData,
-        'Get menu permissions successfully',
+          return {
+            menu_id: menu.id,
+            menu_name: menu.menu_name,
+            has_permission: menuPermissions,
+          };
+        }),
       );
+
+      return successResponse(responseData, 'Get menu permissions successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(

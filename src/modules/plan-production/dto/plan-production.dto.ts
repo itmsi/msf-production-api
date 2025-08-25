@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsDateString, IsNumber, IsBoolean, IsOptional } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsDateString,
+  IsNumber,
+  IsBoolean,
+  IsOptional,
+} from 'class-validator';
 
 export class CreatePlanProductionDto {
   @ApiProperty({
@@ -83,7 +89,8 @@ export class CreatePlanProductionDto {
   remaining_stock: number;
 
   @ApiProperty({
-    description: 'Target SR (Stripping Ratio) - Calculated: (ore_target / ob_target)',
+    description:
+      'Target SR (Stripping Ratio) - Calculated: (ore_target / ob_target)',
     example: 2.0,
   })
   @IsNotEmpty()
@@ -107,7 +114,8 @@ export class CreatePlanProductionDto {
   total_fleet: number;
 
   @ApiProperty({
-    description: 'Stok lama harian - Calculated: (old stock global - ore shipment + ore target)',
+    description:
+      'Stok lama harian - Calculated: (old stock global - ore shipment + ore target)',
     example: 30000.0,
   })
   @IsNotEmpty()
@@ -139,7 +147,8 @@ export class CreatePlanProductionDto {
   shift_quarry: number;
 
   @ApiProperty({
-    description: 'Target SR shift - Calculated: (shift ob target / shift ore target)',
+    description:
+      'Target SR shift - Calculated: (shift ob target / shift ore target)',
     example: 2.0,
   })
   @IsNotEmpty()
@@ -256,7 +265,8 @@ export class UpdatePlanProductionDto {
   remaining_stock?: number;
 
   @ApiProperty({
-    description: 'Target SR (Stripping Ratio) - Calculated: (ore_target / ob_target)',
+    description:
+      'Target SR (Stripping Ratio) - Calculated: (ore_target / ob_target)',
     example: 2.0,
     required: false,
   })
@@ -283,7 +293,8 @@ export class UpdatePlanProductionDto {
   total_fleet?: number;
 
   @ApiProperty({
-    description: 'Stok lama harian - Calculated: (old stock global - ore shipment + ore target)',
+    description:
+      'Stok lama harian - Calculated: (old stock global - ore shipment + ore target)',
     example: 30000.0,
     required: false,
   })
@@ -319,7 +330,8 @@ export class UpdatePlanProductionDto {
   shift_quarry?: number;
 
   @ApiProperty({
-    description: 'Target SR shift - Calculated: (shift ob target / shift ore target)',
+    description:
+      'Target SR shift - Calculated: (shift ob target / shift ore target)',
     example: 2.0,
     required: false,
   })
@@ -414,7 +426,8 @@ export class PlanProductionResponseDto {
   remaining_stock: number;
 
   @ApiProperty({
-    description: 'Target SR (Stripping Ratio) - Calculated: (ore_target / ob_target)',
+    description:
+      'Target SR (Stripping Ratio) - Calculated: (ore_target / ob_target)',
     example: 2.0,
   })
   sr_target: number;
@@ -432,7 +445,8 @@ export class PlanProductionResponseDto {
   total_fleet: number;
 
   @ApiProperty({
-    description: 'Stok lama harian - Calculated: (old stock global - ore shipment + ore target)',
+    description:
+      'Stok lama harian - Calculated: (old stock global - ore shipment + ore target)',
     example: 30000.0,
   })
   daily_old_stock: number;
@@ -456,7 +470,8 @@ export class PlanProductionResponseDto {
   shift_quarry: number;
 
   @ApiProperty({
-    description: 'Target SR shift - Calculated: (shift ob target / shift ore target)',
+    description:
+      'Target SR shift - Calculated: (shift ob target / shift ore target)',
     example: 2.0,
   })
   shift_sr_target: number;

@@ -10,13 +10,13 @@ import {
   ParseIntPipe,
   Query,
 } from '@nestjs/common';
-import { 
-  ApiBearerAuth, 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
-  ApiParam, 
-  ApiQuery 
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { EmployeeService } from './employee.service';
 import {
@@ -40,7 +40,8 @@ export class EmployeeController {
   @Post()
   @ApiOperation({
     summary: 'Membuat employee baru',
-    description: 'Membuat employee baru dengan validasi duplikasi NIP. NIP harus unik dalam sistem.',
+    description:
+      'Membuat employee baru dengan validasi duplikasi NIP. NIP harus unik dalam sistem.',
   })
   @ApiResponse({
     status: 201,
@@ -121,7 +122,8 @@ export class EmployeeController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary: 'Mendapatkan semua data employee dengan pagination, filtering, dan sorting',
+    summary:
+      'Mendapatkan semua data employee dengan pagination, filtering, dan sorting',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -131,13 +133,49 @@ export class EmployeeController {
       - Urutan sorting ASC atau DESC
     `,
   })
-  @ApiQuery({ name: 'page', required: false, type: String, description: 'Nomor halaman (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, type: String, description: 'Jumlah data per halaman (default: 10, max: 100)' })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Pencarian umum di field firstName, lastName, department, position' })
-  @ApiQuery({ name: 'department', required: false, type: String, description: 'Filter berdasarkan department' })
-  @ApiQuery({ name: 'status', required: false, enum: EmployeeStatus, description: 'Filter berdasarkan status' })
-  @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Field untuk sorting' })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'], description: 'Urutan sorting' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: String,
+    description: 'Nomor halaman (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: String,
+    description: 'Jumlah data per halaman (default: 10, max: 100)',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description:
+      'Pencarian umum di field firstName, lastName, department, position',
+  })
+  @ApiQuery({
+    name: 'department',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan department',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: EmployeeStatus,
+    description: 'Filter berdasarkan status',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    description: 'Field untuk sorting',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Urutan sorting',
+  })
   @ApiResponse({
     status: 200,
     description: 'Data employee berhasil diambil',
@@ -414,7 +452,8 @@ export class EmployeeController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data employee berdasarkan ID',
-    description: 'Mengupdate data employee dengan validasi duplikasi NIP. Hanya field yang dikirim yang akan diupdate.',
+    description:
+      'Mengupdate data employee dengan validasi duplikasi NIP. Hanya field yang dikirim yang akan diupdate.',
   })
   @ApiParam({
     name: 'id',

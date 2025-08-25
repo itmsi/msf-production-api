@@ -56,8 +56,12 @@ export class BargeService {
       const search = query.search?.toLowerCase() ?? '';
 
       const name = query.name?.toLowerCase() ?? '';
-      const minCapacity = query.minCapacity ? parseInt(query.minCapacity, 10) : null;
-      const maxCapacity = query.maxCapacity ? parseInt(query.maxCapacity, 10) : null;
+      const minCapacity = query.minCapacity
+        ? parseInt(query.minCapacity, 10)
+        : null;
+      const maxCapacity = query.maxCapacity
+        ? parseInt(query.maxCapacity, 10)
+        : null;
       const sortBy = query.sortBy ?? 'id';
       const sortOrder = query.sortOrder ?? 'DESC';
 
@@ -78,8 +82,6 @@ export class BargeService {
         );
       }
 
-
-
       // Filter by name
       if (name) {
         qb.andWhere('barge.name ILIKE :name', {
@@ -97,7 +99,13 @@ export class BargeService {
       }
 
       // Validate sortBy field to prevent SQL injection
-      const allowedSortFields = ['id', 'name', 'capacity', 'createdAt', 'updatedAt'];
+      const allowedSortFields = [
+        'id',
+        'name',
+        'capacity',
+        'createdAt',
+        'updatedAt',
+      ];
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
@@ -131,8 +139,6 @@ export class BargeService {
     userId: number,
   ): Promise<ApiResponse<BargeResponseDto>> {
     try {
-
-
       const barge = this.bargeRepository.create({
         ...createBargeDto,
         createdBy: userId,
@@ -141,7 +147,10 @@ export class BargeService {
 
       const result = await this.bargeRepository.save(barge);
 
-      return successResponse(result as BargeResponseDto, 'Barge berhasil dibuat');
+      return successResponse(
+        result as BargeResponseDto,
+        'Barge berhasil dibuat',
+      );
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -164,15 +173,16 @@ export class BargeService {
         throwError('Barge tidak ditemukan', 404);
       }
 
-
-
       // Update only provided fields
       Object.assign(barge!, updateBargeDto);
       barge!.updatedBy = userId;
 
       const result = await this.bargeRepository.save(barge!);
 
-      return successResponse(result as BargeResponseDto, 'Barge berhasil diupdate');
+      return successResponse(
+        result as BargeResponseDto,
+        'Barge berhasil diupdate',
+      );
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -206,14 +216,20 @@ export class BargeService {
     }
   }
 
-  async restore(id: number, userId: number): Promise<ApiResponse<BargeResponseDto>> {
+  async restore(
+    id: number,
+    userId: number,
+  ): Promise<ApiResponse<BargeResponseDto>> {
     try {
       const barge = await this.bargeRepository.findOne({
         where: { id, deletedAt: Not(undefined) as any },
       });
 
       if (!barge) {
-        throwError('Barge tidak ditemukan atau tidak dalam status deleted', 404);
+        throwError(
+          'Barge tidak ditemukan atau tidak dalam status deleted',
+          404,
+        );
       }
 
       // Restore soft deleted barge
@@ -223,7 +239,10 @@ export class BargeService {
 
       const result = await this.bargeRepository.save(barge!);
 
-      return successResponse(result as BargeResponseDto, 'Barge berhasil dipulihkan');
+      return successResponse(
+        result as BargeResponseDto,
+        'Barge berhasil dipulihkan',
+      );
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

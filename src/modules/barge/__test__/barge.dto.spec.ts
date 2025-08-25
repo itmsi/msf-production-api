@@ -1,5 +1,9 @@
 import { validate } from 'class-validator';
-import { CreateBargeDto, UpdateBargeDto, GetBargesQueryDto } from '../dto/barge.dto';
+import {
+  CreateBargeDto,
+  UpdateBargeDto,
+  GetBargesQueryDto,
+} from '../dto/barge.dto';
 
 describe('Barge DTOs', () => {
   describe('CreateBargeDto', () => {
@@ -24,8 +28,6 @@ describe('Barge DTOs', () => {
       const errors = await validate(dto);
       expect(errors).toHaveLength(0);
     });
-
-
 
     it('should validate name length constraints', async () => {
       const dto = new CreateBargeDto();
@@ -76,8 +78,6 @@ describe('Barge DTOs', () => {
       const errors = await validate(dto);
       expect(errors).toHaveLength(0);
     });
-
-
 
     it('should validate name length constraints', async () => {
       const dto = new UpdateBargeDto();

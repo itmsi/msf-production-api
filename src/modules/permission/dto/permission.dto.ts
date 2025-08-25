@@ -1,8 +1,8 @@
-import { 
-  IsString, 
-  IsNotEmpty, 
-  IsOptional, 
-  IsInt, 
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsInt,
   IsNumberString,
   MinLength,
   MaxLength,
@@ -11,8 +11,8 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreatePermissionDto {
-  @ApiProperty({ 
-    description: 'Nama permission yang akan dibuat', 
+  @ApiProperty({
+    description: 'Nama permission yang akan dibuat',
     example: 'Create User',
     minLength: 1,
     maxLength: 100,
@@ -23,8 +23,8 @@ export class CreatePermissionDto {
   @MaxLength(100)
   permission_name: string;
 
-  @ApiProperty({ 
-    description: 'Kode permission yang harus unik', 
+  @ApiProperty({
+    description: 'Kode permission yang harus unik',
     example: 'CREATE_USER',
     minLength: 1,
     maxLength: 50,
@@ -35,7 +35,7 @@ export class CreatePermissionDto {
   @MaxLength(50)
   permission_code: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Deskripsi detail permission',
     maxLength: 500,
   })
@@ -44,7 +44,7 @@ export class CreatePermissionDto {
   @MaxLength(500)
   description?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'ID user yang membuat permission ini',
     minimum: 1,
   })
@@ -79,7 +79,7 @@ export class UpdatePermissionDto {
   @MaxLength(50)
   permission_code?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Deskripsi detail permission',
     maxLength: 500,
   })
@@ -88,7 +88,7 @@ export class UpdatePermissionDto {
   @MaxLength(500)
   description?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'ID user yang mengupdate permission ini',
     minimum: 1,
   })
@@ -137,7 +137,13 @@ export class GetPermissionsQueryDto {
     required: false,
     example: 'id',
     description: 'Field untuk sorting',
-    enum: ['id', 'permission_name', 'permission_code', 'createdAt', 'updatedAt'],
+    enum: [
+      'id',
+      'permission_name',
+      'permission_code',
+      'createdAt',
+      'updatedAt',
+    ],
     default: 'id',
   })
   @IsOptional()
@@ -163,32 +169,38 @@ export class PermissionResponseDto {
   @ApiProperty({ example: 'Create User', description: 'Nama permission' })
   permission_name: string;
 
-  @ApiProperty({ example: 'CREATE_USER', description: 'Kode permission (unik)' })
+  @ApiProperty({
+    example: 'CREATE_USER',
+    description: 'Kode permission (unik)',
+  })
   permission_code: string;
 
-  @ApiProperty({ 
-    example: 'Permission untuk membuat user baru', 
+  @ApiProperty({
+    example: 'Permission untuk membuat user baru',
     description: 'Deskripsi permission',
     required: false,
   })
   description: string;
 
-  @ApiProperty({ 
-    example: '2024-01-01T00:00:00.000Z', 
-    description: 'Waktu pembuatan permission' 
+  @ApiProperty({
+    example: '2024-01-01T00:00:00.000Z',
+    description: 'Waktu pembuatan permission',
   })
   createdAt: Date;
 
   @ApiProperty({ example: 1, description: 'ID user yang membuat permission' })
   createdBy: number;
 
-  @ApiProperty({ 
-    example: '2024-01-01T00:00:00.000Z', 
-    description: 'Waktu terakhir update permission' 
+  @ApiProperty({
+    example: '2024-01-01T00:00:00.000Z',
+    description: 'Waktu terakhir update permission',
   })
   updatedAt: Date;
 
-  @ApiProperty({ example: 1, description: 'ID user yang terakhir mengupdate permission' })
+  @ApiProperty({
+    example: 1,
+    description: 'ID user yang terakhir mengupdate permission',
+  })
   updatedBy: number;
 }
 
@@ -207,10 +219,16 @@ export class PermissionListResponseDto {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 
-  @ApiProperty({ example: 'Get permissions successfully', description: 'Pesan response' })
+  @ApiProperty({
+    example: 'Get permissions successfully',
+    description: 'Pesan response',
+  })
   message: string;
 
-  @ApiProperty({ type: [PermissionResponseDto], description: 'Array data permissions' })
+  @ApiProperty({
+    type: [PermissionResponseDto],
+    description: 'Array data permissions',
+  })
   data: PermissionResponseDto[];
 
   @ApiProperty({ type: PaginationMetaDto, description: 'Informasi pagination' })
@@ -221,7 +239,10 @@ export class SinglePermissionResponseDto {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 
-  @ApiProperty({ example: 'Get permission successfully', description: 'Pesan response' })
+  @ApiProperty({
+    example: 'Get permission successfully',
+    description: 'Pesan response',
+  })
   message: string;
 
   @ApiProperty({ type: PermissionResponseDto, description: 'Data permission' })

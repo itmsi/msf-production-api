@@ -156,8 +156,7 @@ export class UpdateTableRPlanWorkingHour1700000000028
         name: 'daily_old_stock',
         type: 'float',
         isNullable: true,
-        comment:
-          'Calculated: (old stock global - ore shipment + ore target)',
+        comment: 'Calculated: (old stock global - ore shipment + ore target)',
       }),
     );
 

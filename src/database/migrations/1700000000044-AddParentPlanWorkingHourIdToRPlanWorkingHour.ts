@@ -1,4 +1,9 @@
-import { MigrationInterface, QueryRunner, TableColumn, TableForeignKey } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  TableColumn,
+  TableForeignKey,
+} from 'typeorm';
 
 export class AddParentPlanWorkingHourIdToRPlanWorkingHour1700000000044
   implements MigrationInterface
@@ -40,6 +45,9 @@ export class AddParentPlanWorkingHourIdToRPlanWorkingHour1700000000044
     }
 
     // Hapus kolom parent_plan_working_hour_id
-    await queryRunner.dropColumn('r_plan_working_hour', 'parent_plan_working_hour_id');
+    await queryRunner.dropColumn(
+      'r_plan_working_hour',
+      'parent_plan_working_hour_id',
+    );
   }
 }

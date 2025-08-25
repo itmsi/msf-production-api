@@ -11,7 +11,9 @@ export class UpdateDateColumnsToDatetime1700000000031
       );
       console.log('Updated r_base_data_pro.activity_date');
     } catch (error) {
-      console.log('Table r_base_data_pro or column activity_date not found, skipping...');
+      console.log(
+        'Table r_base_data_pro or column activity_date not found, skipping...',
+      );
     }
 
     try {
@@ -21,7 +23,9 @@ export class UpdateDateColumnsToDatetime1700000000031
       );
       console.log('Updated r_plan_production.plan_date');
     } catch (error) {
-      console.log('Table r_plan_production or column plan_date not found, skipping...');
+      console.log(
+        'Table r_plan_production or column plan_date not found, skipping...',
+      );
     }
 
     try {
@@ -31,7 +35,9 @@ export class UpdateDateColumnsToDatetime1700000000031
       );
       console.log('Updated r_plan_working_hour.plan_date');
     } catch (error) {
-      console.log('Table r_plan_working_hour or column plan_date not found, skipping...');
+      console.log(
+        'Table r_plan_working_hour or column plan_date not found, skipping...',
+      );
     }
 
     try {
@@ -41,7 +47,9 @@ export class UpdateDateColumnsToDatetime1700000000031
       );
       console.log('Updated r_ccr_hauling.activity_date');
     } catch (error) {
-      console.log('Table r_ccr_hauling or column activity_date not found, skipping...');
+      console.log(
+        'Table r_ccr_hauling or column activity_date not found, skipping...',
+      );
     }
 
     try {
@@ -51,7 +59,9 @@ export class UpdateDateColumnsToDatetime1700000000031
       );
       console.log('Updated r_input_barge.start_loading');
     } catch (error) {
-      console.log('Table r_input_barge or column start_loading not found, skipping...');
+      console.log(
+        'Table r_input_barge or column start_loading not found, skipping...',
+      );
     }
 
     try {
@@ -61,7 +71,9 @@ export class UpdateDateColumnsToDatetime1700000000031
       );
       console.log('Updated r_input_barge.end_loading');
     } catch (error) {
-      console.log('Table r_input_barge or column end_loading not found, skipping...');
+      console.log(
+        'Table r_input_barge or column end_loading not found, skipping...',
+      );
     }
 
     try {
@@ -71,7 +83,9 @@ export class UpdateDateColumnsToDatetime1700000000031
       );
       console.log('Updated m_population.date_arrive');
     } catch (error) {
-      console.log('Table m_population or column date_arrive not found, skipping...');
+      console.log(
+        'Table m_population or column date_arrive not found, skipping...',
+      );
     }
   }
 
@@ -82,7 +96,9 @@ export class UpdateDateColumnsToDatetime1700000000031
         'ALTER TABLE r_base_data_pro ALTER COLUMN activity_date TYPE date',
       );
     } catch (error) {
-      console.log('Table r_base_data_pro or column activity_date not found, skipping...');
+      console.log(
+        'Table r_base_data_pro or column activity_date not found, skipping...',
+      );
     }
 
     try {
@@ -91,7 +107,9 @@ export class UpdateDateColumnsToDatetime1700000000031
         'ALTER TABLE r_plan_production ALTER COLUMN plan_date TYPE date',
       );
     } catch (error) {
-      console.log('Table r_plan_production or column plan_date not found, skipping...');
+      console.log(
+        'Table r_plan_production or column plan_date not found, skipping...',
+      );
     }
 
     try {
@@ -100,7 +118,9 @@ export class UpdateDateColumnsToDatetime1700000000031
         'ALTER TABLE r_plan_working_hour ALTER COLUMN plan_date TYPE date',
       );
     } catch (error) {
-      console.log('Table r_plan_working_hour or column plan_date not found, skipping...');
+      console.log(
+        'Table r_plan_working_hour or column plan_date not found, skipping...',
+      );
     }
 
     try {
@@ -109,7 +129,9 @@ export class UpdateDateColumnsToDatetime1700000000031
         'ALTER TABLE r_ccr_hauling ALTER COLUMN activity_date TYPE date',
       );
     } catch (error) {
-      console.log('Table r_ccr_hauling or column activity_date not found, skipping...');
+      console.log(
+        'Table r_ccr_hauling or column activity_date not found, skipping...',
+      );
     }
 
     try {
@@ -118,7 +140,9 @@ export class UpdateDateColumnsToDatetime1700000000031
         'ALTER TABLE r_input_barge ALTER COLUMN start_loading TYPE date',
       );
     } catch (error) {
-      console.log('Table r_input_barge or column start_loading not found, skipping...');
+      console.log(
+        'Table r_input_barge or column start_loading not found, skipping...',
+      );
     }
 
     try {
@@ -127,7 +151,9 @@ export class UpdateDateColumnsToDatetime1700000000031
         'ALTER TABLE r_input_barge ALTER COLUMN end_loading TYPE date',
       );
     } catch (error) {
-      console.log('Table r_input_barge or column end_loading not found, skipping...');
+      console.log(
+        'Table r_input_barge or column end_loading not found, skipping...',
+      );
     }
 
     try {
@@ -136,7 +162,9 @@ export class UpdateDateColumnsToDatetime1700000000031
         'ALTER TABLE m_population ALTER COLUMN date_arrive TYPE date',
       );
     } catch (error) {
-      console.log('Table m_population or column date_arrive not found, skipping...');
+      console.log(
+        'Table m_population or column date_arrive not found, skipping...',
+      );
     }
   }
 }

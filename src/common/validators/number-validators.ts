@@ -1,11 +1,15 @@
-import { registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator';
+import {
+  registerDecorator,
+  ValidationOptions,
+  ValidationArguments,
+} from 'class-validator';
 
 /**
  * Custom validator untuk memastikan value adalah float/number yang valid
  * Tidak boleh null, undefined, atau NaN
  */
 export function IsValidFloat(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isValidFloat',
       target: object.constructor,
@@ -17,22 +21,22 @@ export function IsValidFloat(validationOptions?: ValidationOptions) {
           if (value === null || value === undefined) {
             return false;
           }
-          
+
           // Cek apakah value adalah number
           if (typeof value !== 'number') {
             return false;
           }
-          
+
           // Cek apakah bukan NaN
           if (isNaN(value)) {
             return false;
           }
-          
+
           // Cek apakah finite number (bukan Infinity atau -Infinity)
           if (!isFinite(value)) {
             return false;
           }
-          
+
           return true;
         },
         defaultMessage(args: ValidationArguments) {
@@ -46,8 +50,12 @@ export function IsValidFloat(validationOptions?: ValidationOptions) {
 /**
  * Custom validator untuk memastikan value adalah float dengan range tertentu
  */
-export function IsFloatInRange(min: number, max: number, validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+export function IsFloatInRange(
+  min: number,
+  max: number,
+  validationOptions?: ValidationOptions,
+) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isFloatInRange',
       target: object.constructor,
@@ -59,22 +67,22 @@ export function IsFloatInRange(min: number, max: number, validationOptions?: Val
           if (value === null || value === undefined) {
             return false;
           }
-          
+
           // Cek apakah value adalah number
           if (typeof value !== 'number') {
             return false;
           }
-          
+
           // Cek apakah bukan NaN
           if (isNaN(value)) {
             return false;
           }
-          
+
           // Cek apakah finite number
           if (!isFinite(value)) {
             return false;
           }
-          
+
           // Cek range
           return value >= min && value <= max;
         },
@@ -90,7 +98,7 @@ export function IsFloatInRange(min: number, max: number, validationOptions?: Val
  * Custom validator untuk memastikan value adalah float yang nullable (optional)
  */
 export function IsNullableFloat(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isNullableFloat',
       target: object.constructor,
@@ -102,20 +110,20 @@ export function IsNullableFloat(validationOptions?: ValidationOptions) {
           if (value === null || value === undefined) {
             return true;
           }
-          
+
           // Jika ada value, harus valid float
           if (typeof value !== 'number') {
             return false;
           }
-          
+
           if (isNaN(value)) {
             return false;
           }
-          
+
           if (!isFinite(value)) {
             return false;
           }
-          
+
           return true;
         },
         defaultMessage(args: ValidationArguments) {
@@ -129,8 +137,12 @@ export function IsNullableFloat(validationOptions?: ValidationOptions) {
 /**
  * Custom validator untuk memastikan value adalah float yang nullable dengan range tertentu
  */
-export function IsNullableFloatInRange(min: number, max: number, validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+export function IsNullableFloatInRange(
+  min: number,
+  max: number,
+  validationOptions?: ValidationOptions,
+) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isNullableFloatInRange',
       target: object.constructor,
@@ -142,20 +154,20 @@ export function IsNullableFloatInRange(min: number, max: number, validationOptio
           if (value === null || value === undefined) {
             return true;
           }
-          
+
           // Jika ada value, harus valid float dalam range
           if (typeof value !== 'number') {
             return false;
           }
-          
+
           if (isNaN(value)) {
             return false;
           }
-          
+
           if (!isFinite(value)) {
             return false;
           }
-          
+
           return value >= min && value <= max;
         },
         defaultMessage(args: ValidationArguments) {

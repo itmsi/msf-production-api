@@ -41,7 +41,9 @@ describe('Barge Integration Tests', () => {
 
     bargeService = moduleFixture.get<BargeService>(BargeService);
     bargeController = moduleFixture.get<BargeController>(BargeController);
-    bargeRepository = moduleFixture.get<Repository<Barge>>(getRepositoryToken(Barge));
+    bargeRepository = moduleFixture.get<Repository<Barge>>(
+      getRepositoryToken(Barge),
+    );
   });
 
   afterAll(async () => {
@@ -84,7 +86,11 @@ describe('Barge Integration Tests', () => {
         capacity: 2000,
       };
 
-      const updatedBarge = await bargeService.update(bargeId, updateBargeDto, 1);
+      const updatedBarge = await bargeService.update(
+        bargeId,
+        updateBargeDto,
+        1,
+      );
       expect(updatedBarge.statusCode).toBe(200);
       expect(updatedBarge.data.name).toBe(updateBargeDto.name);
       expect(updatedBarge.data.capacity).toBe(updateBargeDto.capacity);
@@ -164,7 +170,10 @@ describe('Barge Integration Tests', () => {
         await bargeService.create(data, 1);
       }
 
-      const filteredResult = await bargeService.findAll({ minCapacity: '800', maxCapacity: '1500' });
+      const filteredResult = await bargeService.findAll({
+        minCapacity: '800',
+        maxCapacity: '1500',
+      });
       expect(filteredResult.statusCode).toBe(200);
       expect(filteredResult.data).toHaveLength(1);
       expect(filteredResult.data[0].capacity).toBe(1000);
@@ -182,9 +191,11 @@ describe('Barge Integration Tests', () => {
       const mockRequest = { user: { id: 1 } };
 
       // Test create through controller
-      const createdBarge = await bargeController.create(createBargeDto, mockRequest);
+      const createdBarge = await bargeController.create(
+        createBargeDto,
+        mockRequest,
+      );
       expect(createdBarge.statusCode).toBe(200);
-
 
       const bargeId = createdBarge.data.id;
 
@@ -198,7 +209,11 @@ describe('Barge Integration Tests', () => {
         name: 'Barge Controller Updated',
       };
 
-      const updatedBarge = await bargeController.update(bargeId, updateBargeDto, mockRequest);
+      const updatedBarge = await bargeController.update(
+        bargeId,
+        updateBargeDto,
+        mockRequest,
+      );
       expect(updatedBarge.statusCode).toBe(200);
       expect(updatedBarge.data.name).toBe(updateBargeDto.name);
     });

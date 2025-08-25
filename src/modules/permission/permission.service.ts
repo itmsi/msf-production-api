@@ -6,7 +6,11 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Permission } from './entities/permission.entity';
-import { CreatePermissionDto, UpdatePermissionDto, GetPermissionsQueryDto } from './dto/permission.dto';
+import {
+  CreatePermissionDto,
+  UpdatePermissionDto,
+  GetPermissionsQueryDto,
+} from './dto/permission.dto';
 import {
   ApiResponse,
   successResponse,
@@ -45,7 +49,9 @@ export class PermissionService {
     }
   }
 
-  async findAll(query?: GetPermissionsQueryDto): Promise<ApiResponse<Permission[]>> {
+  async findAll(
+    query?: GetPermissionsQueryDto,
+  ): Promise<ApiResponse<Permission[]>> {
     try {
       if (!query) {
         // Fallback untuk kompatibilitas backward
@@ -91,7 +97,9 @@ export class PermissionService {
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
-      qb.orderBy(`permission.${validSortBy}`, validSortOrder).skip(skip).take(limit);
+      qb.orderBy(`permission.${validSortBy}`, validSortOrder)
+        .skip(skip)
+        .take(limit);
 
       const [result, total] = await qb.getManyAndCount();
 

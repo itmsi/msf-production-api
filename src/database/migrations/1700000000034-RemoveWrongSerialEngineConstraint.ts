@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class RemoveWrongSerialEngineConstraint1700000000034 implements MigrationInterface {
+export class RemoveWrongSerialEngineConstraint1700000000034
+  implements MigrationInterface
+{
   name = 'RemoveWrongSerialEngineConstraint1700000000034';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

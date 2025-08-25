@@ -31,17 +31,23 @@ describe('DailyPlanProductionModule', () => {
   });
 
   it('should provide DailyPlanProductionService', () => {
-    const service = module.get<DailyPlanProductionService>(DailyPlanProductionService);
+    const service = module.get<DailyPlanProductionService>(
+      DailyPlanProductionService,
+    );
     expect(service).toBeDefined();
   });
 
   it('should provide DailyPlanProductionController', () => {
-    const controller = module.get<DailyPlanProductionController>(DailyPlanProductionController);
+    const controller = module.get<DailyPlanProductionController>(
+      DailyPlanProductionController,
+    );
     expect(controller).toBeDefined();
   });
 
   it('should export DailyPlanProductionService', () => {
-    const service = module.get<DailyPlanProductionService>(DailyPlanProductionService);
+    const service = module.get<DailyPlanProductionService>(
+      DailyPlanProductionService,
+    );
     expect(service).toBeDefined();
   });
 

@@ -102,7 +102,7 @@ describe('BargeController', () => {
 
       const mockRequest = { user: { id: 1 } };
       const result = await controller.create(createBargeDto, mockRequest);
-      
+
       expect(result).toEqual(mockResponse);
       expect(service.create).toHaveBeenCalledWith(createBargeDto, 1);
     });
@@ -135,7 +135,7 @@ describe('BargeController', () => {
 
       const mockRequest = { user: { id: 1 } };
       const result = await controller.update(1, updateBargeDto, mockRequest);
-      
+
       expect(result).toEqual(mockResponse);
       expect(service.update).toHaveBeenCalledWith(1, updateBargeDto, 1);
     });
@@ -153,7 +153,7 @@ describe('BargeController', () => {
 
       const mockRequest = { user: { id: 1 } };
       const result = await controller.delete(1, mockRequest);
-      
+
       expect(result).toEqual(mockResponse);
       expect(service.delete).toHaveBeenCalledWith(1, 1);
     });
@@ -180,7 +180,7 @@ describe('BargeController', () => {
 
       const mockRequest = { user: { id: 1 } };
       const result = await controller.restore(1, mockRequest);
-      
+
       expect(result).toEqual(mockResponse);
       expect(service.restore).toHaveBeenCalledWith(1, 1);
     });

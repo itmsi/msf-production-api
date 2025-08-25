@@ -1,7 +1,7 @@
-import { 
-  IsInt, 
-  IsNotEmpty, 
-  IsOptional, 
+import {
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
   IsNumberString,
   IsString,
   Min,
@@ -9,8 +9,8 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateRoleHasPermissionDto {
-  @ApiProperty({ 
-    description: 'ID role yang akan diberikan permission', 
+  @ApiProperty({
+    description: 'ID role yang akan diberikan permission',
     example: 1,
     minimum: 1,
   })
@@ -19,8 +19,8 @@ export class CreateRoleHasPermissionDto {
   @Min(1)
   role_id: number;
 
-  @ApiProperty({ 
-    description: 'ID menu has permission yang terkait', 
+  @ApiProperty({
+    description: 'ID menu has permission yang terkait',
     example: 1,
     minimum: 1,
   })
@@ -29,8 +29,8 @@ export class CreateRoleHasPermissionDto {
   @Min(1)
   mhp_id: number;
 
-  @ApiProperty({ 
-    description: 'ID permission yang akan diberikan kepada role', 
+  @ApiProperty({
+    description: 'ID permission yang akan diberikan kepada role',
     example: 1,
     minimum: 1,
   })
@@ -39,7 +39,7 @@ export class CreateRoleHasPermissionDto {
   @Min(1)
   permission_id: number;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'ID user yang membuat record ini',
     minimum: 1,
   })
@@ -50,8 +50,8 @@ export class CreateRoleHasPermissionDto {
 }
 
 export class UpdateRoleHasPermissionDto {
-  @ApiPropertyOptional({ 
-    description: 'ID role yang akan diberikan permission', 
+  @ApiPropertyOptional({
+    description: 'ID role yang akan diberikan permission',
     example: 1,
     minimum: 1,
   })
@@ -60,8 +60,8 @@ export class UpdateRoleHasPermissionDto {
   @Min(1)
   role_id?: number;
 
-  @ApiPropertyOptional({ 
-    description: 'ID menu has permission yang terkait', 
+  @ApiPropertyOptional({
+    description: 'ID menu has permission yang terkait',
     example: 1,
     minimum: 1,
   })
@@ -70,8 +70,8 @@ export class UpdateRoleHasPermissionDto {
   @Min(1)
   mhp_id?: number;
 
-  @ApiPropertyOptional({ 
-    description: 'ID permission yang akan diberikan kepada role', 
+  @ApiPropertyOptional({
+    description: 'ID permission yang akan diberikan kepada role',
     example: 1,
     minimum: 1,
   })
@@ -80,7 +80,7 @@ export class UpdateRoleHasPermissionDto {
   @Min(1)
   permission_id?: number;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'ID user yang mengupdate record ini',
     minimum: 1,
   })
@@ -148,7 +148,14 @@ export class GetRoleHasPermissionsQueryDto {
     required: false,
     example: 'id',
     description: 'Field untuk sorting',
-    enum: ['id', 'role_id', 'mhp_id', 'permission_id', 'createdAt', 'updatedAt'],
+    enum: [
+      'id',
+      'role_id',
+      'mhp_id',
+      'permission_id',
+      'createdAt',
+      'updatedAt',
+    ],
     default: 'id',
   })
   @IsOptional()
@@ -205,7 +212,10 @@ export class PermissionDto {
   @ApiProperty({ example: 'read', description: 'Nama permission' })
   name: string;
 
-  @ApiProperty({ example: 'Read permission', description: 'Deskripsi permission' })
+  @ApiProperty({
+    example: 'Read permission',
+    description: 'Deskripsi permission',
+  })
   description: string;
 
   @ApiProperty({ example: 'read', description: 'Slug permission' })
@@ -219,46 +229,52 @@ export class RoleHasPermissionResponseDto {
   @ApiProperty({ example: 1, description: 'ID role yang memiliki permission' })
   role_id: number;
 
-  @ApiProperty({ example: 1, description: 'ID menu has permission yang terkait' })
+  @ApiProperty({
+    example: 1,
+    description: 'ID menu has permission yang terkait',
+  })
   mhp_id: number;
 
   @ApiProperty({ example: 1, description: 'ID permission yang dimiliki role' })
   permission_id: number;
 
-  @ApiProperty({ 
-    example: '2024-01-01T00:00:00.000Z', 
-    description: 'Waktu pembuatan role has permission' 
+  @ApiProperty({
+    example: '2024-01-01T00:00:00.000Z',
+    description: 'Waktu pembuatan role has permission',
   })
   createdAt: Date;
 
   @ApiProperty({ example: 1, description: 'ID user yang membuat record ini' })
   createdBy: number;
 
-  @ApiProperty({ 
-    example: '2024-01-01T00:00:00.000Z', 
-    description: 'Waktu terakhir update role has permission' 
+  @ApiProperty({
+    example: '2024-01-01T00:00:00.000Z',
+    description: 'Waktu terakhir update role has permission',
   })
   updatedAt: Date;
 
-  @ApiProperty({ example: 1, description: 'ID user yang terakhir mengupdate record ini' })
+  @ApiProperty({
+    example: 1,
+    description: 'ID user yang terakhir mengupdate record ini',
+  })
   updatedBy: number;
 
-  @ApiProperty({ 
-    type: RoleDto, 
+  @ApiProperty({
+    type: RoleDto,
     description: 'Data role yang terkait',
     required: false,
   })
   role?: RoleDto;
 
-  @ApiProperty({ 
-    type: MenuHasPermissionDto, 
+  @ApiProperty({
+    type: MenuHasPermissionDto,
     description: 'Data menu has permission yang terkait',
     required: false,
   })
   menuHasPermission?: MenuHasPermissionDto;
 
-  @ApiProperty({ 
-    type: PermissionDto, 
+  @ApiProperty({
+    type: PermissionDto,
     description: 'Data permission yang terkait',
     required: false,
   })
@@ -280,10 +296,16 @@ export class RoleHasPermissionListResponseDto {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 
-  @ApiProperty({ example: 'Get role permissions successfully', description: 'Pesan response' })
+  @ApiProperty({
+    example: 'Get role permissions successfully',
+    description: 'Pesan response',
+  })
   message: string;
 
-  @ApiProperty({ type: [RoleHasPermissionResponseDto], description: 'Array data role has permissions' })
+  @ApiProperty({
+    type: [RoleHasPermissionResponseDto],
+    description: 'Array data role has permissions',
+  })
   data: RoleHasPermissionResponseDto[];
 
   @ApiProperty({ type: PaginationMetaDto, description: 'Informasi pagination' })
@@ -294,9 +316,15 @@ export class SingleRoleHasPermissionResponseDto {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 
-  @ApiProperty({ example: 'Get role permission successfully', description: 'Pesan response' })
+  @ApiProperty({
+    example: 'Get role permission successfully',
+    description: 'Pesan response',
+  })
   message: string;
 
-  @ApiProperty({ type: RoleHasPermissionResponseDto, description: 'Data role has permission' })
+  @ApiProperty({
+    type: RoleHasPermissionResponseDto,
+    description: 'Data role has permission',
+  })
   data: RoleHasPermissionResponseDto;
 }

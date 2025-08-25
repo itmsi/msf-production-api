@@ -186,7 +186,10 @@ export class PermissionDto {
   @ApiProperty({ example: 'read', description: 'Nama permission' })
   name: string;
 
-  @ApiProperty({ example: 'Read permission', description: 'Deskripsi permission' })
+  @ApiProperty({
+    example: 'Read permission',
+    description: 'Deskripsi permission',
+  })
   description: string;
 
   @ApiProperty({ example: 'read', description: 'Slug permission' })
@@ -197,8 +200,8 @@ export class MenuResponseDto {
   @ApiProperty({ example: 1, description: 'ID unik menu' })
   id: number;
 
-  @ApiProperty({ 
-    example: null, 
+  @ApiProperty({
+    example: null,
     description: 'ID menu parent (null untuk menu root)',
     nullable: true,
   })
@@ -222,47 +225,50 @@ export class MenuResponseDto {
   @ApiProperty({ example: 1, description: 'Urutan menu' })
   sort_order: number;
 
-  @ApiProperty({ 
-    example: MenuStatus.ACTIVE, 
+  @ApiProperty({
+    example: MenuStatus.ACTIVE,
     description: 'Status menu',
     enum: MenuStatus,
   })
   status: MenuStatus;
 
-  @ApiProperty({ 
-    example: MenuModuleType.PRODUCTION, 
+  @ApiProperty({
+    example: MenuModuleType.PRODUCTION,
     description: 'Module menu',
     enum: MenuModuleType,
   })
   module: MenuModuleType;
 
-  @ApiProperty({ 
-    example: '2024-01-01T00:00:00.000Z', 
-    description: 'Waktu pembuatan menu' 
+  @ApiProperty({
+    example: '2024-01-01T00:00:00.000Z',
+    description: 'Waktu pembuatan menu',
   })
   createdAt: Date;
 
   @ApiProperty({ example: 1, description: 'ID user yang membuat menu' })
   createdBy: number;
 
-  @ApiProperty({ 
-    example: '2024-01-01T00:00:00.000Z', 
-    description: 'Waktu terakhir update menu' 
+  @ApiProperty({
+    example: '2024-01-01T00:00:00.000Z',
+    description: 'Waktu terakhir update menu',
   })
   updatedAt: Date;
 
-  @ApiProperty({ example: 1, description: 'ID user yang terakhir mengupdate menu' })
+  @ApiProperty({
+    example: 1,
+    description: 'ID user yang terakhir mengupdate menu',
+  })
   updatedBy: number;
 
-  @ApiProperty({ 
-    type: [MenuResponseDto], 
+  @ApiProperty({
+    type: [MenuResponseDto],
     description: 'Sub-menu (children)',
     required: false,
   })
   children?: MenuResponseDto[];
 
-  @ApiProperty({ 
-    type: [PermissionDto], 
+  @ApiProperty({
+    type: [PermissionDto],
     description: 'Permissions yang dimiliki menu',
     required: false,
   })
@@ -284,7 +290,10 @@ export class MenuListResponseDto {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 
-  @ApiProperty({ example: 'Get menus successfully', description: 'Pesan response' })
+  @ApiProperty({
+    example: 'Get menus successfully',
+    description: 'Pesan response',
+  })
   message: string;
 
   @ApiProperty({ type: [MenuResponseDto], description: 'Array data menus' })
@@ -298,7 +307,10 @@ export class SingleMenuResponseDto {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 
-  @ApiProperty({ example: 'Get menu successfully', description: 'Pesan response' })
+  @ApiProperty({
+    example: 'Get menu successfully',
+    description: 'Pesan response',
+  })
   message: string;
 
   @ApiProperty({ type: MenuResponseDto, description: 'Data menu' })

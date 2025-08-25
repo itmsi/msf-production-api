@@ -13,8 +13,8 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateRolesDto {
-  @ApiProperty({ 
-    description: 'Kode role yang harus unik', 
+  @ApiProperty({
+    description: 'Kode role yang harus unik',
     example: 'ADMIN',
     minLength: 1,
     maxLength: 100,
@@ -25,8 +25,8 @@ export class CreateRolesDto {
   @MaxLength(100)
   role_code: string;
 
-  @ApiProperty({ 
-    description: 'Nama posisi/jabatan', 
+  @ApiProperty({
+    description: 'Nama posisi/jabatan',
     example: 'Administrator',
     minLength: 1,
     maxLength: 100,
@@ -37,7 +37,7 @@ export class CreateRolesDto {
   @MaxLength(100)
   position_name: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Kode role parent/atasan',
     example: 'SUPER_ADMIN',
     maxLength: 100,
@@ -47,7 +47,7 @@ export class CreateRolesDto {
   @MaxLength(100)
   role_parent?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'ID site tempat role ini berlaku',
     example: 1,
     minimum: 1,
@@ -57,7 +57,7 @@ export class CreateRolesDto {
   @Min(1)
   sites_id?: number;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'ID user yang membuat role ini',
     minimum: 1,
   })
@@ -68,8 +68,8 @@ export class CreateRolesDto {
 }
 
 export class UpdateRolesDto {
-  @ApiPropertyOptional({ 
-    description: 'Kode role yang harus unik', 
+  @ApiPropertyOptional({
+    description: 'Kode role yang harus unik',
     example: 'ADMIN',
     minLength: 1,
     maxLength: 100,
@@ -80,8 +80,8 @@ export class UpdateRolesDto {
   @MaxLength(100)
   role_code?: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Nama posisi/jabatan', 
+  @ApiPropertyOptional({
+    description: 'Nama posisi/jabatan',
     example: 'Administrator',
     minLength: 1,
     maxLength: 100,
@@ -92,7 +92,7 @@ export class UpdateRolesDto {
   @MaxLength(100)
   position_name?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Kode role parent/atasan',
     example: 'SUPER_ADMIN',
     maxLength: 100,
@@ -102,7 +102,7 @@ export class UpdateRolesDto {
   @MaxLength(100)
   role_parent?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'ID site tempat role ini berlaku',
     example: 1,
     minimum: 1,
@@ -112,7 +112,7 @@ export class UpdateRolesDto {
   @Min(1)
   sites_id?: number;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'ID user yang mengupdate role ini',
     minimum: 1,
   })
@@ -201,8 +201,8 @@ export class RolesResponseDto {
   @ApiProperty({ example: 'Administrator', description: 'Nama posisi/jabatan' })
   position_name: string;
 
-  @ApiProperty({ 
-    example: 'SUPER_ADMIN', 
+  @ApiProperty({
+    example: 'SUPER_ADMIN',
     description: 'Kode role parent/atasan',
     required: false,
   })
@@ -211,26 +211,29 @@ export class RolesResponseDto {
   @ApiProperty({ example: 1, description: 'ID site tempat role ini berlaku' })
   sites_id: number;
 
-  @ApiProperty({ 
-    example: '2024-01-01T00:00:00.000Z', 
-    description: 'Waktu pembuatan role' 
+  @ApiProperty({
+    example: '2024-01-01T00:00:00.000Z',
+    description: 'Waktu pembuatan role',
   })
   createdAt: Date;
 
   @ApiProperty({ example: 1, description: 'ID user yang membuat role' })
   createdBy: number;
 
-  @ApiProperty({ 
-    example: '2024-01-01T00:00:00.000Z', 
-    description: 'Waktu terakhir update role' 
+  @ApiProperty({
+    example: '2024-01-01T00:00:00.000Z',
+    description: 'Waktu terakhir update role',
   })
   updatedAt: Date;
 
-  @ApiProperty({ example: 1, description: 'ID user yang terakhir mengupdate role' })
+  @ApiProperty({
+    example: 1,
+    description: 'ID user yang terakhir mengupdate role',
+  })
   updatedBy: number;
 
-  @ApiProperty({ 
-    type: SiteDto, 
+  @ApiProperty({
+    type: SiteDto,
     description: 'Data site yang terkait',
     required: false,
   })
@@ -252,7 +255,10 @@ export class RoleListResponseDto {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 
-  @ApiProperty({ example: 'Get roles successfully', description: 'Pesan response' })
+  @ApiProperty({
+    example: 'Get roles successfully',
+    description: 'Pesan response',
+  })
   message: string;
 
   @ApiProperty({ type: [RolesResponseDto], description: 'Array data roles' })
@@ -266,11 +272,12 @@ export class SingleRoleResponseDto {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 
-  @ApiProperty({ example: 'Get role successfully', description: 'Pesan response' })
+  @ApiProperty({
+    example: 'Get role successfully',
+    description: 'Pesan response',
+  })
   message: string;
 
   @ApiProperty({ type: RolesResponseDto, description: 'Data role' })
   data: RolesResponseDto;
 }
-
-

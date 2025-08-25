@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsDateString, IsNumber, IsPositive, IsOptional } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsDateString,
+  IsNumber,
+  IsPositive,
+  IsOptional,
+} from 'class-validator';
 
 export class CreateParentPlanProductionDto {
   @ApiProperty({
@@ -8,7 +14,10 @@ export class CreateParentPlanProductionDto {
     required: true,
   })
   @IsNotEmpty({ message: 'plan_date tidak boleh kosong' })
-  @IsDateString({}, { message: 'plan_date harus dalam format tanggal yang valid' })
+  @IsDateString(
+    {},
+    { message: 'plan_date harus dalam format tanggal yang valid' },
+  )
   plan_date: string;
 
   @ApiProperty({

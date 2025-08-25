@@ -1,9 +1,25 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, Raw, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import {
+  Repository,
+  FindOptionsWhere,
+  Raw,
+  Between,
+  MoreThanOrEqual,
+  LessThanOrEqual,
+} from 'typeorm';
 import { PlanProduction } from '../plan-production/entities/plan-production.entity';
 import { ParentPlanProduction } from '../parent-plan-production/entities/parent-plan-production.entity';
-import { CreateDailyPlanProductionDto, UpdateDailyPlanProductionDto, QueryDailyPlanProductionDto, DailyPlanProductionListResponseDto } from './dto/daily-plan-production.dto';
+import {
+  CreateDailyPlanProductionDto,
+  UpdateDailyPlanProductionDto,
+  QueryDailyPlanProductionDto,
+  DailyPlanProductionListResponseDto,
+} from './dto/daily-plan-production.dto';
 import { successResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 
@@ -56,15 +72,28 @@ export class DailyPlanProductionService {
     dailyPlanProduction.shift_ob_target = createDto.ob_target / 2;
     dailyPlanProduction.shift_ore_target = createDto.ore_target / 2;
     dailyPlanProduction.shift_quarry = createDto.quarry / 2;
-    dailyPlanProduction.shift_sr_target = dailyPlanProduction.shift_ob_target / dailyPlanProduction.shift_ore_target;
-    dailyPlanProduction.remaining_stock = oldStockGlobal - createDto.ore_shipment_target + createDto.ore_target;
+    dailyPlanProduction.shift_sr_target =
+      dailyPlanProduction.shift_ob_target /
+      dailyPlanProduction.shift_ore_target;
+    dailyPlanProduction.remaining_stock =
+      oldStockGlobal - createDto.ore_shipment_target + createDto.ore_target;
 
-    const savedPlan = await this.dailyPlanProductionRepository.save(dailyPlanProduction);
+    const savedPlan =
+      await this.dailyPlanProductionRepository.save(dailyPlanProduction);
     return successResponse(savedPlan, 'Daily plan production berhasil dibuat');
   }
 
   async findAll(queryDto: QueryDailyPlanProductionDto): Promise<any> {
-    const { start_date, end_date, search, sortBy = 'plan_date', sortOrder = 'DESC', page = 1, limit = 10 } = queryDto;
+    const {
+      start_date,
+      end_date,
+      search,
+      sortBy = 'plan_date',
+      sortOrder = 'DESC',
+      page = 1,
+      limit = 10,
+      calendar_day,
+    } = queryDto;
     const skip = (page - 1) * limit;
 
     const where: FindOptionsWhere<PlanProduction> = {};
@@ -75,6 +104,21 @@ export class DailyPlanProductionService {
       where.plan_date = MoreThanOrEqual(new Date(start_date));
     } else if (end_date) {
       where.plan_date = LessThanOrEqual(new Date(end_date));
+    }
+
+    // Add filter berdasarkan calendar_day
+    if (calendar_day) {
+      switch (calendar_day) {
+        case 'available':
+          where.schedule_day = 1;
+          break;
+        case 'holiday':
+          where.schedule_day = 0;
+          break;
+        case 'one-shift':
+          where.schedule_day = 0.5;
+          break;
+      }
     }
 
     // Handle search parameter - sementara dinonaktifkan karena ada masalah dengan TypeORM
@@ -89,12 +133,13 @@ export class DailyPlanProductionService {
       order[sortBy] = sortOrder;
     }
 
-    const [plans, total] = await this.dailyPlanProductionRepository.findAndCount({
-      where,
-      order,
-      skip,
-      take: limit,
-    });
+    const [plans, total] =
+      await this.dailyPlanProductionRepository.findAndCount({
+        where,
+        order,
+        skip,
+        take: limit,
+      });
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -104,11 +149,15 @@ export class DailyPlanProductionService {
       return Math.round(value * 100) / 100;
     };
 
-    const processedData = plans.map(plan => {
+    const processedData = plans.map((plan) => {
       // Hitung nilai-nilai yang diminta
       const sr_target = roundToTwoDecimals(plan.ob_target / plan.ore_target);
-      const sisa_stock = roundToTwoDecimals(plan.ore_target - plan.ore_shipment_target);
-      const tonnage_per_fleet = roundToTwoDecimals(plan.ore_target / plan.total_fleet);
+      const sisa_stock = roundToTwoDecimals(
+        plan.ore_target - plan.ore_shipment_target,
+      );
+      const tonnage_per_fleet = roundToTwoDecimals(
+        plan.ore_target / plan.total_fleet,
+      );
       const vessel_per_fleet = roundToTwoDecimals(tonnage_per_fleet / 35);
 
       // Handle plan_date yang mungkin bukan Date object
@@ -130,14 +179,23 @@ export class DailyPlanProductionService {
       const isAvailableToEdit = planDateStart > today;
       const isAvailableToDelete = planDateStart > today;
 
-      // Format calender_day
-      const calenderDay = plan.is_calender_day ? 'available' : 'not holiday';
+      // Format calender_day berdasarkan schedule_day
+      let calenderDay = 'holiday';
+      if (plan.schedule_day === 1) {
+        calenderDay = 'available';
+      } else if (plan.schedule_day === 0.5) {
+        calenderDay = 'one-shift';
+      } else if (plan.schedule_day === 0) {
+        calenderDay = 'holiday';
+      }
 
       return {
         id: plan.id,
         date: planDate.toISOString().split('T')[0],
         calender_day: calenderDay,
-        average_month_ewh: roundToTwoDecimals(plan.average_moth_ewh || plan.average_day_ewh), // Menggunakan average_moth_ewh jika ada, fallback ke average_day_ewh
+        average_month_ewh: roundToTwoDecimals(
+          plan.average_moth_ewh || plan.average_day_ewh,
+        ), // Menggunakan average_moth_ewh jika ada, fallback ke average_day_ewh
         average_day_ewh: roundToTwoDecimals(plan.average_day_ewh),
         ob_target: roundToTwoDecimals(plan.ob_target),
         ore_target: roundToTwoDecimals(plan.ore_target),
@@ -174,7 +232,10 @@ export class DailyPlanProductionService {
     return successResponse(plan, 'Data daily plan production berhasil diambil');
   }
 
-  async update(id: number, updateDto: UpdateDailyPlanProductionDto): Promise<any> {
+  async update(
+    id: number,
+    updateDto: UpdateDailyPlanProductionDto,
+  ): Promise<any> {
     const plan = await this.dailyPlanProductionRepository.findOne({
       where: { id },
     });
@@ -193,7 +254,9 @@ export class DailyPlanProductionService {
         currentPlanDateStr = (plan.plan_date as string).split('T')[0];
       } else {
         // Fallback jika format tidak dikenali
-        currentPlanDateStr = new Date(plan.plan_date as any).toISOString().split('T')[0];
+        currentPlanDateStr = new Date(plan.plan_date as any)
+          .toISOString()
+          .split('T')[0];
       }
 
       if (updateDto.plan_date !== currentPlanDateStr) {
@@ -210,7 +273,7 @@ export class DailyPlanProductionService {
     // 2. Update plan_date dan set boolean values
     if (updateDto.plan_date) {
       plan.plan_date = new Date(updateDto.plan_date);
-      
+
       const planDate = new Date(updateDto.plan_date);
       const dayOfWeek = planDate.getDay();
 
@@ -223,17 +286,26 @@ export class DailyPlanProductionService {
     }
 
     // Update field-field yang ada di body request
-    if (updateDto.average_day_ewh !== undefined) plan.average_day_ewh = updateDto.average_day_ewh;
-    if (updateDto.average_month_ewh !== undefined) plan.average_moth_ewh = updateDto.average_month_ewh;
-    if (updateDto.schedule_day !== undefined) plan.schedule_day = updateDto.schedule_day;
+    if (updateDto.average_day_ewh !== undefined)
+      plan.average_day_ewh = updateDto.average_day_ewh;
+    if (updateDto.average_month_ewh !== undefined)
+      plan.average_moth_ewh = updateDto.average_month_ewh;
+    if (updateDto.schedule_day !== undefined)
+      plan.schedule_day = updateDto.schedule_day;
     if (updateDto.ob_target !== undefined) plan.ob_target = updateDto.ob_target;
-    if (updateDto.ore_target !== undefined) plan.ore_target = updateDto.ore_target;
+    if (updateDto.ore_target !== undefined)
+      plan.ore_target = updateDto.ore_target;
     if (updateDto.quarry !== undefined) plan.quarry = updateDto.quarry;
-    if (updateDto.ore_shipment_target !== undefined) plan.ore_shipment_target = updateDto.ore_shipment_target;
-    if (updateDto.total_fleet !== undefined) plan.total_fleet = updateDto.total_fleet;
+    if (updateDto.ore_shipment_target !== undefined)
+      plan.ore_shipment_target = updateDto.ore_shipment_target;
+    if (updateDto.total_fleet !== undefined)
+      plan.total_fleet = updateDto.total_fleet;
 
     // 3. Hitung nilai-nilai yang dihitung otomatis
-    if (updateDto.ob_target !== undefined || updateDto.ore_target !== undefined) {
+    if (
+      updateDto.ob_target !== undefined ||
+      updateDto.ore_target !== undefined
+    ) {
       // sr_target: (rumusnya yaitu (ob_target / ore_target))
       plan.sr_target = plan.ob_target / plan.ore_target;
       // shift_ob_target: (rumusnya yaitu (ob_target / 2))
@@ -249,18 +321,25 @@ export class DailyPlanProductionService {
       plan.shift_quarry = plan.quarry / 2;
     }
 
-    if (updateDto.ore_target !== undefined || updateDto.ore_shipment_target !== undefined) {
-      // Cara mencari old_stock_global: ambil data dari tabel r_plan_production di kolom daily_old_stock 
+    if (
+      updateDto.ore_target !== undefined ||
+      updateDto.ore_shipment_target !== undefined
+    ) {
+      // Cara mencari old_stock_global: ambil data dari tabel r_plan_production di kolom daily_old_stock
       // tapi untuk data sebelumnya, jika tidak ada maka ambil dari tabel r_parent_plan_production di kolom total_sisa_stock
       const oldStockGlobal = await this.getOldStockGlobal();
       // daily_old_stock: (rumusnya yaitu (old_stock_global - ore_shipment_target) + ore_target)
       plan.daily_old_stock = oldStockGlobal;
       // remaining_stock: (rumusnya yaitu (old_stock_global - ore_shipment_target) + ore_target)
-      plan.remaining_stock = oldStockGlobal - plan.ore_shipment_target + plan.ore_target;
+      plan.remaining_stock =
+        oldStockGlobal - plan.ore_shipment_target + plan.ore_target;
     }
 
     const updatedPlan = await this.dailyPlanProductionRepository.save(plan);
-    return successResponse(updatedPlan, 'Daily plan production berhasil diupdate');
+    return successResponse(
+      updatedPlan,
+      'Daily plan production berhasil diupdate',
+    );
   }
 
   async remove(id: number): Promise<any> {
@@ -277,9 +356,9 @@ export class DailyPlanProductionService {
   }
 
   private async getOldStockGlobal(): Promise<number> {
-    // Cara mencari old_stock_global: ambil data dari tabel r_plan_production di kolom daily_old_stock 
+    // Cara mencari old_stock_global: ambil data dari tabel r_plan_production di kolom daily_old_stock
     // tapi untuk data sebelumnya, jika tidak ada maka ambil dari tabel r_parent_plan_production di kolom total_sisa_stock
-    
+
     // 1. Coba ambil dari r_plan_production terlebih dahulu
     const previousPlan = await this.dailyPlanProductionRepository.findOne({
       where: {},

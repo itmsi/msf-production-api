@@ -13,14 +13,14 @@ import {
 } from '@nestjs/common';
 import { RolesService } from './roles.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
-import { 
-  ApiBearerAuth, 
-  ApiTags, 
-  ApiBody, 
-  ApiOperation, 
-  ApiResponse, 
-  ApiParam, 
-  ApiQuery 
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import {
   CreateRolesDto,
@@ -39,7 +39,8 @@ export class RolesController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary: 'Mendapatkan semua data roles dengan pagination, filtering, dan sorting',
+    summary:
+      'Mendapatkan semua data roles dengan pagination, filtering, dan sorting',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -48,11 +49,36 @@ export class RolesController {
       - Urutan sorting ASC atau DESC
     `,
   })
-  @ApiQuery({ name: 'page', required: false, type: String, description: 'Nomor halaman (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, type: String, description: 'Jumlah data per halaman (default: 10, max: 100)' })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search berdasarkan position_name' })
-  @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Field untuk sorting' })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'], description: 'Urutan sorting' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: String,
+    description: 'Nomor halaman (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: String,
+    description: 'Jumlah data per halaman (default: 10, max: 100)',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search berdasarkan position_name',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    description: 'Field untuk sorting',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Urutan sorting',
+  })
   @ApiResponse({
     status: 200,
     description: 'Data roles berhasil diambil',
@@ -174,7 +200,8 @@ export class RolesController {
   @Post()
   @ApiOperation({
     summary: 'Membuat role baru',
-    description: 'Membuat role baru dengan kode unik dan nama posisi. Role code dan position name harus unik dalam sistem.',
+    description:
+      'Membuat role baru dengan kode unik dan nama posisi. Role code dan position name harus unik dalam sistem.',
   })
   @ApiBody({
     type: CreateRolesDto,
@@ -281,7 +308,8 @@ export class RolesController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data role berdasarkan ID',
-    description: 'Mengupdate data role dengan validasi duplikasi role_code dan position_name',
+    description:
+      'Mengupdate data role dengan validasi duplikasi role_code dan position_name',
   })
   @ApiParam({
     name: 'id',
@@ -331,7 +359,11 @@ export class RolesController {
     status: 500,
     description: 'Internal Server Error - Terjadi kesalahan pada server',
   })
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRolesDto, @Request() req: any) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateRolesDto,
+    @Request() req: any,
+  ) {
     if (!dto.updatedBy) {
       dto.updatedBy = req.user?.id;
     }

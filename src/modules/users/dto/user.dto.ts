@@ -13,7 +13,7 @@ import {
 } from 'class-validator';
 
 export class CreateUserDto {
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'usertest',
     description: 'Username unik yang hanya boleh mengandung huruf dan angka',
     minLength: 3,
@@ -28,7 +28,7 @@ export class CreateUserDto {
   })
   username: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: '******',
     description: 'Password minimal 6 karakter',
     minLength: 6,
@@ -39,7 +39,7 @@ export class CreateUserDto {
   @MinLength(6)
   password: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'john@example.com',
     description: 'Email yang valid dan unik',
     maxLength: 100,
@@ -48,7 +48,7 @@ export class CreateUserDto {
   @IsNotEmpty()
   email: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: 1,
     description: 'ID role yang akan diberikan kepada user ini',
     minimum: 1,
@@ -58,7 +58,7 @@ export class CreateUserDto {
   @IsNotEmpty()
   roleId: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: 1,
     description: 'ID employee yang terkait dengan user ini',
     minimum: 1,
@@ -91,7 +91,10 @@ export class EmployeeDto {
   @ApiProperty({ example: 'Doe', description: 'Nama belakang employee' })
   lastName: string;
 
-  @ApiProperty({ example: 'john.doe@company.com', description: 'Email employee' })
+  @ApiProperty({
+    example: 'john.doe@company.com',
+    description: 'Email employee',
+  })
   email: string;
 }
 
@@ -111,28 +114,28 @@ export class UserResponseDto {
   @ApiProperty({ example: 1, description: 'ID employee yang terkait' })
   employee_id: number;
 
-  @ApiProperty({ 
-    example: '2024-01-01T00:00:00.000Z', 
-    description: 'Waktu pembuatan user' 
+  @ApiProperty({
+    example: '2024-01-01T00:00:00.000Z',
+    description: 'Waktu pembuatan user',
   })
   createdAt: Date;
 
-  @ApiProperty({ 
-    example: '2024-01-01T00:00:00.000Z', 
+  @ApiProperty({
+    example: '2024-01-01T00:00:00.000Z',
     description: 'Waktu terakhir update user',
     required: false,
   })
   updatedAt?: Date;
 
-  @ApiProperty({ 
-    type: [RoleDto], 
+  @ApiProperty({
+    type: [RoleDto],
     description: 'Array role yang dimiliki user',
     required: false,
   })
   roles?: RoleDto[];
 
-  @ApiProperty({ 
-    type: EmployeeDto, 
+  @ApiProperty({
+    type: EmployeeDto,
     description: 'Data employee yang terkait',
     required: false,
   })
@@ -221,7 +224,10 @@ export class UserListResponseDto {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 
-  @ApiProperty({ example: 'Get users successfully', description: 'Pesan response' })
+  @ApiProperty({
+    example: 'Get users successfully',
+    description: 'Pesan response',
+  })
   message: string;
 
   @ApiProperty({ type: [UserResponseDto], description: 'Array data users' })
@@ -235,7 +241,10 @@ export class SingleUserResponseDto {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 
-  @ApiProperty({ example: 'Get user successfully', description: 'Pesan response' })
+  @ApiProperty({
+    example: 'Get user successfully',
+    description: 'Pesan response',
+  })
   message: string;
 
   @ApiProperty({ type: UserResponseDto, description: 'Data user' })
@@ -243,7 +252,7 @@ export class SingleUserResponseDto {
 }
 
 export class UpdateUserDto {
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'john@example.com',
     description: 'Email yang valid dan unik',
     maxLength: 100,
@@ -252,8 +261,8 @@ export class UpdateUserDto {
   @IsNotEmpty()
   email: string;
 
-  @ApiProperty({ 
-    example: 1, 
+  @ApiProperty({
+    example: 1,
     description: 'ID unik dari role yang akan diberikan kepada user',
     minimum: 1,
     required: false,

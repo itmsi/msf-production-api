@@ -6,7 +6,7 @@ export class FixColumnNameInRPlanWorkingHourDetail1700000000045
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Ubah nama kolom dari plant_working_hour_id menjadi plant_working_hour_id
     // (sebenarnya nama sudah benar, tapi untuk memastikan konsistensi)
-    
+
     // Tambah kolom baru dengan nama yang benar jika belum ada
     const table = await queryRunner.getTable('r_plan_working_hour_detail');
     if (table) {

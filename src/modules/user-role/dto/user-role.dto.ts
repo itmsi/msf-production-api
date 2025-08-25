@@ -1,7 +1,7 @@
-import { 
-  IsInt, 
-  IsNotEmpty, 
-  IsOptional, 
+import {
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
   IsNumberString,
   IsString,
   MinLength,
@@ -10,8 +10,8 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateUserRoleDto {
-  @ApiProperty({ 
-    description: 'ID user yang akan diberikan role', 
+  @ApiProperty({
+    description: 'ID user yang akan diberikan role',
     example: 1,
     minimum: 1,
   })
@@ -20,8 +20,8 @@ export class CreateUserRoleDto {
   @Min(1)
   user_id: number;
 
-  @ApiProperty({ 
-    description: 'ID role yang akan diberikan kepada user', 
+  @ApiProperty({
+    description: 'ID role yang akan diberikan kepada user',
     example: 1,
     minimum: 1,
   })
@@ -30,7 +30,7 @@ export class CreateUserRoleDto {
   @Min(1)
   role_id: number;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'ID user yang membuat record ini',
     minimum: 1,
   })
@@ -41,8 +41,8 @@ export class CreateUserRoleDto {
 }
 
 export class UpdateUserRoleDto {
-  @ApiPropertyOptional({ 
-    description: 'ID user yang akan diberikan role', 
+  @ApiPropertyOptional({
+    description: 'ID user yang akan diberikan role',
     example: 1,
     minimum: 1,
   })
@@ -51,8 +51,8 @@ export class UpdateUserRoleDto {
   @Min(1)
   user_id?: number;
 
-  @ApiPropertyOptional({ 
-    description: 'ID role yang akan diberikan kepada user', 
+  @ApiPropertyOptional({
+    description: 'ID role yang akan diberikan kepada user',
     example: 1,
     minimum: 1,
   })
@@ -61,7 +61,7 @@ export class UpdateUserRoleDto {
   @Min(1)
   role_id?: number;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'ID user yang mengupdate record ini',
     minimum: 1,
   })
@@ -72,8 +72,8 @@ export class UpdateUserRoleDto {
 }
 
 export class AssignRoleDto {
-  @ApiProperty({ 
-    description: 'ID user yang akan diberikan role', 
+  @ApiProperty({
+    description: 'ID user yang akan diberikan role',
     example: 1,
     minimum: 1,
   })
@@ -82,8 +82,8 @@ export class AssignRoleDto {
   @Min(1)
   user_id: number;
 
-  @ApiProperty({ 
-    description: 'ID role yang akan diberikan kepada user', 
+  @ApiProperty({
+    description: 'ID role yang akan diberikan kepada user',
     example: 1,
     minimum: 1,
   })
@@ -94,8 +94,8 @@ export class AssignRoleDto {
 }
 
 export class RemoveRoleDto {
-  @ApiProperty({ 
-    description: 'ID user yang akan dicabut rolenya', 
+  @ApiProperty({
+    description: 'ID user yang akan dicabut rolenya',
     example: 1,
     minimum: 1,
   })
@@ -104,8 +104,8 @@ export class RemoveRoleDto {
   @Min(1)
   user_id: number;
 
-  @ApiProperty({ 
-    description: 'ID role yang akan dicabut dari user', 
+  @ApiProperty({
+    description: 'ID role yang akan dicabut dari user',
     example: 1,
     minimum: 1,
   })
@@ -220,33 +220,36 @@ export class UserRoleResponseDto {
   @ApiProperty({ example: 1, description: 'ID role yang dimiliki user' })
   role_id: number;
 
-  @ApiProperty({ 
-    example: '2024-01-01T00:00:00.000Z', 
-    description: 'Waktu pembuatan user role' 
+  @ApiProperty({
+    example: '2024-01-01T00:00:00.000Z',
+    description: 'Waktu pembuatan user role',
   })
   createdAt: Date;
 
   @ApiProperty({ example: 1, description: 'ID user yang membuat record ini' })
   createdBy: number;
 
-  @ApiProperty({ 
-    example: '2024-01-01T00:00:00.000Z', 
-    description: 'Waktu terakhir update user role' 
+  @ApiProperty({
+    example: '2024-01-01T00:00:00.000Z',
+    description: 'Waktu terakhir update user role',
   })
   updatedAt: Date;
 
-  @ApiProperty({ example: 1, description: 'ID user yang terakhir mengupdate record ini' })
+  @ApiProperty({
+    example: 1,
+    description: 'ID user yang terakhir mengupdate record ini',
+  })
   updatedBy: number;
 
-  @ApiProperty({ 
-    type: UserDto, 
+  @ApiProperty({
+    type: UserDto,
     description: 'Data user yang terkait',
     required: false,
   })
   user?: UserDto;
 
-  @ApiProperty({ 
-    type: RoleDto, 
+  @ApiProperty({
+    type: RoleDto,
     description: 'Data role yang terkait',
     required: false,
   })
@@ -268,10 +271,16 @@ export class UserRoleListResponseDto {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 
-  @ApiProperty({ example: 'Get user roles successfully', description: 'Pesan response' })
+  @ApiProperty({
+    example: 'Get user roles successfully',
+    description: 'Pesan response',
+  })
   message: string;
 
-  @ApiProperty({ type: [UserRoleResponseDto], description: 'Array data user roles' })
+  @ApiProperty({
+    type: [UserRoleResponseDto],
+    description: 'Array data user roles',
+  })
   data: UserRoleResponseDto[];
 
   @ApiProperty({ type: PaginationMetaDto, description: 'Informasi pagination' })
@@ -282,7 +291,10 @@ export class SingleUserRoleResponseDto {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 
-  @ApiProperty({ example: 'Get user role successfully', description: 'Pesan response' })
+  @ApiProperty({
+    example: 'Get user role successfully',
+    description: 'Pesan response',
+  })
   message: string;
 
   @ApiProperty({ type: UserRoleResponseDto, description: 'Data user role' })
