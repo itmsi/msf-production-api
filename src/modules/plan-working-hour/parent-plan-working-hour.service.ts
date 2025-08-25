@@ -521,11 +521,14 @@ export class ParentPlanWorkingHourService {
 
         // Tentukan availability untuk edit dan delete
         const planDate = new Date(pwh.plan_date);
-        const isCurrentMonth = planDate.getMonth() === currentMonth && planDate.getFullYear() === currentYear;
-        const isFutureMonth = planDate > today;
+        // Set time to start of day for accurate comparison
+        planDate.setHours(0, 0, 0, 0);
+        const todayStart = new Date(today);
+        todayStart.setHours(0, 0, 0, 0);
         
-        const isAvailableToEdit = isCurrentMonth || isFutureMonth;
-        const isAvailableToDelete = isCurrentMonth || isFutureMonth;
+        // true hanya jika plan_date lebih dari tanggal hari ini
+        const isAvailableToEdit = planDate > todayStart;
+        const isAvailableToDelete = planDate > todayStart;
 
         return {
           plan_date: pwh.plan_date.toISOString().split('T')[0], // Format YYYY-MM-DD

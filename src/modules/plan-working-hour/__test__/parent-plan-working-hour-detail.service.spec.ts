@@ -353,5 +353,73 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
       expect(result.data[0]).toHaveProperty('ua', 0);
       expect(result.data[0]).toHaveProperty('eu', 0);
     });
+
+    it('should set availability flags correctly based on plan_date', async () => {
+      const query: GetParentPlanWorkingHourDetailQueryDto = {
+        start_date: '2025-08-01',
+        end_date: '2025-08-31',
+        month_year: '2025-08',
+        page: '1',
+        limit: '10',
+      };
+
+      const mockPlanWorkingHours = [
+        {
+          id: 1,
+          plan_date: new Date('2025-08-10'), // Past date
+          is_calender_day: true,
+          working_hour_day: 8,
+          working_hour_month: 216,
+          working_hour_longshift: 14.4,
+          working_day_longshift: 1.5,
+          mohh_per_month: 100,
+          details: [],
+        },
+        {
+          id: 2,
+          plan_date: new Date('2025-08-15'), // Today
+          is_calender_day: true,
+          working_hour_day: 8,
+          working_hour_month: 216,
+          working_hour_longshift: 14.4,
+          working_day_longshift: 1.5,
+          mohh_per_month: 100,
+          details: [],
+        },
+        {
+          id: 3,
+          plan_date: new Date('2025-08-20'), // Future date
+          is_calender_day: true,
+          working_hour_day: 8,
+          working_hour_month: 216,
+          working_hour_longshift: 14.4,
+          working_day_longshift: 1.5,
+          mohh_per_month: 100,
+          details: [],
+        },
+      ];
+
+      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      mockQueryBuilder.getCount.mockResolvedValue(3);
+      mockQueryBuilder.getMany.mockResolvedValue(mockPlanWorkingHours);
+
+      const result = await service.getDetail(query);
+
+      // Test that availability flags are set (actual values depend on current date)
+      expect(result.data[0]).toHaveProperty('is_available_to_edit');
+      expect(result.data[0]).toHaveProperty('is_available_to_delete');
+      expect(result.data[1]).toHaveProperty('is_available_to_edit');
+      expect(result.data[1]).toHaveProperty('is_available_to_delete');
+      expect(result.data[2]).toHaveProperty('is_available_to_edit');
+      expect(result.data[2]).toHaveProperty('is_available_to_delete');
+
+      // All flags should be boolean values
+      expect(typeof result.data[0].is_available_to_edit).toBe('boolean');
+      expect(typeof result.data[0].is_available_to_delete).toBe('boolean');
+      expect(typeof result.data[1].is_available_to_edit).toBe('boolean');
+      expect(typeof result.data[1].is_available_to_delete).toBe('boolean');
+      expect(typeof result.data[2].is_available_to_edit).toBe('boolean');
+      expect(typeof result.data[2].is_available_to_delete).toBe('boolean');
+    });
   });
 });

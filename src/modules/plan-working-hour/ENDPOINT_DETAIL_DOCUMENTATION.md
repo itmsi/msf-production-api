@@ -93,55 +93,13 @@ GET /api/parent-plan-working-hour/detail?start_date=2025-08-01&end_date=2025-08-
 
 ### Availability Flags
 - `is_available_to_edit`: Apakah data tersedia untuk diedit
-  - `true`: Jika plan_date sama dengan bulan/tahun hari ini atau di masa depan
-  - `false`: Jika plan_date di masa lalu
+  - `true`: Jika plan_date lebih dari tanggal hari ini
+  - `false`: Jika plan_date sama dengan atau kurang dari tanggal hari ini
 - `is_available_to_delete`: Apakah data tersedia untuk dihapus
-  - `true`: Jika plan_date sama dengan bulan/tahun hari ini atau di masa depan
-  - `false`: Jika plan_date di masa lalu
+  - `true`: Jika plan_date lebih dari tanggal hari ini
+  - `false`: Jika plan_date sama dengan atau kurang dari tanggal hari ini
 
 ## Business Logic
 
 ### Calendar Day Determination
-- `is_calender_day = true` → `calendar_day = "available"`
-- `is_calender_day = false` → `calendar_day = "one shift"`
-- `is_calender_day = null` → `calendar_day = "holiday"`
-
-### Metrics Calculation
-1. **EWH**: Effective Working Hours = Total MOHH - Total Delay - Total Breakdown
-2. **PA**: Performance Availability = (EWH + Total Delay + Total Idle) / Total MOHH
-3. **MA**: Mechanical Availability = EWH / (EWH + Total Breakdown)
-4. **UA**: Utilization Availability = EWH / (EWH + Total Delay + Total Idle)
-5. **EU**: Equipment Utilization = EWH / (EWH + Total Delay + Total Idle + Total Breakdown)
-
-### Data Source
-- Data utama diambil dari tabel `r_plan_working_hour`
-- Detail activities diambil dari tabel `r_plan_working_hour_detail`
-- Status activities diambil dari tabel `m_activities`
-- Semua metrics dihitung secara real-time berdasarkan data yang ada
-
-## Error Responses
-
-### Bad Request (400)
-```json
-{
-  "statusCode": 400,
-  "message": "Parameter start_date, end_date, dan month_year harus diisi",
-  "error": "Bad Request"
-}
-```
-
-### Unauthorized (401)
-```json
-{
-  "statusCode": 401,
-  "message": "Unauthorized",
-  "error": "Unauthorized"
-}
-```
-
-## Notes
-- Endpoint ini mendukung pagination untuk data yang besar
-- Semua metrics dihitung secara real-time berdasarkan data yang ada di database
-- Filter berdasarkan rentang tanggal memastikan data yang relevan
-- Response menggunakan helper `paginateResponse` untuk konsistensi dengan endpoint lainnya
-- **Semua nilai numeric di-round ke 2 digit di belakang koma** untuk konsistensi format
+- `
