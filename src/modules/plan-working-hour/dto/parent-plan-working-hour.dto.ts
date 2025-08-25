@@ -1,4 +1,4 @@
-import { IsDateString, IsNumber, IsArray, ValidateNested, IsOptional } from 'class-validator';
+import { IsDateString, IsNumber, IsArray, ValidateNested, IsOptional, IsNumberString, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiExtraModels } from '@nestjs/swagger';
 
@@ -183,4 +183,178 @@ export class ParentPlanWorkingHourResponseDto {
 
   @ApiProperty({ description: 'Waktu soft delete record', example: null })
   deletedAt: Date;
+}
+
+export class ParentPlanWorkingHourSummaryResponseDto {
+  @ApiProperty({
+    example: 1,
+    description: 'ID dari tabel r_parent_plan_working_hour',
+  })
+  parent_id: number;
+
+  @ApiProperty({
+    example: '2025-08',
+    description: 'Bulan dan tahun dari kolom plan_date',
+  })
+  month_year: string;
+
+  @ApiProperty({
+    example: 27,
+    description: 'Jumlah kolom is_schedule_day yang bernilai true',
+  })
+  schedule_day: number;
+
+  @ApiProperty({
+    example: 4,
+    description: 'Jumlah kolom is_holiday_day yang bernilai true',
+  })
+  holiday_day: number;
+
+  @ApiProperty({
+    example: 216,
+    description: 'Jumlah value di kolom working_hour_month',
+  })
+  working_hour_month: number;
+
+  @ApiProperty({
+    example: 7.2,
+    description: 'Jumlah value di kolom working_hour_day',
+  })
+  working_hour_day: number;
+
+  @ApiProperty({
+    example: 14.4,
+    description: 'Jumlah value di kolom working_hour_longshift',
+  })
+  working_hour_longshift: number;
+
+  @ApiProperty({
+    example: 1.5,
+    description: 'Jumlah value di kolom working_day_longshift',
+  })
+  working_day_longshift: number;
+
+  @ApiProperty({
+    example: 100,
+    description: 'Value dari kolom mohh_per_month',
+  })
+  total_mohh: number;
+
+  @ApiProperty({
+    example: 10,
+    description: 'Jumlah value di kolom activities_hour dengan status delay',
+  })
+  total_delay: number;
+
+  @ApiProperty({
+    example: 10,
+    description: 'Jumlah value di kolom activities_hour dengan status idle',
+  })
+  total_idle: number;
+
+  @ApiProperty({
+    example: 10,
+    description: 'Jumlah value di kolom activities_hour dengan status breakdown',
+  })
+  total_breakdown: number;
+
+  @ApiProperty({
+    example: 80,
+    description: 'Rumus: total_mohh - total_delay - total_breakdown',
+  })
+  ewh: number;
+
+  @ApiProperty({
+    example: 1.0,
+    description: 'Rumus: (ewh + total_delay + total_idle) / total_mohh',
+  })
+  pa: number;
+
+  @ApiProperty({
+    example: 0.89,
+    description: 'Rumus: ewh / (ewh + total_breakdown)',
+  })
+  ma: number;
+
+  @ApiProperty({
+    example: 0.8,
+    description: 'Rumus: ewh / (ewh + total_delay + total_idle)',
+  })
+  ua: number;
+
+  @ApiProperty({
+    example: 0.73,
+    description: 'Rumus: ewh / (ewh + total_delay + total_idle + total_breakdown)',
+  })
+  eu: number;
+
+  @ApiProperty({
+    example: true,
+    description: 'Status edit: true jika plan_date lebih dari hari ini',
+  })
+  is_available_to_edit: boolean;
+
+  @ApiProperty({
+    example: true,
+    description: 'Status delete: true jika plan_date lebih dari hari ini',
+  })
+  is_available_to_delete: boolean;
+}
+
+export class GetParentPlanWorkingHourQueryDto {
+  @ApiProperty({
+    required: false,
+    example: '1',
+    description: 'Nomor halaman (default: 1)',
+    minimum: 1,
+    default: 1,
+  })
+  @IsOptional()
+  @IsNumberString()
+  page?: string;
+
+  @ApiProperty({
+    required: false,
+    example: '10',
+    description: 'Jumlah data per halaman (default: 10, max: 100)',
+    minimum: 1,
+    maximum: 100,
+    default: 10,
+  })
+  @IsOptional()
+  @IsNumberString()
+  limit?: string;
+
+  @ApiProperty({
+    required: false,
+    example: '8',
+    description: 'Filter berdasarkan bulan (1-12)',
+    minimum: 1,
+    maximum: 12,
+  })
+  @IsOptional()
+  @IsNumberString()
+  month?: string;
+
+  @ApiProperty({
+    required: false,
+    example: 'id',
+    description: 'Field untuk sorting',
+    enum: ['id', 'plan_date', 'createdAt', 'updatedAt'],
+    default: 'id',
+  })
+  @IsOptional()
+  @IsString()
+  sortBy?: string;
+
+  @ApiProperty({
+    required: false,
+    example: 'DESC',
+    description: 'Urutan sorting',
+    enum: ['ASC', 'DESC'],
+    default: 'DESC',
+  })
+  @IsOptional()
+  @IsString()
+  sortOrder?: 'ASC' | 'DESC';
 }

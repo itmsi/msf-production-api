@@ -1,6 +1,105 @@
 # Plan Working Hour Module
 
 ## Overview
+Modul ini menangani manajemen rencana jam kerja untuk operasional perusahaan.
+
+## Endpoints
+
+### Parent Plan Working Hour
+
+#### GET /api/parent-plan-working-hour
+Mengambil semua data parent plan working hour dengan perhitungan summary.
+
+**Headers:**
+- `Authorization: Bearer {token}`
+
+**Query Parameters:**
+- `page` (optional): Nomor halaman (default: 1)
+- `limit` (optional): Jumlah data per halaman (default: 10, max: 100)
+- `month` (optional): Filter berdasarkan bulan (1-12)
+- `sortBy` (optional): Field untuk sorting (id, plan_date, createdAt, updatedAt)
+- `sortOrder` (optional): Urutan sorting (ASC, DESC)
+
+**Contoh Request:**
+```bash
+# Tanpa filter
+curl -X 'GET' 'http://localhost:9526/api/parent-plan-working-hour' \
+  -H 'Authorization: Bearer {token}'
+
+# Dengan filter bulan dan pagination
+curl -X 'GET' 'http://localhost:9526/api/parent-plan-working-hour?month=8&page=1&limit=20' \
+  -H 'Authorization: Bearer {token}'
+
+# Dengan sorting
+curl -X 'GET' 'http://localhost:9526/api/parent-plan-working-hour?sortBy=plan_date&sortOrder=ASC' \
+  -H 'Authorization: Bearer {token}'
+```
+
+**Response:**
+```json
+{
+  "statusCode": 200,
+  "message": "Parent plan working hour summary berhasil diambil",
+  "data": [
+    {
+      "parent_id": 1,
+      "month_year": "2025-08",
+      "schedule_day": 27,
+      "holiday_day": 4,
+      "working_hour_month": 216,
+      "working_hour_day": 7.2,
+      "working_hour_longshift": 14.4,
+      "working_day_longshift": 1.5,
+      "total_mohh": 100,
+      "total_delay": 10,
+      "total_idle": 10,
+      "total_breakdown": 10,
+      "ewh": 80,
+      "pa": 1.0,
+      "ma": 0.89,
+      "ua": 0.8,
+      "eu": 0.73,
+      "is_available_to_edit": true,
+      "is_available_to_delete": true
+    }
+  ],
+  "pagination": {
+    "total": 1,
+    "page": 1,
+    "limit": 10,
+    "lastPage": 1
+  }
+}
+```
+
+**Field Description:**
+- `parent_id`: ID dari tabel r_parent_plan_working_hour
+- `month_year`: Bulan dan tahun dari kolom plan_date (format: YYYY-MM)
+- `schedule_day`: Jumlah kolom is_schedule_day yang bernilai true
+- `holiday_day`: Jumlah kolom is_holiday_day yang bernilai true
+- `working_hour_month`: Jumlah value di kolom working_hour_month
+- `working_hour_day`: Jumlah value di kolom working_hour_day
+- `working_hour_longshift`: Jumlah value di kolom working_hour_longshift
+- `working_day_longshift`: Jumlah value di kolom working_day_longshift
+- `total_mohh`: Value dari kolom mohh_per_month
+- `total_delay`: Jumlah value di kolom activities_hour dengan status delay
+- `total_idle`: Jumlah value di kolom activities_hour dengan status idle
+- `total_breakdown`: Jumlah value di kolom activities_hour dengan status breakdown
+- `ewh`: Effective Working Hours = total_mohh - total_delay - total_breakdown
+- `pa`: Performance Availability = (ewh + total_delay + total_idle) / total_mohh
+- `ma`: Mechanical Availability = ewh / (ewh + total_breakdown)
+- `ua`: Utilization Availability = ewh / (ewh + total_delay + total_idle)
+- `eu`: Equipment Utilization = ewh / (ewh + total_delay + total_idle + total_breakdown)
+- `is_available_to_edit`: Status edit (true jika plan_date lebih dari bulan saat ini)
+- `is_available_to_delete`: Status delete (true jika plan_date lebih dari bulan saat ini)
+
+**Pagination:**
+- `total`: Total data yang tersedia
+- `page`: Halaman saat ini
+- `limit`: Jumlah data per halaman
+- `lastPage`: Halaman terakhir
+
+## Overview
 Modul Plan Working Hour digunakan untuk mengelola data perencanaan jam kerja dengan detail activities. Data detail activities akan disimpan ke table `r_plan_working_hour_detail`.
 
 ## Features

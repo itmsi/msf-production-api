@@ -8,6 +8,7 @@ import {
   Delete,
   ParseIntPipe,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { 
   ApiTags, 
@@ -15,10 +16,11 @@ import {
   ApiResponse, 
   ApiParam, 
   ApiBearerAuth,
-  ApiBody 
+  ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { ParentPlanWorkingHourService } from './parent-plan-working-hour.service';
-import { CreateParentPlanWorkingHourDto, ParentPlanWorkingHourResponseDto } from './dto/parent-plan-working-hour.dto';
+import { CreateParentPlanWorkingHourDto, ParentPlanWorkingHourResponseDto, ParentPlanWorkingHourSummaryResponseDto, GetParentPlanWorkingHourQueryDto } from './dto/parent-plan-working-hour.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { successResponse } from '../../common/helpers/response.helper';
 
@@ -138,38 +140,83 @@ export class ParentPlanWorkingHourController {
 
   @Get()
   @ApiOperation({
-    summary: 'Ambil Semua Parent Plan Working Hour',
-    description: 'Mengambil semua data parent plan working hour dengan relasi detail'
+    summary: 'Ambil Semua Parent Plan Working Hour Summary',
+    description: 'Mengambil semua data parent plan working hour dengan perhitungan summary sesuai spesifikasi. Mendukung filter, sorting, dan pagination.'
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Nomor halaman (default: 1)',
+    example: '1'
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Jumlah data per halaman (default: 10, max: 100)',
+    example: '10'
+  })
+  @ApiQuery({
+    name: 'month',
+    required: false,
+    description: 'Filter berdasarkan bulan (1-12)',
+    example: '8'
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    description: 'Field untuk sorting',
+    enum: ['id', 'plan_date', 'createdAt', 'updatedAt'],
+    example: 'id'
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    description: 'Urutan sorting',
+    enum: ['ASC', 'DESC'],
+    example: 'DESC'
   })
   @ApiResponse({
     status: 200,
-    description: 'Daftar parent plan working hour berhasil diambil',
+    description: 'Daftar parent plan working hour summary berhasil diambil',
     schema: {
       example: {
         statusCode: 200,
-        message: 'Parent plan working hour berhasil diambil',
+        message: 'Parent plan working hour summary berhasil diambil',
         data: [
           {
-            id: 1,
-            plan_date: "2025-08-21T00:00:00.000Z",
-            total_calendar_day: 31,
-            total_holiday_day: 8,
-            total_available_day: 23,
-            total_working_hour_month: 184,
-            total_working_day_longshift: 5,
-            total_working_hour_day: 8,
-            total_working_hour_longshift: 12,
-            total_mohh_per_month: 1000,
-            createdAt: "2025-08-21T00:00:00.000Z",
-            updatedAt: "2025-08-21T00:00:00.000Z"
+            parent_id: 1,
+            month_year: "2025-08",
+            schedule_day: 27,
+            holiday_day: 4,
+            working_hour_month: 216,
+            working_hour_day: 7.2,
+            working_hour_longshift: 14.4,
+            working_day_longshift: 1.5,
+            total_mohh: 100,
+            total_delay: 10,
+            total_idle: 10,
+            total_breakdown: 10,
+            ewh: 80,
+            pa: 1.0,
+            ma: 0.89,
+            ua: 0.8,
+            eu: 0.73,
+            is_available_to_edit: true,
+            is_available_to_delete: true
           }
-        ]
+        ],
+        pagination: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          lastPage: 1
+        }
       }
     }
   })
-  async findAll() {
-    const result = await this.parentPlanWorkingHourService.findAll();
-    return successResponse(result, 'Parent plan working hour berhasil diambil');
+  async findAll(@Query() query: GetParentPlanWorkingHourQueryDto) {
+    const result = await this.parentPlanWorkingHourService.findAllSummary(query);
+    return result;
   }
 
   @Get(':id')
