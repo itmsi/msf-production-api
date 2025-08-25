@@ -30,6 +30,7 @@ import {
 } from './dto/parent-plan-production.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { Pagination } from '../../common/helpers/public.helper';
+import { successResponse } from '../../common/helpers/response.helper';
 
 @ApiTags('Parent Plan Production')
 @ApiBearerAuth('jwt')
@@ -163,7 +164,12 @@ export class ParentPlanProductionController {
     },
   })
   async create(@Body() createDto: CreateParentPlanProductionDto) {
-    return this.parentPlanProductionService.create(createDto);
+    const result = await this.parentPlanProductionService.create(createDto);
+    return successResponse(
+      result,
+      'Parent plan production berhasil dibuat dan data harian berhasil di-generate',
+      201,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -279,7 +285,12 @@ export class ParentPlanProductionController {
     @Param('id') id: string,
     @Body() updateDto: UpdateParentPlanProductionDto,
   ) {
-    return this.parentPlanProductionService.update(+id, updateDto);
+    const result = await this.parentPlanProductionService.update(+id, updateDto);
+    return successResponse(
+      result,
+      'Parent plan production berhasil diupdate dan data harian berhasil di-regenerate',
+      200,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -338,11 +349,11 @@ export class ParentPlanProductionController {
   })
   async delete(@Param('id') id: string) {
     const result = await this.parentPlanProductionService.delete(+id);
-    return {
-      statusCode: 200,
-      message: 'Parent plan production berhasil dihapus',
-      data: result,
-    };
+    return successResponse(
+      result,
+      'Parent plan production dan data harian berhasil dihapus',
+      200,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -458,13 +469,13 @@ export class ParentPlanProductionController {
       },
     },
   })
-  async findAll(@Query() query: GetParentPlanProductionQueryDto): Promise<{
-    statusCode: number;
-    message: string;
-    data: ParentPlanProductionSummaryResponseDto[];
-    pagination: Pagination;
-  }> {
-    return this.parentPlanProductionService.findAll(query);
+  async findAll(@Query() query: GetParentPlanProductionQueryDto) {
+    const result = await this.parentPlanProductionService.findAll(query);
+    return successResponse(
+      result.data,
+      'Daftar parent plan production berhasil diambil',
+      200,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -544,7 +555,12 @@ export class ParentPlanProductionController {
     },
   })
   async findOne(@Param('id') id: string) {
-    return this.parentPlanProductionService.findOne(+id);
+    const result = await this.parentPlanProductionService.findOne(+id);
+    return successResponse(
+      result,
+      'Parent plan production berhasil ditemukan',
+      200,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -627,6 +643,11 @@ export class ParentPlanProductionController {
     },
   })
   async findByDate(@Param('planDate') planDate: string) {
-    return this.parentPlanProductionService.findByDate(planDate);
+    const result = await this.parentPlanProductionService.findByDate(planDate);
+    return successResponse(
+      result,
+      'Parent plan production berhasil ditemukan berdasarkan tanggal',
+      200,
+    );
   }
 }
