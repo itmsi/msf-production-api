@@ -263,20 +263,22 @@ export class ParentPlanWorkingHourController {
         message: 'Detail parent plan working hour berhasil diambil',
         data: [
           {
+            r_plan_working_hour_id: 1,
             plan_date: "2025-08-01",
             calendar_day: "available",
-            working_hour_day: 8,
-            working_hour_month: 216,
-            working_hour_longshift: 14.4,
-            working_day_longshift: 1.5,
-            mohh_per_month: 100,
-            total_delay: 10,
-            total_idle: 10,
-            total_breakdown: 10,
-            ewh: 80,
-            pa: 1.0,
+            working_hour_day: 8.00,
+            working_hour_month: 216.00,
+            working_hour_longshift: 14.40,
+            working_day_longshift: 1.50,
+            mohh_per_month: 100.00,
+            schedule_day: 1.00,
+            total_delay: 10.00,
+            total_idle: 10.00,
+            total_breakdown: 10.00,
+            ewh: 80.00,
+            pa: 1.00,
             ma: 0.89,
-            ua: 0.8,
+            ua: 0.80,
             eu: 0.67,
             is_available_to_edit: true,
             is_available_to_delete: true
@@ -305,6 +307,219 @@ export class ParentPlanWorkingHourController {
   async getDetail(@Query() query: GetParentPlanWorkingHourDetailQueryDto) {
     const result = await this.parentPlanWorkingHourService.getDetail(query);
     return result;
+  }
+
+  @Get('detail/:id')
+  @ApiOperation({
+    summary: 'Ambil Detail Parent Plan Working Hour by ID',
+    description: 'Mengambil detail data parent plan working hour berdasarkan ID dengan informasi lengkap activities dan metrics.'
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID dari tabel r_plan_working_hour',
+    type: 'number',
+    example: 9
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Detail parent plan working hour berhasil diambil',
+    schema: {
+      example: {
+        statusCode: 200,
+        message: 'Detail parent plan working hour berhasil diambil',
+        data: {
+          id: 9,
+          plan_date: "2025-08-01T00:00:00.000Z",
+          total_working_hour_month: 184,
+          total_working_hour_day: 8,
+          total_working_day_longshift: 5,
+          total_working_hour_longshift: "12.00",
+          total_mohh_per_month: 1000,
+          details: [
+            {
+              name: "Delay",
+              group_detail: [
+                {
+                  activities_id: 1,
+                  name: "P5M",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                },
+                {
+                  activities_id: 5,
+                  name: "GST",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                },
+                {
+                  activities_id: 6,
+                  name: "P2H",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                },
+                {
+                  activities_id: 11,
+                  name: "tes delay",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                }
+              ]
+            },
+            {
+              name: "Working",
+              group_detail: [
+                {
+                  activities_id: 2,
+                  name: "Loading Barge",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                }
+              ]
+            },
+            {
+              name: "Breakdown",
+              group_detail: [
+                {
+                  activities_id: 3,
+                  name: "Maintenance",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                },
+                {
+                  activities_id: 9,
+                  name: "Schedule",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                },
+                {
+                  activities_id: 10,
+                  name: "UnSchedule",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                }
+              ]
+            },
+            {
+              name: "Idle",
+              group_detail: [
+                {
+                  activities_id: 4,
+                  name: "Waiting",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                },
+                {
+                  activities_id: 7,
+                  name: "Hujan",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                },
+                {
+                  activities_id: 8,
+                  name: "Fogging",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                }
+              ]
+            },
+            {
+              name: "Null",
+              group_detail: [
+                {
+                  activities_id: 12,
+                  name: "Excavation",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                },
+                {
+                  activities_id: 13,
+                  name: "Loading",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                },
+                {
+                  activities_id: 14,
+                  name: "Transportation",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                },
+                {
+                  activities_id: 15,
+                  name: "Unloading",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                },
+                {
+                  activities_id: 16,
+                  name: "Compaction",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                },
+                {
+                  activities_id: 17,
+                  name: "Grading",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                },
+                {
+                  activities_id: 18,
+                  name: "Drilling",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                },
+                {
+                  activities_id: 19,
+                  name: "Welding",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                },
+                {
+                  activities_id: 20,
+                  name: "Inspection",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - ID tidak ditemukan',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'Plan working hour dengan ID 999 tidak ditemukan',
+        error: 'Bad Request'
+      }
+    }
+  })
+  async getDetailById(@Param('id', ParseIntPipe) id: number) {
+    const result = await this.parentPlanWorkingHourService.getDetailById(id);
+    return successResponse(result, 'Detail parent plan working hour berhasil diambil');
   }
 
   @Get(':id')
@@ -338,18 +553,6 @@ export class ParentPlanWorkingHourController {
               group_detail: [
                 {
                   activities_id: 1,
-                  name: "P5M",
-                  type_data: "number",
-                  type_field: "input",
-                  activities_hour: 1
-                }
-              ]
-            },
-            {
-              name: "Breakdown",
-              group_detail: [
-                {
-                  activities_id: 2,
                   name: "P5M",
                   type_data: "number",
                   type_field: "input",

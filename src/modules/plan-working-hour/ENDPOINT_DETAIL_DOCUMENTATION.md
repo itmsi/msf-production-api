@@ -39,6 +39,7 @@ GET /api/parent-plan-working-hour/detail?start_date=2025-08-01&end_date=2025-08-
   "message": "Detail parent plan working hour berhasil diambil",
   "data": [
             {
+          "r_plan_working_hour_id": 1,
           "plan_date": "2025-08-01",
           "calendar_day": "available",
           "working_hour_day": 8.00,
@@ -70,6 +71,7 @@ GET /api/parent-plan-working-hour/detail?start_date=2025-08-01&end_date=2025-08-
 ## Field Descriptions
 
 ### Data Fields
+- `r_plan_working_hour_id`: ID dari tabel r_plan_working_hour
 - `plan_date`: Tanggal rencana dalam format YYYY-MM-DD
 - `calendar_day`: Status hari kalender
   - `available`: Hari kerja normal (is_calender_day = true)

@@ -32,6 +32,7 @@ GET /api/parent-plan-working-hour/detail?start_date=2025-09-01&end_date=2025-09-
   "message": "Detail parent plan working hour berhasil diambil",
   "data": [
     {
+      "r_plan_working_hour_id": 1,
       "plan_date": "2025-08-01",
       "calendar_day": "available",
       "working_hour_day": 8.00,
@@ -51,6 +52,7 @@ GET /api/parent-plan-working-hour/detail?start_date=2025-09-01&end_date=2025-09-
       "is_available_to_delete": true
     },
     {
+      "r_plan_working_hour_id": 2,
       "plan_date": "2025-08-02",
       "calendar_day": "available",
       "working_hour_day": 8.00,
@@ -70,21 +72,22 @@ GET /api/parent-plan-working-hour/detail?start_date=2025-09-01&end_date=2025-09-
       "is_available_to_delete": true
     },
     {
+      "r_plan_working_hour_id": 3,
       "plan_date": "2025-08-03",
       "calendar_day": "holiday",
-      "working_hour_day": 0,
-      "working_hour_month": 0,
-      "working_hour_longshift": 0,
-      "working_day_longshift": 0,
-      "mohh_per_month": 0,
-      "total_delay": 0,
-      "total_idle": 0,
-      "total_breakdown": 0,
-      "ewh": 0,
-      "pa": 0,
-      "ma": 0,
-      "ua": 0,
-      "eu": 0,
+      "working_hour_day": 0.00,
+      "working_hour_month": 0.00,
+      "working_hour_longshift": 0.00,
+      "working_day_longshift": 0.00,
+      "mohh_per_month": 0.00,
+      "total_delay": 0.00,
+      "total_idle": 0.00,
+      "total_breakdown": 0.00,
+      "ewh": 0.00,
+      "pa": 0.00,
+      "ma": 0.00,
+      "ua": 0.00,
+      "eu": 0.00,
       "is_available_to_edit": true,
       "is_available_to_delete": true
     }

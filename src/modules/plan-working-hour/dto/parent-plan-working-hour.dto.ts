@@ -7,6 +7,18 @@ export class ActivityDetailDto {
   @IsNumber()
   activities_id: number;
 
+  @ApiProperty({ description: 'Nama aktivitas', example: 'P5M' })
+  @IsString()
+  name: string;
+
+  @ApiProperty({ description: 'Tipe data aktivitas', example: 'number' })
+  @IsString()
+  type_data: string;
+
+  @ApiProperty({ description: 'Tipe field input', example: 'input' })
+  @IsString()
+  type_field: string;
+
   @ApiProperty({ description: 'Jam aktivitas', example: 1 })
   @IsNumber()
   activities_hour: number;
@@ -381,17 +393,7 @@ export class ActivityGroupDetailDto {
   activities_hour: number;
 }
 
-export class ActivityGroupDto {
-  @ApiProperty({ description: 'Nama grup aktivitas', example: 'Delay' })
-  @IsString()
-  name: string;
 
-  @ApiProperty({ description: 'Detail aktivitas dalam grup', type: [ActivityGroupDetailDto] })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => ActivityGroupDetailDto)
-  group_detail: ActivityGroupDetailDto[];
-}
 
 export class GetParentPlanWorkingHourDetailQueryDto {
   @ApiProperty({ 
@@ -440,6 +442,12 @@ export class GetParentPlanWorkingHourDetailQueryDto {
 }
 
 export class ParentPlanWorkingHourDetailResponseDto {
+  @ApiProperty({ 
+    description: 'ID dari tabel r_plan_working_hour', 
+    example: 1
+  })
+  r_plan_working_hour_id: number;
+
   @ApiProperty({ 
     description: 'Tanggal rencana', 
     example: '2025-08-01'
@@ -543,3 +551,113 @@ export class ParentPlanWorkingHourDetailResponseDto {
   })
   is_available_to_delete: boolean;
 }
+
+export class ActivityDetailByIdDto {
+  @ApiProperty({ 
+    description: 'ID dari tabel r_plan_working_hour_detail', 
+    example: 1
+  })
+  id: number;
+
+  @ApiProperty({ 
+    description: 'ID dari tabel m_activities', 
+    example: 1
+  })
+  activities_id: number;
+
+  @ApiProperty({ 
+    description: 'Jam aktivitas', 
+    example: 5.00
+  })
+  activities_hour: number;
+
+  @ApiProperty({ 
+    description: 'Nama aktivitas', 
+    example: 'Loading Barge'
+  })
+  activity_name: string;
+
+  @ApiProperty({ 
+    description: 'Status aktivitas', 
+    example: 'working',
+    enum: ['working', 'delay', 'idle', 'breakdown']
+  })
+  activity_status: string;
+
+  @ApiProperty({ 
+    description: 'ID dari tabel m_activities_group', 
+    example: 1
+  })
+  activities_group_id: number;
+
+  @ApiProperty({ 
+    description: 'Nama grup aktivitas', 
+    example: 'Production'
+  })
+  activities_group_name: string;
+}
+
+export class ActivityGroupDto {
+  @ApiProperty({ 
+    description: 'Nama grup aktivitas', 
+    example: 'Delay'
+  })
+  name: string;
+
+  @ApiProperty({ 
+    description: 'Detail aktivitas dalam grup', 
+    type: [ActivityDetailDto]
+  })
+  group_detail: ActivityDetailDto[];
+}
+
+export class ParentPlanWorkingHourDetailByIdResponseDto {
+  @ApiProperty({ 
+    description: 'ID dari parent plan working hour', 
+    example: 9
+  })
+  id: number;
+
+  @ApiProperty({ 
+    description: 'Tanggal rencana kerja', 
+    example: '2025-08-01T00:00:00.000Z'
+  })
+  plan_date: Date;
+
+  @ApiProperty({ 
+    description: 'Total jam kerja per bulan', 
+    example: 184
+  })
+  total_working_hour_month: number;
+
+  @ApiProperty({ 
+    description: 'Total jam kerja per hari', 
+    example: 8
+  })
+  total_working_hour_day: number;
+
+  @ApiProperty({ 
+    description: 'Total hari kerja longshift', 
+    example: 5
+  })
+  total_working_day_longshift: number;
+
+  @ApiProperty({ 
+    description: 'Total jam kerja longshift', 
+    example: '12.00'
+  })
+  total_working_hour_longshift: string;
+
+  @ApiProperty({ 
+    description: 'Total MOHH per bulan', 
+    example: 1000
+  })
+  total_mohh_per_month: number;
+
+  @ApiProperty({ 
+    description: 'Detail aktivitas dikelompokkan berdasarkan status', 
+    type: [ActivityGroupDto]
+  })
+  details: ActivityGroupDto[];
+}
+

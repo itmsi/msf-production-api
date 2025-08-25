@@ -531,6 +531,7 @@ export class ParentPlanWorkingHourService {
         const isAvailableToDelete = planDate > todayStart;
 
         return {
+          r_plan_working_hour_id: pwh.id,
           plan_date: pwh.plan_date.toISOString().split('T')[0], // Format YYYY-MM-DD
           calendar_day: calendarDay,
           working_hour_day: this.roundToTwoDecimals(pwh.working_hour_day || 0),
@@ -538,6 +539,7 @@ export class ParentPlanWorkingHourService {
           working_hour_longshift: this.roundToTwoDecimals(pwh.working_hour_longshift || 0),
           working_day_longshift: this.roundToTwoDecimals(pwh.working_day_longshift || 0),
           mohh_per_month: this.roundToTwoDecimals(pwh.mohh_per_month || 0),
+          schedule_day: this.roundToTwoDecimals(pwh.schedule_day || 1),
           total_delay: this.roundToTwoDecimals(totalDelay),
           total_idle: this.roundToTwoDecimals(totalIdle),
           total_breakdown: this.roundToTwoDecimals(totalBreakdown),
@@ -553,6 +555,170 @@ export class ParentPlanWorkingHourService {
     );
 
     return paginateResponse(result, total, page, limit, 'Detail parent plan working hour berhasil diambil');
+  }
+
+  async getDetailById(id: number) {
+    // Get data dari r_plan_working_hour dengan join ke detail dan activities
+    const planWorkingHour = await this.planWorkingHourRepository
+      .createQueryBuilder('pwh')
+      .leftJoinAndSelect('pwh.details', 'details')
+      .leftJoinAndSelect('details.activities', 'activities')
+      .where('pwh.id = :id', { id })
+      .getOne();
+
+    if (!planWorkingHour) {
+      throw new BadRequestException(`Plan working hour dengan ID ${id} tidak ditemukan`);
+    }
+
+    // Hitung total berdasarkan status activities
+    let totalDelay = 0;
+    let totalIdle = 0;
+    let totalBreakdown = 0;
+
+    if (planWorkingHour.details && planWorkingHour.details.length > 0) {
+      for (const detail of planWorkingHour.details) {
+        if (detail.activities && detail.activities.status) {
+          switch (detail.activities.status) {
+            case 'delay':
+              totalDelay += detail.activities_hour || 0;
+              break;
+            case 'idle':
+              totalIdle += detail.activities_hour || 0;
+              break;
+            case 'breakdown':
+              totalBreakdown += detail.activities_hour || 0;
+              break;
+          }
+        }
+      }
+    }
+
+    // Hitung metrics
+    const totalMohh = planWorkingHour.mohh_per_month || 0;
+    const ewh = Math.max(0, totalMohh - totalDelay - totalBreakdown);
+    
+    // Hitung PA, MA, UA, EU
+    const pa = totalMohh > 0 ? (ewh + totalDelay + totalIdle) / totalMohh : 0;
+    const ma = (ewh + totalBreakdown) > 0 ? ewh / (ewh + totalBreakdown) : 0;
+    const ua = (ewh + totalDelay + totalIdle) > 0 ? ewh / (ewh + totalDelay + totalIdle) : 0;
+    const eu = (ewh + totalDelay + totalIdle + totalBreakdown) > 0 ? ewh / (ewh + totalDelay + totalIdle + totalBreakdown) : 0;
+
+    // Tentukan calendar day status
+    let calendarDay = 'holiday';
+    if (planWorkingHour.is_calender_day === true) {
+      calendarDay = 'available';
+    } else if (planWorkingHour.is_calender_day === false) {
+      calendarDay = 'one shift';
+    }
+
+    // Tentukan availability untuk edit dan delete
+    const planDate = new Date(planWorkingHour.plan_date);
+    const today = new Date();
+    // Set time to start of day for accurate comparison
+    planDate.setHours(0, 0, 0, 0);
+    const todayStart = new Date(today);
+    todayStart.setHours(0, 0, 0, 0);
+    
+    // true hanya jika plan_date lebih dari tanggal hari ini
+    const isAvailableToEdit = planDate > todayStart;
+    const isAvailableToDelete = planDate > todayStart;
+
+    // Process activities data
+    const activities = planWorkingHour.details?.map(detail => ({
+      id: detail.id,
+      activities_id: detail.activities_id,
+      activities_hour: this.roundToTwoDecimals(detail.activities_hour || 0),
+      activity_name: detail.activities?.name || '',
+      activity_status: detail.activities?.status || '',
+      activities_group_id: null, // TODO: Implement when activities_group entity is available
+      activities_group_name: '', // TODO: Implement when activities_group entity is available
+    })) || [];
+
+    // Group activities by status
+    const delayActivities = planWorkingHour.details
+      ?.filter(detail => detail.activities?.status === 'delay')
+      .map(detail => ({
+        activities_id: detail.activities_id,
+        name: detail.activities?.name || '',
+        type_data: 'number',
+        type_field: 'input',
+        activities_hour: detail.activities_hour || 0,
+      })) || [];
+
+    const workingActivities = planWorkingHour.details
+      ?.filter(detail => detail.activities?.status === 'working')
+      .map(detail => ({
+        activities_id: detail.activities_id,
+        name: detail.activities?.name || '',
+        type_data: 'number',
+        type_field: 'input',
+        activities_hour: detail.activities_hour || 0,
+      })) || [];
+
+    const breakdownActivities = planWorkingHour.details
+      ?.filter(detail => detail.activities?.status === 'breakdown')
+      .map(detail => ({
+        activities_id: detail.activities_id,
+        name: detail.activities?.name || '',
+        type_data: 'number',
+        type_field: 'input',
+        activities_hour: detail.activities_hour || 0,
+      })) || [];
+
+    const idleActivities = planWorkingHour.details
+      ?.filter(detail => detail.activities?.status === 'idle')
+      .map(detail => ({
+        activities_id: detail.activities_id,
+        name: detail.activities?.name || '',
+        type_data: 'number',
+        type_field: 'input',
+        activities_hour: detail.activities_hour || 0,
+      })) || [];
+
+    const nullActivities = planWorkingHour.details
+      ?.filter(detail => !detail.activities?.status)
+      .map(detail => ({
+        activities_id: detail.activities_id,
+        name: detail.activities?.name || '',
+        type_data: 'number',
+        type_field: 'input',
+        activities_hour: detail.activities_hour || 0,
+      })) || [];
+
+    // Create details array
+    const details = [
+      {
+        name: 'Delay',
+        group_detail: delayActivities,
+      },
+      {
+        name: 'Working',
+        group_detail: workingActivities,
+      },
+      {
+        name: 'Breakdown',
+        group_detail: breakdownActivities,
+      },
+      {
+        name: 'Idle',
+        group_detail: idleActivities,
+      },
+      {
+        name: 'Null',
+        group_detail: nullActivities,
+      },
+    ];
+
+    return {
+      id: planWorkingHour.id,
+      plan_date: planWorkingHour.plan_date,
+      total_working_hour_month: planWorkingHour.working_hour_month || 0,
+      total_working_hour_day: planWorkingHour.working_hour_day || 0,
+      total_working_day_longshift: planWorkingHour.working_day_longshift || 0,
+      total_working_hour_longshift: (planWorkingHour.working_hour_longshift || 0).toFixed(2),
+      total_mohh_per_month: planWorkingHour.mohh_per_month || 0,
+      details,
+    };
   }
 
   private formatDecimalToString(value: number | string): string {

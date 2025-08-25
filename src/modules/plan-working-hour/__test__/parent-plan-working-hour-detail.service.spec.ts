@@ -30,6 +30,7 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
     skip: jest.fn().mockReturnThis(),
     take: jest.fn().mockReturnThis(),
     getMany: jest.fn(),
+    getOne: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -110,6 +111,7 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
       expect(mockQueryBuilder.getCount).toHaveBeenCalled();
       expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(result.data).toHaveLength(1);
+      expect(result.data[0]).toHaveProperty('r_plan_working_hour_id', 1);
       expect(result.data[0]).toHaveProperty('plan_date', '2025-08-01');
       expect(result.data[0]).toHaveProperty('calendar_day', 'available');
       expect(result.data[0]).toHaveProperty('total_delay', 5);
@@ -273,6 +275,7 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
           working_hour_longshift: 14.45678,
           working_day_longshift: 1.56789,
           mohh_per_month: 100.123,
+          schedule_day: 1.0,
           details: [
             {
               activities_hour: 5.6789,
@@ -329,6 +332,7 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
           working_hour_longshift: 0,
           working_day_longshift: 0,
           mohh_per_month: 0,
+          schedule_day: 1,
           details: [],
         },
       ];
@@ -354,6 +358,78 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
       expect(result.data[0]).toHaveProperty('eu', 0);
     });
 
+    it('should get detail by ID successfully', async () => {
+      const id = 9;
+      const mockPlanWorkingHour = {
+        id: 9,
+        plan_date: new Date('2025-08-01'),
+        is_calender_day: true,
+        working_hour_day: 8,
+        working_hour_month: 216,
+        working_hour_longshift: 14.4,
+        working_day_longshift: 1.5,
+        mohh_per_month: 100,
+        schedule_day: 1,
+        details: [
+          {
+            id: 1,
+            activities_id: 1,
+            activities_hour: 5,
+            activities: {
+              id: 1,
+              name: 'Loading Barge',
+              status: 'working',
+            },
+          },
+          {
+            id: 2,
+            activities_id: 2,
+            activities_hour: 3,
+            activities: {
+              id: 2,
+              name: 'Transport',
+              status: 'delay',
+            },
+          },
+        ],
+      };
+
+      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      mockQueryBuilder.leftJoinAndSelect.mockReturnValue(mockQueryBuilder);
+      mockQueryBuilder.where.mockReturnValue(mockQueryBuilder);
+      mockQueryBuilder.getOne.mockResolvedValue(mockPlanWorkingHour);
+
+      const result = await service.getDetailById(id);
+
+      expect(mockQueryBuilder.getOne).toHaveBeenCalled();
+      expect(result.id).toBe(9);
+      expect(result.plan_date).toEqual(new Date('2025-08-01'));
+      expect(result.total_working_hour_month).toBe(216);
+      expect(result.total_working_hour_day).toBe(8);
+      expect(result.total_working_day_longshift).toBe(1.5);
+      expect(result.total_working_hour_longshift).toBe('14.40');
+      expect(result.total_mohh_per_month).toBe(100);
+      expect(result.details).toHaveLength(5);
+      expect(result.details[0]).toHaveProperty('name', 'Delay');
+      expect(result.details[1]).toHaveProperty('name', 'Working');
+      expect(result.details[2]).toHaveProperty('name', 'Breakdown');
+      expect(result.details[3]).toHaveProperty('name', 'Idle');
+      expect(result.details[4]).toHaveProperty('name', 'Null');
+    });
+
+    it('should throw error when ID not found', async () => {
+      const id = 999;
+      
+      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      mockQueryBuilder.leftJoinAndSelect.mockReturnValue(mockQueryBuilder);
+      mockQueryBuilder.where.mockReturnValue(mockQueryBuilder);
+      mockQueryBuilder.getOne.mockResolvedValue(null);
+
+      await expect(service.getDetailById(id)).rejects.toThrow(
+        `Plan working hour dengan ID ${id} tidak ditemukan`
+      );
+    });
+
     it('should set availability flags correctly based on plan_date', async () => {
       const query: GetParentPlanWorkingHourDetailQueryDto = {
         start_date: '2025-08-01',
@@ -373,6 +449,7 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
           working_hour_longshift: 14.4,
           working_day_longshift: 1.5,
           mohh_per_month: 100,
+          schedule_day: 1,
           details: [],
         },
         {
@@ -384,6 +461,7 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
           working_hour_longshift: 14.4,
           working_day_longshift: 1.5,
           mohh_per_month: 100,
+          schedule_day: 1,
           details: [],
         },
         {
@@ -395,6 +473,7 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
           working_hour_longshift: 14.4,
           working_day_longshift: 1.5,
           mohh_per_month: 100,
+          schedule_day: 1,
           details: [],
         },
       ];

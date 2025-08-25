@@ -44,6 +44,9 @@ export class PlanWorkingHour {
   @Column({ type: 'float', nullable: true })
   mohh_per_month: number;
 
+  @Column({ type: 'float', nullable: true, default: 1 })
+  schedule_day: number;
+
   @Column({ type: 'int', nullable: true })
   parent_plan_working_hour_id: number;
 

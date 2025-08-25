@@ -12,6 +12,13 @@ Endpoint baru `/api/parent-plan-working-hour/detail` telah berhasil dibuat denga
 - **Method**: GET
 - **Location**: `src/modules/plan-working-hour/parent-plan-working-hour.controller.ts`
 
+### 2. Endpoint Detail by ID (BARU)
+- **URL**: `GET /api/parent-plan-working-hour/detail/{id}`
+- **Authentication**: JWT Guard
+- **Method**: GET
+- **Location**: `src/modules/plan-working-hour/parent-plan-working-hour.controller.ts`
+- **Purpose**: Mengambil detail data berdasarkan ID dengan informasi lengkap activities
+
 ### 2. Query Parameters
 - **Required**:
   - `start_date`: Tanggal mulai (YYYY-MM-DD)

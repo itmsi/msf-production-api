@@ -9,6 +9,7 @@ describe('ParentPlanWorkingHourController - Detail Endpoint', () => {
 
   const mockService = {
     getDetail: jest.fn(),
+    getDetailById: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -45,20 +46,21 @@ describe('ParentPlanWorkingHourController - Detail Endpoint', () => {
         message: 'Detail parent plan working hour berhasil diambil',
         data: [
           {
+            r_plan_working_hour_id: 1,
             plan_date: '2025-08-01',
             calendar_day: 'available',
-            working_hour_day: 8,
-            working_hour_month: 216,
-            working_hour_longshift: 14.4,
-            working_day_longshift: 1.5,
-            mohh_per_month: 100,
-            total_delay: 10,
-            total_idle: 10,
-            total_breakdown: 10,
-            ewh: 80,
-            pa: 1.0,
+            working_hour_day: 8.00,
+            working_hour_month: 216.00,
+            working_hour_longshift: 14.40,
+            working_day_longshift: 1.50,
+            mohh_per_month: 100.00,
+            total_delay: 10.00,
+            total_idle: 10.00,
+            total_breakdown: 10.00,
+            ewh: 80.00,
+            pa: 1.00,
             ma: 0.89,
-            ua: 0.8,
+            ua: 0.80,
             eu: 0.67,
             is_available_to_edit: true,
             is_available_to_delete: true,
@@ -134,6 +136,54 @@ describe('ParentPlanWorkingHourController - Detail Endpoint', () => {
 
       expect(result.data).toEqual([]);
       expect(result.pagination.total).toBe(0);
+    });
+
+    it('should return detail by ID successfully', async () => {
+      const id = 9;
+      const mockResponse = {
+        statusCode: 200,
+        message: 'Detail parent plan working hour berhasil diambil',
+        data: {
+          id: 9,
+          plan_date: '2025-08-01',
+          calendar_day: 'available',
+          working_hour_day: 8.00,
+          working_hour_month: 216.00,
+          working_hour_longshift: 14.40,
+          working_day_longshift: 1.50,
+          mohh_per_month: 100.00,
+          total_delay: 10.00,
+          total_idle: 10.00,
+          total_breakdown: 10.00,
+          ewh: 80.00,
+          pa: 1.00,
+          ma: 0.89,
+          ua: 0.80,
+          eu: 0.67,
+          is_available_to_edit: true,
+          is_available_to_delete: true,
+          activities: [
+            {
+              id: 1,
+              activities_id: 1,
+              activities_hour: 5.00,
+              activity_name: 'Loading Barge',
+              activity_status: 'working',
+              activities_group_id: 1,
+              activities_group_name: 'Production',
+            },
+          ],
+        },
+      };
+
+      mockService.getDetailById.mockResolvedValue(mockResponse.data);
+
+      const result = await controller.getDetailById(id);
+
+      expect(service.getDetailById).toHaveBeenCalledWith(id);
+      expect(result.statusCode).toBe(200);
+      expect(result.message).toBe('Detail parent plan working hour berhasil diambil');
+      expect(result.data).toEqual(mockResponse.data);
     });
   });
 });
