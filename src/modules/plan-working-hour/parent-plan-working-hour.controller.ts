@@ -20,7 +20,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { ParentPlanWorkingHourService } from './parent-plan-working-hour.service';
-import { CreateParentPlanWorkingHourDto, ParentPlanWorkingHourResponseDto, ParentPlanWorkingHourSummaryResponseDto, GetParentPlanWorkingHourQueryDto } from './dto/parent-plan-working-hour.dto';
+import { CreateParentPlanWorkingHourDto, ParentPlanWorkingHourResponseDto, ParentPlanWorkingHourSummaryResponseDto, GetParentPlanWorkingHourQueryDto, GetParentPlanWorkingHourDetailQueryDto } from './dto/parent-plan-working-hour.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { successResponse } from '../../common/helpers/response.helper';
 
@@ -216,6 +216,94 @@ export class ParentPlanWorkingHourController {
   })
   async findAll(@Query() query: GetParentPlanWorkingHourQueryDto) {
     const result = await this.parentPlanWorkingHourService.findAllSummary(query);
+    return result;
+  }
+
+  @Get('detail')
+  @ApiOperation({
+    summary: 'Ambil Detail Parent Plan Working Hour',
+    description: 'Mengambil detail data parent plan working hour berdasarkan rentang tanggal dengan perhitungan metrics lengkap. Mendukung filter dan pagination.'
+  })
+  @ApiQuery({
+    name: 'start_date',
+    required: true,
+    description: 'Tanggal mulai (format: YYYY-MM-DD)',
+    example: '2025-08-01'
+  })
+  @ApiQuery({
+    name: 'end_date',
+    required: true,
+    description: 'Tanggal akhir (format: YYYY-MM-DD)',
+    example: '2025-08-31'
+  })
+  @ApiQuery({
+    name: 'month_year',
+    required: true,
+    description: 'Bulan dan tahun (format: YYYY-MM)',
+    example: '2025-08'
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Nomor halaman (default: 1)',
+    example: '1'
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Jumlah data per halaman (default: 10, max: 100)',
+    example: '10'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Detail parent plan working hour berhasil diambil',
+    schema: {
+      example: {
+        statusCode: 200,
+        message: 'Detail parent plan working hour berhasil diambil',
+        data: [
+          {
+            plan_date: "2025-08-01",
+            calendar_day: "available",
+            working_hour_day: 8,
+            working_hour_month: 216,
+            working_hour_longshift: 14.4,
+            working_day_longshift: 1.5,
+            mohh_per_month: 100,
+            total_delay: 10,
+            total_idle: 10,
+            total_breakdown: 10,
+            ewh: 80,
+            pa: 1.0,
+            ma: 0.89,
+            ua: 0.8,
+            eu: 0.67,
+            is_available_to_edit: true,
+            is_available_to_delete: true
+          }
+        ],
+        pagination: {
+          total: 31,
+          page: 1,
+          limit: 10,
+          lastPage: 4
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Parameter tidak valid',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'Parameter start_date, end_date, dan month_year harus diisi',
+        error: 'Bad Request'
+      }
+    }
+  })
+  async getDetail(@Query() query: GetParentPlanWorkingHourDetailQueryDto) {
+    const result = await this.parentPlanWorkingHourService.getDetail(query);
     return result;
   }
 

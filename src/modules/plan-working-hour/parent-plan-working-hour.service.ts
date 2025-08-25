@@ -4,7 +4,7 @@ import { Repository, DataSource, In } from 'typeorm';
 import { ParentPlanWorkingHour } from './entities/parent-plan-working-hour.entity';
 import { PlanWorkingHour } from './entities/plan-working-hour.entity';
 import { PlanWorkingHourDetail } from './entities/plan-working-hour-detail.entity';
-import { CreateParentPlanWorkingHourDto, ActivityDetailDto, GetParentPlanWorkingHourQueryDto } from './dto/parent-plan-working-hour.dto';
+import { CreateParentPlanWorkingHourDto, ActivityDetailDto, GetParentPlanWorkingHourQueryDto, GetParentPlanWorkingHourDetailQueryDto } from './dto/parent-plan-working-hour.dto';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import { Activities } from '../activities/entities/activities.entity';
 import { ActivityStatus } from '../activities/dto/activities.dto';
@@ -445,10 +445,121 @@ export class ParentPlanWorkingHourService {
     await this.parentPlanWorkingHourRepository.softDelete(id);
   }
 
+  async getDetail(query: GetParentPlanWorkingHourDetailQueryDto) {
+    const page = parseInt(query.page || '1');
+    const limit = Math.min(parseInt(query.limit || '10'), 100);
+    const offset = (page - 1) * limit;
+
+    // Parse dates
+    const startDate = new Date(query.start_date);
+    const endDate = new Date(query.end_date);
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+
+    // Build query untuk mengambil data plan working hour
+    const queryBuilder = this.planWorkingHourRepository
+      .createQueryBuilder('pwh')
+      .leftJoinAndSelect('pwh.details', 'details')
+      .leftJoinAndSelect('details.activities', 'activities')
+      .where('pwh.plan_date >= :startDate', { startDate })
+      .andWhere('pwh.plan_date <= :endDate', { endDate })
+      .orderBy('pwh.plan_date', 'ASC');
+
+    // Get total count
+    const total = await queryBuilder.getCount();
+
+    // Get paginated data
+    const planWorkingHours = await queryBuilder
+      .skip(offset)
+      .take(limit)
+      .getMany();
+
+    // Process data untuk response
+    const result = await Promise.all(
+      planWorkingHours.map(async (pwh) => {
+        // Hitung total berdasarkan status activities
+        let totalDelay = 0;
+        let totalIdle = 0;
+        let totalBreakdown = 0;
+
+        if (pwh.details && pwh.details.length > 0) {
+          for (const detail of pwh.details) {
+            if (detail.activities && detail.activities.status) {
+              switch (detail.activities.status) {
+                case 'delay':
+                  totalDelay += detail.activities_hour || 0;
+                  break;
+                case 'idle':
+                  totalIdle += detail.activities_hour || 0;
+                  break;
+                case 'breakdown':
+                  totalBreakdown += detail.activities_hour || 0;
+                  break;
+              }
+            }
+          }
+        }
+
+        // Hitung metrics
+        const totalMohh = pwh.mohh_per_month || 0;
+        const ewh = Math.max(0, totalMohh - totalDelay - totalBreakdown);
+        
+        // Hitung PA, MA, UA, EU
+        const pa = totalMohh > 0 ? (ewh + totalDelay + totalIdle) / totalMohh : 0;
+        const ma = (ewh + totalBreakdown) > 0 ? ewh / (ewh + totalBreakdown) : 0;
+        const ua = (ewh + totalDelay + totalIdle) > 0 ? ewh / (ewh + totalDelay + totalIdle) : 0;
+        const eu = (ewh + totalDelay + totalIdle + totalBreakdown) > 0 ? ewh / (ewh + totalDelay + totalIdle + totalBreakdown) : 0;
+
+        // Tentukan calendar day status
+        let calendarDay = 'holiday';
+        if (pwh.is_calender_day === true) {
+          calendarDay = 'available';
+        } else if (pwh.is_calender_day === false) {
+          calendarDay = 'one shift';
+        }
+
+        // Tentukan availability untuk edit dan delete
+        const planDate = new Date(pwh.plan_date);
+        const isCurrentMonth = planDate.getMonth() === currentMonth && planDate.getFullYear() === currentYear;
+        const isFutureMonth = planDate > today;
+        
+        const isAvailableToEdit = isCurrentMonth || isFutureMonth;
+        const isAvailableToDelete = isCurrentMonth || isFutureMonth;
+
+        return {
+          plan_date: pwh.plan_date.toISOString().split('T')[0], // Format YYYY-MM-DD
+          calendar_day: calendarDay,
+          working_hour_day: this.roundToTwoDecimals(pwh.working_hour_day || 0),
+          working_hour_month: this.roundToTwoDecimals(pwh.working_hour_month || 0),
+          working_hour_longshift: this.roundToTwoDecimals(pwh.working_hour_longshift || 0),
+          working_day_longshift: this.roundToTwoDecimals(pwh.working_day_longshift || 0),
+          mohh_per_month: this.roundToTwoDecimals(pwh.mohh_per_month || 0),
+          total_delay: this.roundToTwoDecimals(totalDelay),
+          total_idle: this.roundToTwoDecimals(totalIdle),
+          total_breakdown: this.roundToTwoDecimals(totalBreakdown),
+          ewh: this.roundToTwoDecimals(ewh),
+          pa: this.roundToTwoDecimals(pa),
+          ma: this.roundToTwoDecimals(ma),
+          ua: this.roundToTwoDecimals(ua),
+          eu: this.roundToTwoDecimals(eu),
+          is_available_to_edit: isAvailableToEdit,
+          is_available_to_delete: isAvailableToDelete,
+        };
+      })
+    );
+
+    return paginateResponse(result, total, page, limit, 'Detail parent plan working hour berhasil diambil');
+  }
+
   private formatDecimalToString(value: number | string): string {
     if (typeof value === 'number') {
       return value.toFixed(2);
     }
     return value;
+  }
+
+  private roundToTwoDecimals(value: number): number {
+    return Math.round(value * 100) / 100;
   }
 }

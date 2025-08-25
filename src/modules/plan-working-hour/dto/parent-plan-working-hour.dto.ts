@@ -393,31 +393,153 @@ export class ActivityGroupDto {
   group_detail: ActivityGroupDetailDto[];
 }
 
+export class GetParentPlanWorkingHourDetailQueryDto {
+  @ApiProperty({ 
+    description: 'Tanggal mulai (format: YYYY-MM-DD)', 
+    example: '2025-08-01',
+    required: true
+  })
+  @IsDateString()
+  start_date: string;
+
+  @ApiProperty({ 
+    description: 'Tanggal akhir (format: YYYY-MM-DD)', 
+    example: '2025-08-31',
+    required: true
+  })
+  @IsDateString()
+  end_date: string;
+
+  @ApiProperty({ 
+    description: 'Bulan dan tahun (format: YYYY-MM)', 
+    example: '2025-08',
+    required: true
+  })
+  @IsString()
+  month_year: string;
+
+  @ApiProperty({
+    name: 'page',
+    required: false,
+    description: 'Nomor halaman (default: 1)',
+    example: '1'
+  })
+  @IsOptional()
+  @IsNumberString()
+  page?: string;
+
+  @ApiProperty({
+    name: 'limit',
+    required: false,
+    description: 'Jumlah data per halaman (default: 10, max: 100)',
+    example: '10'
+  })
+  @IsOptional()
+  @IsNumberString()
+  limit?: string;
+}
+
 export class ParentPlanWorkingHourDetailResponseDto {
-  @ApiProperty({ description: 'ID unik parent plan working hour', example: 9 })
-  id: number;
+  @ApiProperty({ 
+    description: 'Tanggal rencana', 
+    example: '2025-08-01'
+  })
+  plan_date: string;
 
-  @ApiProperty({ description: 'Tanggal rencana', example: '2025-08-21T00:00:00.000Z' })
-  plan_date: Date;
+  @ApiProperty({ 
+    description: 'Status hari kalender', 
+    example: 'available',
+    enum: ['available', 'one shift', 'holiday']
+  })
+  calendar_day: string;
 
-  @ApiProperty({ description: 'Total jam kerja dalam bulan', example: 184 })
-  total_working_hour_month: number;
+  @ApiProperty({ 
+    description: 'Jam kerja per hari', 
+    example: 8
+  })
+  working_hour_day: number;
 
-  @ApiProperty({ description: 'Total jam kerja per hari', example: 8 })
-  total_working_hour_day: number;
+  @ApiProperty({ 
+    description: 'Jam kerja per bulan', 
+    example: 216
+  })
+  working_hour_month: number;
 
-  @ApiProperty({ description: 'Total hari kerja dengan long shift', example: 5 })
-  total_working_day_longshift: number;
+  @ApiProperty({ 
+    description: 'Jam kerja long shift', 
+    example: 14.4
+  })
+  working_hour_longshift: number;
 
-  @ApiProperty({ description: 'Total jam kerja long shift', example: '12.00' })
-  total_working_hour_longshift: string;
+  @ApiProperty({ 
+    description: 'Hari kerja long shift', 
+    example: 1.5
+  })
+  working_day_longshift: number;
 
-  @ApiProperty({ description: 'Total MOHH per bulan', example: 1000 })
-  total_mohh_per_month: number;
+  @ApiProperty({ 
+    description: 'MOHH per bulan', 
+    example: 100
+  })
+  mohh_per_month: number;
 
-  @ApiProperty({ description: 'Grup aktivitas', type: [ActivityGroupDto] })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => ActivityGroupDto)
-  details: ActivityGroupDto[];
+  @ApiProperty({ 
+    description: 'Total delay', 
+    example: 10
+  })
+  total_delay: number;
+
+  @ApiProperty({ 
+    description: 'Total idle', 
+    example: 10
+  })
+  total_idle: number;
+
+  @ApiProperty({ 
+    description: 'Total breakdown', 
+    example: 10
+  })
+  total_breakdown: number;
+
+  @ApiProperty({ 
+    description: 'Effective Working Hours', 
+    example: 80
+  })
+  ewh: number;
+
+  @ApiProperty({ 
+    description: 'Performance Availability', 
+    example: 1.0
+  })
+  pa: number;
+
+  @ApiProperty({ 
+    description: 'Mechanical Availability', 
+    example: 0.89
+  })
+  ma: number;
+
+  @ApiProperty({ 
+    description: 'Utilization Availability', 
+    example: 0.8
+  })
+  ua: number;
+
+  @ApiProperty({ 
+    description: 'Equipment Utilization', 
+    example: 0.67
+  })
+  eu: number;
+
+  @ApiProperty({ 
+    description: 'Apakah tersedia untuk edit', 
+    example: true
+  })
+  is_available_to_edit: boolean;
+
+  @ApiProperty({ 
+    description: 'Apakah tersedia untuk hapus', 
+    example: true
+  })
+  is_available_to_delete: boolean;
 }
