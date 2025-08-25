@@ -332,6 +332,75 @@ export class ParentPlanWorkingHourController {
     return result;
   }
 
+  @Get('form')
+  @ApiOperation({
+    summary: 'Mendapatkan data activities untuk form parent plan working hour',
+    description: `
+      Endpoint untuk mendapatkan data activities yang dikelompokkan berdasarkan status.
+      
+      Data akan dikelompokkan secara dinamis berdasarkan status yang ada:
+      - working: activities dengan status 'working'
+      - delay: activities dengan status 'delay'
+      - idle: activities dengan status 'idle'  
+      - breakdown: activities dengan status 'breakdown'
+      - [status]: activities dengan status lainnya (otomatis)
+      
+      Setiap activity memiliki field tambahan:
+      - type_data: tipe data yang diharapkan (default: 'number')
+      - type_field: tipe field input (default: 'input')
+    `,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Data activities berhasil diambil',
+    schema: {
+      example: {
+        statusCode: 200,
+        message: 'Parent plan working hour form data',
+        data: [
+          {
+            name: 'Delay',
+            group_detail: [
+              {
+                id: 1,
+                name: 'P5M',
+                type_data: 'number',
+                type_field: 'input',
+              },
+              {
+                id: 2,
+                name: 'P2H',
+                type_data: 'number',
+                type_field: 'input',
+              },
+            ],
+          },
+          {
+            name: 'Idle',
+            group_detail: [
+              {
+                id: 3,
+                name: 'P1H',
+                type_data: 'number',
+                type_field: 'input',
+              },
+              {
+                id: 4,
+                name: 'P7H',
+                type_data: 'number',
+                type_field: 'input',
+              },
+            ],
+          },
+        ],
+      },
+    },
+  })
+  async getFormData() {
+    const result = await this.parentPlanWorkingHourService.getFormData();
+    return successResponse(result, 'Parent plan working hour form data');
+  }
+
   @Get('detail/:id')
   @ApiOperation({
     summary: 'Ambil Detail Parent Plan Working Hour by ID',

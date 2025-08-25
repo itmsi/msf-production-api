@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, In } from 'typeorm';
+import { Repository, DataSource, In, IsNull } from 'typeorm';
 import { ParentPlanWorkingHour } from './entities/parent-plan-working-hour.entity';
 import { PlanWorkingHour } from './entities/plan-working-hour.entity';
 import { PlanWorkingHourDetail } from './entities/plan-working-hour-detail.entity';
@@ -1011,5 +1011,60 @@ export class ParentPlanWorkingHourService {
 
   private roundToTwoDecimals(value: number): number {
     return Math.round(value * 100) / 100;
+  }
+
+  async getFormData(): Promise<
+    Array<{
+      name: string;
+      group_detail: Array<{
+        id: number;
+        name: string;
+        type_data: string;
+        type_field: string;
+      }>;
+    }>
+  > {
+    // Ambil semua activities yang aktif
+    const activities = await this.dataSource
+      .getRepository(Activities)
+      .find({
+        where: { deletedAt: IsNull() },
+        select: ['id', 'name', 'status'],
+      });
+
+    // Kelompokkan berdasarkan status
+    const groupedData: {
+      [key: string]: Array<{
+        id: number;
+        name: string;
+        type_data: string;
+        type_field: string;
+      }>;
+    } = {};
+
+    activities.forEach((activity) => {
+      if (activity.status) {
+        const statusKey = activity.status.toLowerCase();
+
+        if (!groupedData[statusKey]) {
+          groupedData[statusKey] = [];
+        }
+
+        groupedData[statusKey].push({
+          id: activity.id,
+          name: activity.name,
+          type_data: 'number',
+          type_field: 'input',
+        });
+      }
+    });
+
+    // Transform ke format yang diminta
+    const result = Object.entries(groupedData).map(([status, activities]) => ({
+      name: status.charAt(0).toUpperCase() + status.slice(1), // Capitalize first letter
+      group_detail: activities,
+    }));
+
+    return result;
   }
 }

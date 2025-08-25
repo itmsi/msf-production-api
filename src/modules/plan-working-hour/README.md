@@ -134,64 +134,98 @@ curl -X 'GET' 'http://localhost:9526/api/parent-plan-working-hour/9' \
             "activities_hour": 1
           }
         ]
-      },
-      {
-        "name": "Breakdown",
-        "group_detail": [
-          {
-            "activities_id": 2,
-            "name": "P5M",
-            "type_data": "number",
-            "type_field": "input",
-            "activities_hour": 1
-          }
-        ]
-      },
-      {
-        "name": "Idle",
-        "group_detail": [
-          {
-            "activities_id": 3,
-            "name": "P5M",
-            "type_data": "number",
-            "type_field": "input",
-            "activities_hour": 1
-          }
-        ]
-      },
-      {
-        "name": "Working",
-        "group_detail": [
-          {
-            "activities_id": 4,
-            "name": "P5M",
-            "type_data": "number",
-            "type_field": "input",
-            "activities_hour": 1
-          }
-        ]
       }
     ]
   }
 }
 ```
 
-**Field Description:**
-- `id`: ID unik parent plan working hour
-- `plan_date`: Tanggal rencana
-- `total_working_hour_month`: Total jam kerja dalam bulan
-- `total_working_hour_day`: Total jam kerja per hari
-- `total_working_day_longshift`: Total hari kerja dengan long shift
-- `total_working_hour_longshift`: Total jam kerja long shift (format string dengan 2 decimal)
-- `total_mohh_per_month`: Total MOHH per bulan
-- `details`: Array grup aktivitas yang dikelompokkan berdasarkan status dari tabel `m_activities`
-  - `name`: Nama grup aktivitas (berdasarkan status: Working, Breakdown, Idle, Delay)
-  - `group_detail`: Array detail aktivitas dalam grup
-    - `activities_id`: ID aktivitas dari tabel `m_activities`
-    - `name`: Nama aktivitas dari kolom `name` di tabel `m_activities`
-    - `type_data`: Tipe data aktivitas (default: "number")
-    - `type_field`: Tipe field aktivitas (default: "input")
-    - `activities_hour`: Jam aktivitas (default: 1)
+#### GET /api/parent-plan-working-hour/form
+Mendapatkan data activities yang dikelompokkan berdasarkan status untuk form parent plan working hour.
+
+**Headers:**
+- `Authorization: Bearer {token}`
+
+**Contoh Request:**
+```bash
+curl -X 'GET' 'http://localhost:9526/api/parent-plan-working-hour/form' \
+  -H 'accept: application/json' \
+  -H 'Authorization: Bearer {token}'
+```
+
+**Response:**
+```json
+{
+  "statusCode": 200,
+  "message": "Parent plan working hour form data",
+  "data": [
+    {
+      "name": "Delay",
+      "group_detail": [
+        {
+          "id": 1,
+          "name": "P5M",
+          "type_data": "number",
+          "type_field": "input"
+        },
+        {
+          "id": 5,
+          "name": "GST",
+          "type_data": "number",
+          "type_field": "input"
+        }
+      ]
+    },
+    {
+      "name": "Working",
+      "group_detail": [
+        {
+          "id": 2,
+          "name": "Loading Barge",
+          "type_data": "number",
+          "type_field": "input"
+        }
+      ]
+    },
+    {
+      "name": "Breakdown",
+      "group_detail": [
+        {
+          "id": 3,
+          "name": "Maintenance",
+          "type_data": "number",
+          "type_field": "input"
+        }
+      ]
+    },
+    {
+      "name": "Idle",
+      "group_detail": [
+        {
+          "id": 4,
+          "name": "Waiting",
+          "type_data": "number",
+          "type_field": "input"
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Response Description:**
+Data akan dikelompokkan secara dinamis berdasarkan status yang ada:
+- `Delay`: activities dengan status 'delay'
+- `Working`: activities dengan status 'working'
+- `Breakdown`: activities dengan status 'breakdown'
+- `Idle`: activities dengan status 'idle'
+- `[status]`: activities dengan status lainnya (otomatis)
+
+Setiap activity memiliki field:
+- `id`: ID dari activity
+- `name`: Nama activity
+- `type_data`: Tipe data yang diharapkan (default: 'number')
+- `type_field`: Tipe field input (default: 'input')
 
 **Error Responses:**
 - `400 Bad Request`: ID tidak ditemukan
@@ -371,6 +405,17 @@ Modul Plan Working Hour digunakan untuk mengelola data perencanaan jam kerja den
 ### Additional Endpoints
 - `GET /api/plan-working-hour/summary` - Get working hours summary
 - `GET /api/plan-working-hour/date-range` - Get by date range
+
+### Parent Plan Working Hour Endpoints
+- `POST /api/parent-plan-working-hour` - Create parent plan working hour
+- `GET /api/parent-plan-working-hour` - Get all parent plan working hours
+- `GET /api/parent-plan-working-hour/form` - Get activities grouped by status for form
+- `GET /api/parent-plan-working-hour/:id` - Get parent plan working hour by ID
+- `PATCH /api/parent-plan-working-hour/:id` - Update parent plan working hour
+- `DELETE /api/parent-plan-working-hour/:id` - Delete parent plan working hour
+- `GET /api/parent-plan-working-hour/detail` - Get detail by date range
+- `GET /api/parent-plan-working-hour/detail/:id` - Get detail by ID
+- `PATCH /api/parent-plan-working-hour/detail/:id` - Update detail by ID
 
 ## Request Format
 
