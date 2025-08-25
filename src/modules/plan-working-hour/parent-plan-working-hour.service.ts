@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, In } from 'typeorm';
 import { ParentPlanWorkingHour } from './entities/parent-plan-working-hour.entity';
 import { PlanWorkingHour } from './entities/plan-working-hour.entity';
 import { PlanWorkingHourDetail } from './entities/plan-working-hour-detail.entity';
@@ -361,17 +361,83 @@ export class ParentPlanWorkingHourService {
     return parentPlan;
   }
 
-  async update(id: number, updateDto: Partial<CreateParentPlanWorkingHourDto>): Promise<ParentPlanWorkingHour> {
-    const parentPlan = await this.findOneEntity(id);
-    
-    // Update parent plan
-    Object.assign(parentPlan, updateDto);
-    
-    if (updateDto.plan_date) {
-      parentPlan.plan_date = new Date(updateDto.plan_date);
-    }
+  async update(id: number, updateDto: Partial<CreateParentPlanWorkingHourDto>): Promise<any> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    return await this.parentPlanWorkingHourRepository.save(parentPlan);
+    try {
+      // 1. Ambil parent plan yang akan diupdate
+      const parentPlan = await this.findOneEntity(id);
+      
+      // 2. Update parent plan
+      Object.assign(parentPlan, updateDto);
+      
+      if (updateDto.plan_date) {
+        parentPlan.plan_date = new Date(updateDto.plan_date);
+      }
+
+      const updatedParentPlan = await queryRunner.manager.save(ParentPlanWorkingHour, parentPlan);
+
+      // 3. Update data yang sudah ada di r_plan_working_hour (bukan hapus dan insert ulang)
+      const existingPlanWorkingHours = await queryRunner.manager.find(PlanWorkingHour, {
+        where: { parent_plan_working_hour_id: id }
+      });
+
+      if (existingPlanWorkingHours.length > 0) {
+        // Update data yang sudah ada
+        for (const planWorkingHour of existingPlanWorkingHours) {
+          // Update field yang relevan
+          planWorkingHour.working_day_longshift = updateDto.total_working_day_longshift || parentPlan.total_working_day_longshift;
+          planWorkingHour.working_hour_longshift = updateDto.total_working_hour_longshift || parentPlan.total_working_hour_longshift;
+          planWorkingHour.working_hour_month = (updateDto.total_working_hour_month || parentPlan.total_working_hour_month) / existingPlanWorkingHours.length;
+          planWorkingHour.working_hour_day = updateDto.total_working_hour_day || parentPlan.total_working_hour_day;
+          planWorkingHour.mohh_per_month = updateDto.total_mohh_per_month || parentPlan.total_mohh_per_month;
+        }
+
+        await queryRunner.manager.save(PlanWorkingHour, existingPlanWorkingHours);
+      }
+
+      // 4. Update data yang sudah ada di r_plan_working_hour_detail (bukan hapus dan insert ulang)
+      if (updateDto.detail && updateDto.detail.length > 0) {
+        // Ambil semua plan working hour IDs
+        const planWorkingHourIds = existingPlanWorkingHours.map(pwh => pwh.id);
+        
+        // Hapus detail lama yang tidak ada di update data
+        await queryRunner.manager.delete(PlanWorkingHourDetail, {
+          plant_working_hour_id: In(planWorkingHourIds)
+        });
+
+        // Insert detail baru untuk semua tanggal
+        const planWorkingHourDetails: PlanWorkingHourDetail[] = [];
+
+        for (const planWorkingHour of existingPlanWorkingHours) {
+          for (const activityDetail of updateDto.detail) {
+            const detail = this.planWorkingHourDetailRepository.create({
+              plant_working_hour_id: planWorkingHour.id,
+              activities_id: activityDetail.activities_id,
+              activities_hour: activityDetail.activities_hour,
+            });
+
+            planWorkingHourDetails.push(detail);
+          }
+        }
+
+        await queryRunner.manager.save(PlanWorkingHourDetail, planWorkingHourDetails);
+      }
+
+      await queryRunner.commitTransaction();
+
+      // 5. Return response dengan format yang sama seperti findOne
+      return await this.findOne(id);
+
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      console.error('Error in update:', error);
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async remove(id: number): Promise<void> {

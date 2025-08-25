@@ -293,12 +293,46 @@ export class ParentPlanWorkingHourController {
   @Patch(':id')
   @ApiOperation({
     summary: 'Update Parent Plan Working Hour',
-    description: 'Mengupdate data parent plan working hour berdasarkan ID'
+    description: 'Mengupdate data parent plan working hour berdasarkan ID beserta semua tabel terkait (r_parent_plan_working_hour, r_plan_working_hour, r_plan_working_hour_detail)'
   })
   @ApiParam({
     name: 'id',
     description: 'ID parent plan working hour',
     type: 'number'
+  })
+  @ApiBody({
+    type: CreateParentPlanWorkingHourDto,
+    description: 'Data parent plan working hour yang akan diupdate',
+    examples: {
+      example1: {
+        summary: 'Contoh request update dengan detail activities',
+        value: {
+          plan_date: "2025-08-21",
+          total_calendar_day: 31,
+          total_holiday_day: 8,
+          total_available_day: 23,
+          total_working_hour_month: 184,
+          total_working_day_longshift: 5,
+          total_working_hour_day: 8,
+          total_working_hour_longshift: 12,
+          total_mohh_per_month: 1000,
+          detail: [
+            {
+              activities_id: 1,
+              activities_hour: 1
+            },
+            {
+              activities_id: 2,
+              activities_hour: 1
+            },
+            {
+              activities_id: 3,
+              activities_hour: 1
+            }
+          ]
+        }
+      }
+    }
   })
   @ApiResponse({
     status: 200,
@@ -308,18 +342,27 @@ export class ParentPlanWorkingHourController {
         statusCode: 200,
         message: 'Parent plan working hour berhasil diupdate',
         data: {
-          id: 1,
+          id: 9,
           plan_date: "2025-08-21T00:00:00.000Z",
-          total_calendar_day: 31,
-          total_holiday_day: 8,
-          total_available_day: 23,
           total_working_hour_month: 184,
-          total_working_day_longshift: 5,
           total_working_hour_day: 8,
-          total_working_hour_longshift: 12,
+          total_working_day_longshift: 5,
+          total_working_hour_longshift: "12.00",
           total_mohh_per_month: 1000,
-          createdAt: "2025-08-21T00:00:00.000Z",
-          updatedAt: "2025-08-21T00:00:00.000Z"
+          details: [
+            {
+              name: "Delay",
+              group_detail: [
+                {
+                  activities_id: 1,
+                  name: "P5M",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                }
+              ]
+            }
+          ]
         }
       }
     }

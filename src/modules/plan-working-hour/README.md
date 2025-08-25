@@ -204,6 +204,134 @@ curl -X 'GET' 'http://localhost:9526/api/parent-plan-working-hour/9' \
 - Field `type_data`, `type_field`, dan `activities_hour` menggunakan nilai default sesuai requirement
 - Response menggunakan format yang konsisten dengan endpoint lainnya
 
+#### PATCH /api/parent-plan-working-hour/:id
+Mengupdate data parent plan working hour berdasarkan ID beserta semua tabel terkait.
+
+**Headers:**
+- `Authorization: Bearer {token}`
+
+**Path Parameters:**
+- `id`: ID parent plan working hour (number)
+
+**Request Body:**
+```json
+{
+  "plan_date": "2025-08-21",
+  "total_calendar_day": 31,
+  "total_holiday_day": 8,
+  "total_available_day": 23,
+  "total_working_hour_month": 184,
+  "total_working_day_longshift": 5,
+  "total_working_hour_day": 8,
+  "total_working_hour_longshift": 12,
+  "total_mohh_per_month": 1000,
+  "detail": [
+    {
+      "activities_id": 1,
+      "activities_hour": 1
+    },
+    {
+      "activities_id": 2,
+      "activities_hour": 1
+    },
+    {
+      "activities_id": 3,
+      "activities_hour": 1
+    }
+  ]
+}
+```
+
+**Contoh Request:**
+```bash
+curl -X 'PATCH' 'http://localhost:9526/api/parent-plan-working-hour/9' \
+  -H 'accept: application/json' \
+  -H 'Authorization: Bearer {token}' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "plan_date": "2025-08-21",
+    "total_calendar_day": 31,
+    "total_holiday_day": 8,
+    "total_available_day": 23,
+    "total_working_hour_month": 184,
+    "total_working_day_longshift": 5,
+    "total_working_hour_day": 8,
+    "total_working_hour_longshift": 12,
+    "total_mohh_per_month": 1000,
+    "detail": [
+      {
+        "activities_id": 1,
+        "activities_hour": 1
+      },
+      {
+        "activities_id": 2,
+        "activities_hour": 1
+      },
+      {
+        "activities_id": 3,
+        "activities_hour": 1
+      }
+    ]
+  }'
+```
+
+**Response:**
+```json
+{
+  "statusCode": 200,
+  "message": "Parent plan working hour berhasil diupdate",
+  "data": {
+    "id": 9,
+    "plan_date": "2025-08-21T00:00:00.000Z",
+    "total_working_hour_month": 184,
+    "total_working_hour_day": 8,
+    "total_working_day_longshift": 5,
+    "total_working_hour_longshift": "12.00",
+    "total_mohh_per_month": 1000,
+    "details": [
+      {
+        "name": "Delay",
+        "group_detail": [
+          {
+            "activities_id": 1,
+            "name": "P5M",
+            "type_data": "number",
+            "type_field": "input",
+            "activities_hour": 1
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Field Description:**
+- Semua field sama seperti endpoint GET, dengan data yang sudah diupdate
+- Response mengembalikan data lengkap dengan activities yang dikelompokkan
+
+**Proses Update:**
+1. **Update Parent Plan**: Update data di tabel `r_parent_plan_working_hour`
+2. **Update Daily Data**: Update data yang sudah ada di tabel `r_plan_working_hour` (bukan hapus dan insert ulang)
+3. **Update Activities**: Update data di tabel `r_plan_working_hour_detail` dengan menghapus detail lama dan insert detail baru
+4. **Transaction Safety**: Semua operasi menggunakan database transaction untuk memastikan konsistensi data
+
+**Perbedaan dengan Versi Sebelumnya:**
+- **Sebelumnya**: Hapus semua data lama dan insert ulang (DELETE + INSERT)
+- **Sekarang**: Update data yang sudah ada (UPDATE) untuk mempertahankan struktur data
+- **Keuntungan**: Data history dan referensi tetap terjaga, tidak ada data yang hilang
+
+**Error Responses:**
+- `400 Bad Request`: ID tidak ditemukan atau data tidak valid
+- `401 Unauthorized`: Token tidak valid atau expired
+- `500 Internal Server Error`: Error server internal
+
+**Notes:**
+- Endpoint ini akan mengupdate semua tabel terkait secara otomatis
+- Data harian akan di-generate ulang berdasarkan bulan yang baru
+- Activities detail akan di-update sesuai dengan data yang dikirim
+- Menggunakan database transaction untuk memastikan data konsisten
+
 ## Overview
 Modul Plan Working Hour digunakan untuk mengelola data perencanaan jam kerja dengan detail activities. Data detail activities akan disimpan ke table `r_plan_working_hour_detail`.
 
