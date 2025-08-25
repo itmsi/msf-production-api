@@ -237,18 +237,39 @@ export class ParentPlanWorkingHourController {
         statusCode: 200,
         message: 'Parent plan working hour berhasil diambil',
         data: {
-          id: 1,
+          id: 9,
           plan_date: "2025-08-21T00:00:00.000Z",
-          total_calendar_day: 31,
-          total_holiday_day: 8,
-          total_available_day: 23,
-          total_working_hour: 184,
+          total_working_hour_month: 184,
+          total_working_hour_day: 8,
           total_working_day_longshift: 5,
-          working_hour_longshift: 12,
-          working_hour_longshift_day: 8.5,
+          total_working_hour_longshift: "12.00",
           total_mohh_per_month: 1000,
-          createdAt: "2025-08-21T00:00:00.000Z",
-          updatedAt: "2025-08-21T00:00:00.000Z"
+          details: [
+            {
+              name: "Delay",
+              group_detail: [
+                {
+                  activities_id: 1,
+                  name: "P5M",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                }
+              ]
+            },
+            {
+              name: "Breakdown",
+              group_detail: [
+                {
+                  activities_id: 2,
+                  name: "P5M",
+                  type_data: "number",
+                  type_field: "input",
+                  activities_hour: 1
+                }
+              ]
+            }
+          ]
         }
       }
     }

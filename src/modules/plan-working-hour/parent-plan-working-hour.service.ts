@@ -6,6 +6,8 @@ import { PlanWorkingHour } from './entities/plan-working-hour.entity';
 import { PlanWorkingHourDetail } from './entities/plan-working-hour-detail.entity';
 import { CreateParentPlanWorkingHourDto, ActivityDetailDto, GetParentPlanWorkingHourQueryDto } from './dto/parent-plan-working-hour.dto';
 import { paginateResponse } from '../../common/helpers/public.helper';
+import { Activities } from '../activities/entities/activities.entity';
+import { ActivityStatus } from '../activities/dto/activities.dto';
 
 @Injectable()
 export class ParentPlanWorkingHourService {
@@ -270,7 +272,83 @@ export class ParentPlanWorkingHourService {
     );
   }
 
-  async findOne(id: number): Promise<ParentPlanWorkingHour> {
+  async findOne(id: number): Promise<any> {
+    try {
+      console.log('Starting findOne with ID:', id);
+      
+      // Ambil parent plan tanpa relations yang kompleks
+      const parentPlan = await this.parentPlanWorkingHourRepository.findOne({
+        where: { id },
+      });
+
+      console.log('Parent plan found:', parentPlan);
+
+      if (!parentPlan) {
+        throw new BadRequestException(`Parent plan working hour dengan ID ${id} tidak ditemukan`);
+      }
+
+      // Ambil semua activities dari tabel m_activities dengan error handling
+      let allActivities: Activities[] = [];
+      try {
+        allActivities = await this.dataSource
+          .getRepository(Activities)
+          .createQueryBuilder('activities')
+          .getMany();
+        console.log('Activities found:', allActivities.length);
+      } catch (activitiesError) {
+        console.error('Error fetching activities:', activitiesError);
+        // Jika ada error, gunakan array kosong
+        allActivities = [];
+      }
+
+      // Kelompokkan activities berdasarkan status dengan error handling
+      let activitiesByStatus: Record<string, Activities[]> = {};
+      try {
+        activitiesByStatus = allActivities.reduce((acc, activity) => {
+          const status = activity.status;
+          if (!acc[status]) {
+            acc[status] = [];
+          }
+          acc[status].push(activity);
+          return acc;
+        }, {} as Record<string, Activities[]>);
+        console.log('Activities grouped by status:', Object.keys(activitiesByStatus));
+      } catch (groupingError) {
+        console.error('Error grouping activities:', groupingError);
+        activitiesByStatus = {};
+      }
+
+      // Buat response dengan format yang diinginkan
+      const response = {
+        id: parentPlan.id,
+        plan_date: parentPlan.plan_date,
+        total_working_hour_month: parentPlan.total_working_hour_month,
+        total_working_hour_day: parentPlan.total_working_hour_day,
+        total_working_day_longshift: parentPlan.total_working_day_longshift,
+        total_working_hour_longshift: this.formatDecimalToString(parentPlan.total_working_hour_longshift),
+        total_mohh_per_month: parentPlan.total_mohh_per_month,
+        details: Object.entries(activitiesByStatus).map(([status, activities]) => ({
+          name: status.charAt(0).toUpperCase() + status.slice(1), // Capitalize first letter
+          group_detail: activities.map((activity: Activities) => ({
+            activities_id: activity.id,
+            name: activity.name,
+            type_data: 'number', // Default value as per requirement
+            type_field: 'input', // Default value as per requirement
+            activities_hour: 1 // Default value as per requirement
+          }))
+        }))
+      };
+
+      console.log('Response created successfully:', response);
+      return response;
+    } catch (error) {
+      console.error('Error in findOne:', error);
+      throw error;
+    }
+  }
+
+  // Method internal untuk mendapatkan entity asli
+  private async findOneEntity(id: number): Promise<ParentPlanWorkingHour> {
     const parentPlan = await this.parentPlanWorkingHourRepository.findOne({
       where: { id },
       relations: ['planWorkingHours', 'planWorkingHours.details'],
@@ -284,7 +362,7 @@ export class ParentPlanWorkingHourService {
   }
 
   async update(id: number, updateDto: Partial<CreateParentPlanWorkingHourDto>): Promise<ParentPlanWorkingHour> {
-    const parentPlan = await this.findOne(id);
+    const parentPlan = await this.findOneEntity(id);
     
     // Update parent plan
     Object.assign(parentPlan, updateDto);
@@ -297,7 +375,14 @@ export class ParentPlanWorkingHourService {
   }
 
   async remove(id: number): Promise<void> {
-    const parentPlan = await this.findOne(id);
+    const parentPlan = await this.findOneEntity(id);
     await this.parentPlanWorkingHourRepository.softDelete(id);
+  }
+
+  private formatDecimalToString(value: number | string): string {
+    if (typeof value === 'number') {
+      return value.toFixed(2);
+    }
+    return value;
   }
 }

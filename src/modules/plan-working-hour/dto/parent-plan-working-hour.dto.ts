@@ -358,3 +358,66 @@ export class GetParentPlanWorkingHourQueryDto {
   @IsString()
   sortOrder?: 'ASC' | 'DESC';
 }
+
+export class ActivityGroupDetailDto {
+  @ApiProperty({ description: 'ID aktivitas', example: 1 })
+  @IsNumber()
+  activities_id: number;
+
+  @ApiProperty({ description: 'Nama aktivitas', example: 'P5M' })
+  @IsString()
+  name: string;
+
+  @ApiProperty({ description: 'Tipe data aktivitas', example: 'number' })
+  @IsString()
+  type_data: string;
+
+  @ApiProperty({ description: 'Tipe field aktivitas', example: 'input' })
+  @IsString()
+  type_field: string;
+
+  @ApiProperty({ description: 'Jam aktivitas', example: 1 })
+  @IsNumber()
+  activities_hour: number;
+}
+
+export class ActivityGroupDto {
+  @ApiProperty({ description: 'Nama grup aktivitas', example: 'Delay' })
+  @IsString()
+  name: string;
+
+  @ApiProperty({ description: 'Detail aktivitas dalam grup', type: [ActivityGroupDetailDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ActivityGroupDetailDto)
+  group_detail: ActivityGroupDetailDto[];
+}
+
+export class ParentPlanWorkingHourDetailResponseDto {
+  @ApiProperty({ description: 'ID unik parent plan working hour', example: 9 })
+  id: number;
+
+  @ApiProperty({ description: 'Tanggal rencana', example: '2025-08-21T00:00:00.000Z' })
+  plan_date: Date;
+
+  @ApiProperty({ description: 'Total jam kerja dalam bulan', example: 184 })
+  total_working_hour_month: number;
+
+  @ApiProperty({ description: 'Total jam kerja per hari', example: 8 })
+  total_working_hour_day: number;
+
+  @ApiProperty({ description: 'Total hari kerja dengan long shift', example: 5 })
+  total_working_day_longshift: number;
+
+  @ApiProperty({ description: 'Total jam kerja long shift', example: '12.00' })
+  total_working_hour_longshift: string;
+
+  @ApiProperty({ description: 'Total MOHH per bulan', example: 1000 })
+  total_mohh_per_month: number;
+
+  @ApiProperty({ description: 'Grup aktivitas', type: [ActivityGroupDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ActivityGroupDto)
+  details: ActivityGroupDto[];
+}

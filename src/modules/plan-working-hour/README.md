@@ -85,19 +85,124 @@ curl -X 'GET' 'http://localhost:9526/api/parent-plan-working-hour?sortBy=plan_da
 - `total_delay`: Jumlah value di kolom activities_hour dengan status delay
 - `total_idle`: Jumlah value di kolom activities_hour dengan status idle
 - `total_breakdown`: Jumlah value di kolom activities_hour dengan status breakdown
-- `ewh`: Effective Working Hours = total_mohh - total_delay - total_breakdown
-- `pa`: Performance Availability = (ewh + total_delay + total_idle) / total_mohh
-- `ma`: Mechanical Availability = ewh / (ewh + total_breakdown)
-- `ua`: Utilization Availability = ewh / (ewh + total_delay + total_idle)
-- `eu`: Equipment Utilization = ewh / (ewh + total_delay + total_idle + total_breakdown)
-- `is_available_to_edit`: Status edit (true jika plan_date lebih dari bulan saat ini)
-- `is_available_to_delete`: Status delete (true jika plan_date lebih dari bulan saat ini)
+- `ewh`: Rumus: total_mohh - total_delay - total_breakdown
+- `pa`: Rumus: (ewh + total_delay + total_idle) / total_mohh
+- `ma`: Rumus: ewh / (ewh + total_breakdown)
+- `ua`: Rumus: ewh / (ewh + total_delay + total_idle)
+- `eu`: Rumus: ewh / (ewh + total_delay + total_idle + total_breakdown)
+- `is_available_to_edit`: Status edit: true jika plan_date lebih dari hari ini
+- `is_available_to_delete`: Status delete: true jika plan_date lebih dari hari ini
 
-**Pagination:**
-- `total`: Total data yang tersedia
-- `page`: Halaman saat ini
-- `limit`: Jumlah data per halaman
-- `lastPage`: Halaman terakhir
+#### GET /api/parent-plan-working-hour/:id
+Mengambil data parent plan working hour berdasarkan ID dengan detail activities yang dikelompokkan berdasarkan status.
+
+**Headers:**
+- `Authorization: Bearer {token}`
+
+**Path Parameters:**
+- `id`: ID parent plan working hour (number)
+
+**Contoh Request:**
+```bash
+curl -X 'GET' 'http://localhost:9526/api/parent-plan-working-hour/9' \
+  -H 'accept: application/json' \
+  -H 'Authorization: Bearer {token}'
+```
+
+**Response:**
+```json
+{
+  "statusCode": 200,
+  "message": "Parent plan working hour berhasil diambil",
+  "data": {
+    "id": 9,
+    "plan_date": "2025-08-21T00:00:00.000Z",
+    "total_working_hour_month": 184,
+    "total_working_hour_day": 8,
+    "total_working_day_longshift": 5,
+    "total_working_hour_longshift": "12.00",
+    "total_mohh_per_month": 1000,
+    "details": [
+      {
+        "name": "Delay",
+        "group_detail": [
+          {
+            "activities_id": 1,
+            "name": "P5M",
+            "type_data": "number",
+            "type_field": "input",
+            "activities_hour": 1
+          }
+        ]
+      },
+      {
+        "name": "Breakdown",
+        "group_detail": [
+          {
+            "activities_id": 2,
+            "name": "P5M",
+            "type_data": "number",
+            "type_field": "input",
+            "activities_hour": 1
+          }
+        ]
+      },
+      {
+        "name": "Idle",
+        "group_detail": [
+          {
+            "activities_id": 3,
+            "name": "P5M",
+            "type_data": "number",
+            "type_field": "input",
+            "activities_hour": 1
+          }
+        ]
+      },
+      {
+        "name": "Working",
+        "group_detail": [
+          {
+            "activities_id": 4,
+            "name": "P5M",
+            "type_data": "number",
+            "type_field": "input",
+            "activities_hour": 1
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Field Description:**
+- `id`: ID unik parent plan working hour
+- `plan_date`: Tanggal rencana
+- `total_working_hour_month`: Total jam kerja dalam bulan
+- `total_working_hour_day`: Total jam kerja per hari
+- `total_working_day_longshift`: Total hari kerja dengan long shift
+- `total_working_hour_longshift`: Total jam kerja long shift (format string dengan 2 decimal)
+- `total_mohh_per_month`: Total MOHH per bulan
+- `details`: Array grup aktivitas yang dikelompokkan berdasarkan status dari tabel `m_activities`
+  - `name`: Nama grup aktivitas (berdasarkan status: Working, Breakdown, Idle, Delay)
+  - `group_detail`: Array detail aktivitas dalam grup
+    - `activities_id`: ID aktivitas dari tabel `m_activities`
+    - `name`: Nama aktivitas dari kolom `name` di tabel `m_activities`
+    - `type_data`: Tipe data aktivitas (default: "number")
+    - `type_field`: Tipe field aktivitas (default: "input")
+    - `activities_hour`: Jam aktivitas (default: 1)
+
+**Error Responses:**
+- `400 Bad Request`: ID tidak ditemukan
+- `401 Unauthorized`: Token tidak valid atau expired
+- `500 Internal Server Error`: Error server internal
+
+**Notes:**
+- Data activities diambil dari tabel `m_activities` dan dikelompokkan berdasarkan kolom `status`
+- Setiap status akan menjadi grup terpisah dalam array `details`
+- Field `type_data`, `type_field`, dan `activities_hour` menggunakan nilai default sesuai requirement
+- Response menggunakan format yang konsisten dengan endpoint lainnya
 
 ## Overview
 Modul Plan Working Hour digunakan untuk mengelola data perencanaan jam kerja dengan detail activities. Data detail activities akan disimpan ke table `r_plan_working_hour_detail`.
