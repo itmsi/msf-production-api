@@ -33,6 +33,7 @@ export class ParentPlanWorkingHourService {
         total_working_hour: createDto.total_working_hour,
         total_working_day_longshift: createDto.total_working_day_longshift,
         working_hour_longshift: createDto.working_hour_longshift,
+        working_hour_longshift_day: createDto.working_hour_longshift_day,
         total_mohh_per_month: createDto.total_mohh_per_month,
       });
 

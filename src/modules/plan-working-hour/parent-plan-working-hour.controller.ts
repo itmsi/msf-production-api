@@ -63,6 +63,7 @@ export class ParentPlanWorkingHourController {
           total_working_hour: 184,
           total_working_day_longshift: 5,
           working_hour_longshift: 12,
+          working_hour_longshift_day: 8.5,
           total_mohh_per_month: 1000,
           detail: [
             {
@@ -95,6 +96,7 @@ export class ParentPlanWorkingHourController {
         total_working_hour: 184,
         total_working_day_longshift: 5,
         working_hour_longshift: 12,
+        working_hour_longshift_day: 8.5,
         total_mohh_per_month: 1000,
         createdAt: "2025-08-21T00:00:00.000Z",
         updatedAt: "2025-08-21T00:00:00.000Z",
@@ -155,6 +157,7 @@ export class ParentPlanWorkingHourController {
             total_working_hour: 184,
             total_working_day_longshift: 5,
             working_hour_longshift: 12,
+            working_hour_longshift_day: 8.5,
             total_mohh_per_month: 1000,
             createdAt: "2025-08-21T00:00:00.000Z",
             updatedAt: "2025-08-21T00:00:00.000Z"
@@ -194,6 +197,7 @@ export class ParentPlanWorkingHourController {
           total_working_hour: 184,
           total_working_day_longshift: 5,
           working_hour_longshift: 12,
+          working_hour_longshift_day: 8.5,
           total_mohh_per_month: 1000,
           createdAt: "2025-08-21T00:00:00.000Z",
           updatedAt: "2025-08-21T00:00:00.000Z"
@@ -243,6 +247,7 @@ export class ParentPlanWorkingHourController {
           total_working_hour: 184,
           total_working_day_longshift: 5,
           working_hour_longshift: 12,
+          working_hour_longshift_day: 8.5,
           total_mohh_per_month: 1000,
           createdAt: "2025-08-21T00:00:00.000Z",
           updatedAt: "2025-08-21T00:00:00.000Z"

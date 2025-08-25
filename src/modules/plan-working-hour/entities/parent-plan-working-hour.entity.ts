@@ -35,6 +35,9 @@ export class ParentPlanWorkingHour {
   @Column({ type: 'int', nullable: true })
   working_hour_longshift: number;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  working_hour_longshift_day: number;
+
   @Column({ type: 'int', nullable: true })
   total_mohh_per_month: number;
 
