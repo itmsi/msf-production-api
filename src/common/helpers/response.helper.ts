@@ -23,6 +23,24 @@ export function successResponse<T = any>(
   };
 }
 
+export function successResponseWithMeta<T = any>(
+  data: T,
+  message = 'Retrieve data success',
+  statusCode = 200,
+  meta?: {
+    total: number;
+    page: number;
+    limit: number;
+  },
+): ApiResponse<T> {
+  return {
+    statusCode,
+    message,
+    data,
+    meta,
+  };
+}
+
 export function emptyDataResponse<T = any>(
   message = 'Data not found',
   data: T = null as T,

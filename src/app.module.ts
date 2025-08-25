@@ -20,6 +20,7 @@ import { BargeModule } from './modules/barge/barge.module';
 import { DailyPlanProductionModule } from './modules/daily-plan-production/daily-plan-production.module';
 import { ParentPlanProductionModule } from './modules/parent-plan-production/parent-plan-production.module';
 import { BaseDataProductionModule } from './modules/base-data-production/base-data-production.module';
+import { EffectiveWorkingHoursModule } from './modules/effective-working-hours/effective-working-hours.module';
 import { S3Module } from './integrations/s3/s3.module';
 
 @Module({
@@ -58,6 +59,7 @@ import { S3Module } from './integrations/s3/s3.module';
     DailyPlanProductionModule,
     ParentPlanProductionModule,
     BaseDataProductionModule,
+    EffectiveWorkingHoursModule,
     S3Module,
   ],
 })
