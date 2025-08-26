@@ -1081,4 +1081,94 @@ export class ParentPlanWorkingHourService {
 
     return result;
   }
+
+  // Method baru untuk update detail berdasarkan ID dari r_plan_working_hour
+  async updateDetailByPlanWorkingHourId(
+    id: number,
+    updateDto: Partial<UpdateDetailParentPlanWorkingHourDto>,
+  ): Promise<any> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // 1. Ambil plan working hour yang akan diupdate
+      const planWorkingHour = await queryRunner.manager.findOne(PlanWorkingHour, {
+        where: { id },
+        relations: ['parentPlanWorkingHour', 'details'],
+      });
+
+      if (!planWorkingHour) {
+        throw new BadRequestException(
+          `Plan working hour dengan ID ${id} tidak ditemukan`,
+        );
+      }
+
+      const parentPlan = planWorkingHour.parentPlanWorkingHour;
+
+      // 2. Update parent plan jika ada perubahan
+      if (updateDto.plan_date) {
+        parentPlan.plan_date = new Date(updateDto.plan_date);
+        await queryRunner.manager.save(ParentPlanWorkingHour, parentPlan);
+      }
+
+      // 3. Update data di r_plan_working_hour
+      if (updateDto.working_day_longshift !== undefined) {
+        planWorkingHour.working_day_longshift = updateDto.working_day_longshift;
+      }
+      if (updateDto.working_hour_longshift !== undefined) {
+        planWorkingHour.working_hour_longshift = updateDto.working_hour_longshift;
+      }
+      if (updateDto.working_hour_month !== undefined) {
+        planWorkingHour.working_hour_month = updateDto.working_hour_month;
+      }
+      if (updateDto.working_hour_day !== undefined) {
+        planWorkingHour.working_hour_day = updateDto.working_hour_day;
+      }
+      if (updateDto.mohh_per_month !== undefined) {
+        planWorkingHour.mohh_per_month = updateDto.mohh_per_month;
+      }
+      if (updateDto.schedule_day !== undefined) {
+        planWorkingHour.schedule_day = updateDto.schedule_day;
+      }
+
+      await queryRunner.manager.save(PlanWorkingHour, planWorkingHour);
+
+      // 4. Update data di r_plan_working_hour_detail
+      if (updateDto.detail && updateDto.detail.length > 0) {
+        // Hapus detail lama
+        await queryRunner.manager.delete(PlanWorkingHourDetail, {
+          plant_working_hour_id: planWorkingHour.id,
+        });
+
+        // Insert detail baru
+        const planWorkingHourDetails: PlanWorkingHourDetail[] = [];
+        for (const activityDetail of updateDto.detail) {
+          const detail = this.planWorkingHourDetailRepository.create({
+            plant_working_hour_id: planWorkingHour.id,
+            activities_id: activityDetail.activities_id,
+            activities_hour: activityDetail.activities_hour,
+          });
+
+          planWorkingHourDetails.push(detail);
+        }
+
+        await queryRunner.manager.save(
+          PlanWorkingHourDetail,
+          planWorkingHourDetails,
+        );
+      }
+
+      await queryRunner.commitTransaction();
+
+      // 5. Return response dengan format yang sama seperti getDetailById
+      return await this.getDetailById(id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      console.error('Error in updateDetailByPlanWorkingHourId:', error);
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
 }

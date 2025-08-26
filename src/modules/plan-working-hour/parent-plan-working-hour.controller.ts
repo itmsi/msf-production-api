@@ -877,7 +877,7 @@ export class ParentPlanWorkingHourController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: Partial<UpdateDetailParentPlanWorkingHourDto>,
   ) {
-    const result = await this.parentPlanWorkingHourService.updateDetail(
+    const result = await this.parentPlanWorkingHourService.updateDetailByPlanWorkingHourId(
       id,
       updateDto,
     );
