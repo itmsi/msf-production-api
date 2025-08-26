@@ -8,7 +8,10 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { Department } from '../../department/entities/department.entity';
 
 @Entity('m_employee')
 export class Employee {
@@ -25,16 +28,16 @@ export class Employee {
   lastName: string;
 
   @Expose()
-  @Column()
-  department: string;
+  @Column({ name: 'department_id', nullable: true })
+  departmentId?: number;
 
   @Expose()
   @Column()
   position: string;
 
   @Expose()
-  @Column()
-  nip: number;
+  @Column({ type: 'varchar', length: 255 })
+  nip: string;
 
   @Expose()
   @Column({
@@ -59,6 +62,10 @@ export class Employee {
 
   @OneToMany('Users', (user: any) => user.employees)
   users?: any[];
+
+  @ManyToOne(() => Department, (department) => department.employees)
+  @JoinColumn({ name: 'department_id' })
+  department?: Department;
 
   // Virtual property untuk nama lengkap
   @Expose()

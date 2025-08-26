@@ -6,6 +6,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { SitesModule } from './modules/sites/sites.module';
 import { EmployeeModule } from './modules/employee/employee.module';
+import { DepartmentModule } from './modules/department/department.module';
 import { BrandModule } from './modules/brand/brand.module';
 import { UnitTypeModule } from './modules/unit-type/unit-type.module';
 import { ActivitiesModule } from './modules/activities/activities.module';
@@ -47,6 +48,7 @@ import { S3Module } from './integrations/s3/s3.module';
     RolesModule,
     SitesModule,
     EmployeeModule,
+    DepartmentModule,
     BrandModule,
     UnitTypeModule,
     ActivitiesModule,

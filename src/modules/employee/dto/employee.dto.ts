@@ -42,15 +42,13 @@ export class CreateEmployeeDto {
   lastName: string;
 
   @ApiProperty({
-    description: 'Department of employee',
-    example: 'IT',
-    minLength: 1,
-    maxLength: 100,
+    description: 'Department ID of employee',
+    example: 1,
+    minimum: 1,
   })
-  @IsString()
-  @MinLength(1)
-  @MaxLength(100)
-  department: string;
+  @IsNumber()
+  @Min(1)
+  departmentId: number;
 
   @ApiProperty({
     description: 'Position of employee',
@@ -65,13 +63,14 @@ export class CreateEmployeeDto {
 
   @ApiProperty({
     description: 'NIP (Employee ID)',
-    example: 123456789,
-    minimum: 100000000,
-    maximum: 999999999,
+    example: 'EMP001',
+    minLength: 1,
+    maxLength: 255,
   })
-  @IsNumber()
-  @Min(100000000)
-  nip: number;
+  @IsString()
+  @MinLength(1)
+  @MaxLength(255)
+  nip: string;
 
   @ApiProperty({
     description: 'Employee status',
@@ -124,17 +123,15 @@ export class UpdateEmployeeDto {
   lastName?: string;
 
   @ApiProperty({
-    description: 'Department of employee',
-    example: 'IT',
+    description: 'Department ID of employee',
+    example: 1,
     required: false,
-    minLength: 1,
-    maxLength: 100,
+    minimum: 1,
   })
   @IsOptional()
-  @IsString()
-  @MinLength(1)
-  @MaxLength(100)
-  department?: string;
+  @IsNumber()
+  @Min(1)
+  departmentId?: number;
 
   @ApiProperty({
     description: 'Position of employee',
@@ -151,15 +148,16 @@ export class UpdateEmployeeDto {
 
   @ApiProperty({
     description: 'NIP (Employee ID)',
-    example: 123456789,
+    example: 'EMP001',
     required: false,
-    minimum: 100000000,
-    maximum: 999999999,
+    minLength: 1,
+    maxLength: 255,
   })
   @IsOptional()
-  @IsNumber()
-  @Min(100000000)
-  nip?: number;
+  @IsString()
+  @MinLength(1)
+  @MaxLength(255)
+  nip?: string;
 
   @ApiProperty({
     description: 'Employee status',
@@ -198,8 +196,11 @@ export class EmployeeResponseDto {
   @ApiProperty({ description: 'Full name of employee', example: 'John Doe' })
   name: string;
 
-  @ApiProperty({ description: 'Department of employee', example: 'IT' })
-  department: string;
+  @ApiProperty({ description: 'Department ID of employee', example: 1 })
+  departmentId: number;
+
+  @ApiProperty({ description: 'Department name of employee', example: 'Information Technology' })
+  departmentName?: string;
 
   @ApiProperty({
     description: 'Position of employee',
@@ -207,8 +208,8 @@ export class EmployeeResponseDto {
   })
   position: string;
 
-  @ApiProperty({ description: 'NIP (Employee ID)', example: 123456789 })
-  nip: number;
+  @ApiProperty({ description: 'NIP (Employee ID)', example: 'EMP001' })
+  nip: string;
 
   @ApiProperty({
     description: 'Employee status',
@@ -271,15 +272,15 @@ export class GetEmployeesQueryDto {
   search?: string;
 
   @ApiProperty({
-    description: 'Filter by department',
+    description: 'Filter by department ID',
     required: false,
-    minLength: 1,
-    example: 'IT',
+    minimum: 1,
+    example: 1,
   })
   @IsOptional()
-  @IsString()
-  @MinLength(1)
-  department?: string;
+  @IsNumber()
+  @Min(1)
+  departmentId?: number;
 
   @ApiProperty({
     description: 'Filter by status',
@@ -298,7 +299,7 @@ export class GetEmployeesQueryDto {
       'id',
       'firstName',
       'lastName',
-      'department',
+      'departmentId',
       'position',
       'nip',
       'status',

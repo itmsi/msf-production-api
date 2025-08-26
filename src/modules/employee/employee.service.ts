@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder, Not } from 'typeorm';
 import { Employee } from './entities/employee.entity';
+import { Department } from '../department/entities/department.entity';
 import {
   CreateEmployeeDto,
   UpdateEmployeeDto,
@@ -25,6 +26,8 @@ export class EmployeeService {
   constructor(
     @InjectRepository(Employee)
     private employeeRepository: Repository<Employee>,
+    @InjectRepository(Department)
+    private departmentRepository: Repository<Department>,
   ) {}
 
   async create(
@@ -40,15 +43,33 @@ export class EmployeeService {
         throwError('NIP already exists', 409);
       }
 
+      // Check if department exists
+      if (createEmployeeDto.departmentId) {
+        const department = await this.departmentRepository.findOne({
+          where: { id: createEmployeeDto.departmentId },
+        });
+
+        if (!department) {
+          throwError('Department not found', 404);
+        }
+      }
+
       const employee = this.employeeRepository.create(createEmployeeDto);
       const result = await this.employeeRepository.save(employee);
+
+      // Load department information
+      const employeeWithDepartment = await this.employeeRepository.findOne({
+        where: { id: result.id },
+        relations: ['department'],
+      });
 
       const response: EmployeeResponseDto = {
         id: result.id,
         firstName: result.firstName,
         lastName: result.lastName,
         name: result.name,
-        department: result.department,
+        departmentId: result.departmentId!,
+        departmentName: employeeWithDepartment?.department?.name,
         position: result.position,
         nip: result.nip,
         status: result.status as any,
@@ -72,7 +93,7 @@ export class EmployeeService {
       const limit = parseInt(query.limit || '10', 10);
       const skip = (page - 1) * limit;
       const search = query.search?.toLowerCase() || '';
-      const department = query.department?.toLowerCase() || '';
+      const departmentId = query.departmentId;
       const status = query.status || '';
       const sortBy = query.sortBy || 'id';
       const sortOrder = query.sortOrder || 'DESC';
@@ -84,18 +105,19 @@ export class EmployeeService {
 
       const qb: SelectQueryBuilder<Employee> = this.employeeRepository
         .createQueryBuilder('employee')
+        .leftJoinAndSelect('employee.department', 'department')
         .where('employee.deletedAt IS NULL');
 
       if (search) {
         qb.andWhere(
-          '(employee.firstName ILIKE :search OR employee.lastName ILIKE :search OR employee.department ILIKE :search OR employee.position ILIKE :search)',
+          '(employee.firstName ILIKE :search OR employee.lastName ILIKE :search OR department.name ILIKE :search OR employee.position ILIKE :search)',
           { search: `%${search}%` },
         );
       }
 
-      if (department) {
-        qb.andWhere('employee.department ILIKE :department', {
-          department: `%${department}%`,
+      if (departmentId) {
+        qb.andWhere('employee.departmentId = :departmentId', {
+          departmentId,
         });
       }
 
@@ -108,7 +130,7 @@ export class EmployeeService {
         'id',
         'firstName',
         'lastName',
-        'department',
+        'departmentId',
         'position',
         'nip',
         'status',
@@ -129,7 +151,8 @@ export class EmployeeService {
         firstName: employee.firstName,
         lastName: employee.lastName,
         name: employee.name,
-        department: employee.department,
+        departmentId: employee.departmentId!,
+        departmentName: employee.department?.name,
         position: employee.position,
         nip: employee.nip,
         status: employee.status as any,
@@ -155,6 +178,7 @@ export class EmployeeService {
     try {
       const employee = await this.employeeRepository.findOne({
         where: { id, deletedAt: null as any },
+        relations: ['department'],
       });
 
       if (!employee) {
@@ -166,7 +190,8 @@ export class EmployeeService {
         firstName: employee.firstName,
         lastName: employee.lastName,
         name: employee.name,
-        department: employee.department,
+        departmentId: employee.departmentId!,
+        departmentName: employee.department?.name,
         position: employee.position,
         nip: employee.nip,
         status: employee.status as any,
@@ -206,15 +231,33 @@ export class EmployeeService {
         }
       }
 
+      // Check if department exists (if being updated)
+      if (updateEmployeeDto.departmentId) {
+        const department = await this.departmentRepository.findOne({
+          where: { id: updateEmployeeDto.departmentId },
+        });
+
+        if (!department) {
+          throwError('Department not found', 404);
+        }
+      }
+
       Object.assign(employee, updateEmployeeDto);
       const result = await this.employeeRepository.save(employee);
+
+      // Load department information
+      const employeeWithDepartment = await this.employeeRepository.findOne({
+        where: { id: result.id },
+        relations: ['department'],
+      });
 
       const response: EmployeeResponseDto = {
         id: result.id,
         firstName: result.firstName,
         lastName: result.lastName,
         name: result.name,
-        department: result.department,
+        departmentId: result.departmentId!,
+        departmentName: employeeWithDepartment?.department?.name,
         position: result.position,
         nip: result.nip,
         status: result.status as any,
@@ -249,18 +292,19 @@ export class EmployeeService {
     }
   }
 
-  async findByNip(nip: number): Promise<Employee | null> {
+  async findByNip(nip: string): Promise<Employee | null> {
     return this.employeeRepository.findOne({
       where: { nip, deletedAt: null as any },
     });
   }
 
   async findByDepartment(
-    department: string,
+    departmentId: number,
   ): Promise<ApiResponse<EmployeeResponseDto[]>> {
     try {
       const result = await this.employeeRepository.find({
-        where: { department, deletedAt: null as any },
+        where: { departmentId, deletedAt: null as any },
+        relations: ['department'],
         order: { firstName: 'ASC', lastName: 'ASC' },
       });
 
@@ -269,7 +313,8 @@ export class EmployeeService {
         firstName: employee.firstName,
         lastName: employee.lastName,
         name: employee.name,
-        department: employee.department,
+        departmentId: employee.departmentId!,
+        departmentName: employee.department?.name,
         position: employee.position,
         nip: employee.nip,
         status: employee.status as any,
@@ -296,6 +341,7 @@ export class EmployeeService {
     try {
       const result = await this.employeeRepository.find({
         where: { status, deletedAt: null as any },
+        relations: ['department'],
         order: { firstName: 'ASC', lastName: 'ASC' },
       });
 
@@ -304,7 +350,8 @@ export class EmployeeService {
         firstName: employee.firstName,
         lastName: employee.lastName,
         name: employee.name,
-        department: employee.department,
+        departmentId: employee.departmentId!,
+        departmentName: employee.department?.name,
         position: employee.position,
         nip: employee.nip,
         status: employee.status as any,

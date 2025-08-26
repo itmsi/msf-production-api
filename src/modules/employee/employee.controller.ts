@@ -261,16 +261,16 @@ export class EmployeeController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('by-department/:department')
+  @Get('by-department/:departmentId')
   @ApiOperation({
     summary: 'Mendapatkan employee berdasarkan department',
     description: 'Mengambil semua employee yang berada di department tertentu',
   })
   @ApiParam({
-    name: 'department',
-    description: 'Nama department yang akan dicari',
-    example: 'IT',
-    type: String,
+    name: 'departmentId',
+    description: 'ID department yang akan dicari',
+    example: 1,
+    type: Number,
   })
   @ApiResponse({
     status: 200,
@@ -306,8 +306,8 @@ export class EmployeeController {
     status: 500,
     description: 'Internal Server Error - Terjadi kesalahan pada server',
   })
-  findByDepartment(@Param('department') department: string) {
-    return this.employeeService.findByDepartment(department);
+  findByDepartment(@Param('departmentId', ParseIntPipe) departmentId: number) {
+    return this.employeeService.findByDepartment(departmentId);
   }
 
   @UseGuards(JwtAuthGuard)
