@@ -319,14 +319,17 @@ export class MenuHasPermissionService {
       });
 
       // Ambil role has permissions untuk role tertentu
+      // Data ini berisi kombinasi role_id, permission_id, dan mhp_id dari tabel r_role_has_permission
       const rolePermissions = await this.roleHasPermissionRepository.find({
         where: { role_id: roleId },
       });
 
-      // Buat map untuk permission yang dimiliki role
+      // Buat map untuk permission yang dimiliki role berdasarkan kombinasi role_id, permission_id, dan mhp_id
       const rolePermissionMap = new Map();
       rolePermissions.forEach((rhp) => {
-        rolePermissionMap.set(rhp.permission_id, true);
+        // Key: kombinasi permission_id dan mhp_id, Value: true (berarti role memiliki permission ini dengan mhp_id tertentu)
+        const key = `${rhp.permission_id}-${rhp.mhp_id}`;
+        rolePermissionMap.set(key, true);
       });
 
       // Buat response data
@@ -344,7 +347,9 @@ export class MenuHasPermissionService {
           const menuPermissions = menuHasPermissions.map((mhp) => ({
             permission_id: mhp.permission_id,
             permission_name: mhp.permission.permission_name,
-            role_has_status: rolePermissionMap.has(mhp.permission_id),
+            // role_has_status: true jika ada data di tabel r_role_has_permission dengan kombinasi role_id, permission_id, dan mhp_id
+            // role_has_status: false jika tidak ada data di tabel r_role_has_permission
+            role_has_status: rolePermissionMap.has(`${mhp.permission_id}-${mhp.id}`),
             mhp_id: mhp.id, // Selalu ada value karena diambil dari r_menu_has_permission
           }));
 
