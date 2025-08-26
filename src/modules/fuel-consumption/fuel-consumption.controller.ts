@@ -32,9 +32,9 @@ import {
 
 @ApiTags('Fuel Consumption')
 @ApiBearerAuth('jwt')
-@ApiExtraModels(FuelConsumptionResponseDto)
-@UseGuards(JwtAuthGuard)
 @Controller('fuel-consumption')
+@UseGuards(JwtAuthGuard)
+@ApiExtraModels(FuelConsumptionResponseDto)
 export class FuelConsumptionController {
   constructor(private readonly fuelConsumptionService: FuelConsumptionService) {}
 

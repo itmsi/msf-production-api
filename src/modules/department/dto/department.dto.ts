@@ -1,141 +1,110 @@
-import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsString,
-  IsOptional,
-  MinLength,
-  MaxLength,
-  IsNumber,
-} from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsOptional, MaxLength, IsInt, Min, Max } from 'class-validator';
+import { Type } from 'class-transformer';
 
+// Create DTO
 export class CreateDepartmentDto {
   @ApiProperty({
-    description: 'Name of department',
-    example: 'Information Technology',
-    minLength: 1,
+    description: 'Nama department',
+    example: 'Human Resources',
     maxLength: 255,
   })
   @IsString()
-  @MinLength(1)
-  @MaxLength(255)
+  @IsNotEmpty({ message: 'Nama department tidak boleh kosong' })
+  @MaxLength(255, { message: 'Nama department tidak boleh lebih dari 255 karakter' })
   name: string;
-
-  @ApiProperty({
-    description: 'Description of department',
-    example: 'Handles all IT related activities',
-    required: false,
-    minLength: 1,
-    maxLength: 255,
-  })
-  @IsOptional()
-  @IsString()
-  @MinLength(1)
-  @MaxLength(255)
-  description?: string;
 }
 
+// Update DTO
 export class UpdateDepartmentDto {
-  @ApiProperty({
-    description: 'Name of department',
-    example: 'Information Technology',
-    required: false,
-    minLength: 1,
+  @ApiPropertyOptional({
+    description: 'Nama department',
+    example: 'Human Resources Updated',
     maxLength: 255,
   })
   @IsOptional()
   @IsString()
-  @MinLength(1)
-  @MaxLength(255)
+  @IsNotEmpty({ message: 'Nama department tidak boleh kosong' })
+  @MaxLength(255, { message: 'Nama department tidak boleh lebih dari 255 karakter' })
   name?: string;
-
-  @ApiProperty({
-    description: 'Description of department',
-    example: 'Handles all IT related activities',
-    required: false,
-    minLength: 1,
-    maxLength: 255,
-  })
-  @IsOptional()
-  @IsString()
-  @MinLength(1)
-  @MaxLength(255)
-  description?: string;
 }
 
+// Response DTO
 export class DepartmentResponseDto {
-  @ApiProperty({ description: 'Department ID', example: 1 })
+  @ApiProperty({
+    description: 'ID Department',
+    example: 1,
+  })
   id: number;
 
-  @ApiProperty({ description: 'Name of department', example: 'Information Technology' })
+  @ApiProperty({
+    description: 'Nama department',
+    example: 'Human Resources',
+  })
   name: string;
 
-  @ApiProperty({ description: 'Description of department', example: 'Handles all IT related activities' })
-  description?: string;
-
   @ApiProperty({
-    description: 'Creation date',
-    example: '2024-01-01T00:00:00.000Z',
+    description: 'Tanggal dibuat',
+    example: '2024-01-15T08:00:00.000Z',
   })
   createdAt: Date;
 
   @ApiProperty({
-    description: 'Last update date',
-    example: '2024-01-01T00:00:00.000Z',
+    description: 'Tanggal diupdate',
+    example: '2024-01-15T10:30:00.000Z',
   })
   updatedAt: Date;
 }
 
+// Query DTO
 export class GetDepartmentsQueryDto {
-  @ApiProperty({
-    description: 'Page number',
-    example: '1',
-    required: false,
+  @ApiPropertyOptional({
+    description: 'Nomor halaman',
+    example: 1,
     minimum: 1,
-    default: 1,
   })
   @IsOptional()
-  @IsString()
-  page?: string;
+  @Type(() => Number)
+  @IsInt({ message: 'Page harus berupa angka' })
+  @Min(1, { message: 'Page minimal 1' })
+  page?: number = 1;
 
-  @ApiProperty({
-    description: 'Items per page',
-    example: '10',
-    required: false,
+  @ApiPropertyOptional({
+    description: 'Jumlah data per halaman',
+    example: 10,
     minimum: 1,
     maximum: 100,
-    default: 10,
   })
   @IsOptional()
-  @IsString()
-  limit?: string;
+  @Type(() => Number)
+  @IsInt({ message: 'Limit harus berupa angka' })
+  @Min(1, { message: 'Limit minimal 1' })
+  @Max(100, { message: 'Limit maksimal 100' })
+  limit?: number = 10;
 
-  @ApiProperty({
-    description: 'Search term for name or description',
-    required: false,
-    minLength: 1,
-    example: 'IT',
+  @ApiPropertyOptional({
+    description: 'Kata kunci pencarian berdasarkan nama department',
+    example: 'human',
   })
   @IsOptional()
   @IsString()
-  @MinLength(1)
   search?: string;
 
-  @ApiProperty({
-    description: 'Field for sorting',
-    enum: ['id', 'name', 'description', 'createdAt', 'updatedAt'],
-    required: false,
-    default: 'id',
+  @ApiPropertyOptional({
+    description: 'Field untuk sorting',
+    example: 'name',
+    enum: ['id', 'name', 'createdAt', 'updatedAt'],
   })
   @IsOptional()
   @IsString()
-  sortBy?: string;
+  sortBy?: string = 'id';
 
-  @ApiProperty({
-    description: 'Sort order',
+  @ApiPropertyOptional({
+    description: 'Urutan sorting',
+    example: 'ASC',
     enum: ['ASC', 'DESC'],
-    required: false,
-    default: 'DESC',
   })
   @IsOptional()
   @IsString()
-  sortOrder?: 'ASC' | 'DESC';
+  sortOrder?: 'ASC' | 'DESC' = 'DESC';
 }

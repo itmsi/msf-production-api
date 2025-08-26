@@ -35,6 +35,7 @@ import { successResponse } from '../../common/helpers/response.helper';
 @ApiTags('Parent Plan Production')
 @ApiBearerAuth('jwt')
 @Controller('parent-plan-production')
+@UseGuards(JwtAuthGuard)
 @ApiExtraModels(CreateParentPlanProductionDto)
 export class ParentPlanProductionController {
   constructor(

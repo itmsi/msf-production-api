@@ -1,50 +1,30 @@
-import { Expose, Exclude } from 'class-transformer';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  DeleteDateColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
   OneToMany,
-  ManyToOne,
-  JoinColumn,
 } from 'typeorm';
-import { Employee } from '../../employee/entities/employee.entity';
 
 @Entity('m_departments')
 export class Department {
-  @Expose()
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Expose()
-  @Column({ name: 'name' })
+  @Column({ type: 'varchar', length: 255, nullable: false })
   name: string;
 
-  @Expose()
-  @Column({ name: 'description', nullable: true })
-  description?: string;
+  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
 
-  @CreateDateColumn()
-  createdAt?: Date;
+  @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
+  updatedAt: Date;
 
-  @Column({ name: 'createdBy', nullable: true })
-  createdBy?: number;
+  @DeleteDateColumn({ type: 'timestamp', nullable: true })
+  deletedAt: Date;
 
-  @UpdateDateColumn()
-  updatedAt?: Date | null;
-
-  @Column({ name: 'updatedBy', nullable: true })
-  updatedBy?: number;
-
-  @DeleteDateColumn()
-  deletedAt?: Date | null;
-
-  @Column({ name: 'deletedBy', nullable: true })
-  deletedBy?: number;
-
-  // Relations
-  @OneToMany(() => Employee, (employee) => employee.department)
-  employees?: Employee[];
+  @OneToMany('Employee', (employee: any) => employee.department)
+  employees?: any[];
 }

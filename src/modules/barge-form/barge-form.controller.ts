@@ -32,9 +32,9 @@ import {
 
 @ApiTags('Barge Form')
 @ApiBearerAuth('jwt')
-@ApiExtraModels(BargeFormResponseDto)
-@UseGuards(JwtAuthGuard)
 @Controller('barge-form')
+@UseGuards(JwtAuthGuard)
+@ApiExtraModels(BargeFormResponseDto)
 export class BargeFormController {
   constructor(private readonly bargeFormService: BargeFormService) {}
 

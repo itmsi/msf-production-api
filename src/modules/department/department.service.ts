@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  HttpException,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Department } from './entities/department.entity';
@@ -11,59 +7,68 @@ import {
   UpdateDepartmentDto,
   DepartmentResponseDto,
   GetDepartmentsQueryDto,
-} from './dto/department.dto';
+} from './dto';
 import {
-  ApiResponse,
   successResponse,
-  throwError,
   emptyDataResponse,
+  throwError,
 } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
+import { HttpException } from '@nestjs/common';
+
+export interface ApiResponse<T = any> {
+  statusCode: number;
+  message: string;
+  data?: T;
+  pagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    lastPage: number;
+  };
+}
 
 @Injectable()
 export class DepartmentService {
   constructor(
     @InjectRepository(Department)
-    private departmentRepository: Repository<Department>,
+    private readonly departmentRepository: Repository<Department>,
   ) {}
 
-  async create(
-    createDepartmentDto: CreateDepartmentDto,
-  ): Promise<ApiResponse<DepartmentResponseDto>> {
+  async create(createDepartmentDto: CreateDepartmentDto): Promise<ApiResponse<DepartmentResponseDto>> {
     try {
-      // Check if department name already exists
+      // Check if department with same name already exists
       const existingDepartment = await this.departmentRepository.findOne({
         where: { name: createDepartmentDto.name },
       });
 
       if (existingDepartment) {
-        throwError('Department name already exists', 409);
+        throwError('Department dengan nama tersebut sudah ada', 409);
       }
 
       const department = this.departmentRepository.create(createDepartmentDto);
-      const result = await this.departmentRepository.save(department);
+      const savedDepartment = await this.departmentRepository.save(department);
 
-      const response: DepartmentResponseDto = {
-        id: result.id,
-        name: result.name,
-        description: result.description,
-        createdAt: result.createdAt!,
-        updatedAt: result.updatedAt!,
+      const responseData: DepartmentResponseDto = {
+        id: savedDepartment.id,
+        name: savedDepartment.name,
+        createdAt: savedDepartment.createdAt,
+        updatedAt: savedDepartment.updatedAt,
       };
 
-      return successResponse(response, 'Department created successfully', 201);
+      return successResponse(responseData, 'Department berhasil dibuat', 201);
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Failed to create department');
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      return throwError('Gagal membuat department', 500);
     }
   }
 
-  async findAll(
-    query: GetDepartmentsQueryDto,
-  ): Promise<ApiResponse<DepartmentResponseDto[]>> {
+  async findAll(query: GetDepartmentsQueryDto): Promise<ApiResponse<DepartmentResponseDto[]>> {
     try {
-      const page = parseInt(query.page || '1', 10);
-      const limit = parseInt(query.limit || '10', 10);
+      const page = parseInt(query.page?.toString() || '1', 10);
+      const limit = parseInt(query.limit?.toString() || '10', 10);
       const skip = (page - 1) * limit;
       const search = query.search?.toLowerCase() || '';
       const sortBy = query.sortBy || 'id';
@@ -78,21 +83,15 @@ export class DepartmentService {
         .createQueryBuilder('department')
         .where('department.deletedAt IS NULL');
 
+      // Search filter
       if (search) {
-        qb.andWhere(
-          '(department.name ILIKE :search OR department.description ILIKE :search)',
-          { search: `%${search}%` },
-        );
+        qb.andWhere('department.name ILIKE :search', {
+          search: `%${search}%`,
+        });
       }
 
       // Validate sortBy field to prevent SQL injection
-      const allowedSortFields = [
-        'id',
-        'name',
-        'description',
-        'createdAt',
-        'updatedAt',
-      ];
+      const allowedSortFields = ['id', 'name', 'createdAt', 'updatedAt'];
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
@@ -105,9 +104,8 @@ export class DepartmentService {
       const transformedResult = result.map((department) => ({
         id: department.id,
         name: department.name,
-        description: department.description,
-        createdAt: department.createdAt!,
-        updatedAt: department.updatedAt!,
+        createdAt: department.createdAt,
+        updatedAt: department.updatedAt,
       }));
 
       return paginateResponse(
@@ -115,11 +113,11 @@ export class DepartmentService {
         total,
         page,
         limit,
-        'Get departments successfully',
+        'Data department berhasil diambil',
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Failed to fetch departments');
+      throw new InternalServerErrorException('Gagal mengambil data department');
     }
   }
 
@@ -130,63 +128,66 @@ export class DepartmentService {
       });
 
       if (!department) {
-        return emptyDataResponse('Department not found', null);
+        return emptyDataResponse('Department tidak ditemukan');
       }
 
-      const response: DepartmentResponseDto = {
+      const responseData: DepartmentResponseDto = {
         id: department.id,
         name: department.name,
-        description: department.description,
-        createdAt: department.createdAt!,
-        updatedAt: department.updatedAt!,
+        createdAt: department.createdAt,
+        updatedAt: department.updatedAt,
       };
 
-      return successResponse(response, 'Get department successfully');
+      return successResponse(responseData, 'Department berhasil diambil');
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Failed to fetch department');
+      return throwError('Gagal mengambil department', 500);
     }
   }
 
-  async update(
-    id: number,
-    updateDepartmentDto: UpdateDepartmentDto,
-  ): Promise<ApiResponse<DepartmentResponseDto | null>> {
+  async update(id: number, updateDepartmentDto: UpdateDepartmentDto): Promise<ApiResponse<DepartmentResponseDto>> {
     try {
       const department = await this.departmentRepository.findOne({
         where: { id, deletedAt: null as any },
       });
 
       if (!department) {
-        return emptyDataResponse('Department not found', null);
+        throw new NotFoundException('Department tidak ditemukan');
       }
 
-      // Check if department name already exists (if being updated)
-      if (updateDepartmentDto.name && updateDepartmentDto.name !== department.name) {
+      // Check if another department with same name already exists (excluding current one)
+      if (updateDepartmentDto.name) {
         const existingDepartment = await this.departmentRepository.findOne({
-          where: { name: updateDepartmentDto.name, deletedAt: null as any },
+          where: { name: updateDepartmentDto.name },
         });
 
-        if (existingDepartment) {
-          throwError('Department name already exists', 409);
+        if (existingDepartment && existingDepartment.id !== id) {
+          throwError('Department dengan nama tersebut sudah ada', 409);
         }
       }
 
-      Object.assign(department, updateDepartmentDto);
-      const result = await this.departmentRepository.save(department);
+      await this.departmentRepository.update(id, updateDepartmentDto);
+      
+      const updatedDepartment = await this.departmentRepository.findOne({
+        where: { id },
+      });
 
-      const response: DepartmentResponseDto = {
-        id: result.id,
-        name: result.name,
-        description: result.description,
-        createdAt: result.createdAt!,
-        updatedAt: result.updatedAt!,
+      if (!updatedDepartment) {
+        throw new NotFoundException('Department tidak ditemukan setelah update');
+      }
+
+      const responseData: DepartmentResponseDto = {
+        id: updatedDepartment.id,
+        name: updatedDepartment.name,
+        createdAt: updatedDepartment.createdAt,
+        updatedAt: updatedDepartment.updatedAt,
       };
 
-      return successResponse(response, 'Department updated successfully');
+      return successResponse(responseData, 'Department berhasil diperbarui');
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Failed to update department');
+      if (error instanceof NotFoundException || error instanceof HttpException) {
+        throw error;
+      }
+      return throwError('Gagal memperbarui department', 500);
     }
   }
 
@@ -197,21 +198,17 @@ export class DepartmentService {
       });
 
       if (!department) {
-        return emptyDataResponse('Department not found', null);
+        throw new NotFoundException('Department tidak ditemukan');
       }
 
       await this.departmentRepository.softDelete(id);
 
-      return successResponse(null, 'Department deleted successfully');
+      return successResponse(null, 'Department berhasil dihapus');
     } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException('Failed to delete department');
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      return throwError('Gagal menghapus department', 500);
     }
-  }
-
-  async findByName(name: string): Promise<Department | null> {
-    return this.departmentRepository.findOne({
-      where: { name, deletedAt: null as any },
-    });
   }
 }
