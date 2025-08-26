@@ -10,10 +10,10 @@ import {
 } from './dto';
 import {
   successResponse,
-  successResponseWithMeta,
   emptyDataResponse,
   throwError,
 } from '../../common/helpers/response.helper';
+import { paginateResponse } from '../../common/helpers/public.helper';
 
 @Injectable()
 export class BargeFormService {
@@ -130,15 +130,12 @@ export class BargeFormService {
         return emptyDataResponse('No barge forms found');
       }
 
-      return successResponseWithMeta(
+      return paginateResponse(
         transformedData,
-        'Barge forms retrieved successfully',
-        200,
-        {
-          total,
-          page,
-          limit,
-        }
+        total,
+        page,
+        limit,
+        'Barge forms retrieved successfully'
       );
     } catch (error) {
       throwError('Failed to retrieve barge forms', 500);

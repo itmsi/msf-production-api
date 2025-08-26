@@ -157,24 +157,13 @@ export class ActivitiesService {
         updatedAt: activity.updatedAt,
       }));
 
-      const response = paginateResponse(
+      return paginateResponse(
         transformedResult,
         total,
         page,
         limit,
         'Data aktivitas berhasil diambil',
       );
-
-      return {
-        statusCode: response.statusCode,
-        message: response.message,
-        data: response.data,
-        meta: {
-          total,
-          page,
-          limit,
-        },
-      };
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Gagal mengambil data aktivitas');

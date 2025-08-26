@@ -8,7 +8,7 @@ import {
   QueryEffectiveWorkingHoursDto,
   EffectiveWorkingHoursResponseDto,
 } from './dto/effective-working-hours.dto';
-import { successResponseWithMeta } from '../../common/helpers/response.helper';
+import { paginateResponse } from '../../common/helpers/public.helper';
 
 @Injectable()
 export class EffectiveWorkingHoursService {
@@ -85,11 +85,13 @@ export class EffectiveWorkingHoursService {
       );
     }
 
-    return successResponseWithMeta(filteredData, 'Data retrieved successfully', 200, {
+    return paginateResponse(
+      filteredData,
       total,
       page,
       limit,
-    });
+      'Data retrieved successfully'
+    );
   }
 
   async findOne(id: number): Promise<EffectiveWorkingHours> {

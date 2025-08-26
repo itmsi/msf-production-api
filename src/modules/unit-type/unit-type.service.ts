@@ -158,24 +158,13 @@ export class UnitTypeService {
           : undefined,
       }));
 
-      const response = paginateResponse(
+      return paginateResponse(
         transformedResult,
         total,
         page,
         limit,
         'Data unit type berhasil diambil',
       );
-
-      return {
-        statusCode: response.statusCode,
-        message: response.message,
-        data: response.data,
-        meta: {
-          total,
-          page,
-          limit,
-        },
-      };
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Gagal mengambil data unit type');

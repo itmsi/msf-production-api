@@ -10,10 +10,10 @@ import {
 } from './dto';
 import {
   successResponse,
-  successResponseWithMeta,
   emptyDataResponse,
   throwError,
 } from '../../common/helpers/response.helper';
+import { paginateResponse } from '../../common/helpers/public.helper';
 
 @Injectable()
 export class FuelConsumptionService {
@@ -185,15 +185,12 @@ export class FuelConsumptionService {
         return value;
       }));
 
-      return successResponseWithMeta(
+      return paginateResponse(
         formattedData,
-        'Fuel consumption data retrieved successfully',
-        200,
-        {
-          total,
-          page,
-          limit,
-        }
+        total,
+        page,
+        limit,
+        'Fuel consumption data retrieved successfully'
       );
     } catch (error) {
       throwError('Failed to retrieve fuel consumption data', 500);
