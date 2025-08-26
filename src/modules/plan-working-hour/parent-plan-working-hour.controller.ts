@@ -9,6 +9,9 @@ import {
   ParseIntPipe,
   UseGuards,
   Query,
+  UsePipes,
+  ValidationPipe,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -242,21 +245,15 @@ export class ParentPlanWorkingHourController {
   })
   @ApiQuery({
     name: 'start_date',
-    required: true,
+    required: false,
     description: 'Tanggal mulai (format: YYYY-MM-DD)',
     example: '2025-08-01',
   })
   @ApiQuery({
     name: 'end_date',
-    required: true,
+    required: false,
     description: 'Tanggal akhir (format: YYYY-MM-DD)',
     example: '2025-08-31',
-  })
-  @ApiQuery({
-    name: 'month_year',
-    required: true,
-    description: 'Bulan dan tahun (format: YYYY-MM)',
-    example: '2025-08',
   })
   @ApiQuery({
     name: 'page',
@@ -327,7 +324,15 @@ export class ParentPlanWorkingHourController {
       },
     },
   })
-  async getDetail(@Query() query: GetParentPlanWorkingHourDetailQueryDto) {
+  async getDetail(@Query() query: any) {
+    // Manual validation untuk parameter optional
+    if (query.start_date && isNaN(new Date(query.start_date).getTime())) {
+      throw new BadRequestException('start_date must be a valid date format (YYYY-MM-DD)');
+    }
+    if (query.end_date && isNaN(new Date(query.end_date).getTime())) {
+      throw new BadRequestException('end_date must be a valid date format (YYYY-MM-DD)');
+    }
+    
     const result = await this.parentPlanWorkingHourService.getDetail(query);
     return result;
   }

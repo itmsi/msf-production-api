@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsNumberString,
   IsString,
+  ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiExtraModels } from '@nestjs/swagger';
@@ -419,26 +420,16 @@ export class GetParentPlanWorkingHourDetailQueryDto {
   @ApiProperty({
     description: 'Tanggal mulai (format: YYYY-MM-DD)',
     example: '2025-08-01',
-    required: true,
+    required: false,
   })
-  @IsDateString()
-  start_date: string;
+  start_date?: string;
 
   @ApiProperty({
     description: 'Tanggal akhir (format: YYYY-MM-DD)',
     example: '2025-08-31',
-    required: true,
+    required: false,
   })
-  @IsDateString()
-  end_date: string;
-
-  @ApiProperty({
-    description: 'Bulan dan tahun (format: YYYY-MM)',
-    example: '2025-08',
-    required: true,
-  })
-  @IsString()
-  month_year: string;
+  end_date?: string;
 
   @ApiProperty({
     name: 'page',
@@ -446,8 +437,6 @@ export class GetParentPlanWorkingHourDetailQueryDto {
     description: 'Nomor halaman (default: 1)',
     example: '1',
   })
-  @IsOptional()
-  @IsNumberString()
   page?: string;
 
   @ApiProperty({
@@ -456,8 +445,6 @@ export class GetParentPlanWorkingHourDetailQueryDto {
     description: 'Jumlah data per halaman (default: 10, max: 100)',
     example: '10',
   })
-  @IsOptional()
-  @IsNumberString()
   limit?: string;
 
   @ApiProperty({
@@ -467,8 +454,6 @@ export class GetParentPlanWorkingHourDetailQueryDto {
     example: 'available',
     enum: ['available', 'holiday', 'one-shift'],
   })
-  @IsOptional()
-  @IsString()
   calendar_day?: string;
 }
 

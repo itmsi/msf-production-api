@@ -55,49 +55,49 @@ export class FuelConsumptionResponseDto {
     example: 100.5,
     nullable: true,
   })
-  last_refueling_hm: number;
+  last_refueling_hm: number | null;
 
   @ApiProperty({
     description: 'Now Refueling HM',
     example: 150.2,
     nullable: true,
   })
-  now_refueling_hm: number;
+  now_refueling_hm: number | null;
 
   @ApiProperty({
     description: 'Running Refueling HM',
     example: 49.7,
     nullable: true,
   })
-  running_refueling_hm: number;
+  running_refueling_hm: number | null;
 
   @ApiProperty({
     description: 'Last Refueling KM',
     example: 1000.5,
     nullable: true,
   })
-  last_refueling_km: number;
+  last_refueling_km: number | null;
 
   @ApiProperty({
     description: 'Now Refueling KM',
     example: 1200.8,
     nullable: true,
   })
-  now_refueling_km: number;
+  now_refueling_km: number | null;
 
   @ApiProperty({
     description: 'Running Refueling KM',
     example: 200.3,
     nullable: true,
   })
-  running_refueling_km: number;
+  running_refueling_km: number | null;
 
   @ApiProperty({
     description: 'Quantity Supply',
     example: 50.0,
     nullable: true,
   })
-  qty_supply: number;
+  qty_supply: number | null;
 
   @ApiProperty({
     description: 'Unit of Measure',
@@ -110,14 +110,14 @@ export class FuelConsumptionResponseDto {
     example: 0.25,
     nullable: true,
   })
-  l_per_km: number;
+  l_per_km: number | null;
 
   @ApiProperty({
     description: 'Liters per HM',
     example: 1.01,
     nullable: true,
   })
-  l_per_hm: number;
+  l_per_hm: number | null;
 
   @ApiProperty({
     description: 'Start Refueling Time',
@@ -138,5 +138,5 @@ export class FuelConsumptionResponseDto {
     example: 30.0,
     nullable: true,
   })
-  lead_time_refueling_time: number;
+  lead_time_refueling_time: number | null;
 }

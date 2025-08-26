@@ -659,9 +659,6 @@ export class ParentPlanWorkingHourService {
     const limit = Math.min(parseInt(query.limit || '10'), 100);
     const offset = (page - 1) * limit;
 
-    // Parse dates
-    const startDate = new Date(query.start_date);
-    const endDate = new Date(query.end_date);
     const today = new Date();
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
@@ -670,9 +667,26 @@ export class ParentPlanWorkingHourService {
     const queryBuilder = this.planWorkingHourRepository
       .createQueryBuilder('pwh')
       .leftJoinAndSelect('pwh.details', 'details')
-      .leftJoinAndSelect('details.activities', 'activities')
-      .where('pwh.plan_date >= :startDate', { startDate })
-      .andWhere('pwh.plan_date <= :endDate', { endDate });
+      .leftJoinAndSelect('details.activities', 'activities');
+
+    // Add date filters only if provided
+    if (query.start_date) {
+      // Validate date format
+      const startDate = new Date(query.start_date);
+      if (isNaN(startDate.getTime())) {
+        throw new BadRequestException('start_date must be a valid date format (YYYY-MM-DD)');
+      }
+      queryBuilder.andWhere('pwh.plan_date >= :startDate', { startDate });
+    }
+
+    if (query.end_date) {
+      // Validate date format
+      const endDate = new Date(query.end_date);
+      if (isNaN(endDate.getTime())) {
+        throw new BadRequestException('end_date must be a valid date format (YYYY-MM-DD)');
+      }
+      queryBuilder.andWhere('pwh.plan_date <= :endDate', { endDate });
+    }
 
     // Add filter berdasarkan calendar_day
     if (query.calendar_day) {

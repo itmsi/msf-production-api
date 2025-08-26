@@ -16,18 +16,23 @@ Authorization: Bearer <jwt_token>
 
 ## Query Parameters
 
-### Required Parameters
+### Optional Parameters
 - `start_date` (string): Tanggal mulai dalam format YYYY-MM-DD
 - `end_date` (string): Tanggal akhir dalam format YYYY-MM-DD  
-- `month_year` (string): Bulan dan tahun dalam format YYYY-MM
-
-### Optional Parameters
 - `page` (string): Nomor halaman (default: 1)
 - `limit` (string): Jumlah data per halaman (default: 10, max: 100)
+- `calendar_day` (string): Filter berdasarkan status hari kalender (available/holiday/one-shift)
 
 ## Example Request
 ```bash
-GET /api/parent-plan-working-hour/detail?start_date=2025-08-01&end_date=2025-08-31&month_year=2025-08&page=1&limit=10
+# Request dengan semua parameter
+GET /api/parent-plan-working-hour/detail?start_date=2025-08-01&end_date=2025-08-31&page=1&limit=10&calendar_day=available
+
+# Request tanpa parameter (akan mengambil semua data)
+GET /api/parent-plan-working-hour/detail
+
+# Request dengan filter tanggal saja
+GET /api/parent-plan-working-hour/detail?start_date=2025-08-01&end_date=2025-08-31
 ```
 
 ## Response Structure

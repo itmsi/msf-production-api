@@ -20,13 +20,12 @@ Endpoint baru `/api/parent-plan-working-hour/detail` telah berhasil dibuat denga
 - **Purpose**: Mengambil detail data berdasarkan ID dengan informasi lengkap activities
 
 ### 2. Query Parameters
-- **Required**:
+- **Optional**:
   - `start_date`: Tanggal mulai (YYYY-MM-DD)
   - `end_date`: Tanggal akhir (YYYY-MM-DD)
-  - `month_year`: Bulan dan tahun (YYYY-MM)
-- **Optional**:
   - `page`: Nomor halaman (default: 1)
   - `limit`: Jumlah data per halaman (default: 10, max: 100)
+  - `calendar_day`: Filter berdasarkan status hari kalender (available/holiday/one-shift)
 
 ### 3. Response Fields
 - `plan_date`: Tanggal rencana dari kolom plan_date
