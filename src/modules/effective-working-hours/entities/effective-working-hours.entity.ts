@@ -124,6 +124,15 @@ export class EffectiveWorkingHours {
   duration: number;
 
   @ApiProperty({
+    description: 'Catatan tambahan untuk loss time',
+    example: 'Perlu perbaikan mesin',
+    type: 'string',
+    nullable: true,
+  })
+  @Column({ type: 'text', nullable: true })
+  remarks: string;
+
+  @ApiProperty({
     description: 'Waktu pembuatan record',
     type: 'string',
     format: 'date-time',

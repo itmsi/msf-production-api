@@ -69,6 +69,7 @@ export class EffectiveWorkingHoursService {
       start: result.start instanceof Date ? result.start.toISOString() : (result.start || ''),
       end: result.stop instanceof Date ? result.stop.toISOString() : (result.stop || ''),
       duration: result.duration || 0,
+      remarks: result.remarks || '',
     }));
 
     // Apply keyword filter if provided

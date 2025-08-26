@@ -72,6 +72,15 @@ export class CreateEffectiveWorkingHoursDto {
   @IsOptional()
   @IsDateString()
   stop?: string;
+
+  @ApiPropertyOptional({
+    description: 'Catatan tambahan untuk loss time',
+    example: 'Perlu perbaikan mesin',
+    type: 'string',
+  })
+  @IsOptional()
+  @IsString()
+  remarks?: string;
 }
 
 export class UpdateEffectiveWorkingHoursDto {
@@ -148,6 +157,15 @@ export class UpdateEffectiveWorkingHoursDto {
   @IsOptional()
   @IsDateString()
   stop?: string;
+
+  @ApiPropertyOptional({
+    description: 'Catatan tambahan untuk loss time',
+    example: 'Perlu perbaikan mesin',
+    type: 'string',
+  })
+  @IsOptional()
+  @IsString()
+  remarks?: string;
 }
 
 export class QueryEffectiveWorkingHoursDto {
@@ -281,4 +299,12 @@ export class EffectiveWorkingHoursResponseDto {
     type: 'number',
   })
   duration: number;
+
+  @ApiProperty({
+    description: 'Catatan tambahan untuk loss time',
+    example: 'Perlu perbaikan mesin',
+    type: 'string',
+    nullable: true,
+  })
+  remarks: string;
 }
