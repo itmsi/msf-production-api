@@ -4,8 +4,10 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { Repository, SelectQueryBuilder, IsNull } from 'typeorm';
 import { RoleHasPermission } from './entities/role-has-permission.entity';
+import { Menu } from '../menu/entities/menu.entity';
+import { MenuHasPermission } from '../menu-has-permission/entities/menu-has-permission.entity';
 import {
   CreateRoleHasPermissionDto,
   UpdateRoleHasPermissionDto,
@@ -24,6 +26,10 @@ export class RoleHasPermissionService {
   constructor(
     @InjectRepository(RoleHasPermission)
     private roleHasPermissionRepository: Repository<RoleHasPermission>,
+    @InjectRepository(Menu)
+    private menuRepository: Repository<Menu>,
+    @InjectRepository(MenuHasPermission)
+    private menuHasPermissionRepository: Repository<MenuHasPermission>,
   ) {}
 
   async create(
@@ -239,19 +245,67 @@ export class RoleHasPermissionService {
     }
   }
 
-  async findByRoleId(
-    roleId: number,
-  ): Promise<ApiResponse<RoleHasPermission[]>> {
+  async findByRoleId(roleId: number): Promise<ApiResponse<any>> {
     try {
-      const result = await this.roleHasPermissionRepository.find({
-        where: { role_id: roleId },
-        relations: ['menuHasPermission', 'permission'],
+      // Ambil semua menus
+      const allMenus = await this.menuRepository.find({
+        where: { deletedAt: IsNull() },
+        order: { id: 'ASC' },
       });
 
-      return successResponse(
-        result,
-        'Get role permissions by role ID successfully',
+      // Ambil role has permissions untuk role tertentu
+      // Data ini berisi kombinasi role_id, permission_id, dan mhp_id dari tabel r_role_has_permission
+      const rolePermissions = await this.roleHasPermissionRepository.find({
+        where: { role_id: roleId },
+      });
+
+      // Buat map untuk permission yang dimiliki role berdasarkan kombinasi role_id, permission_id, dan mhp_id
+      const rolePermissionMap = new Map();
+      rolePermissions.forEach((rhp) => {
+        // Key: kombinasi permission_id dan mhp_id, Value: object dengan status dan id
+        const key = `${rhp.permission_id}-${rhp.mhp_id}`;
+        rolePermissionMap.set(key, {
+          hasPermission: true,
+          roleHasPermissionId: rhp.id
+        });
+      });
+
+      // Buat response data
+      const responseData = await Promise.all(
+        allMenus.map(async (menu) => {
+          // Ambil menu has permissions yang benar-benar ada untuk menu ini
+          const menuHasPermissions =
+            await this.menuHasPermissionRepository.find({
+              where: { menu_id: menu.id },
+              relations: ['permission'],
+              order: { permission_id: 'ASC' },
+            });
+
+          // Buat array permissions yang hanya berisi permission yang di-assign ke menu
+          const menuPermissions = menuHasPermissions.map((mhp) => {
+            const key = `${mhp.permission_id}-${mhp.id}`;
+            const rolePermissionData = rolePermissionMap.get(key);
+            
+            return {
+              permission_id: mhp.permission_id,
+              permission_name: mhp.permission.permission_name,
+              // role_has_status: true jika ada data di tabel r_role_has_permission dengan kombinasi role_id, permission_id, dan mhp_id
+              // role_has_status: false jika tidak ada data di tabel r_role_has_permission
+              role_has_status: rolePermissionData ? rolePermissionData.hasPermission : false,
+              mhp_id: mhp.id, // Selalu ada value karena diambil dari r_menu_has_permission
+              role_has_permission_id: rolePermissionData ? rolePermissionData.roleHasPermissionId : null,
+            };
+          });
+
+          return {
+            menu_id: menu.id,
+            menu_name: menu.menu_name,
+            has_permission: menuPermissions,
+          };
+        }),
       );
+
+      return successResponse(responseData, 'Get menu permissions successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(

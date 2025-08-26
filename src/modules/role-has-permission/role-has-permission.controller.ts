@@ -27,6 +27,7 @@ import {
   GetRoleHasPermissionsQueryDto,
   RoleHasPermissionListResponseDto,
   SingleRoleHasPermissionResponseDto,
+  MenuByRoleListResponseDto,
 } from './dto/role-has-permission.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 
@@ -245,51 +246,72 @@ export class RoleHasPermissionController {
   @UseGuards(JwtAuthGuard)
   @Get('by-role/:roleId')
   @ApiOperation({
-    summary: 'Mendapatkan semua permissions berdasarkan role ID',
-    description: 'Mengambil semua permissions yang dimiliki oleh role tertentu',
+    summary: 'Mendapatkan menu permissions berdasarkan role ID',
+    description:
+      'Mengambil menu permissions yang di-assign ke menu dengan status role untuk role tertentu. Hanya permission yang benar-benar di-assign ke menu yang ditampilkan.',
   })
   @ApiParam({
     name: 'roleId',
-    description: 'ID role yang akan dicari permissionsnya',
+    description: 'ID role yang akan dicari menu permissionsnya',
     example: 1,
     type: Number,
   })
   @ApiResponse({
     status: 200,
-    description:
-      'Data role has permissions berdasarkan role ID berhasil diambil',
-    type: [RoleHasPermissionResponseDto],
+    description: 'Data menu permissions berdasarkan role berhasil diambil',
+    type: MenuByRoleListResponseDto,
     schema: {
       example: {
         statusCode: 200,
-        message: 'Get role permissions by role ID successfully',
+        message: 'Get menu permissions successfully',
         data: [
           {
-            id: 1,
-            role_id: 1,
-            mhp_id: 1,
-            permission_id: 1,
-            createdAt: '2024-01-01T00:00:00.000Z',
-            createdBy: 1,
-            updatedAt: '2024-01-01T00:00:00.000Z',
-            updatedBy: 1,
-            menuHasPermission: {
-              id: 1,
-              menu_id: 1,
-              permission_id: 1,
-              menu_name: 'Dashboard',
-              permission_name: 'read',
-            },
-            permission: {
-              id: 1,
-              name: 'read',
-              description: 'Read permission',
-              slug: 'read',
-            },
+            menu_id: 1,
+            menu_name: 'Dashboard',
+            has_permission: [
+              {
+                permission_id: 1,
+                permission_name: 'Create',
+                role_has_status: true,
+                mhp_id: 1,
+                role_has_permission_id: 1,
+              },
+              {
+                permission_id: 3,
+                permission_name: 'Update',
+                role_has_status: false,
+                mhp_id: 3,
+                role_has_permission_id: null,
+              },
+            ],
+          },
+          {
+            menu_id: 2,
+            menu_name: 'Users',
+            has_permission: [
+              {
+                permission_id: 1,
+                permission_name: 'Create',
+                role_has_status: true,
+                mhp_id: 5,
+                role_has_permission_id: 2,
+              },
+              {
+                permission_id: 2,
+                permission_name: 'Read',
+                role_has_status: false,
+                mhp_id: 6,
+                role_has_permission_id: null,
+              },
+            ],
           },
         ],
       },
     },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Role ID tidak valid',
   })
   @ApiResponse({
     status: 401,
@@ -297,7 +319,8 @@ export class RoleHasPermissionController {
   })
   @ApiResponse({
     status: 500,
-    description: 'Internal Server Error - Terjadi kesalahan pada server',
+    description:
+      'Internal Server Error - Terjadi kesalahan pada server',
   })
   findByRoleId(@Param('roleId', ParseIntPipe) roleId: number) {
     return this.roleHasPermissionService.findByRoleId(roleId);
