@@ -33,7 +33,7 @@ export class BargeFormService {
       // Calculate achievment if both vol_by_survey and capacity_per_dt are provided
       if (createBargeFormDto.vol_by_survey && createBargeFormDto.capacity_per_dt) {
         createBargeFormDto.achievment = 
-          createBargeFormDto.vol_by_survey / createBargeFormDto.capacity_per_dt;
+          Number((createBargeFormDto.vol_by_survey / createBargeFormDto.capacity_per_dt).toFixed(2));
       }
 
       const bargeForm = this.bargeFormRepository.create(createBargeFormDto);
@@ -57,10 +57,10 @@ export class BargeFormService {
         site_name: bargeFormWithRelations!.site?.name || '',
         start_loading: bargeFormWithRelations!.start_loading,
         end_loading: bargeFormWithRelations!.end_loading,
-        total_vessel: bargeFormWithRelations!.total_vessel,
-        vol_by_survey: bargeFormWithRelations!.vol_by_survey,
-        capacity_per_dt: bargeFormWithRelations!.capacity_per_dt,
-        achievment: bargeFormWithRelations!.achievment,
+        total_vessel: bargeFormWithRelations!.total_vessel ? Number(bargeFormWithRelations!.total_vessel.toFixed(2)) : null,
+        vol_by_survey: bargeFormWithRelations!.vol_by_survey ? Number(bargeFormWithRelations!.vol_by_survey.toFixed(2)) : null,
+        capacity_per_dt: bargeFormWithRelations!.capacity_per_dt ? Number(bargeFormWithRelations!.capacity_per_dt.toFixed(2)) : null,
+        achievment: bargeFormWithRelations!.achievment ? Number(bargeFormWithRelations!.achievment.toFixed(2)) : null,
         remarks: bargeFormWithRelations!.remarks,
         status: bargeFormWithRelations!.status,
       };
@@ -79,27 +79,16 @@ export class BargeFormService {
       const queryBuilder = this.bargeFormRepository
         .createQueryBuilder('bargeForm')
         .leftJoinAndSelect('bargeForm.barge', 'barge')
-        .leftJoinAndSelect('bargeForm.site', 'site')
-        .select([
-          'bargeForm.id',
-          'bargeForm.shipment',
-          'bargeForm.start_loading',
-          'bargeForm.end_loading',
-          'bargeForm.total_vessel',
-          'bargeForm.vol_by_survey',
-          'bargeForm.capacity_per_dt',
-          'bargeForm.achievment',
-          'bargeForm.remarks',
-          'bargeForm.status',
-          'barge.name',
-          'site.name',
-        ]);
+        .leftJoinAndSelect('bargeForm.site', 'site');
 
       // Apply date range filter
       if (start_date && end_date) {
         queryBuilder.andWhere(
-          'DATE(bargeForm.start_loading) >= :start_date AND DATE(bargeForm.end_loading) <= :end_date',
-          { start_date, end_date }
+          'bargeForm.start_loading >= :start_date AND bargeForm.end_loading <= :end_date',
+          { 
+            start_date: new Date(start_date + 'T00:00:00.000Z'),
+            end_date: new Date(end_date + 'T23:59:59.999Z')
+          }
         );
       }
 
@@ -129,10 +118,10 @@ export class BargeFormService {
         site_name: item.site?.name || '',
         start_loading: item.start_loading,
         end_loading: item.end_loading,
-        total_vessel: item.total_vessel,
-        vol_by_survey: item.vol_by_survey,
-        capacity_per_dt: item.capacity_per_dt,
-        achievment: item.achievment,
+        total_vessel: item.total_vessel ? Number(item.total_vessel.toFixed(2)) : null,
+        vol_by_survey: item.vol_by_survey ? Number(item.vol_by_survey.toFixed(2)) : null,
+        capacity_per_dt: item.capacity_per_dt ? Number(item.capacity_per_dt.toFixed(2)) : null,
+        achievment: item.achievment ? Number(item.achievment.toFixed(2)) : null,
         remarks: item.remarks,
         status: item.status,
       }));
@@ -174,10 +163,10 @@ export class BargeFormService {
         site_name: bargeForm.site?.name || '',
         start_loading: bargeForm.start_loading,
         end_loading: bargeForm.end_loading,
-        total_vessel: bargeForm.total_vessel,
-        vol_by_survey: bargeForm.vol_by_survey,
-        capacity_per_dt: bargeForm.capacity_per_dt,
-        achievment: bargeForm.achievment,
+        total_vessel: bargeForm.total_vessel ? Number(bargeForm.total_vessel.toFixed(2)) : null,
+        vol_by_survey: bargeForm.vol_by_survey ? Number(bargeForm.vol_by_survey.toFixed(2)) : null,
+        capacity_per_dt: bargeForm.capacity_per_dt ? Number(bargeForm.capacity_per_dt.toFixed(2)) : null,
+        achievment: bargeForm.achievment ? Number(bargeForm.achievment.toFixed(2)) : null,
         remarks: bargeForm.remarks,
         status: bargeForm.status,
       };

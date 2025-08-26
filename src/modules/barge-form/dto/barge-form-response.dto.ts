@@ -42,40 +42,40 @@ export class BargeFormResponseDto {
     example: 100.5,
     nullable: true,
   })
-  total_vessel: number;
+  total_vessel: number | null;
 
   @ApiProperty({
     description: 'Volume by Survey',
     example: 95.2,
     nullable: true,
   })
-  vol_by_survey: number;
+  vol_by_survey: number | null;
 
   @ApiProperty({
     description: 'Capacity per DT',
     example: 0.95,
     nullable: true,
   })
-  capacity_per_dt: number;
+  capacity_per_dt: number | null;
 
   @ApiProperty({
     description: 'Achievement',
     example: 1.0,
     nullable: true,
   })
-  achievment: number;
+  achievment: number | null;
 
   @ApiProperty({
     description: 'Remarks',
     example: 'Loading completed successfully',
     nullable: true,
   })
-  remarks: string;
+  remarks: string | null;
 
   @ApiProperty({
     description: 'Status',
     example: 'completed',
     nullable: true,
   })
-  status: string;
+  status: string | null;
 }
