@@ -10,6 +10,7 @@ import {
   GetParentPlanWorkingHourQueryDto,
   GetParentPlanWorkingHourDetailQueryDto,
   UpdateDetailParentPlanWorkingHourDto,
+  UpdateParentPlanWorkingHourSimpleDto,
 } from './dto/parent-plan-working-hour.dto';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import { Activities } from '../activities/entities/activities.entity';
@@ -353,42 +354,52 @@ export class ParentPlanWorkingHourService {
         );
       }
 
-      // Ambil semua activities dari tabel m_activities dengan error handling
-      let allActivities: Activities[] = [];
-      try {
-        allActivities = await this.dataSource
-          .getRepository(Activities)
-          .createQueryBuilder('activities')
-          .getMany();
-        console.log('Activities found:', allActivities.length);
-      } catch (activitiesError) {
-        console.error('Error fetching activities:', activitiesError);
-        // Jika ada error, gunakan array kosong
-        allActivities = [];
+      // Ambil data detail dari database untuk activities yang sudah ada
+      const planWorkingHourDetails = await this.dataSource
+        .createQueryBuilder()
+        .select([
+          'pwhd.activities_id as activities_id',
+          'pwhd.activities_hour as activities_hour',
+          'a.name as activity_name',
+          'a.status as activity_status'
+        ])
+        .from('r_plan_working_hour_detail', 'pwhd')
+        .leftJoin('r_plan_working_hour', 'pwh', 'pwh.id = pwhd.plant_working_hour_id')
+        .leftJoin('m_activities', 'a', 'a.id = pwhd.activities_id')
+        .where('pwh.parent_plan_working_hour_id = :parentId', { parentId: id })
+        .getRawMany();
+
+      console.log('Plan working hour details found:', planWorkingHourDetails.length);
+
+      // Kelompokkan activities berdasarkan status dengan data yang sebenarnya
+      const activitiesByStatus: Record<string, any[]> = {};
+      
+      for (const detail of planWorkingHourDetails) {
+        const status = detail.activity_status || 'null';
+        if (!activitiesByStatus[status]) {
+          activitiesByStatus[status] = [];
+        }
+        
+        // Cek apakah activity sudah ada di grup
+        const existingActivity = activitiesByStatus[status].find(
+          (act) => act.activities_id === detail.activities_id
+        );
+        
+        if (!existingActivity) {
+          activitiesByStatus[status].push({
+            activities_id: detail.activities_id,
+            name: detail.activity_name,
+            type_data: 'number',
+            type_field: 'input',
+            activities_hour: detail.activities_hour,
+          });
+        }
       }
 
-      // Kelompokkan activities berdasarkan status dengan error handling
-      let activitiesByStatus: Record<string, Activities[]> = {};
-      try {
-        activitiesByStatus = allActivities.reduce(
-          (acc, activity) => {
-            const status = activity.status;
-            if (!acc[status]) {
-              acc[status] = [];
-            }
-            acc[status].push(activity);
-            return acc;
-          },
-          {} as Record<string, Activities[]>,
-        );
-        console.log(
-          'Activities grouped by status:',
-          Object.keys(activitiesByStatus),
-        );
-      } catch (groupingError) {
-        console.error('Error grouping activities:', groupingError);
-        activitiesByStatus = {};
-      }
+      console.log(
+        'Activities grouped by status:',
+        Object.keys(activitiesByStatus),
+      );
 
       // Buat response dengan format yang diinginkan
       const response = {
@@ -404,13 +415,7 @@ export class ParentPlanWorkingHourService {
         details: Object.entries(activitiesByStatus).map(
           ([status, activities]) => ({
             name: status.charAt(0).toUpperCase() + status.slice(1), // Capitalize first letter
-            group_detail: activities.map((activity: Activities) => ({
-              activities_id: activity.id,
-              name: activity.name,
-              type_data: 'number', // Default value as per requirement
-              type_field: 'input', // Default value as per requirement
-              activities_hour: 1, // Default value as per requirement
-            })),
+            group_detail: activities,
           }),
         ),
       };
@@ -441,7 +446,7 @@ export class ParentPlanWorkingHourService {
 
   async update(
     id: number,
-    updateDto: Partial<CreateParentPlanWorkingHourDto>,
+    updateDto: UpdateParentPlanWorkingHourSimpleDto,
   ): Promise<any> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -451,11 +456,33 @@ export class ParentPlanWorkingHourService {
       // 1. Ambil parent plan yang akan diupdate
       const parentPlan = await this.findOneEntity(id);
 
-      // 2. Update parent plan
-      Object.assign(parentPlan, updateDto);
-
+      // 2. Update parent plan - hanya update field yang ada di request
       if (updateDto.plan_date) {
         parentPlan.plan_date = new Date(updateDto.plan_date);
+      }
+      if (updateDto.total_calendar_day !== undefined) {
+        parentPlan.total_calendar_day = updateDto.total_calendar_day;
+      }
+      if (updateDto.total_holiday_day !== undefined) {
+        parentPlan.total_holiday_day = updateDto.total_holiday_day;
+      }
+      if (updateDto.total_available_day !== undefined) {
+        parentPlan.total_available_day = updateDto.total_available_day;
+      }
+      if (updateDto.total_working_hour_month !== undefined) {
+        parentPlan.total_working_hour_month = updateDto.total_working_hour_month;
+      }
+      if (updateDto.total_working_day_longshift !== undefined) {
+        parentPlan.total_working_day_longshift = updateDto.total_working_day_longshift;
+      }
+      if (updateDto.total_working_hour_day !== undefined) {
+        parentPlan.total_working_hour_day = updateDto.total_working_hour_day;
+      }
+      if (updateDto.total_working_hour_longshift !== undefined) {
+        parentPlan.total_working_hour_longshift = updateDto.total_working_hour_longshift;
+      }
+      if (updateDto.total_mohh_per_month !== undefined) {
+        parentPlan.total_mohh_per_month = updateDto.total_mohh_per_month;
       }
 
       const updatedParentPlan = await queryRunner.manager.save(
@@ -472,24 +499,23 @@ export class ParentPlanWorkingHourService {
       );
 
       if (existingPlanWorkingHours.length > 0) {
-        // Update data yang sudah ada
+        // Update data yang sudah ada - hanya update field yang ada di request
         for (const planWorkingHour of existingPlanWorkingHours) {
-          // Update field yang relevan
-          planWorkingHour.working_day_longshift =
-            updateDto.total_working_day_longshift ||
-            parentPlan.total_working_day_longshift;
-          planWorkingHour.working_hour_longshift =
-            updateDto.total_working_hour_longshift ||
-            parentPlan.total_working_hour_longshift;
-          planWorkingHour.working_hour_month =
-            (updateDto.total_working_hour_month ||
-              parentPlan.total_working_hour_month) /
-            existingPlanWorkingHours.length;
-          planWorkingHour.working_hour_day =
-            updateDto.total_working_hour_day ||
-            parentPlan.total_working_hour_day;
-          planWorkingHour.mohh_per_month =
-            updateDto.total_mohh_per_month || parentPlan.total_mohh_per_month;
+          if (updateDto.total_working_day_longshift !== undefined) {
+            planWorkingHour.working_day_longshift = updateDto.total_working_day_longshift;
+          }
+          if (updateDto.total_working_hour_longshift !== undefined) {
+            planWorkingHour.working_hour_longshift = updateDto.total_working_hour_longshift;
+          }
+          if (updateDto.total_working_hour_month !== undefined) {
+            planWorkingHour.working_hour_month = updateDto.total_working_hour_month / existingPlanWorkingHours.length;
+          }
+          if (updateDto.total_working_hour_day !== undefined) {
+            planWorkingHour.working_hour_day = updateDto.total_working_hour_day;
+          }
+          if (updateDto.total_mohh_per_month !== undefined) {
+            planWorkingHour.mohh_per_month = updateDto.total_mohh_per_month;
+          }
         }
 
         await queryRunner.manager.save(

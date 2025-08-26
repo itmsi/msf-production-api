@@ -677,6 +677,17 @@ export class ParentPlanWorkingHourDetailByIdResponseDto {
   details: ActivityGroupDto[];
 }
 
+// DTO untuk detail activities yang sederhana (hanya activities_id dan activities_hour)
+export class SimpleActivityDetailDto {
+  @ApiProperty({ description: 'ID aktivitas', example: 1 })
+  @IsNumber()
+  activities_id: number;
+
+  @ApiProperty({ description: 'Jam aktivitas', example: 2 })
+  @IsNumber()
+  activities_hour: number;
+}
+
 export class UpdateDetailParentPlanWorkingHourDto {
   @ApiProperty({
     description: 'Tanggal rencana',
@@ -765,4 +776,125 @@ export class UpdateDetailParentPlanWorkingHourDto {
   @ValidateNested({ each: true })
   @Type(() => ActivityDetailDto)
   detail: ActivityDetailDto[];
+}
+
+// DTO baru untuk update dengan struktur detail yang sederhana
+export class UpdateParentPlanWorkingHourSimpleDto {
+  @ApiProperty({
+    description: 'Tanggal rencana',
+    example: '2025-08-01',
+    type: 'string',
+    format: 'date',
+    required: false,
+  })
+  @IsOptional()
+  @IsDateString()
+  plan_date?: string;
+
+  @ApiProperty({
+    description: 'Total hari kalender dalam bulan',
+    example: 31,
+    type: 'number',
+    required: false,
+    minimum: 28,
+    maximum: 31,
+  })
+  @IsOptional()
+  @IsNumber()
+  total_calendar_day?: number;
+
+  @ApiProperty({
+    description: 'Total hari libur dalam bulan',
+    example: 8,
+    type: 'number',
+    required: false,
+    minimum: 0,
+  })
+  @IsOptional()
+  @IsNumber()
+  total_holiday_day?: number;
+
+  @ApiProperty({
+    description: 'Total hari tersedia untuk kerja',
+    example: 23,
+    type: 'number',
+    required: false,
+    minimum: 0,
+  })
+  @IsOptional()
+  @IsNumber()
+  total_available_day?: number;
+
+  @ApiProperty({
+    description: 'Total jam kerja dalam bulan',
+    example: 184,
+    type: 'number',
+    required: false,
+    minimum: 0,
+  })
+  @IsOptional()
+  @IsNumber()
+  total_working_hour_month?: number;
+
+  @ApiProperty({
+    description: 'Total hari kerja dengan long shift',
+    example: 5,
+    type: 'number',
+    required: false,
+    minimum: 0,
+  })
+  @IsOptional()
+  @IsNumber()
+  total_working_day_longshift?: number;
+
+  @ApiProperty({
+    description: 'Total jam kerja per hari',
+    example: 8,
+    type: 'number',
+    required: false,
+    minimum: 0,
+    maximum: 24,
+  })
+  @IsOptional()
+  @IsNumber()
+  total_working_hour_day?: number;
+
+  @ApiProperty({
+    description: 'Total jam kerja long shift',
+    example: 12,
+    required: false,
+    type: 'number',
+    minimum: 0,
+    maximum: 24,
+  })
+  @IsOptional()
+  @IsNumber()
+  total_working_hour_longshift?: number;
+
+  @ApiProperty({
+    description: 'Total MOHH (Man Operating Hour per Hour) per bulan',
+    example: 1000,
+    type: 'number',
+    required: false,
+    minimum: 0,
+  })
+  @IsOptional()
+  @IsNumber()
+  total_mohh_per_month?: number;
+
+  @ApiProperty({
+    description: 'Detail aktivitas per tanggal (struktur sederhana)',
+    type: [SimpleActivityDetailDto],
+    required: false,
+    example: [
+      { activities_id: 1, activities_hour: 2 },
+      { activities_id: 2, activities_hour: 3 },
+      { activities_id: 3, activities_hour: 4 },
+    ],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SimpleActivityDetailDto)
+  detail?: SimpleActivityDetailDto[];
 }

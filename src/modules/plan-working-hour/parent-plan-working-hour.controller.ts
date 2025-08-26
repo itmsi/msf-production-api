@@ -30,6 +30,7 @@ import {
   GetParentPlanWorkingHourQueryDto,
   GetParentPlanWorkingHourDetailQueryDto,
   UpdateDetailParentPlanWorkingHourDto,
+  UpdateParentPlanWorkingHourSimpleDto,
 } from './dto/parent-plan-working-hour.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { successResponse } from '../../common/helpers/response.helper';
@@ -694,13 +695,13 @@ export class ParentPlanWorkingHourController {
     type: 'number',
   })
   @ApiBody({
-    type: CreateParentPlanWorkingHourDto,
+    type: UpdateParentPlanWorkingHourSimpleDto,
     description: 'Data parent plan working hour yang akan diupdate',
     examples: {
       example1: {
         summary: 'Contoh request update dengan detail activities',
         value: {
-          plan_date: '2025-08-21',
+          plan_date: '2025-08-01',
           total_calendar_day: 31,
           total_holiday_day: 8,
           total_available_day: 23,
@@ -712,15 +713,15 @@ export class ParentPlanWorkingHourController {
           detail: [
             {
               activities_id: 1,
-              activities_hour: 1,
+              activities_hour: 2,
             },
             {
               activities_id: 2,
-              activities_hour: 1,
+              activities_hour: 3,
             },
             {
               activities_id: 3,
-              activities_hour: 1,
+              activities_hour: 4,
             },
           ],
         },
@@ -773,7 +774,7 @@ export class ParentPlanWorkingHourController {
   })
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateDto: Partial<CreateParentPlanWorkingHourDto>,
+    @Body() updateDto: UpdateParentPlanWorkingHourSimpleDto,
   ) {
     const result = await this.parentPlanWorkingHourService.update(
       id,
