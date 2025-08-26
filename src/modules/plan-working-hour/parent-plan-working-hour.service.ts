@@ -1003,6 +1003,9 @@ export class ParentPlanWorkingHourService {
       total_mohh_per_month: this.roundToTwoDecimals(
         planWorkingHour.mohh_per_month || 0,
       ),
+      schedule_day: this.roundToTwoDecimals(
+        planWorkingHour.schedule_day || 1,
+      ),
       details: details.map((group) => ({
         name: group.name,
         group_detail: group.group_detail.map((activity) => ({
