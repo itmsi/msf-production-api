@@ -52,7 +52,7 @@ export class EffectiveWorkingHoursService {
     // Get data with relations
     const results = await this.effectiveWorkingHoursRepository.find({
       where: whereConditions,
-      relations: ['population', 'population.unitType', 'activities'],
+      relations: ['population', 'population.unitType', 'population.site', 'activities'],
       skip,
       take: limit,
     });
@@ -70,6 +70,8 @@ export class EffectiveWorkingHoursService {
       end: result.stop instanceof Date ? result.stop.toISOString() : (result.stop || ''),
       duration: result.duration || 0,
       remarks: result.remarks || '',
+      type: result.population?.unitType?.unit_name || '',
+      site: result.population?.site?.name || '',
     }));
 
     // Apply keyword filter if provided
@@ -93,7 +95,7 @@ export class EffectiveWorkingHoursService {
   async findOne(id: number): Promise<EffectiveWorkingHours> {
     const effectiveWorkingHours = await this.effectiveWorkingHoursRepository.findOne({
       where: { id },
-      relations: ['population', 'population.unitType', 'activities'],
+      relations: ['population', 'population.unitType', 'population.site', 'activities'],
     });
 
     if (!effectiveWorkingHours) {

@@ -189,7 +189,7 @@ export class EffectiveWorkingHours {
     description: 'Data population/unit yang terkait',
     type: () => Population,
   })
-  @ManyToOne(() => Population)
+  @ManyToOne(() => Population, { eager: true })
   @JoinColumn({ name: 'population_id' })
   population: Population;
 

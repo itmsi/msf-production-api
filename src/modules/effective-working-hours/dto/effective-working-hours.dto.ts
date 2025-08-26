@@ -307,4 +307,18 @@ export class EffectiveWorkingHoursResponseDto {
     nullable: true,
   })
   remarks: string;
+
+  @ApiProperty({
+    description: 'Nama tipe unit (dari m_unit_type.unit_name)',
+    example: 'EXCAVATOR',
+    type: 'string',
+  })
+  type: string;
+
+  @ApiProperty({
+    description: 'Nama site (dari m_sites.name)',
+    example: 'Site A',
+    type: 'string',
+  })
+  site: string;
 }
