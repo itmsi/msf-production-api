@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { ShiftType } from '../entities/parent-base-data-pro.entity';
 import { MaterialType } from '../entities/base-data-pro.entity';
 
@@ -85,7 +85,8 @@ export class CreateBaseDataProductionDto {
   @IsNotEmpty()
   activityDate: string;
 
-  @ApiProperty({ description: 'Shift type', enum: ShiftType, example: ShiftType.DS })
+  @ApiProperty({ description: 'Shift type (DS/NS or ds/ns - will be converted to lowercase automatically)', enum: ShiftType, example: 'DS' })
+  @Transform(({ value }) => value?.toLowerCase())
   @IsEnum(ShiftType)
   @IsNotEmpty()
   shift: ShiftType;
