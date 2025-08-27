@@ -125,7 +125,7 @@ export class BargeService {
         updatedBy: barge.updatedBy,
       }));
 
-      return paginateResponse(transformedResult, total, page, limit);
+      return paginateResponse(transformedResult, total, page, limit, 'Barge data retrieved successfully');
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

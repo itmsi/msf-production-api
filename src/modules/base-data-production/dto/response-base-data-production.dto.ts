@@ -129,6 +129,9 @@ export class BaseDataProductionListResponseDto {
 
   @ApiProperty({ description: 'Distance dari kolom distance' })
   distance: number;
+
+  @ApiProperty({ description: 'Material dari kolom material', enum: MaterialType })
+  material: MaterialType;
 }
 
 export class PaginatedBaseDataProductionResponseDto {

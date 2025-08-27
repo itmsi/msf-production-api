@@ -11,7 +11,8 @@ import {
   QueryBaseDataProductionDto,
   PaginatedBaseDataProductionResponseDto 
 } from './dto';
-import { successResponse } from '../../common/helpers/response.helper';
+import { successResponse, emptyDataResponse, throwError } from '../../common/helpers/response.helper';
+import { paginateResponse } from '../../common/helpers/public.helper';
 
 @Injectable()
 export class BaseDataProductionService {
@@ -59,13 +60,57 @@ export class BaseDataProductionService {
 
     await this.baseDataProRepository.save(baseDataProDetails);
 
-    // Return with details using successResponse
-    const result = await this.findOne(savedParent.id);
-    return successResponse(result, 'Base data production berhasil dibuat', 201);
+    // Get created data for response
+    const createdData = await this.parentBaseDataProRepository.findOne({
+      where: { id: savedParent.id },
+      relations: ['baseDataPro'],
+    });
+
+    if (!createdData) {
+      throw new NotFoundException('Base data production not found after creation');
+    }
+
+    // Transform data to response format
+    const transformedData = {
+      id: createdData.id,
+      unitId: createdData.unitId,
+      activityDate: createdData.activityDate,
+      shift: createdData.shift,
+      driverId: createdData.driverId,
+      startShift: createdData.startShift,
+      endShift: createdData.endShift,
+      baseDataPro: createdData.baseDataPro?.map(detail => ({
+        id: detail.id,
+        parentBaseDataProId: detail.parentBaseDataProId,
+        kmAwal: detail.kmAwal,
+        kmAkhir: detail.kmAkhir,
+        totalKm: detail.totalKm,
+        hmAwal: detail.hmAwal,
+        hmAkhir: detail.hmAkhir,
+        totalHm: detail.totalHm,
+        loadingPointId: detail.loadingPointId,
+        dumpingPointId: detail.dumpingPointId,
+        mroundDistance: detail.mroundDistance,
+        distance: detail.distance,
+        totalVessel: detail.totalVessel,
+        material: detail.material,
+        createdBy: detail.createdBy,
+        updatedBy: detail.updatedBy,
+        deletedBy: detail.deletedBy,
+        createdAt: detail.createdAt,
+        updatedAt: detail.updatedAt,
+        deletedAt: detail.deletedAt,
+      })) || [],
+    };
+
+    return successResponse(transformedData, 'Base data production berhasil dibuat', 201);
   }
 
   async update(id: number, updateDto: UpdateBaseDataProductionDto, userId: number) {
-    const parentBaseDataPro = await this.findOne(id);
+    const parentBaseDataPro = await this.parentBaseDataProRepository.findOne({
+      where: { id },
+      relations: ['baseDataPro'],
+    });
     
     if (!parentBaseDataPro) {
       throw new NotFoundException(`Base data production with ID ${id} not found`);
@@ -143,11 +188,53 @@ export class BaseDataProductionService {
       }
     }
 
-    const result = await this.findOne(id);
-    return successResponse(result, 'Base data production berhasil diupdate');
+    // Get updated data for response
+    const updatedData = await this.parentBaseDataProRepository.findOne({
+      where: { id },
+      relations: ['baseDataPro'],
+    });
+
+    if (!updatedData) {
+      throw new NotFoundException('Base data production not found after update');
+    }
+
+    // Transform data to response format
+    const transformedData = {
+      id: updatedData.id,
+      unitId: updatedData.unitId,
+      activityDate: updatedData.activityDate,
+      shift: updatedData.shift,
+      driverId: updatedData.driverId,
+      startShift: updatedData.startShift,
+      endShift: updatedData.endShift,
+      baseDataPro: updatedData.baseDataPro?.map(detail => ({
+        id: detail.id,
+        parentBaseDataProId: detail.parentBaseDataProId,
+        kmAwal: detail.kmAwal,
+        kmAkhir: detail.kmAkhir,
+        totalKm: detail.totalKm,
+        hmAwal: detail.hmAwal,
+        hmAkhir: detail.hmAkhir,
+        totalHm: detail.totalHm,
+        loadingPointId: detail.loadingPointId,
+        dumpingPointId: detail.dumpingPointId,
+        mroundDistance: detail.mroundDistance,
+        distance: detail.distance,
+        totalVessel: detail.totalVessel,
+        material: detail.material,
+        createdBy: detail.createdBy,
+        updatedBy: detail.updatedBy,
+        deletedBy: detail.deletedBy,
+        createdAt: detail.createdAt,
+        updatedAt: detail.updatedAt,
+        deletedAt: detail.deletedAt,
+      })) || [],
+    };
+
+    return successResponse(transformedData, 'Base data production berhasil diupdate');
   }
 
-  async findAll(queryDto: QueryBaseDataProductionDto): Promise<PaginatedBaseDataProductionResponseDto> {
+  async findAll(queryDto: QueryBaseDataProductionDto): Promise<any> {
     try {
       const { startDate, endDate, keyword, page = 1, limit = 10 } = queryDto;
       const skip = (page - 1) * limit;
@@ -195,15 +282,16 @@ export class BaseDataProductionService {
         dumping_point: `Dumping ${parent.baseDataPro?.[0]?.dumpingPointId || 'N/A'}`,
         mround_distance: parent.baseDataPro?.[0]?.mroundDistance || 0,
         distance: parent.baseDataPro?.[0]?.distance || 0,
+        material: parent.baseDataPro?.[0]?.material || 'none',
       }));
 
-      return {
+      return paginateResponse(
         data,
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit),
-      };
+        'Base data production data retrieved successfully'
+      );
     } catch (error) {
       console.error('Error in findAll:', error);
       throw error;
@@ -211,16 +299,53 @@ export class BaseDataProductionService {
   }
 
   async findOne(id: number) {
-    const parentBaseDataPro = await this.parentBaseDataProRepository.findOne({
-      where: { id },
-      relations: ['baseDataPro'],
-    });
+    try {
+      const parentBaseDataPro = await this.parentBaseDataProRepository.findOne({
+        where: { id },
+        relations: ['baseDataPro'],
+      });
 
-    if (!parentBaseDataPro) {
-      throw new NotFoundException(`Base data production with ID ${id} not found`);
+      if (!parentBaseDataPro) {
+        return emptyDataResponse('Base data production not found');
+      }
+
+      // Transform data to response format
+      const transformedData = {
+        id: parentBaseDataPro.id,
+        unitId: parentBaseDataPro.unitId,
+        activityDate: parentBaseDataPro.activityDate,
+        shift: parentBaseDataPro.shift,
+        driverId: parentBaseDataPro.driverId,
+        startShift: parentBaseDataPro.startShift,
+        endShift: parentBaseDataPro.endShift,
+        baseDataPro: parentBaseDataPro.baseDataPro?.map(detail => ({
+          id: detail.id,
+          parentBaseDataProId: detail.parentBaseDataProId,
+          kmAwal: detail.kmAwal,
+          kmAkhir: detail.kmAkhir,
+          totalKm: detail.totalKm,
+          hmAwal: detail.hmAwal,
+          hmAkhir: detail.hmAkhir,
+          totalHm: detail.totalHm,
+          loadingPointId: detail.loadingPointId,
+          dumpingPointId: detail.dumpingPointId,
+          mroundDistance: detail.mroundDistance,
+          distance: detail.distance,
+          totalVessel: detail.totalVessel,
+          material: detail.material,
+          createdBy: detail.createdBy,
+          updatedBy: detail.updatedBy,
+          deletedBy: detail.deletedBy,
+          createdAt: detail.createdAt,
+          updatedAt: detail.updatedAt,
+          deletedAt: detail.deletedAt,
+        })) || [],
+      };
+
+      return successResponse(transformedData, 'Base data production retrieved successfully');
+    } catch (error) {
+      throwError('Failed to retrieve base data production', 500);
     }
-
-    return parentBaseDataPro;
   }
 
   async remove(id: number) {
