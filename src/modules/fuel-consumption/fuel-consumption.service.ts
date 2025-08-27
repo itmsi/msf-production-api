@@ -80,6 +80,8 @@ export class FuelConsumptionService {
       // Transform to response format
       const transformedData: FuelConsumptionResponseDto = {
         id: fuelConsumptionWithRelations!.id,
+        unit_id: fuelConsumptionWithRelations!.unit_id,
+        operator_id: fuelConsumptionWithRelations!.operator_id,
         shift: fuelConsumptionWithRelations!.shift,
         part_name: fuelConsumptionWithRelations!.part_name,
         site: '', // Will be populated if needed
@@ -152,6 +154,8 @@ export class FuelConsumptionService {
       // Transform data to response format
       const transformedData: FuelConsumptionResponseDto[] = fuelConsumptions.map((item) => ({
         id: item.id,
+        unit_id: item.unit_id,
+        operator_id: item.operator_id,
         shift: item.shift,
         part_name: item.part_name,
         site: item.unit?.site?.name || '',
@@ -211,6 +215,8 @@ export class FuelConsumptionService {
 
       const transformedData: FuelConsumptionResponseDto = {
         id: fuelConsumption.id,
+        unit_id: fuelConsumption.unit_id,
+        operator_id: fuelConsumption.operator_id,
         shift: fuelConsumption.shift,
         part_name: fuelConsumption.part_name,
         site: fuelConsumption.unit?.site?.name || '',
@@ -293,6 +299,8 @@ export class FuelConsumptionService {
 
       const transformedData: FuelConsumptionResponseDto = {
         id: updatedFuelConsumption.id,
+        unit_id: updatedFuelConsumption.unit_id,
+        operator_id: updatedFuelConsumption.operator_id,
         shift: updatedFuelConsumption.shift,
         part_name: updatedFuelConsumption.part_name,
         site: updatedFuelConsumption.unit?.site?.name || '',

@@ -8,6 +8,19 @@ export class FuelConsumptionResponseDto {
   id: number;
 
   @ApiProperty({
+    description: 'Unit ID from m_population table',
+    example: 28,
+  })
+  unit_id: number;
+
+  @ApiProperty({
+    description: 'Operator ID from m_user table',
+    example: 1,
+    nullable: true,
+  })
+  operator_id: number | null;
+
+  @ApiProperty({
     description: 'Shift',
     example: 'DS',
   })
