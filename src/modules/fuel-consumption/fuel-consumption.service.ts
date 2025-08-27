@@ -33,25 +33,25 @@ export class FuelConsumptionService {
   async create(createFuelConsumptionDto: CreateFuelConsumptionDto): Promise<any> {
     try {
       // Calculate running_refueling_hm if both now and last are provided
-      if (createFuelConsumptionDto.now_refueling_hm && createFuelConsumptionDto.last_refueling_hm) {
+      if (createFuelConsumptionDto.now_refueling_hm !== undefined && createFuelConsumptionDto.last_refueling_hm !== undefined) {
         createFuelConsumptionDto.running_refueling_hm = 
           parseFloat((createFuelConsumptionDto.now_refueling_hm - createFuelConsumptionDto.last_refueling_hm).toFixed(2));
       }
 
       // Calculate running_refueling_km if both now and last are provided
-      if (createFuelConsumptionDto.now_refueling_km && createFuelConsumptionDto.last_refueling_km) {
+      if (createFuelConsumptionDto.now_refueling_km !== undefined && createFuelConsumptionDto.last_refueling_km !== undefined) {
         createFuelConsumptionDto.running_refueling_km = 
           parseFloat((createFuelConsumptionDto.now_refueling_km - createFuelConsumptionDto.last_refueling_km).toFixed(2));
       }
 
       // Calculate l_per_km if qty_supply and running_refueling_km are provided
-      if (createFuelConsumptionDto.qty_supply && createFuelConsumptionDto.running_refueling_km) {
+      if (createFuelConsumptionDto.qty_supply !== undefined && createFuelConsumptionDto.running_refueling_km !== undefined) {
         createFuelConsumptionDto.l_per_km = 
           parseFloat((createFuelConsumptionDto.qty_supply / createFuelConsumptionDto.running_refueling_km).toFixed(2));
       }
 
       // Calculate l_per_hm if qty_supply and running_refueling_hm are provided
-      if (createFuelConsumptionDto.qty_supply && createFuelConsumptionDto.running_refueling_hm) {
+      if (createFuelConsumptionDto.qty_supply !== undefined && createFuelConsumptionDto.running_refueling_hm !== undefined) {
         createFuelConsumptionDto.l_per_hm = 
           parseFloat((createFuelConsumptionDto.qty_supply / createFuelConsumptionDto.running_refueling_hm).toFixed(2));
       }
@@ -70,7 +70,7 @@ export class FuelConsumptionService {
       // Reload with relations
       const fuelConsumptionWithRelations = await this.fuelConsumptionRepository.findOne({
         where: { id: savedFuelConsumption.id },
-        relations: ['unit', 'operator', 'unit.site', 'unit.unitType', 'operator.employees'],
+        relations: ['unit', 'operator'],
       });
 
       if (!fuelConsumptionWithRelations) {
@@ -82,11 +82,11 @@ export class FuelConsumptionService {
         id: fuelConsumptionWithRelations!.id,
         shift: fuelConsumptionWithRelations!.shift,
         part_name: fuelConsumptionWithRelations!.part_name,
-        site: fuelConsumptionWithRelations!.unit?.site?.name || '',
+        site: '', // Will be populated if needed
         no_unit: fuelConsumptionWithRelations!.unit?.no_unit || '',
-        type_unit: fuelConsumptionWithRelations!.unit?.unitType?.unit_name || '',
+        type_unit: '', // Will be populated if needed
         serial_number: fuelConsumptionWithRelations!.unit?.vin_number || '',
-        operator_name: fuelConsumptionWithRelations!.operator?.employees ? `${fuelConsumptionWithRelations!.operator.employees.firstName || ''} ${fuelConsumptionWithRelations!.operator.employees.lastName || ''}`.trim() : '',
+        operator_name: '', // Will be populated if needed
         last_refueling_hm: this.formatNumber(fuelConsumptionWithRelations!.last_refueling_hm),
         now_refueling_hm: this.formatNumber(fuelConsumptionWithRelations!.now_refueling_hm),
         running_refueling_hm: this.formatNumber(fuelConsumptionWithRelations!.running_refueling_hm),
@@ -104,6 +104,7 @@ export class FuelConsumptionService {
 
       return successResponse(transformedData, 'Fuel consumption created successfully', 201);
     } catch (error) {
+      console.error('Error creating fuel consumption:', error);
       throwError('Failed to create fuel consumption', 500);
     }
   }
@@ -249,25 +250,25 @@ export class FuelConsumptionService {
       }
 
       // Calculate running_refueling_hm if both now and last are provided
-      if (updateFuelConsumptionDto.now_refueling_hm && updateFuelConsumptionDto.last_refueling_hm) {
+      if (updateFuelConsumptionDto.now_refueling_hm !== undefined && updateFuelConsumptionDto.last_refueling_hm !== undefined) {
         updateFuelConsumptionDto.running_refueling_hm = 
           parseFloat((updateFuelConsumptionDto.now_refueling_hm - updateFuelConsumptionDto.last_refueling_hm).toFixed(2));
       }
 
       // Calculate running_refueling_km if both now and last are provided
-      if (updateFuelConsumptionDto.now_refueling_km && updateFuelConsumptionDto.last_refueling_km) {
+      if (updateFuelConsumptionDto.now_refueling_km !== undefined && updateFuelConsumptionDto.last_refueling_km !== undefined) {
         updateFuelConsumptionDto.running_refueling_km = 
           parseFloat((updateFuelConsumptionDto.now_refueling_km - updateFuelConsumptionDto.last_refueling_km).toFixed(2));
       }
 
       // Calculate l_per_km if qty_supply and running_refueling_km are provided
-      if (updateFuelConsumptionDto.qty_supply && updateFuelConsumptionDto.running_refueling_km) {
+      if (updateFuelConsumptionDto.qty_supply !== undefined && updateFuelConsumptionDto.running_refueling_km !== undefined) {
         updateFuelConsumptionDto.l_per_km = 
           parseFloat((updateFuelConsumptionDto.qty_supply / updateFuelConsumptionDto.running_refueling_km).toFixed(2));
       }
 
       // Calculate l_per_hm if qty_supply and running_refueling_hm are provided
-      if (updateFuelConsumptionDto.qty_supply && updateFuelConsumptionDto.running_refueling_hm) {
+      if (updateFuelConsumptionDto.qty_supply !== undefined && updateFuelConsumptionDto.running_refueling_hm !== undefined) {
         updateFuelConsumptionDto.l_per_hm = 
           parseFloat((updateFuelConsumptionDto.qty_supply / updateFuelConsumptionDto.running_refueling_hm).toFixed(2));
       }

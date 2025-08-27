@@ -36,28 +36,28 @@ export class FuelConsumption {
   @Column({ type: 'int', nullable: true })
   operator_id: number;
 
-  @Column({ type: 'float', nullable: false })
+  @Column({ type: 'float', nullable: true })
   last_refueling_hm: number;
 
-  @Column({ type: 'float', nullable: false })
+  @Column({ type: 'float', nullable: true })
   now_refueling_hm: number;
 
   @Column({ 
     type: 'float', 
-    nullable: false,
+    nullable: true,
     comment: 'Calculated: (now - last)'
   })
   running_refueling_hm: number;
 
-  @Column({ type: 'float', nullable: false })
+  @Column({ type: 'float', nullable: true })
   last_refueling_km: number;
 
-  @Column({ type: 'float', nullable: false })
+  @Column({ type: 'float', nullable: true })
   now_refueling_km: number;
 
   @Column({ 
     type: 'float', 
-    nullable: false,
+    nullable: true,
     comment: 'Calculated: (now - last)'
   })
   running_refueling_km: number;
@@ -119,11 +119,11 @@ export class FuelConsumption {
   deletedBy: number;
 
   // Relations
-  @ManyToOne(() => Population, { eager: true })
+  @ManyToOne(() => Population)
   @JoinColumn({ name: 'unit_id' })
   unit: Population;
 
-  @ManyToOne(() => Users, { eager: true })
+  @ManyToOne(() => Users)
   @JoinColumn({ name: 'operator_id' })
   operator: Users;
 }

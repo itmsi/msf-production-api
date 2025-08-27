@@ -83,7 +83,7 @@ export class BargeFormController {
   @Get()
   @ApiOperation({
     summary: 'Mendapatkan semua barge form',
-    description: 'Mengambil semua barge form dengan filter opsional berdasarkan rentang tanggal dan pencarian keyword. Mendukung pagination dan sorting berdasarkan tanggal pembuatan.',
+    description: 'Mengambil semua barge form dengan filter opsional berdasarkan rentang tanggal, pencarian keyword, dan barge_id. Mendukung pagination dan sorting berdasarkan tanggal pembuatan.',
   })
   @ApiQuery({
     name: 'start_date',
@@ -102,6 +102,12 @@ export class BargeFormController {
     required: false,
     description: 'Kata kunci pencarian untuk nama barge, nama site, shipment, atau remarks',
     example: 'alpha',
+  })
+  @ApiQuery({
+    name: 'barge_id',
+    required: false,
+    description: 'Filter berdasarkan ID barge',
+    example: 1,
   })
   @ApiQuery({
     name: 'page',

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsDateString } from 'class-validator';
+import { IsOptional, IsString, IsDateString, IsInt } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class QueryBargeFormDto {
@@ -30,6 +30,16 @@ export class QueryBargeFormDto {
   @IsString()
   @Transform(({ value }) => value?.trim())
   keyword?: string;
+
+  @ApiProperty({
+    description: 'Filter by barge ID',
+    example: 1,
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  @Transform(({ value }) => parseInt(value))
+  barge_id?: number;
 
   @ApiProperty({
     description: 'Page number for pagination',

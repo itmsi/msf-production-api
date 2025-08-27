@@ -85,7 +85,7 @@ export class BargeFormService {
 
   async findAll(queryDto: QueryBargeFormDto): Promise<any> {
     try {
-      const { start_date, end_date, keyword, page = 1, limit = 10 } = queryDto;
+      const { start_date, end_date, keyword, barge_id, page = 1, limit = 10 } = queryDto;
       const skip = (page - 1) * limit;
 
       const queryBuilder = this.bargeFormRepository
@@ -110,6 +110,11 @@ export class BargeFormService {
           '(barge.name LIKE :keyword OR site.name LIKE :keyword OR bargeForm.shipment LIKE :keyword OR bargeForm.remarks LIKE :keyword)',
           { keyword: `%${keyword}%` }
         );
+      }
+
+      // Apply barge_id filter
+      if (barge_id) {
+        queryBuilder.andWhere('bargeForm.barge_id = :barge_id', { barge_id });
       }
 
       // Get total count

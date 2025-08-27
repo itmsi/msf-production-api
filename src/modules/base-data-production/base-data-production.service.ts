@@ -148,113 +148,66 @@ export class BaseDataProductionService {
   }
 
   async findAll(queryDto: QueryBaseDataProductionDto): Promise<PaginatedBaseDataProductionResponseDto> {
-    const { startDate, endDate, keyword, page = 1, limit = 10 } = queryDto;
-    const skip = (page - 1) * limit;
+    try {
+      const { startDate, endDate, keyword, page = 1, limit = 10 } = queryDto;
+      const skip = (page - 1) * limit;
 
-    // Build where conditions
-    let whereConditions: any = {};
-    let detailWhereConditions: any = {};
+      // Simple query first to test basic functionality
+      let whereConditions: any = {};
 
-    if (startDate && endDate) {
-      whereConditions.activityDate = Between(new Date(startDate), new Date(endDate));
+      // Apply date filter
+      if (startDate && endDate) {
+        whereConditions.activityDate = Between(new Date(startDate), new Date(endDate));
+      }
+
+      // Get total count
+      const total = await this.parentBaseDataProRepository.count({
+        where: whereConditions,
+      });
+
+      // Get parent data with details
+      const parentData = await this.parentBaseDataProRepository.find({
+        where: whereConditions,
+        relations: ['baseDataPro'],
+        skip: skip,
+        take: limit,
+        order: { id: 'DESC' },
+      });
+
+      // Transform data to DTO format
+      const data = parentData.map(parent => ({
+        id: parent.id,
+        date: parent.activityDate,
+        shift: parent.shift,
+        driver: `Driver ${parent.driverId}`, // Simplified for now
+        activity: 'N/A',
+        unit: `Unit ${parent.unitId}`, // Simplified for now
+        start_shift: parent.startShift,
+        end_shift: parent.endShift,
+        km_awal: parent.baseDataPro?.[0]?.kmAwal || 0,
+        km_akhir: parent.baseDataPro?.[0]?.kmAkhir || 0,
+        hm_awal: parent.baseDataPro?.[0]?.hmAwal || 0,
+        hm_akhir: parent.baseDataPro?.[0]?.hmAkhir || 0,
+        total_km: (parent.baseDataPro?.[0]?.kmAkhir || 0) - (parent.baseDataPro?.[0]?.kmAwal || 0),
+        total_hm: (parent.baseDataPro?.[0]?.hmAkhir || 0) - (parent.baseDataPro?.[0]?.hmAwal || 0),
+        total_vessel: parent.baseDataPro?.[0]?.totalVessel || 0,
+        loading_point: `Loading ${parent.baseDataPro?.[0]?.loadingPointId || 'N/A'}`,
+        dumping_point: `Dumping ${parent.baseDataPro?.[0]?.dumpingPointId || 'N/A'}`,
+        mround_distance: parent.baseDataPro?.[0]?.mroundDistance || 0,
+        distance: parent.baseDataPro?.[0]?.distance || 0,
+      }));
+
+      return {
+        data,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      console.error('Error in findAll:', error);
+      throw error;
     }
-
-    if (keyword) {
-      // Search in parent table
-      whereConditions = [
-        { unitId: Like(`%${keyword}%`) },
-        { driverId: Like(`%${keyword}%`) },
-        { shift: Like(`%${keyword}%`) },
-      ];
-
-      // Search in detail table
-      detailWhereConditions = [
-        { material: Like(`%${keyword}%`) },
-        { totalVessel: Like(`%${keyword}%`) },
-        { mroundDistance: Like(`%${keyword}%`) },
-        { distance: Like(`%${keyword}%`) },
-        { totalKm: Like(`%${keyword}%`) },
-        { totalHm: Like(`%${keyword}%`) },
-        { loadingPointId: Like(`%${keyword}%`) },
-        { dumpingPointId: Like(`%${keyword}%`) },
-      ];
-    }
-
-    // Get total count
-    const total = await this.parentBaseDataProRepository.count({
-      where: whereConditions,
-    });
-
-    // Get parent data with details using query builder for complex joins
-    const queryBuilder = this.parentBaseDataProRepository
-      .createQueryBuilder('parent')
-      .leftJoinAndSelect('parent.baseDataPro', 'detail')
-      .leftJoin('m_user', 'driver', 'driver.id = parent.driverId')
-      .leftJoin('m_unit_type', 'unit', 'unit.id = parent.unitId')
-      .leftJoin('m_operation_points', 'loading', 'loading.id = detail.loading_point_id AND loading.type = \'loading\'')
-      .leftJoin('m_operation_points', 'dumping', 'dumping.id = detail.dumping_point_id AND dumping.type = \'dumping\'')
-      .select([
-        'parent.id',
-        'parent.activityDate',
-        'parent.shift',
-        'parent.startShift',
-        'parent.endShift',
-        'driver.firstName as driverFirstName',
-        'driver.lastName as driverLastName',
-        'unit.unit_name as unitName',
-        'unit.type_name as typeName',
-        'unit.model_name as modelName',
-        'detail.kmAwal',
-        'detail.kmAkhir',
-        'detail.hmAwal',
-        'detail.hmAkhir',
-        'detail.totalVessel',
-        'detail.mroundDistance',
-        'detail.distance',
-        'loading.name as loadingPointName',
-        'dumping.name as dumpingPointName'
-      ])
-      .where(whereConditions)
-      .skip(skip)
-      .take(limit)
-      .orderBy('parent.id', 'DESC');
-
-    if (keyword && detailWhereConditions.length > 0) {
-      queryBuilder.andWhere('detail.material LIKE :keyword OR detail.totalVessel LIKE :keyword OR detail.mroundDistance LIKE :keyword OR detail.distance LIKE :keyword OR detail.totalKm LIKE :keyword OR detail.totalHm LIKE :keyword OR detail.loadingPointId LIKE :keyword OR detail.dumpingPointId LIKE :keyword', { keyword: `%${keyword}%` });
-    }
-
-    const rawData = await queryBuilder.getRawMany();
-
-    // Transform raw data to DTO format
-    const data = rawData.map(item => ({
-      id: item.parent_id,
-      date: item.parent_activityDate,
-      shift: item.parent_shift,
-      driver: `${item.driverFirstName || ''} ${item.driverLastName || ''}`.trim() || 'Unknown',
-      activity: 'N/A', // activities_id belum tersedia
-      unit: `${item.unitName || ''} ${item.typeName || ''} ${item.modelName || ''}`.trim() || 'Unknown',
-      start_shift: item.parent_startShift,
-      end_shift: item.parent_endShift,
-      km_awal: item.detail_kmAwal || 0,
-      km_akhir: item.detail_kmAkhir || 0,
-      hm_awal: item.detail_hmAwal || 0,
-      hm_akhir: item.detail_hmAkhir || 0,
-      total_km: (item.detail_kmAkhir || 0) - (item.detail_kmAwal || 0),
-      total_hm: (item.detail_hmAkhir || 0) - (item.detail_hmAwal || 0),
-      total_vessel: item.detail_totalVessel || 0,
-      loading_point: item.loadingPointName || 'Unknown',
-      dumping_point: item.dumpingPointName || 'Unknown',
-      mround_distance: item.detail_mroundDistance || 0,
-      distance: item.detail_distance || 0,
-    }));
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
   }
 
   async findOne(id: number) {
