@@ -42,7 +42,7 @@ export class BargeFormController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Membuat barge form baru',
-    description: 'Membuat barge form baru dengan perhitungan otomatis capacity_per_dt dan achievment. Perhitungan: capacity_per_dt = vol_by_survey / total_vessel, achievment = vol_by_survey / capacity_per_dt',
+    description: 'Membuat barge form baru dengan perhitungan otomatis capacity_per_dt, achievment, dan status. Perhitungan: capacity_per_dt = vol_by_survey / total_vessel, achievment = vol_by_survey / capacity_per_dt, status = "Completed" jika end_loading ada, "On Progress" jika end_loading null',
   })
   @ApiResponse({
     status: 201,
@@ -208,7 +208,7 @@ export class BargeFormController {
   @Patch(':id')
   @ApiOperation({
     summary: 'Memperbarui barge form',
-    description: 'Memperbarui barge form yang sudah ada dengan perhitungan ulang otomatis capacity_per_dt dan achievment',
+    description: 'Memperbarui barge form yang sudah ada dengan perhitungan ulang otomatis capacity_per_dt, achievment, dan status. Perhitungan: capacity_per_dt = vol_by_survey / total_vessel, achievment = vol_by_survey / capacity_per_dt, status = "Completed" jika end_loading ada, "On Progress" jika end_loading null',
   })
   @ApiParam({
     name: 'id',

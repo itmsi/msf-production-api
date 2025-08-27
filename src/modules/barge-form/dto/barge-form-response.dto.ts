@@ -8,6 +8,18 @@ export class BargeFormResponseDto {
   id: number;
 
   @ApiProperty({
+    description: 'Barge ID',
+    example: 1,
+  })
+  barge_id: number;
+
+  @ApiProperty({
+    description: 'Site ID',
+    example: 1,
+  })
+  site_id: number;
+
+  @ApiProperty({
     description: 'Shipment',
     example: 'SHIP001',
   })
@@ -52,14 +64,14 @@ export class BargeFormResponseDto {
   vol_by_survey: number | null;
 
   @ApiProperty({
-    description: 'Capacity per DT',
+    description: 'Capacity per DT (calculated: vol_by_survey / total_vessel)',
     example: 0.95,
     nullable: true,
   })
   capacity_per_dt: number | null;
 
   @ApiProperty({
-    description: 'Achievement',
+    description: 'Achievement (calculated: vol_by_survey / capacity_per_dt)',
     example: 1.0,
     nullable: true,
   })
@@ -73,7 +85,7 @@ export class BargeFormResponseDto {
   remarks: string | null;
 
   @ApiProperty({
-    description: 'Status',
+    description: 'Status (calculated: "On Progress" if end_loading is null, "Completed" otherwise)',
     example: 'completed',
     nullable: true,
   })

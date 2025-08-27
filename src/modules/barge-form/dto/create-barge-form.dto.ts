@@ -56,24 +56,6 @@ export class CreateBargeFormDto {
   vol_by_survey?: number;
 
   @ApiProperty({
-    description: 'Capacity per DT (calculated: vol_by_survey / total_vessel)',
-    example: 0.95,
-    required: false,
-  })
-  @IsOptional()
-  @IsNumber()
-  capacity_per_dt?: number;
-
-  @ApiProperty({
-    description: 'Achievement (calculated: vol_by_survey / capacity_per_dt)',
-    example: 1.0,
-    required: false,
-  })
-  @IsOptional()
-  @IsNumber()
-  achievment?: number;
-
-  @ApiProperty({
     description: 'Remarks',
     example: 'Loading completed successfully',
     required: false,
@@ -81,13 +63,4 @@ export class CreateBargeFormDto {
   @IsOptional()
   @IsString()
   remarks?: string;
-
-  @ApiProperty({
-    description: 'Status',
-    example: 'completed',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  status?: string;
 }
