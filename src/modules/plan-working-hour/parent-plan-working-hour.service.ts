@@ -987,15 +987,11 @@ export class ParentPlanWorkingHourService {
           activities_hour: detail.activities_hour || 0,
         })) || [];
 
-    // Create details array
+    // Create details array - hanya menampilkan Delay, Idle, dan Breakdown
     const details = [
       {
         name: 'Delay',
         group_detail: delayActivities,
-      },
-      {
-        name: 'Working',
-        group_detail: workingActivities,
       },
       {
         name: 'Breakdown',
@@ -1004,10 +1000,6 @@ export class ParentPlanWorkingHourService {
       {
         name: 'Idle',
         group_detail: idleActivities,
-      },
-      {
-        name: 'Null',
-        group_detail: nullActivities,
       },
     ];
 
