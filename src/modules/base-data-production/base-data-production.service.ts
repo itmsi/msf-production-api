@@ -1,10 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, Between } from 'typeorm';
 import { 
   ParentBaseDataPro, 
   BaseDataPro 
 } from './entities';
+import { UnitType } from '../unit-type/entities/unit-type.entity';
+import { Employee } from '../employee/entities/employee.entity';
+import { Sites } from '../sites/entities/sites.entity';
 import { 
   CreateBaseDataProductionDto, 
   UpdateBaseDataProductionDto, 
@@ -21,89 +24,150 @@ export class BaseDataProductionService {
     private parentBaseDataProRepository: Repository<ParentBaseDataPro>,
     @InjectRepository(BaseDataPro)
     private baseDataProRepository: Repository<BaseDataPro>,
-
+    @InjectRepository(UnitType)
+    private unitTypeRepository: Repository<UnitType>,
+    @InjectRepository(Employee)
+    private employeeRepository: Repository<Employee>,
+    @InjectRepository(Sites)
+    private sitesRepository: Repository<Sites>,
   ) {}
 
   async create(createDto: CreateBaseDataProductionDto, userId: number) {
-    // Create parent base data pro
-    const parentBaseDataPro = this.parentBaseDataProRepository.create({
-      unitId: createDto.unitId,
-      activityDate: new Date(createDto.activityDate),
-      shift: createDto.shift,
-      driverId: createDto.driverId,
-      startShift: createDto.startShift ? new Date(createDto.startShift) : null,
-      endShift: createDto.endShift ? new Date(createDto.endShift) : null,
-    });
+    try {
+      // Validate foreign key constraints
+      await this.validateForeignKeys(createDto);
 
-    const savedParent = await this.parentBaseDataProRepository.save(parentBaseDataPro) as ParentBaseDataPro;
+      // Create parent base data pro
+      const parentBaseDataPro = this.parentBaseDataProRepository.create({
+        unitId: createDto.unitId,
+        activityDate: new Date(createDto.activityDate),
+        shift: createDto.shift,
+        driverId: createDto.driverId,
+        startShift: createDto.startShift ? new Date(createDto.startShift) : null,
+        endShift: createDto.endShift ? new Date(createDto.endShift) : null,
+      });
 
-    // Create base data pro details
-    const baseDataProDetails = createDto.detail.map(detail => 
-      this.baseDataProRepository.create({
-        parentBaseDataProId: savedParent.id,
-        kmAwal: detail.kmAwal,
-        kmAkhir: detail.kmAkhir,
-        totalKm: detail.totalKm ?? (detail.kmAkhir - detail.kmAwal),
-        hmAwal: detail.hmAwal,
-        hmAkhir: detail.hmAkhir,
-        totalHm: detail.totalHm ?? (detail.hmAkhir - detail.hmAwal),
-        loadingPointId: detail.loadingPointId,
-        dumpingPointId: detail.dumpingPointId,
-        mroundDistance: Math.floor(detail.distance), // Calculate automatically from distance
-        distance: detail.distance,
-        totalVessel: detail.totalVessel,
-        material: detail.material,
-        createdBy: userId,
-        updatedBy: userId,
-      })
-    );
+      const savedParent = await this.parentBaseDataProRepository.save(parentBaseDataPro) as ParentBaseDataPro;
 
-    await this.baseDataProRepository.save(baseDataProDetails);
+      // Create base data pro details
+      const baseDataProDetails = createDto.detail.map(detail => 
+        this.baseDataProRepository.create({
+          parentBaseDataProId: savedParent.id,
+          kmAwal: detail.kmAwal,
+          kmAkhir: detail.kmAkhir,
+          totalKm: detail.totalKm ?? (detail.kmAkhir - detail.kmAwal),
+          hmAwal: detail.hmAwal,
+          hmAkhir: detail.hmAkhir,
+          totalHm: detail.totalHm ?? (detail.hmAkhir - detail.hmAwal),
+          loadingPointId: detail.loadingPointId,
+          dumpingPointId: detail.dumpingPointId,
+          mroundDistance: detail.distance, // Store distance as is, no need to floor
+          distance: detail.distance,
+          totalVessel: detail.totalVessel,
+          material: detail.material,
+          createdBy: userId,
+          updatedBy: userId,
+        })
+      );
 
-    // Get created data for response
-    const createdData = await this.parentBaseDataProRepository.findOne({
-      where: { id: savedParent.id },
-      relations: ['baseDataPro'],
-    });
+      await this.baseDataProRepository.save(baseDataProDetails);
 
-    if (!createdData) {
-      throw new NotFoundException('Base data production not found after creation');
+      // Get created data for response
+      const createdData = await this.parentBaseDataProRepository.findOne({
+        where: { id: savedParent.id },
+        relations: ['baseDataPro'],
+      });
+
+      if (!createdData) {
+        throw new NotFoundException('Base data production not found after creation');
+      }
+
+      // Transform data to response format
+      const transformedData = {
+        id: createdData.id,
+        unitId: createdData.unitId,
+        activityDate: createdData.activityDate,
+        shift: createdData.shift,
+        driverId: createdData.driverId,
+        startShift: createdData.startShift,
+        endShift: createdData.endShift,
+        baseDataPro: createdData.baseDataPro?.map(detail => ({
+          id: detail.id,
+          parentBaseDataProId: detail.parentBaseDataProId,
+          kmAwal: detail.kmAwal,
+          kmAkhir: detail.kmAkhir,
+          totalKm: detail.totalKm,
+          hmAwal: detail.hmAwal,
+          hmAkhir: detail.hmAkhir,
+          totalHm: detail.totalHm,
+          loadingPointId: detail.loadingPointId,
+          dumpingPointId: detail.dumpingPointId,
+          mroundDistance: detail.mroundDistance,
+          distance: detail.distance,
+          totalVessel: detail.totalVessel,
+          material: detail.material,
+          createdBy: detail.createdBy,
+          updatedBy: detail.updatedBy,
+          deletedBy: detail.deletedBy,
+          createdAt: detail.createdAt,
+          updatedAt: detail.updatedAt,
+          deletedAt: detail.deletedAt,
+        })) || [],
+      };
+
+      return successResponse(transformedData, 'Base data production berhasil dibuat', 201);
+    } catch (error) {
+      // Re-throw specific exceptions
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      
+      // Handle database constraint errors
+      if (error.code === '23503') { // Foreign key violation
+        throw new BadRequestException('Data referensi tidak ditemukan. Pastikan Unit ID, Driver ID, Loading Point ID, dan Dumping Point ID valid.');
+      }
+      
+      // Handle other database errors
+      if (error.code === '23505') { // Unique constraint violation
+        throw new BadRequestException('Data duplikat ditemukan.');
+      }
+      
+      // Handle date parsing errors
+      if (error instanceof TypeError && error.message.includes('Invalid Date')) {
+        throw new BadRequestException('Format tanggal tidak valid. Gunakan format ISO: YYYY-MM-DD atau YYYY-MM-DDTHH:mm:ss.sssZ');
+      }
+      
+      // Log unexpected errors
+      console.error('Unexpected error in create base data production:', error);
+      throw new BadRequestException('Terjadi kesalahan internal. Silakan coba lagi atau hubungi administrator.');
+    }
+  }
+
+  private async validateForeignKeys(createDto: CreateBaseDataProductionDto): Promise<void> {
+    // Validate Unit ID
+    const unit = await this.unitTypeRepository.findOne({ where: { id: createDto.unitId } });
+    if (!unit) {
+      throw new BadRequestException(`Unit dengan ID ${createDto.unitId} tidak ditemukan`);
     }
 
-    // Transform data to response format
-    const transformedData = {
-      id: createdData.id,
-      unitId: createdData.unitId,
-      activityDate: createdData.activityDate,
-      shift: createdData.shift,
-      driverId: createdData.driverId,
-      startShift: createdData.startShift,
-      endShift: createdData.endShift,
-      baseDataPro: createdData.baseDataPro?.map(detail => ({
-        id: detail.id,
-        parentBaseDataProId: detail.parentBaseDataProId,
-        kmAwal: detail.kmAwal,
-        kmAkhir: detail.kmAkhir,
-        totalKm: detail.totalKm,
-        hmAwal: detail.hmAwal,
-        hmAkhir: detail.hmAkhir,
-        totalHm: detail.totalHm,
-        loadingPointId: detail.loadingPointId,
-        dumpingPointId: detail.dumpingPointId,
-        mroundDistance: detail.mroundDistance,
-        distance: detail.distance,
-        totalVessel: detail.totalVessel,
-        material: detail.material,
-        createdBy: detail.createdBy,
-        updatedBy: detail.updatedBy,
-        deletedBy: detail.deletedBy,
-        createdAt: detail.createdAt,
-        updatedAt: detail.updatedAt,
-        deletedAt: detail.deletedAt,
-      })) || [],
-    };
+    // Validate Driver ID
+    const driver = await this.employeeRepository.findOne({ where: { id: createDto.driverId } });
+    if (!driver) {
+      throw new BadRequestException(`Driver dengan ID ${createDto.driverId} tidak ditemukan`);
+    }
 
-    return successResponse(transformedData, 'Base data production berhasil dibuat', 201);
+    // Validate Loading Point IDs
+    for (const detail of createDto.detail) {
+      const loadingPoint = await this.sitesRepository.findOne({ where: { id: detail.loadingPointId } });
+      if (!loadingPoint) {
+        throw new BadRequestException(`Loading Point dengan ID ${detail.loadingPointId} tidak ditemukan`);
+      }
+
+      const dumpingPoint = await this.sitesRepository.findOne({ where: { id: detail.dumpingPointId } });
+      if (!dumpingPoint) {
+        throw new BadRequestException(`Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan`);
+      }
+    }
   }
 
   async update(id: number, updateDto: UpdateBaseDataProductionDto, userId: number) {
@@ -148,7 +212,7 @@ export class BaseDataProductionService {
           existingDetail.totalHm = detailDto.totalHm ?? (detailDto.hmAkhir - detailDto.hmAwal);
           existingDetail.loadingPointId = detailDto.loadingPointId;
           existingDetail.dumpingPointId = detailDto.dumpingPointId;
-          existingDetail.mroundDistance = Math.floor(detailDto.distance); // Calculate automatically from distance
+          existingDetail.mroundDistance = detailDto.distance; // Store distance as is, no need to floor
           existingDetail.distance = detailDto.distance;
           existingDetail.totalVessel = detailDto.totalVessel;
           existingDetail.material = detailDto.material;
@@ -167,7 +231,7 @@ export class BaseDataProductionService {
             totalHm: detailDto.totalHm ?? (detailDto.hmAkhir - detailDto.hmAwal),
             loadingPointId: detailDto.loadingPointId,
             dumpingPointId: detailDto.dumpingPointId,
-            mroundDistance: Math.floor(detailDto.distance), // Calculate automatically from distance
+            mroundDistance: detailDto.distance, // Store distance as is, no need to floor
             distance: detailDto.distance,
             totalVessel: detailDto.totalVessel,
             material: detailDto.material,

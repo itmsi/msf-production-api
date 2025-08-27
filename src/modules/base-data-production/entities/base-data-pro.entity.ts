@@ -27,13 +27,13 @@ export class BaseDataPro {
   @Column({ type: 'int', name: 'parent_base_data_pro_id' })
   parentBaseDataProId: number;
 
-  @Column({ type: 'int', name: 'km_awal', nullable: true })
+  @Column({ type: 'decimal', precision: 10, scale: 2, name: 'km_awal', nullable: true })
   kmAwal: number;
 
-  @Column({ type: 'int', name: 'km_akhir', nullable: true })
+  @Column({ type: 'decimal', precision: 10, scale: 2, name: 'km_akhir', nullable: true })
   kmAkhir: number;
 
-  @Column({ type: 'int', name: 'total_km', nullable: true })
+  @Column({ type: 'decimal', precision: 10, scale: 2, name: 'total_km', nullable: true })
   totalKm: number;
 
   @Column({ type: 'float', name: 'hm_awal', nullable: true })
@@ -51,13 +51,13 @@ export class BaseDataPro {
   @Column({ type: 'int', name: 'dumping_point_id', nullable: true })
   dumpingPointId: number;
 
-  @Column({ type: 'int', name: 'mround_distance', nullable: true })
+  @Column({ type: 'decimal', precision: 10, scale: 2, name: 'mround_distance', nullable: true })
   mroundDistance: number;
 
   @Column({ type: 'float', name: 'distance', nullable: true })
   distance: number;
 
-  @Column({ type: 'int', name: 'total_vessel', nullable: true })
+  @Column({ type: 'decimal', precision: 10, scale: 2, name: 'total_vessel', nullable: true })
   totalVessel: number;
 
   @Column({ type: 'enum', enum: MaterialType, nullable: true })
