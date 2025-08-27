@@ -53,11 +53,6 @@ export class BaseDataProDetailDto {
   @IsNotEmpty()
   dumpingPointId: number;
 
-  @ApiProperty({ description: 'Mround distance', example: 15 })
-  @IsInt()
-  @IsNotEmpty()
-  mroundDistance: number;
-
   @ApiProperty({ description: 'Distance', example: 15 })
   @IsInt()
   @IsNotEmpty()

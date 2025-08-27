@@ -48,7 +48,7 @@ export class BaseDataProductionService {
         totalHm: detail.totalHm ?? (detail.hmAkhir - detail.hmAwal),
         loadingPointId: detail.loadingPointId,
         dumpingPointId: detail.dumpingPointId,
-        mroundDistance: detail.mroundDistance,
+        mroundDistance: Math.floor(detail.distance), // Calculate automatically from distance
         distance: detail.distance,
         totalVessel: detail.totalVessel,
         material: detail.material,
@@ -103,7 +103,7 @@ export class BaseDataProductionService {
           existingDetail.totalHm = detailDto.totalHm ?? (detailDto.hmAkhir - detailDto.hmAwal);
           existingDetail.loadingPointId = detailDto.loadingPointId;
           existingDetail.dumpingPointId = detailDto.dumpingPointId;
-          existingDetail.mroundDistance = detailDto.mroundDistance;
+          existingDetail.mroundDistance = Math.floor(detailDto.distance); // Calculate automatically from distance
           existingDetail.distance = detailDto.distance;
           existingDetail.totalVessel = detailDto.totalVessel;
           existingDetail.material = detailDto.material;
@@ -122,7 +122,7 @@ export class BaseDataProductionService {
             totalHm: detailDto.totalHm ?? (detailDto.hmAkhir - detailDto.hmAwal),
             loadingPointId: detailDto.loadingPointId,
             dumpingPointId: detailDto.dumpingPointId,
-            mroundDistance: detailDto.mroundDistance,
+            mroundDistance: Math.floor(detailDto.distance), // Calculate automatically from distance
             distance: detailDto.distance,
             totalVessel: detailDto.totalVessel,
             material: detailDto.material,
