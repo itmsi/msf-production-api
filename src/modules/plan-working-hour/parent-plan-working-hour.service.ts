@@ -1102,8 +1102,14 @@ export class ParentPlanWorkingHourService {
       }
     });
 
+    // Filter hanya status yang diinginkan: delay, idle, breakdown
+    const allowedStatuses = ['delay', 'idle', 'breakdown'];
+    const filteredGroupedData = Object.entries(groupedData).filter(([status]) => 
+      allowedStatuses.includes(status.toLowerCase())
+    );
+
     // Transform ke format yang diminta
-    const result = Object.entries(groupedData).map(([status, activities]) => ({
+    const result = filteredGroupedData.map(([status, activities]) => ({
       name: status.charAt(0).toUpperCase() + status.slice(1), // Capitalize first letter
       group_detail: activities,
     }));
