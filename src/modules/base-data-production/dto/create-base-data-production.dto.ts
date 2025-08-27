@@ -5,35 +5,43 @@ import { ShiftType } from '../entities/parent-base-data-pro.entity';
 import { MaterialType } from '../entities/base-data-pro.entity';
 
 export class BaseDataProDetailDto {
-  @ApiProperty({ description: 'Kilometer awal', example: 1 })
+  @ApiProperty({ description: 'Kilometer awal', example: 10 })
   @IsInt()
   @IsNotEmpty()
   kmAwal: number;
 
-  @ApiProperty({ description: 'Kilometer akhir', example: 1 })
+  @ApiProperty({ description: 'Kilometer akhir', example: 25 })
   @IsInt()
   @IsNotEmpty()
   kmAkhir: number;
 
-  @ApiProperty({ description: 'Total kilometer', example: 1 })
+  @ApiProperty({ 
+    description: 'Total kilometer (calculated automatically as kmAkhir - kmAwal if not provided)', 
+    example: 0, 
+    required: false 
+  })
   @IsInt()
-  @IsNotEmpty()
-  totalKm: number;
+  @IsOptional()
+  totalKm?: number;
 
-  @ApiProperty({ description: 'Hour meter awal', example: 1 })
+  @ApiProperty({ description: 'Hour meter awal', example: 5 })
   @IsInt()
   @IsNotEmpty()
   hmAwal: number;
 
-  @ApiProperty({ description: 'Hour meter akhir', example: 1 })
+  @ApiProperty({ description: 'Hour meter akhir', example: 12 })
   @IsInt()
   @IsNotEmpty()
   hmAkhir: number;
 
-  @ApiProperty({ description: 'Total hour meter', example: 1 })
+  @ApiProperty({ 
+    description: 'Total hour meter (calculated automatically as hmAkhir - hmAwal if not provided)', 
+    example: 0, 
+    required: false 
+  })
   @IsInt()
-  @IsNotEmpty()
-  totalHm: number;
+  @IsOptional()
+  totalHm?: number;
 
   @ApiProperty({ description: 'ID loading point', example: 1 })
   @IsInt()
@@ -45,17 +53,17 @@ export class BaseDataProDetailDto {
   @IsNotEmpty()
   dumpingPointId: number;
 
-  @ApiProperty({ description: 'Mround distance', example: 1 })
+  @ApiProperty({ description: 'Mround distance', example: 15 })
   @IsInt()
   @IsNotEmpty()
   mroundDistance: number;
 
-  @ApiProperty({ description: 'Distance', example: 1 })
+  @ApiProperty({ description: 'Distance', example: 15 })
   @IsInt()
   @IsNotEmpty()
   distance: number;
 
-  @ApiProperty({ description: 'Total vessel', example: 1 })
+  @ApiProperty({ description: 'Total vessel', example: 3 })
   @IsInt()
   @IsNotEmpty()
   totalVessel: number;
@@ -67,7 +75,7 @@ export class BaseDataProDetailDto {
 }
 
 export class CreateBaseDataProductionDto {
-  @ApiProperty({ description: 'ID unit', example: 1 })
+  @ApiProperty({ description: 'ID unit', example: 6 })
   @IsInt()
   @IsNotEmpty()
   unitId: number;

@@ -42,10 +42,10 @@ export class BaseDataProductionService {
         parentBaseDataProId: savedParent.id,
         kmAwal: detail.kmAwal,
         kmAkhir: detail.kmAkhir,
-        totalKm: detail.totalKm,
+        totalKm: detail.totalKm ?? (detail.kmAkhir - detail.kmAwal),
         hmAwal: detail.hmAwal,
         hmAkhir: detail.hmAkhir,
-        totalHm: detail.totalHm,
+        totalHm: detail.totalHm ?? (detail.hmAkhir - detail.hmAwal),
         loadingPointId: detail.loadingPointId,
         dumpingPointId: detail.dumpingPointId,
         mroundDistance: detail.mroundDistance,
@@ -97,10 +97,10 @@ export class BaseDataProductionService {
           const existingDetail = existingDetails[i];
           existingDetail.kmAwal = detailDto.kmAwal;
           existingDetail.kmAkhir = detailDto.kmAkhir;
-          existingDetail.totalKm = detailDto.totalKm;
+          existingDetail.totalKm = detailDto.totalKm ?? (detailDto.kmAkhir - detailDto.kmAwal);
           existingDetail.hmAwal = detailDto.hmAwal;
           existingDetail.hmAkhir = detailDto.hmAkhir;
-          existingDetail.totalHm = detailDto.totalHm;
+          existingDetail.totalHm = detailDto.totalHm ?? (detailDto.hmAkhir - detailDto.hmAwal);
           existingDetail.loadingPointId = detailDto.loadingPointId;
           existingDetail.dumpingPointId = detailDto.dumpingPointId;
           existingDetail.mroundDistance = detailDto.mroundDistance;
@@ -116,10 +116,10 @@ export class BaseDataProductionService {
             parentBaseDataProId: id,
             kmAwal: detailDto.kmAwal,
             kmAkhir: detailDto.kmAkhir,
-            totalKm: detailDto.totalKm,
+            totalKm: detailDto.totalKm ?? (detailDto.kmAkhir - detailDto.kmAwal),
             hmAwal: detailDto.hmAwal,
             hmAkhir: detailDto.hmAkhir,
-            totalHm: detailDto.totalHm,
+            totalHm: detailDto.totalHm ?? (detailDto.hmAkhir - detailDto.hmAwal),
             loadingPointId: detailDto.loadingPointId,
             dumpingPointId: detailDto.dumpingPointId,
             mroundDistance: detailDto.mroundDistance,
