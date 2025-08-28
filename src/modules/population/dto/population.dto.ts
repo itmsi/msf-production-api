@@ -473,11 +473,16 @@ export class GetPopulationsQueryDto {
   })
   @IsOptional()
   @Transform(({ value }) => {
-    if (value === 'true') return true;
-    if (value === 'false') return false;
-    return null;
+    try {
+      if (value === 'true') return true;
+      if (value === 'false') return false;
+      return null;
+    } catch (error) {
+      console.error('Transform error for is_dt:', error);
+      return null;
+    }
   })
-  @IsBoolean()
+  @IsIn([true, false, null])
   is_dt?: boolean | null;
 
 

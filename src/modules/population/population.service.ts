@@ -130,6 +130,20 @@ export class PopulationService {
         : undefined;
       const unitTypeName = query.unit_type_name;
       const isDt = query.is_dt;
+      
+      // Log query parameters untuk debugging
+      console.log('Query parameters received:', {
+        page,
+        limit,
+        search,
+        status,
+        unitTypeId,
+        unitTypeName,
+        isDt,
+        typeOfIsDt: typeof isDt,
+        activitiesId: query.activities_id
+      });
+      
       const activitiesId = query.activities_id
         ? parseInt(query.activities_id, 10)
         : undefined;
@@ -174,13 +188,38 @@ export class PopulationService {
 
       // Filter by is_dt (Dump Truck)
       if (isDt !== null && isDt !== undefined) {
-        if (isDt === true) {
-          // Jika is_dt = true, hanya ambil dump truck
-          qb.andWhere('LOWER(unitType.unit_name) = LOWER(:dumpTruckName)', { dumpTruckName: 'dump truck' });
-        } else {
-          // Jika is_dt = false, ambil semua kecuali dump truck
-          qb.andWhere('LOWER(unitType.unit_name) != LOWER(:dumpTruckName)', { dumpTruckName: 'dump truck' });
+        try {
+          console.log('Applying is_dt filter:', { isDt, type: typeof isDt });
+          
+          if (isDt === true) {
+            // Jika is_dt = true, hanya ambil dump truck
+            // Gunakan multiple conditions untuk case-insensitive matching
+            qb.andWhere(
+              '(LOWER(unitType.unit_name) = LOWER(:dumpTruckName) OR unitType.unit_name ILIKE :dumpTruckPattern)',
+              { 
+                dumpTruckName: 'dump truck',
+                dumpTruckPattern: '%dump truck%'
+              }
+            );
+            console.log('Filter applied: Hanya dump truck (case-insensitive)');
+          } else {
+            // Jika is_dt = false, ambil semua kecuali dump truck
+            qb.andWhere(
+              '(LOWER(unitType.unit_name) != LOWER(:dumpTruckName) AND unitType.unit_name NOT ILIKE :dumpTruckPattern)',
+              { 
+                dumpTruckName: 'dump truck',
+                dumpTruckPattern: '%dump truck%'
+              }
+            );
+            console.log('Filter applied: Semua kecuali dump truck (case-insensitive)');
+          }
+        } catch (error) {
+          console.error('Error applying is_dt filter:', error);
+          // Fallback: tidak ada filter
+          console.log('Fallback: Tidak ada filter is_dt');
         }
+      } else {
+        console.log('No is_dt filter applied');
       }
 
 
@@ -236,7 +275,23 @@ export class PopulationService {
         .skip(skip)
         .take(limit);
 
+      // Log SQL query untuk debugging
+      try {
+        const sql = qb.getSql();
+        console.log('Generated SQL Query:', sql);
+        console.log('Query Parameters:', qb.getParameters());
+      } catch (error) {
+        console.error('Error getting SQL:', error);
+      }
+
       const [result, total] = await qb.getManyAndCount();
+
+      // Log result untuk debugging
+      console.log('Query result:', {
+        totalRecords: total,
+        returnedRecords: result.length,
+        firstRecordUnitType: result[0]?.unitType?.unit_name || 'N/A'
+      });
 
       // Transform result to DTO format
       const transformedResult = result.map((population) => ({
