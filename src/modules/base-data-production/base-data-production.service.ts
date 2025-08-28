@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, Between } from 'typeorm';
+import { Repository, Like, Between, In } from 'typeorm';
 import { 
   ParentBaseDataPro, 
   BaseDataPro 
@@ -8,6 +8,8 @@ import {
 import { Population } from '../population/entities/population.entity';
 import { Employee } from '../employee/entities/employee.entity';
 import { Sites } from '../sites/entities/sites.entity';
+import { Barge } from '../barge/entities/barge.entity';
+import { OperationPoints } from '../operation-points/entities/operation-points.entity';
 import { 
   CreateBaseDataProductionDto, 
   UpdateBaseDataProductionDto, 
@@ -30,6 +32,10 @@ export class BaseDataProductionService {
     private employeeRepository: Repository<Employee>,
     @InjectRepository(Sites)
     private sitesRepository: Repository<Sites>,
+    @InjectRepository(Barge)
+    private bargeRepository: Repository<Barge>,
+    @InjectRepository(OperationPoints)
+    private operationPointsRepository: Repository<OperationPoints>,
   ) {}
 
   async create(createDto: CreateBaseDataProductionDto, userId: number) {
@@ -61,6 +67,9 @@ export class BaseDataProductionService {
           totalHm: detail.totalHm ?? (detail.hmAkhir - detail.hmAwal),
           loadingPointId: detail.loadingPointId,
           dumpingPointId: detail.dumpingPointId,
+          dumpingPointOpId: detail.dumpingPointOpId,
+          dumpingPointBargeId: detail.dumpingPointBargeId,
+          activity: detail.activity,
           mroundDistance: detail.distance, // Store distance as is, no need to floor
           distance: detail.distance,
           totalVessel: detail.totalVessel,
@@ -102,6 +111,9 @@ export class BaseDataProductionService {
           totalHm: detail.totalHm,
           loadingPointId: detail.loadingPointId,
           dumpingPointId: detail.dumpingPointId,
+          dumpingPointOpId: detail.dumpingPointOpId,
+          dumpingPointBargeId: detail.dumpingPointBargeId,
+          activity: detail.activity,
           mroundDistance: detail.mroundDistance,
           distance: detail.distance,
           totalVessel: detail.totalVessel,
@@ -167,6 +179,22 @@ export class BaseDataProductionService {
       if (!dumpingPoint) {
         throw new BadRequestException(`Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan`);
       }
+
+      // Validate Dumping Point Operation ID if provided
+      if (detail.dumpingPointOpId) {
+        const dumpingPointOp = await this.operationPointsRepository.findOne({ where: { id: detail.dumpingPointOpId } });
+        if (!dumpingPointOp) {
+          throw new BadRequestException(`Dumping Point Operation dengan ID ${detail.dumpingPointOpId} tidak ditemukan`);
+        }
+      }
+
+      // Validate Dumping Point Barge ID if provided
+      if (detail.dumpingPointBargeId) {
+        const dumpingPointBarge = await this.bargeRepository.findOne({ where: { id: detail.dumpingPointBargeId } });
+        if (!dumpingPointBarge) {
+          throw new BadRequestException(`Dumping Point Barge dengan ID ${detail.dumpingPointBargeId} tidak ditemukan`);
+        }
+      }
     }
   }
 
@@ -212,6 +240,9 @@ export class BaseDataProductionService {
           existingDetail.totalHm = detailDto.totalHm ?? (detailDto.hmAkhir - detailDto.hmAwal);
           existingDetail.loadingPointId = detailDto.loadingPointId;
           existingDetail.dumpingPointId = detailDto.dumpingPointId;
+          existingDetail.dumpingPointOpId = detailDto.dumpingPointOpId || null;
+          existingDetail.dumpingPointBargeId = detailDto.dumpingPointBargeId || null;
+          existingDetail.activity = detailDto.activity || null;
           existingDetail.mroundDistance = detailDto.distance; // Store distance as is, no need to floor
           existingDetail.distance = detailDto.distance;
           existingDetail.totalVessel = detailDto.totalVessel;
@@ -231,6 +262,9 @@ export class BaseDataProductionService {
             totalHm: detailDto.totalHm ?? (detailDto.hmAkhir - detailDto.hmAwal),
             loadingPointId: detailDto.loadingPointId,
             dumpingPointId: detailDto.dumpingPointId,
+            dumpingPointOpId: detailDto.dumpingPointOpId || null,
+            dumpingPointBargeId: detailDto.dumpingPointBargeId || null,
+            activity: detailDto.activity || null,
             mroundDistance: detailDto.distance, // Store distance as is, no need to floor
             distance: detailDto.distance,
             totalVessel: detailDto.totalVessel,
@@ -265,7 +299,7 @@ export class BaseDataProductionService {
     // Transform data to response format
     const transformedData = {
       id: updatedData.id,
-              populationId: updatedData.populationId,
+      populationId: updatedData.populationId,
       activityDate: updatedData.activityDate,
       shift: updatedData.shift,
       driverId: updatedData.driverId,
@@ -282,6 +316,9 @@ export class BaseDataProductionService {
         totalHm: detail.totalHm,
         loadingPointId: detail.loadingPointId,
         dumpingPointId: detail.dumpingPointId,
+        dumpingPointOpId: detail.dumpingPointOpId,
+        dumpingPointBargeId: detail.dumpingPointBargeId,
+        activity: detail.activity,
         mroundDistance: detail.mroundDistance,
         distance: detail.distance,
         totalVessel: detail.totalVessel,
@@ -325,29 +362,75 @@ export class BaseDataProductionService {
         order: { id: 'DESC' },
       });
 
+      // Get additional data for joins
+      const dumpingPointOpIds = parentData
+        .flatMap(parent => parent.baseDataPro)
+        .map(detail => detail.dumpingPointOpId)
+        .filter(id => id !== null && id !== undefined);
+
+      const dumpingPointBargeIds = parentData
+        .flatMap(parent => parent.baseDataPro)
+        .map(detail => detail.dumpingPointBargeId)
+        .filter(id => id !== null && id !== undefined);
+
+      const loadingPointIds = parentData
+        .flatMap(parent => parent.baseDataPro)
+        .map(detail => detail.loadingPointId)
+        .filter(id => id !== null && id !== undefined);
+
+      const dumpingPointIds = parentData
+        .flatMap(parent => parent.baseDataPro)
+        .map(detail => detail.dumpingPointId)
+        .filter(id => id !== null && id !== undefined);
+
+      const populationIds = parentData.map(parent => parent.populationId);
+      const driverIds = parentData.map(parent => parent.driverId);
+
+      // Fetch related data
+      const [operationPoints, barges, sites, populations, employees] = await Promise.all([
+        this.operationPointsRepository.find({ where: { id: In(dumpingPointOpIds) } }),
+        this.bargeRepository.find({ where: { id: In(dumpingPointBargeIds) } }),
+        this.sitesRepository.find({ where: { id: In([...loadingPointIds, ...dumpingPointIds]) } }),
+        this.populationRepository.find({ where: { id: In(populationIds) } }),
+        this.employeeRepository.find({ where: { id: In(driverIds) } }),
+      ]);
+
+      // Create lookup maps
+      const operationPointsMap = new Map(operationPoints.map(op => [op.id, op.name]));
+      const bargesMap = new Map(barges.map(barge => [barge.id, barge.name]));
+      const sitesMap = new Map(sites.map(site => [site.id, site.name]));
+      const populationsMap = new Map(populations.map(pop => [pop.id, pop.no_unit || `Unit ${pop.id}`]));
+      const employeesMap = new Map(employees.map(emp => [emp.id, emp.name]));
+
       // Transform data to DTO format
-      const data = parentData.map(parent => ({
-        id: parent.id,
-        date: parent.activityDate,
-        shift: parent.shift,
-        driver: `Driver ${parent.driverId}`, // Simplified for now
-        activity: 'N/A',
-        unit: `Unit ${parent.populationId}`, // Simplified for now
-        start_shift: parent.startShift,
-        end_shift: parent.endShift,
-        km_awal: parent.baseDataPro?.[0]?.kmAwal || 0,
-        km_akhir: parent.baseDataPro?.[0]?.kmAkhir || 0,
-        hm_awal: parent.baseDataPro?.[0]?.hmAwal || 0,
-        hm_akhir: parent.baseDataPro?.[0]?.hmAkhir || 0,
-        total_km: (parent.baseDataPro?.[0]?.kmAkhir || 0) - (parent.baseDataPro?.[0]?.kmAwal || 0),
-        total_hm: (parent.baseDataPro?.[0]?.hmAkhir || 0) - (parent.baseDataPro?.[0]?.hmAwal || 0),
-        total_vessel: parent.baseDataPro?.[0]?.totalVessel || 0,
-        loading_point: `Loading ${parent.baseDataPro?.[0]?.loadingPointId || 'N/A'}`,
-        dumping_point: `Dumping ${parent.baseDataPro?.[0]?.dumpingPointId || 'N/A'}`,
-        mround_distance: parent.baseDataPro?.[0]?.mroundDistance || 0,
-        distance: parent.baseDataPro?.[0]?.distance || 0,
-        material: parent.baseDataPro?.[0]?.material || 'none',
-      }));
+      const data = parentData.map(parent => {
+        const baseData = parent.baseDataPro?.[0];
+        return {
+          id: parent.id,
+          date: parent.activityDate,
+          shift: parent.shift,
+          driver: employeesMap.get(parent.driverId) || `Driver ${parent.driverId}`,
+          activity: 'N/A',
+          unit: populationsMap.get(parent.populationId) || `Unit ${parent.populationId}`,
+          start_shift: parent.startShift,
+          end_shift: parent.endShift,
+          km_awal: baseData?.kmAwal || 0,
+          km_akhir: baseData?.kmAkhir || 0,
+          hm_awal: baseData?.hmAwal || 0,
+          hm_akhir: baseData?.hmAkhir || 0,
+          total_km: (baseData?.kmAkhir || 0) - (baseData?.kmAwal || 0),
+          total_hm: (baseData?.hmAkhir || 0) - (baseData?.hmAwal || 0),
+          total_vessel: baseData?.totalVessel || 0,
+          loading_point: sitesMap.get(baseData?.loadingPointId || 0) || `Loading ${baseData?.loadingPointId || 'N/A'}`,
+          dumping_point: sitesMap.get(baseData?.dumpingPointId || 0) || `Dumping ${baseData?.dumpingPointId || 'N/A'}`,
+          dumping_point_op: operationPointsMap.get(baseData?.dumpingPointOpId || 0) || '',
+          dumping_point_barge: bargesMap.get(baseData?.dumpingPointBargeId || 0) || '',
+          activity_type: baseData?.activity || null,
+          mround_distance: baseData?.mroundDistance || 0,
+          distance: baseData?.distance || 0,
+          material: baseData?.material || 'none',
+        };
+      });
 
       return paginateResponse(
         data,
@@ -393,6 +476,9 @@ export class BaseDataProductionService {
           totalHm: detail.totalHm,
           loadingPointId: detail.loadingPointId,
           dumpingPointId: detail.dumpingPointId,
+          dumpingPointOpId: detail.dumpingPointOpId,
+          dumpingPointBargeId: detail.dumpingPointBargeId,
+          activity: detail.activity,
           mroundDistance: detail.mroundDistance,
           distance: detail.distance,
           totalVessel: detail.totalVessel,

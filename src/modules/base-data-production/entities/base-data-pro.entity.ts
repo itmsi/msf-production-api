@@ -20,6 +20,12 @@ export enum MaterialType {
   QUARRY = 'quarry',
 }
 
+export enum ActivityType {
+  HAULING = 'hauling',
+  BARGING = 'barging',
+  DIRECT = 'direct',
+}
+
 @Entity('r_base_data_pro')
 export class BaseDataPro {
   @PrimaryGeneratedColumn()
@@ -51,6 +57,15 @@ export class BaseDataPro {
 
   @Column({ type: 'int', name: 'dumping_point_id', nullable: true })
   dumpingPointId: number;
+
+  @Column({ type: 'int', name: 'dumping_point_op_id', nullable: true })
+  dumpingPointOpId: number | null;
+
+  @Column({ type: 'int', name: 'dumping_point_barge_id', nullable: true })
+  dumpingPointBargeId: number | null;
+
+  @Column({ type: 'enum', enum: ActivityType, nullable: true })
+  activity: ActivityType | null;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, name: 'mround_distance', nullable: true })
   mroundDistance: number;

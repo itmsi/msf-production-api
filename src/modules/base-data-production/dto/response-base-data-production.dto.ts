@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MaterialType } from '../entities/base-data-pro.entity';
+import { MaterialType, ActivityType } from '../entities/base-data-pro.entity';
 import { ShiftType } from '../entities/parent-base-data-pro.entity';
 
 export class BaseDataProDetailResponseDto {
@@ -32,6 +32,15 @@ export class BaseDataProDetailResponseDto {
 
   @ApiProperty({ description: 'ID dumping point' })
   dumpingPointId: number;
+
+  @ApiProperty({ description: 'ID dumping point operation' })
+  dumpingPointOpId: number | null;
+
+  @ApiProperty({ description: 'ID dumping point barge' })
+  dumpingPointBargeId: number | null;
+
+  @ApiProperty({ description: 'Type of activity', enum: ActivityType })
+  activity: ActivityType | null;
 
   @ApiProperty({ description: 'Mround distance' })
   mroundDistance: number;
@@ -123,6 +132,15 @@ export class BaseDataProductionListResponseDto {
 
   @ApiProperty({ description: 'Dumping point name dari join ke tabel m_operation_points' })
   dumping_point: string;
+
+  @ApiProperty({ description: 'Dumping point operation name dari join ke tabel m_operation_points' })
+  dumping_point_op: string | null;
+
+  @ApiProperty({ description: 'Dumping point barge name dari join ke tabel m_sites' })
+  dumping_point_barge: string | null;
+
+  @ApiProperty({ description: 'Type of activity dari kolom activity', enum: ActivityType })
+  activity_type: ActivityType | null;
 
   @ApiProperty({ description: 'Mround distance dari kolom mround_distance' })
   mround_distance: number;

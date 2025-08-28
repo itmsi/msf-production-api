@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested, IsNumber, Validate } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ShiftType } from '../entities/parent-base-data-pro.entity';
-import { MaterialType } from '../entities/base-data-pro.entity';
+import { MaterialType, ActivityType } from '../entities/base-data-pro.entity';
 
 // Custom validator untuk format tanggal
 export function IsValidDateFormat(validationOptions?: any) {
@@ -70,6 +70,21 @@ export class BaseDataProDetailDto {
   @IsInt()
   @IsNotEmpty()
   dumpingPointId: number;
+
+  @ApiProperty({ description: 'ID dumping point operation', example: 1, required: false })
+  @IsInt()
+  @IsOptional()
+  dumpingPointOpId?: number;
+
+  @ApiProperty({ description: 'ID dumping point barge', example: 1, required: false })
+  @IsInt()
+  @IsOptional()
+  dumpingPointBargeId?: number;
+
+  @ApiProperty({ description: 'Type of activity', enum: ActivityType, example: ActivityType.HAULING, required: false })
+  @IsEnum(ActivityType)
+  @IsOptional()
+  activity?: ActivityType;
 
   @ApiProperty({ description: 'Distance', example: 15 })
   @IsNumber()
