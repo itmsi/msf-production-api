@@ -54,15 +54,57 @@ if (Array.isArray(data)) {
 }
 ```
 
-### 4. Format Object
+### 4. Format Object (Selektif)
 ```typescript
 if (typeof data === 'object') {
-  // Jika data adalah object, format setiap property
+  // Jika data adalah object, format hanya field numeric/pecahan
   const formattedData: any = {};
   for (const [key, value] of Object.entries(data)) {
-    formattedData[key] = this.formatNumbers(value);
+    // Skip field yang tidak boleh diformat (tanggal, boolean, string non-numeric)
+    if (this.shouldSkipFormatting(key, value)) {
+      formattedData[key] = value;
+        } else {
+          formattedData[key] = this.formatNumbers(value);
+        }
+      }
+      return formattedData;
+    }
+```
+
+### 5. Field yang Di-skip (Tidak Diformat)
+```typescript
+private shouldSkipFormatting(key: string, value: any): boolean {
+  // Skip field yang tidak boleh diformat
+  const skipFields = [
+    'id', 'createdAt', 'updatedAt', 'deletedAt', 'plan_date',
+    'is_calender_day', 'is_holiday_day', 'is_available_day',
+    'schedule_day', 'total_fleet'
+  ];
+
+  // Skip jika key ada dalam daftar skip
+  if (skipFields.includes(key)) {
+    return true;
   }
-  return formattedData;
+
+  // Skip jika value adalah Date object
+  if (value instanceof Date) {
+    return true;
+  }
+
+  // Skip jika value adalah boolean
+  if (typeof value === 'boolean') {
+    return true;
+  }
+
+  // Skip jika value adalah string yang bukan numeric
+  if (typeof value === 'string') {
+    const num = parseFloat(value);
+    if (isNaN(num)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 ```
 
@@ -75,26 +117,85 @@ if (typeof data === 'object') {
   "message": "Data daily plan production berhasil diambil",
   "data": {
     "id": 303,
+    "plan_date": "2025-01-01T00:00:00.000Z",
+    "is_calender_day": true,
+    "is_holiday_day": false,
+    "is_available_day": true,
     "average_day_ewh": 1.567890123,
+    "average_shift_ewh": 0.753456789,
     "ob_target": 1000.123456789,
-    "sr_target": 1.2345678901234567
+    "ore_target": 800.987654321,
+    "quarry": 200.555555555,
+    "sr_target": 1.2345678901234567,
+    "ore_shipment_target": 750.111111111,
+    "daily_old_stock": 0.000000000,
+    "shift_ob_target": 500.061728394,
+    "shift_ore_target": 400.493827160,
+    "shift_quarry": 100.277777777,
+    "shift_sr_target": 1.2345678901234567,
+    "total_fleet": 15,
+    "remaining_stock": 50.111111111,
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:00:00.000Z"
   }
 }
 ```
 
-### Setelah Interceptor
+### Setelah Interceptor (Hanya Field Numeric/Pecahan yang Diformat)
 ```json
 {
   "statusCode": 200,
   "message": "Data daily plan production berhasil diambil",
   "data": {
     "id": 303,
+    "plan_date": "2025-01-01T00:00:00.000Z",
+    "is_calender_day": true,
+    "is_holiday_day": false,
+    "is_available_day": true,
     "average_day_ewh": 1.57,
+    "average_shift_ewh": 0.75,
     "ob_target": 1000.12,
-    "sr_target": 1.23
+    "ore_target": 800.99,
+    "quarry": 200.56,
+    "sr_target": 1.23,
+    "ore_shipment_target": 750.11,
+    "daily_old_stock": 0.00,
+    "shift_ob_target": 500.06,
+    "shift_ore_target": 400.49,
+    "shift_quarry": 100.28,
+    "shift_sr_target": 1.23,
+    "total_fleet": 15,
+    "remaining_stock": 50.11,
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:00:00.000Z"
   }
 }
 ```
+
+### Field yang Diformat (Numeric/Pecahan)
+- `average_day_ewh`: 1.567890123 → 1.57
+- `average_shift_ewh`: 0.753456789 → 0.75
+- `ob_target`: 1000.123456789 → 1000.12
+- `ore_target`: 800.987654321 → 800.99
+- `quarry`: 200.555555555 → 200.56
+- `sr_target`: 1.2345678901234567 → 1.23
+- `ore_shipment_target`: 750.111111111 → 750.11
+- `daily_old_stock`: 0.000000000 → 0.00
+- `shift_ob_target`: 500.061728394 → 500.06
+- `shift_ore_target`: 400.493827160 → 400.49
+- `shift_quarry`: 100.277777777 → 100.28
+- `shift_sr_target`: 1.2345678901234567 → 1.23
+- `remaining_stock`: 50.111111111 → 50.11
+
+### Field yang Tidak Diformat (Dibiarkan Asli)
+- `id`: 303 (integer)
+- `plan_date`: "2025-01-01T00:00:00.000Z" (tanggal)
+- `is_calender_day`: true (boolean)
+- `is_holiday_day`: false (boolean)
+- `is_available_day`: true (boolean)
+- `total_fleet`: 15 (integer)
+- `createdAt`: "2025-01-01T00:00:00.000Z" (tanggal)
+- `updatedAt`: "2025-01-01T00:00:00.000Z" (tanggal)
 
 ## Implementasi di Controller
 
@@ -109,10 +210,12 @@ findOne(@Param('id') id: string) {
 
 ## Keuntungan
 
-1. **Konsistensi Format**: Semua angka akan memiliki format yang sama (2 digit di belakang koma)
-2. **Otomatis**: Tidak perlu memodifikasi setiap service atau response
-3. **Fleksibel**: Bisa diterapkan ke endpoint mana saja
-4. **Maintainable**: Mudah untuk diubah atau diperluas
+1. **Konsistensi Format**: Hanya field numeric/pecahan yang diformat ke 2 digit di belakang koma
+2. **Selektif**: Field non-numeric seperti tanggal, boolean, dan integer tidak diubah
+3. **Otomatis**: Tidak perlu memodifikasi setiap service atau response
+4. **Fleksibel**: Bisa diterapkan ke endpoint mana saja
+5. **Maintainable**: Mudah untuk diubah atau diperluas
+6. **Data Integrity**: Mempertahankan tipe data asli untuk field yang tidak seharusnya diformat
 
 ## Testing
 

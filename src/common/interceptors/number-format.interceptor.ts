@@ -42,14 +42,53 @@ export class NumberFormatInterceptor implements NestInterceptor {
     }
 
     if (typeof data === 'object') {
-      // Jika data adalah object, format setiap property
+      // Jika data adalah object, format hanya field numeric/pecahan
       const formattedData: any = {};
       for (const [key, value] of Object.entries(data)) {
-        formattedData[key] = this.formatNumbers(value);
+        // Skip field yang tidak boleh diformat (tanggal, boolean, string non-numeric)
+        if (this.shouldSkipFormatting(key, value)) {
+          formattedData[key] = value;
+        } else {
+          formattedData[key] = this.formatNumbers(value);
+        }
       }
       return formattedData;
     }
 
     return data;
+  }
+
+  private shouldSkipFormatting(key: string, value: any): boolean {
+    // Skip field yang tidak boleh diformat
+    const skipFields = [
+      'id', 'createdAt', 'updatedAt', 'deletedAt', 'plan_date', 'date',
+      'is_calender_day', 'is_holiday_day', 'is_available_day',
+      'schedule_day', 'total_fleet'
+    ];
+
+    // Skip jika key ada dalam daftar skip
+    if (skipFields.includes(key)) {
+      return true;
+    }
+
+    // Skip jika value adalah Date object
+    if (value instanceof Date) {
+      return true;
+    }
+
+    // Skip jika value adalah boolean
+    if (typeof value === 'boolean') {
+      return true;
+    }
+
+    // Skip jika value adalah string yang bukan numeric
+    if (typeof value === 'string') {
+      const num = parseFloat(value);
+      if (isNaN(num)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }
