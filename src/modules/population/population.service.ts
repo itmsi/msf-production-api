@@ -187,40 +187,42 @@ export class PopulationService {
       }
 
       // Filter by is_dt (Dump Truck)
+      console.log('=== DEBUG is_dt FILTER ===');
+      console.log('Raw isDt value:', isDt);
+      console.log('Type of isDt:', typeof isDt);
+      console.log('isDt === true:', isDt === true);
+      console.log('isDt === false:', isDt === false);
+      console.log('isDt !== null:', isDt !== null);
+      console.log('isDt !== undefined:', isDt !== undefined);
+      
       if (isDt !== null && isDt !== undefined) {
         try {
-          console.log('Applying is_dt filter:', { isDt, type: typeof isDt });
+          console.log('✅ Condition met: Applying is_dt filter');
           
           if (isDt === true) {
             // Jika is_dt = true, hanya ambil dump truck
-            // Gunakan multiple conditions untuk case-insensitive matching
-            qb.andWhere(
-              '(LOWER(unitType.unit_name) = LOWER(:dumpTruckName) OR unitType.unit_name ILIKE :dumpTruckPattern)',
-              { 
-                dumpTruckName: 'dump truck',
-                dumpTruckPattern: '%dump truck%'
-              }
-            );
-            console.log('Filter applied: Hanya dump truck (case-insensitive)');
+            console.log('🔍 Applying filter: is_dt = true (hanya dump truck)');
+            qb.andWhere('LOWER(unitType.unit_name) = LOWER(:dumpTruckName)', { 
+              dumpTruckName: 'dump truck'
+            });
+            console.log('✅ Filter applied: Hanya dump truck (case-insensitive)');
           } else {
             // Jika is_dt = false, ambil semua kecuali dump truck
-            qb.andWhere(
-              '(LOWER(unitType.unit_name) != LOWER(:dumpTruckName) AND unitType.unit_name NOT ILIKE :dumpTruckPattern)',
-              { 
-                dumpTruckName: 'dump truck',
-                dumpTruckPattern: '%dump truck%'
-              }
-            );
-            console.log('Filter applied: Semua kecuali dump truck (case-insensitive)');
+            console.log('🔍 Applying filter: is_dt = false (semua kecuali dump truck)');
+            qb.andWhere('LOWER(unitType.unit_name) != LOWER(:dumpTruckName)', { 
+              dumpTruckName: 'dump truck'
+            });
+            console.log('✅ Filter applied: Semua kecuali dump truck (case-insensitive)');
           }
         } catch (error) {
-          console.error('Error applying is_dt filter:', error);
-          // Fallback: tidak ada filter
-          console.log('Fallback: Tidak ada filter is_dt');
+          console.error('❌ Error applying is_dt filter:', error);
+          console.log('🔄 Fallback: Tidak ada filter is_dt');
         }
       } else {
-        console.log('No is_dt filter applied');
+        console.log('❌ Condition NOT met: No is_dt filter applied');
+        console.log('Reason: isDt is null or undefined');
       }
+      console.log('=== END DEBUG is_dt FILTER ===');
 
 
 

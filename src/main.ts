@@ -63,25 +63,24 @@ async function bootstrap() {
   });
   app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalInterceptors(new LoggerInterceptor());
-  if (process.env.STRICT_VALIDATION === 'yes') {
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: false,
-        transform: true,
-        transformOptions: {
-          enableImplicitConversion: true,
-        },
-        exceptionFactory: (errors) => {
-          const firstError = errors[0];
-          const constraint = firstError?.constraints
-            ? Object.values(firstError.constraints)[0]
-            : 'Invalid input';
-          return new BadRequestException(constraint);
-        },
-      }),
-    );
-  }
+  // ValidationPipe harus selalu aktif untuk transformasi parameter query
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: false,
+      transform: true,  // ✅ Penting untuk @Transform decorator
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+      exceptionFactory: (errors) => {
+        const firstError = errors[0];
+        const constraint = firstError?.constraints
+          ? Object.values(firstError.constraints)[0]
+          : 'Invalid input';
+        return new BadRequestException(constraint);
+      },
+    }),
+  );
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
   await app.listen(process.env.PORT ?? 3000);
 }
