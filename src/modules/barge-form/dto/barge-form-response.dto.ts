@@ -44,10 +44,11 @@ export class BargeFormResponseDto {
   start_loading: Date;
 
   @ApiProperty({
-    description: 'End Loading Date',
+    description: 'End Loading Date (can be null if loading is still in progress)',
     example: '2024-01-01T18:00:00Z',
+    nullable: true,
   })
-  end_loading: Date;
+  end_loading: Date | null;
 
   @ApiProperty({
     description: 'Total Vessel',

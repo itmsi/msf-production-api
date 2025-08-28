@@ -8,7 +8,7 @@ Module ini menangani operasi CRUD untuk data produksi dasar yang terdiri dari du
 
 ### Parent Base Data Pro
 - `id` - Primary key (auto increment)
-- `unit_id` - ID unit
+- `population_id` - ID population/unit
 - `activity_date` - Tanggal aktivitas
 - `shift` - Shift (ds/ns)
 - `driver_id` - ID driver
@@ -39,7 +39,7 @@ Membuat data produksi baru dengan detail.
 **Request Body:**
 ```json
 {
-  "unit_id": 1,
+  "populationId": 1,
   "activity_date": "2025-08-21",
   "shift": "ds",
   "driver_id": 1,

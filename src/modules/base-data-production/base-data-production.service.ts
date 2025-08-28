@@ -5,7 +5,7 @@ import {
   ParentBaseDataPro, 
   BaseDataPro 
 } from './entities';
-import { UnitType } from '../unit-type/entities/unit-type.entity';
+import { Population } from '../population/entities/population.entity';
 import { Employee } from '../employee/entities/employee.entity';
 import { Sites } from '../sites/entities/sites.entity';
 import { 
@@ -24,8 +24,8 @@ export class BaseDataProductionService {
     private parentBaseDataProRepository: Repository<ParentBaseDataPro>,
     @InjectRepository(BaseDataPro)
     private baseDataProRepository: Repository<BaseDataPro>,
-    @InjectRepository(UnitType)
-    private unitTypeRepository: Repository<UnitType>,
+    @InjectRepository(Population)
+    private populationRepository: Repository<Population>,
     @InjectRepository(Employee)
     private employeeRepository: Repository<Employee>,
     @InjectRepository(Sites)
@@ -39,7 +39,7 @@ export class BaseDataProductionService {
 
       // Create parent base data pro
       const parentBaseDataPro = this.parentBaseDataProRepository.create({
-        unitId: createDto.unitId,
+        populationId: createDto.populationId,
         activityDate: new Date(createDto.activityDate),
         shift: createDto.shift,
         driverId: createDto.driverId,
@@ -85,7 +85,7 @@ export class BaseDataProductionService {
       // Transform data to response format
       const transformedData = {
         id: createdData.id,
-        unitId: createdData.unitId,
+        populationId: createdData.populationId,
         activityDate: createdData.activityDate,
         shift: createdData.shift,
         driverId: createdData.driverId,
@@ -144,10 +144,10 @@ export class BaseDataProductionService {
   }
 
   private async validateForeignKeys(createDto: CreateBaseDataProductionDto): Promise<void> {
-    // Validate Unit ID
-    const unit = await this.unitTypeRepository.findOne({ where: { id: createDto.unitId } });
-    if (!unit) {
-      throw new BadRequestException(`Unit dengan ID ${createDto.unitId} tidak ditemukan`);
+    // Validate Population ID
+    const population = await this.populationRepository.findOne({ where: { id: createDto.populationId } });
+    if (!population) {
+      throw new BadRequestException(`Unit dengan ID ${createDto.populationId} tidak ditemukan di tabel population`);
     }
 
     // Validate Driver ID
@@ -181,7 +181,7 @@ export class BaseDataProductionService {
     }
 
     // Update parent base data pro
-    if (updateDto.unitId !== undefined) parentBaseDataPro.unitId = updateDto.unitId;
+    if (updateDto.populationId !== undefined) parentBaseDataPro.populationId = updateDto.populationId;
     if (updateDto.activityDate !== undefined) parentBaseDataPro.activityDate = new Date(updateDto.activityDate);
     if (updateDto.shift !== undefined) parentBaseDataPro.shift = updateDto.shift;
     if (updateDto.driverId !== undefined) parentBaseDataPro.driverId = updateDto.driverId;
@@ -265,7 +265,7 @@ export class BaseDataProductionService {
     // Transform data to response format
     const transformedData = {
       id: updatedData.id,
-      unitId: updatedData.unitId,
+              populationId: updatedData.populationId,
       activityDate: updatedData.activityDate,
       shift: updatedData.shift,
       driverId: updatedData.driverId,
@@ -332,7 +332,7 @@ export class BaseDataProductionService {
         shift: parent.shift,
         driver: `Driver ${parent.driverId}`, // Simplified for now
         activity: 'N/A',
-        unit: `Unit ${parent.unitId}`, // Simplified for now
+        unit: `Unit ${parent.populationId}`, // Simplified for now
         start_shift: parent.startShift,
         end_shift: parent.endShift,
         km_awal: parent.baseDataPro?.[0]?.kmAwal || 0,
@@ -376,7 +376,7 @@ export class BaseDataProductionService {
       // Transform data to response format
       const transformedData = {
         id: parentBaseDataPro.id,
-        unitId: parentBaseDataPro.unitId,
+        populationId: parentBaseDataPro.populationId,
         activityDate: parentBaseDataPro.activityDate,
         shift: parentBaseDataPro.shift,
         driverId: parentBaseDataPro.driverId,

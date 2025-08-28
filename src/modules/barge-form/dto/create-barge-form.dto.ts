@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsString, IsDateString, IsNumber, IsOptional } from 'class-validator';
+import { IsInt, IsString, IsDateString, IsNumber, IsOptional, ValidateIf } from 'class-validator';
 
 export class CreateBargeFormDto {
   @ApiProperty({
@@ -31,11 +31,14 @@ export class CreateBargeFormDto {
   start_loading: string;
 
   @ApiProperty({
-    description: 'End Loading Date',
+    description: 'End Loading Date (optional, can be null)',
     example: '2024-01-01T18:00:00Z',
+    required: false,
   })
+  @IsOptional()
+  @ValidateIf((o) => o.end_loading !== null && o.end_loading !== undefined)
   @IsDateString()
-  end_loading: string;
+  end_loading?: string | null;
 
   @ApiProperty({
     description: 'Total Vessel',

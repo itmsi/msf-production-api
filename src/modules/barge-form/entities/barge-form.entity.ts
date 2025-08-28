@@ -28,8 +28,8 @@ export class BargeForm {
   @Column({ type: 'timestamp', nullable: false })
   start_loading: Date;
 
-  @Column({ type: 'timestamp', nullable: false })
-  end_loading: Date;
+  @Column({ type: 'timestamp', nullable: true })
+  end_loading: Date | null;
 
   @Column({ type: 'float', nullable: true })
   total_vessel: number;

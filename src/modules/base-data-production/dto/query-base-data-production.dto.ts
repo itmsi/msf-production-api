@@ -13,7 +13,7 @@ export class QueryBaseDataProductionDto {
   @IsDateString()
   endDate?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by keyword (unit_id, driver_id, shift, material, total_vessel, mround_distance, distance, total_km, total_hm, loading_point_id, dumping_point_id)', example: 'coal' })
+  @ApiPropertyOptional({ description: 'Filter by keyword (population_id, driver_id, shift, material, total_vessel, mround_distance, distance, total_km, total_hm, loading_point_id, dumping_point_id)', example: 'coal' })
   @IsOptional()
   @IsString()
   keyword?: string;

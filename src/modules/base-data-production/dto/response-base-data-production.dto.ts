@@ -50,8 +50,8 @@ export class ParentBaseDataProResponseDto {
   @ApiProperty({ description: 'ID' })
   id: number;
 
-  @ApiProperty({ description: 'ID unit' })
-  unitId: number;
+  @ApiProperty({ description: 'ID population/unit' })
+  populationId: number;
 
   @ApiProperty({ description: 'Activity date' })
   activityDate: Date;
@@ -88,7 +88,7 @@ export class BaseDataProductionListResponseDto {
   @ApiProperty({ description: 'Activity name dari join ke tabel m_activities' })
   activity: string;
 
-  @ApiProperty({ description: 'Unit info dari join ke tabel m_unit' })
+  @ApiProperty({ description: 'Unit info dari join ke tabel m_population' })
   unit: string;
 
   @ApiProperty({ description: 'Start shift dari kolom start_shift' })

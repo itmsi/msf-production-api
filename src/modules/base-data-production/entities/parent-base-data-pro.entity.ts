@@ -16,8 +16,8 @@ export class ParentBaseDataPro {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'int', name: 'unit_id' })
-  unitId: number;
+  @Column({ type: 'int', name: 'population_id' })
+  populationId: number;
 
   @Column({ type: 'timestamp', name: 'activity_date' })
   activityDate: Date;

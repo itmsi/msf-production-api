@@ -9,6 +9,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { ParentBaseDataPro } from './parent-base-data-pro.entity';
+import { Population } from '../../population/entities/population.entity';
 
 export enum MaterialType {
   BIOMAS = 'biomas',
