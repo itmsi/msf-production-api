@@ -181,7 +181,7 @@ export class ParentPlanProductionResponseDto {
     description: 'Total target quarry',
     example: 300000.0,
   })
-  total_quary_target: number;
+  total_quarry_target: number;
 
   @ApiProperty({
     description: 'Total target SR (Stripping Ratio)',

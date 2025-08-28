@@ -486,7 +486,7 @@ export class ParentPlanProductionService {
       total_ore_target:
         updateDto.total_ore_target ?? existingParent.total_ore_target,
       total_quarry_target:
-        updateDto.total_quary_target ?? existingParent.total_quarry_target,
+        updateDto.total_quarry_target ?? existingParent.total_quarry_target,
       total_sr_target:
         updateDto.total_sr_target ?? existingParent.total_sr_target,
       total_ore_shipment_target:
@@ -498,6 +498,8 @@ export class ParentPlanProductionService {
         updateDto.total_sisa_stock ?? existingParent.total_sisa_stock,
       total_fleet: updateDto.total_fleet ?? existingParent.total_fleet,
     };
+
+
 
     const savedParent =
       await this.parentPlanProductionRepository.save(updatedParent);
@@ -571,7 +573,7 @@ export class ParentPlanProductionService {
       (updateDto.total_ore_target ?? parentPlanProduction.total_ore_target) /
       totalDays;
     const quarry =
-      updateDto.total_quary_target ?? parentPlanProduction.total_quarry_target; // Diambil langsung dari body request, tidak dibagi jumlah hari
+      updateDto.total_quarry_target ?? parentPlanProduction.total_quarry_target; // Diambil langsung dari body request, tidak dibagi jumlah hari
     const oreShipmentTarget =
       (updateDto.total_ore_shipment_target ??
         parentPlanProduction.total_ore_shipment_target) / totalDays;

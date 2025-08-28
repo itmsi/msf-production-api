@@ -80,7 +80,7 @@ export class CreateParentPlanProductionDto {
   })
   @IsNotEmpty()
   @IsNumber()
-  total_quary_target: number;
+  total_quarry_target: number;
 
   @ApiProperty({
     description: 'Total target SR (Stripping Ratio)',
@@ -203,7 +203,7 @@ export class UpdateParentPlanProductionDto {
   })
   @IsOptional()
   @IsNumber()
-  total_quary_target?: number;
+  total_quarry_target?: number;
 
   @ApiProperty({
     description: 'Total target SR (Stripping Ratio)',
@@ -310,7 +310,7 @@ export class ParentPlanProductionResponseDto {
     description: 'Total target quarry',
     example: 200000.0,
   })
-  total_quary_target: number;
+  total_quarry_target: number;
 
   @ApiProperty({
     description: 'Total target SR (Stripping Ratio)',
