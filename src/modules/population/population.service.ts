@@ -128,6 +128,7 @@ export class PopulationService {
       const unitTypeId = query.unit_type_id
         ? parseInt(query.unit_type_id, 10)
         : undefined;
+      const unitTypeName = query.unit_type_name;
       const activitiesId = query.activities_id
         ? parseInt(query.activities_id, 10)
         : undefined;
@@ -163,6 +164,11 @@ export class PopulationService {
       // Filter by unit_type_id
       if (unitTypeId) {
         qb.andWhere('population.unit_type_id = :unitTypeId', { unitTypeId });
+      }
+
+      // Filter by unit_type_name (case-insensitive)
+      if (unitTypeName) {
+        qb.andWhere('LOWER(unitType.unit_name) = LOWER(:unitTypeName)', { unitTypeName });
       }
 
       // Filter by activities_id

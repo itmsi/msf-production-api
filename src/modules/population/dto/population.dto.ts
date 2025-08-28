@@ -454,6 +454,15 @@ export class GetPopulationsQueryDto {
   unit_type_id?: string;
 
   @ApiProperty({
+    description: 'Filter berdasarkan unit type name (case-insensitive)',
+    example: 'excavator',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  unit_type_name?: string;
+
+  @ApiProperty({
     description: 'Filter berdasarkan activities ID',
     example: '1',
     required: false,
