@@ -52,7 +52,7 @@ export class PopulationController {
     summary:
       'Mendapatkan semua data population dengan pagination, filtering, dan sorting',
     description:
-      'Endpoint ini mendukung pagination, pencarian, filtering berdasarkan status, unit_type_id, unit_type_name, activities_id, site_id, engine_brand, tyre_type, dan range tanggal, serta sorting berdasarkan field tertentu',
+      'Endpoint ini mendukung pagination, pencarian, filtering berdasarkan status, unit_type_id, unit_type_name, is_dt, activities_id, site_id, engine_brand, tyre_type, dan range tanggal, serta sorting berdasarkan field tertentu',
   })
   @SwaggerApiResponse({
     status: 200,

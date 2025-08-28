@@ -7,7 +7,9 @@ import {
   IsInt,
   IsIn,
   IsNotEmpty,
+  IsBoolean,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreatePopulationDto {
   @ApiProperty({
@@ -461,6 +463,24 @@ export class GetPopulationsQueryDto {
   @IsOptional()
   @IsString()
   unit_type_name?: string;
+
+  @ApiProperty({
+    description: 'Filter untuk Dump Truck (true: hanya dump truck, false: selain dump truck, null: semua)',
+    example: 'true',
+    required: false,
+    type: Boolean,
+    nullable: true,
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return null;
+  })
+  @IsBoolean()
+  is_dt?: boolean | null;
+
+
 
   @ApiProperty({
     description: 'Filter berdasarkan activities ID',

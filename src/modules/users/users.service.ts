@@ -32,6 +32,7 @@ export class UsersService {
     limit: number = 10,
     search?: string,
     role?: string,
+    position_name?: string,
     sortBy?: string,
     sortOrder?: 'ASC' | 'DESC',
   ): Promise<ApiResponse<UserResponseDto[]>> {
@@ -41,7 +42,8 @@ export class UsersService {
         .createQueryBuilder('user')
         .leftJoinAndSelect('user.employees', 'employee')
         .leftJoinAndSelect('user.userRoles', 'userRole')
-        .leftJoinAndSelect('userRole.role', 'role');
+        .leftJoinAndSelect('userRole.role', 'role')
+        .where('user.deletedAt IS NULL'); // Exclude soft deleted records
 
       if (search) {
         qb.andWhere(
@@ -54,7 +56,10 @@ export class UsersService {
         qb.andWhere('role.roleCode = :role', { role });
       }
 
-      qb.orderBy('user.id', 'DESC').skip(skip).take(limit);
+      // Filter by position_name (case-insensitive)
+      if (position_name) {
+        qb.andWhere('LOWER(role.position_name) = LOWER(:position_name)', { position_name });
+      }
 
       // Validate limit
       if (limit > 100) {
@@ -74,7 +79,9 @@ export class UsersService {
         : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
-      qb.orderBy(`user.${validSortBy}`, validSortOrder);
+      qb.orderBy(`user.${validSortBy}`, validSortOrder)
+        .skip(skip)
+        .take(limit);
 
       const [result, total] = await qb.getManyAndCount();
 

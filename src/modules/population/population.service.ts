@@ -129,6 +129,7 @@ export class PopulationService {
         ? parseInt(query.unit_type_id, 10)
         : undefined;
       const unitTypeName = query.unit_type_name;
+      const isDt = query.is_dt;
       const activitiesId = query.activities_id
         ? parseInt(query.activities_id, 10)
         : undefined;
@@ -170,6 +171,19 @@ export class PopulationService {
       if (unitTypeName) {
         qb.andWhere('LOWER(unitType.unit_name) = LOWER(:unitTypeName)', { unitTypeName });
       }
+
+      // Filter by is_dt (Dump Truck)
+      if (isDt !== null && isDt !== undefined) {
+        if (isDt === true) {
+          // Jika is_dt = true, hanya ambil dump truck
+          qb.andWhere('LOWER(unitType.unit_name) = LOWER(:dumpTruckName)', { dumpTruckName: 'dump truck' });
+        } else {
+          // Jika is_dt = false, ambil semua kecuali dump truck
+          qb.andWhere('LOWER(unitType.unit_name) != LOWER(:dumpTruckName)', { dumpTruckName: 'dump truck' });
+        }
+      }
+
+
 
       // Filter by activities_id
       if (activitiesId) {

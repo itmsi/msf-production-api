@@ -190,6 +190,17 @@ export class GetUsersQueryDto {
 
   @ApiProperty({
     required: false,
+    description: 'Filter berdasarkan position name (case-insensitive)',
+    example: 'Administrator',
+    maxLength: 100,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  position_name?: string;
+
+  @ApiProperty({
+    required: false,
     description: 'Field untuk sorting',
     enum: ['id', 'username', 'email', 'createdAt', 'updatedAt'],
     default: 'id',

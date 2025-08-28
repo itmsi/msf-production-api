@@ -46,6 +46,7 @@ export class UsersController {
       - Pagination dengan parameter page dan limit
       - Search berdasarkan username, email, atau nama employee
       - Filter berdasarkan role code
+      - Filter berdasarkan position name (case-insensitive)
       - Sorting berdasarkan field tertentu
       - Urutan sorting ASC atau DESC
     `,
@@ -73,6 +74,12 @@ export class UsersController {
     required: false,
     type: String,
     description: 'Filter berdasarkan role code',
+  })
+  @ApiQuery({
+    name: 'position_name',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan position name (case-insensitive)',
   })
   @ApiQuery({
     name: 'sortBy',
@@ -148,6 +155,7 @@ export class UsersController {
       limitNum,
       query.search,
       query.role,
+      query.position_name,
       query.sortBy,
       query.sortOrder,
     );
