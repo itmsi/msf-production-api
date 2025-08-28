@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -27,6 +28,7 @@ import {
   DailyPlanProductionListResponseMainDto,
 } from './dto/daily-plan-production.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
+import { NumberFormatInterceptor } from '../../common/interceptors/number-format.interceptor';
 
 @ApiTags('Daily Plan Production')
 @ApiBearerAuth('jwt')
@@ -37,6 +39,7 @@ export class DailyPlanProductionController {
   ) {}
 
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(NumberFormatInterceptor)
   @Post()
   @ApiOperation({
     summary: 'Create Daily Plan Production',
@@ -92,6 +95,7 @@ export class DailyPlanProductionController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(NumberFormatInterceptor)
   @Get()
   @ApiOperation({
     summary: 'Get All Daily Plan Production',
@@ -170,6 +174,7 @@ export class DailyPlanProductionController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(NumberFormatInterceptor)
   @Get(':id')
   @ApiOperation({
     summary: 'Get Daily Plan Production by ID',
@@ -210,6 +215,7 @@ export class DailyPlanProductionController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(NumberFormatInterceptor)
   @Patch(':id')
   @ApiOperation({
     summary: 'Update Daily Plan Production',
@@ -330,6 +336,7 @@ export class DailyPlanProductionController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(NumberFormatInterceptor)
   @Delete(':id')
   @ApiOperation({
     summary: 'Delete Daily Plan Production',
