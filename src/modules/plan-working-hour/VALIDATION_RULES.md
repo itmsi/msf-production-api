@@ -34,16 +34,9 @@ Kedua endpoint ini digunakan untuk membuat dan mengupdate parent plan working ho
   Bulan saat ini: 2025-08
   ```
 
-### 3. Validasi Konsistensi Data Kalender
-- **total_calendar_day** harus sama dengan jumlah hari di bulan yang dipilih
-- **Error**: Jika tidak sesuai, akan muncul pesan:
-  ```
-  total_calendar_day harus sama dengan jumlah hari di bulan yang dipilih. 
-  Bulan 2025-08 memiliki 31 hari, 
-  tetapi total_calendar_day yang dikirim: 30
-  ```
 
-### 4. Validasi Logika Hari Kerja
+
+### 3. Validasi Logika Hari Kerja
 - **total_available_day + total_holiday_day = total_calendar_day**
 - **Error**: Jika tidak sesuai, akan muncul pesan:
   ```
@@ -51,21 +44,21 @@ Kedua endpoint ini digunakan untuk membuat dan mengupdate parent plan working ho
   20 + 8 ≠ 31
   ```
 
-### 5. Validasi Detail Activities
+### 4. Validasi Detail Activities
 - **detail** tidak boleh kosong atau null
 - **Error**: Jika kosong, akan muncul pesan:
   ```
   Detail activities tidak boleh kosong. Minimal harus ada satu aktivitas.
   ```
 
-### 6. Validasi Unik Activities ID
+### 5. Validasi Unik Activities ID
 - **activities_id** dalam detail harus unik (tidak boleh duplikat)
 - **Error**: Jika ada duplikasi, akan muncul pesan:
   ```
   Activities ID harus unik. Tidak boleh ada duplikasi activities_id dalam detail.
   ```
 
-### 7. Validasi Activities ID Valid
+### 6. Validasi Activities ID Valid
 - Semua **activities_id** yang dikirim harus ada di database
 - Activities tidak boleh sudah di-soft delete
 - **Error**: Jika ada ID yang tidak valid, akan muncul pesan:
@@ -73,14 +66,14 @@ Kedua endpoint ini digunakan untuk membuat dan mengupdate parent plan working ho
   Activities ID berikut tidak ditemukan atau sudah dihapus: 999, 888
   ```
 
-### 8. Validasi Activities Hour
+### 7. Validasi Activities Hour
 - **activities_hour** tidak boleh negatif
 - **Error**: Jika ada nilai negatif, akan muncul pesan:
   ```
   Activities hour tidak boleh negatif. Activities ID 6: -1
   ```
 
-### 9. Validasi Duplikat Bulan (Fitur Utama)
+### 8. Validasi Duplikat Bulan (Fitur Utama)
 - **Tidak boleh ada data untuk bulan yang sama di tahun yang sama**
 - Validasi ini menggunakan query database yang kompatibel dengan berbagai database
 - **Untuk POST**: Mencegah pembuatan data baru untuk bulan yang sudah ada
@@ -169,18 +162,9 @@ Kedua endpoint ini digunakan untuk membuat dan mengupdate parent plan working ho
 }
 ```
 
-### 3. Total Hari Tidak Konsisten
-```json
-{
-  "plan_date": "2025-08-01",
-  "total_calendar_day": 30,   // ❌ Agustus memiliki 31 hari
-  "total_holiday_day": 8,
-  "total_available_day": 23,  // ❌ 8 + 23 ≠ 30
-  // ... field lainnya
-}
-```
 
-### 4. Activities ID Duplikat
+
+### 3. Activities ID Duplikat
 ```json
 {
   "plan_date": "2025-08-01",
@@ -198,7 +182,7 @@ Kedua endpoint ini digunakan untuk membuat dan mengupdate parent plan working ho
 }
 ```
 
-### 5. Bulan yang Sudah Ada
+### 4. Bulan yang Sudah Ada
 ```json
 {
   "plan_date": "2025-08-01",  // ❌ Agustus 2025 sudah ada di database

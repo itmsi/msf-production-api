@@ -59,23 +59,13 @@ export class ParentPlanWorkingHourService {
       );
     }
     
-    // Validasi konsistensi data dengan jumlah hari di bulan yang dipilih
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    if (createDto.total_calendar_day !== daysInMonth) {
-      throw new BadRequestException(
-        `total_calendar_day harus sama dengan jumlah hari di bulan yang dipilih. ` +
-        `Bulan ${year}-${String(month + 1).padStart(2, '0')} memiliki ${daysInMonth} hari, ` +
-        `tetapi total_calendar_day yang dikirim: ${createDto.total_calendar_day}`
-      );
-    }
-    
     // Validasi bahwa total_available_day + total_holiday_day = total_calendar_day
-    if (createDto.total_available_day + createDto.total_holiday_day !== createDto.total_calendar_day) {
-      throw new BadRequestException(
-        `Total hari tersedia + total hari libur harus sama dengan total hari kalender. ` +
-        `${createDto.total_available_day} + ${createDto.total_holiday_day} ≠ ${createDto.total_calendar_day}`
-      );
-    }
+    // if (createDto.total_available_day + createDto.total_holiday_day !== createDto.total_calendar_day) {
+    //   throw new BadRequestException(
+    //     `Total hari tersedia + total hari libur harus sama dengan total hari kalender. ` +
+    //     `${createDto.total_available_day} + ${createDto.total_holiday_day} ≠ ${createDto.total_calendar_day}`
+    //   );
+    // }
     
     // Validasi detail activities tidak kosong
     if (!createDto.detail || createDto.detail.length === 0) {

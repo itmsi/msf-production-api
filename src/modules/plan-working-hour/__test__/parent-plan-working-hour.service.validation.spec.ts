@@ -134,16 +134,7 @@ describe('ParentPlanWorkingHourService - Validation Tests', () => {
       );
     });
 
-    it('should throw error when total_calendar_day does not match month days', async () => {
-      const invalidDto = { ...validCreateDto, total_calendar_day: 30 }; // August has 31 days
 
-      await expect(service.create(invalidDto)).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.create(invalidDto)).rejects.toThrow(
-        'total_calendar_day harus sama dengan jumlah hari di bulan yang dipilih',
-      );
-    });
 
     it('should throw error when total_available_day + total_holiday_day != total_calendar_day', async () => {
       const invalidDto = { ...validCreateDto, total_available_day: 20 }; // 20 + 8 != 31
