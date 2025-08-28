@@ -24,6 +24,7 @@ import { BaseDataProductionModule } from './modules/base-data-production/base-da
 import { EffectiveWorkingHoursModule } from './modules/effective-working-hours/effective-working-hours.module';
 import { BargeFormModule } from './modules/barge-form/barge-form.module';
 import { FuelConsumptionModule } from './modules/fuel-consumption/fuel-consumption.module';
+import { HaulingListModule } from './modules/hauling-list/hauling-list.module';
 import { S3Module } from './integrations/s3/s3.module';
 
 @Module({
@@ -66,6 +67,7 @@ import { S3Module } from './integrations/s3/s3.module';
     EffectiveWorkingHoursModule,
     BargeFormModule,
     FuelConsumptionModule,
+    HaulingListModule,
     S3Module,
   ],
 })
