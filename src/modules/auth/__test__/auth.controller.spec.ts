@@ -47,7 +47,7 @@ describe('AuthController', () => {
 
   describe('login()', () => {
     it('should login and return token', async () => {
-      const body: LoginDto = { username: 'admin', password: 'admin123' };
+      const body: LoginDto = { username: 'superadmin', password: 'Qwer1234!' };
       const result = await authController.login(body);
 
       expect(authService.validateUser).toHaveBeenCalledWith(

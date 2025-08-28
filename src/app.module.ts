@@ -25,6 +25,7 @@ import { EffectiveWorkingHoursModule } from './modules/effective-working-hours/e
 import { BargeFormModule } from './modules/barge-form/barge-form.module';
 import { FuelConsumptionModule } from './modules/fuel-consumption/fuel-consumption.module';
 import { HaulingListModule } from './modules/hauling-list/hauling-list.module';
+import { HaulingProblemModule } from './modules/hauling-problem/hauling-problem.module';
 import { S3Module } from './integrations/s3/s3.module';
 
 @Module({
@@ -68,6 +69,7 @@ import { S3Module } from './integrations/s3/s3.module';
     BargeFormModule,
     FuelConsumptionModule,
     HaulingListModule,
+    HaulingProblemModule,
     S3Module,
   ],
 })

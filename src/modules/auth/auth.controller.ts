@@ -45,8 +45,8 @@ export class AuthController {
         summary: 'Contoh login dengan admin',
         description: 'Contoh login menggunakan akun admin',
         value: {
-          username: 'admin',
-          password: 'admin123',
+          username: 'superadmin',
+          password: 'Qwer1234!',
         },
       },
       example2: {
