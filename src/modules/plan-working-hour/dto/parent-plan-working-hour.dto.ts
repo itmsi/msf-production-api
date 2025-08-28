@@ -33,6 +33,17 @@ export class ActivityDetailDto {
   activities_hour: number;
 }
 
+// DTO untuk detail activities yang sederhana (hanya activities_id dan activities_hour)
+export class SimpleActivityDetailDto {
+  @ApiProperty({ description: 'ID aktivitas', example: 1 })
+  @IsNumber()
+  activities_id: number;
+
+  @ApiProperty({ description: 'Jam aktivitas', example: 2 })
+  @IsNumber()
+  activities_hour: number;
+}
+
 export class CreateParentPlanWorkingHourDto {
   @ApiProperty({
     description: 'Tanggal rencana',
@@ -151,7 +162,7 @@ export class CreateParentPlanWorkingHourDto {
 
   @ApiProperty({
     description: 'Detail aktivitas per tanggal',
-    type: [ActivityDetailDto],
+    type: [SimpleActivityDetailDto],
     required: true,
     example: [
       { activities_id: 1, activities_hour: 1 },
@@ -161,8 +172,8 @@ export class CreateParentPlanWorkingHourDto {
   })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => ActivityDetailDto)
-  detail: ActivityDetailDto[];
+  @Type(() => SimpleActivityDetailDto)
+  detail: SimpleActivityDetailDto[];
 }
 
 export class ParentPlanWorkingHourResponseDto {
@@ -675,17 +686,6 @@ export class ParentPlanWorkingHourDetailByIdResponseDto {
     type: [ActivityGroupDto],
   })
   details: ActivityGroupDto[];
-}
-
-// DTO untuk detail activities yang sederhana (hanya activities_id dan activities_hour)
-export class SimpleActivityDetailDto {
-  @ApiProperty({ description: 'ID aktivitas', example: 1 })
-  @IsNumber()
-  activities_id: number;
-
-  @ApiProperty({ description: 'Jam aktivitas', example: 2 })
-  @IsNumber()
-  activities_hour: number;
 }
 
 export class UpdateDetailParentPlanWorkingHourDto {

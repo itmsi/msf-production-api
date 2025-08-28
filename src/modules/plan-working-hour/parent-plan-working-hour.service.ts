@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, In, IsNull } from 'typeorm';
+import { Repository, DataSource, In, IsNull, Between } from 'typeorm';
 import { ParentPlanWorkingHour } from './entities/parent-plan-working-hour.entity';
 import { PlanWorkingHour } from './entities/plan-working-hour.entity';
 import { PlanWorkingHourDetail } from './entities/plan-working-hour-detail.entity';
@@ -31,6 +31,123 @@ export class ParentPlanWorkingHourService {
   async create(
     createDto: CreateParentPlanWorkingHourDto,
   ): Promise<ParentPlanWorkingHour> {
+    // Validasi duplikat bulan di tahun yang sama
+    const planDate = new Date(createDto.plan_date);
+    const year = planDate.getFullYear();
+    const month = planDate.getMonth();
+    
+    // Validasi bahwa plan_date adalah tanggal pertama dari bulan (01)
+    const dayOfMonth = planDate.getDate();
+    if (dayOfMonth !== 1) {
+      throw new BadRequestException(
+        `plan_date harus berupa tanggal pertama dari bulan (01). ` +
+        `Tanggal yang dikirim: ${createDto.plan_date}. ` +
+        `Gunakan format YYYY-MM-01 (contoh: 2025-08-01)`
+      );
+    }
+    
+    // Validasi bahwa plan_date tidak boleh di masa lalu (untuk bulan yang sudah lewat)
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+    
+    if (year < currentYear || (year === currentYear && month < currentMonth)) {
+      throw new BadRequestException(
+        `Tidak dapat membuat plan untuk bulan yang sudah lewat. ` +
+        `Bulan yang dipilih: ${year}-${String(month + 1).padStart(2, '0')}. ` +
+        `Bulan saat ini: ${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`
+      );
+    }
+    
+    // Validasi konsistensi data dengan jumlah hari di bulan yang dipilih
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    if (createDto.total_calendar_day !== daysInMonth) {
+      throw new BadRequestException(
+        `total_calendar_day harus sama dengan jumlah hari di bulan yang dipilih. ` +
+        `Bulan ${year}-${String(month + 1).padStart(2, '0')} memiliki ${daysInMonth} hari, ` +
+        `tetapi total_calendar_day yang dikirim: ${createDto.total_calendar_day}`
+      );
+    }
+    
+    // Validasi bahwa total_available_day + total_holiday_day = total_calendar_day
+    if (createDto.total_available_day + createDto.total_holiday_day !== createDto.total_calendar_day) {
+      throw new BadRequestException(
+        `Total hari tersedia + total hari libur harus sama dengan total hari kalender. ` +
+        `${createDto.total_available_day} + ${createDto.total_holiday_day} ≠ ${createDto.total_calendar_day}`
+      );
+    }
+    
+    // Validasi detail activities tidak kosong
+    if (!createDto.detail || createDto.detail.length === 0) {
+      throw new BadRequestException(
+        'Detail activities tidak boleh kosong. Minimal harus ada satu aktivitas.'
+      );
+    }
+    
+    // Validasi activities_id unik
+    const uniqueActivitiesIds = [...new Set(createDto.detail.map(d => d.activities_id))];
+    if (uniqueActivitiesIds.length !== createDto.detail.length) {
+      throw new BadRequestException(
+        'Activities ID harus unik. Tidak boleh ada duplikasi activities_id dalam detail.'
+      );
+    }
+    
+    // Validasi bahwa semua activities_id yang dikirim ada di database
+    const activities = await this.dataSource
+      .getRepository(Activities)
+      .find({
+        where: { 
+          id: In(uniqueActivitiesIds),
+          deletedAt: IsNull()
+        },
+        select: ['id']
+      });
+    
+    if (activities.length !== uniqueActivitiesIds.length) {
+      const foundIds = activities.map(a => a.id);
+      const missingIds = uniqueActivitiesIds.filter(id => !foundIds.includes(id));
+      throw new BadRequestException(
+        `Activities ID berikut tidak ditemukan atau sudah dihapus: ${missingIds.join(', ')}`
+      );
+    }
+    
+    // Validasi activities_hour tidak negatif
+    for (const detail of createDto.detail) {
+      if (detail.activities_hour < 0) {
+        throw new BadRequestException(
+          `Activities hour tidak boleh negatif. Activities ID ${detail.activities_id}: ${detail.activities_hour}`
+        );
+      }
+    }
+    
+    // Cek apakah sudah ada data untuk bulan yang sama di tahun yang sama
+    // Menggunakan pendekatan yang kompatibel dengan berbagai database
+    const startOfMonth = new Date(year, month, 1);
+    const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
+    
+    // Query untuk mencari data yang plan_date-nya berada dalam rentang bulan yang sama
+    // Menggunakan BETWEEN untuk kompatibilitas yang lebih baik
+    // Hanya cek data yang tidak di-soft delete
+    const existingPlan = await this.parentPlanWorkingHourRepository
+      .createQueryBuilder('ppwh')
+      .where('ppwh.plan_date BETWEEN :startOfMonth AND :endOfMonth', { 
+        startOfMonth, 
+        endOfMonth 
+      })
+      .andWhere('ppwh.deletedAt IS NULL') // Hanya cek data yang tidak di-soft delete
+      .getOne();
+
+    if (existingPlan) {
+      const monthNames = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+      ];
+      throw new BadRequestException(
+        `Data untuk bulan ${monthNames[month]} ${year} sudah ada dalam sistem. ` +
+        `Silakan gunakan bulan lain atau update data yang sudah ada.`
+      );
+    }
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -125,9 +242,28 @@ export class ParentPlanWorkingHourService {
       return result;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw new BadRequestException(
-        `Gagal membuat parent plan working hour: ${error.message}`,
-      );
+      
+      // Jika error sudah BadRequestException, throw langsung
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      // Jika error lain, buat message yang lebih detail
+      let errorMessage = 'Gagal membuat parent plan working hour';
+      
+      if (error.message) {
+        if (error.message.includes('duplicate key')) {
+          errorMessage = 'Data dengan informasi yang sama sudah ada dalam sistem';
+        } else if (error.message.includes('violates foreign key constraint')) {
+          errorMessage = 'Data referensi tidak ditemukan (activities_id tidak valid)';
+        } else if (error.message.includes('invalid input syntax')) {
+          errorMessage = 'Format data tidak valid';
+        } else {
+          errorMessage += `: ${error.message}`;
+        }
+      }
+      
+      throw new BadRequestException(errorMessage);
     } finally {
       await queryRunner.release();
     }
@@ -456,7 +592,62 @@ export class ParentPlanWorkingHourService {
       // 1. Ambil parent plan yang akan diupdate
       const parentPlan = await this.findOneEntity(id);
 
-      // 2. Update parent plan - hanya update field yang ada di request
+      // 2. Validasi duplikat bulan jika plan_date diupdate
+      if (updateDto.plan_date) {
+        const newPlanDate = new Date(updateDto.plan_date);
+        const year = newPlanDate.getFullYear();
+        const month = newPlanDate.getMonth();
+        
+        // Validasi bahwa plan_date adalah tanggal pertama dari bulan (01)
+        const dayOfMonth = newPlanDate.getDate();
+        if (dayOfMonth !== 1) {
+          throw new BadRequestException(
+            `plan_date harus berupa tanggal pertama dari bulan (01). ` +
+            `Tanggal yang dikirim: ${updateDto.plan_date}. ` +
+            `Gunakan format YYYY-MM-01 (contoh: 2025-09-01)`
+          );
+        }
+        
+        // Validasi bahwa plan_date tidak boleh di masa lalu (untuk bulan yang sudah lewat)
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        const currentMonth = today.getMonth();
+        
+        if (year < currentYear || (year === currentYear && month < currentMonth)) {
+          throw new BadRequestException(
+            `Tidak dapat mengupdate plan untuk bulan yang sudah lewat. ` +
+            `Bulan yang dipilih: ${year}-${String(month + 1).padStart(2, '0')}. ` +
+            `Bulan saat ini: ${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`
+          );
+        }
+        
+        // Cek apakah sudah ada data untuk bulan yang sama di tahun yang sama (kecuali record yang sedang diupdate)
+        const startOfMonth = new Date(year, month, 1);
+        const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
+        
+        const existingPlan = await this.parentPlanWorkingHourRepository
+          .createQueryBuilder('ppwh')
+          .where('ppwh.plan_date BETWEEN :startOfMonth AND :endOfMonth', { 
+            startOfMonth, 
+            endOfMonth 
+          })
+          .andWhere('ppwh.deletedAt IS NULL') // Hanya cek data yang tidak di-soft delete
+          .andWhere('ppwh.id != :currentId', { currentId: id }) // Kecualikan record yang sedang diupdate
+          .getOne();
+
+        if (existingPlan) {
+          const monthNames = [
+            'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+          ];
+          throw new BadRequestException(
+            `Data untuk bulan ${monthNames[month]} ${year} sudah ada dalam sistem. ` +
+            `Silakan gunakan bulan lain atau update data yang sudah ada.`
+          );
+        }
+      }
+
+      // 3. Update parent plan - hanya update field yang ada di request
       if (updateDto.plan_date) {
         parentPlan.plan_date = new Date(updateDto.plan_date);
       }
@@ -490,7 +681,7 @@ export class ParentPlanWorkingHourService {
         parentPlan,
       );
 
-      // 3. Update data yang sudah ada di r_plan_working_hour (bukan hapus dan insert ulang)
+      // 4. Update data yang sudah ada di r_plan_working_hour (bukan hapus dan insert ulang)
       const existingPlanWorkingHours = await queryRunner.manager.find(
         PlanWorkingHour,
         {
@@ -524,7 +715,7 @@ export class ParentPlanWorkingHourService {
         );
       }
 
-      // 4. Update data yang sudah ada di r_plan_working_hour_detail (bukan hapus dan insert ulang)
+      // 5. Update data yang sudah ada di r_plan_working_hour_detail (bukan hapus dan insert ulang)
       if (updateDto.detail && updateDto.detail.length > 0) {
         // Ambil semua plan working hour IDs
         const planWorkingHourIds = existingPlanWorkingHours.map(
@@ -559,7 +750,7 @@ export class ParentPlanWorkingHourService {
 
       await queryRunner.commitTransaction();
 
-      // 5. Return response dengan format yang sama seperti findOne
+      // 6. Return response dengan format yang sama seperti findOne
       return await this.findOne(id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -584,6 +775,59 @@ export class ParentPlanWorkingHourService {
 
       // 2. Update parent plan jika ada perubahan
       if (updateDto.plan_date) {
+        // Validasi duplikat bulan jika plan_date diupdate
+        const newPlanDate = new Date(updateDto.plan_date);
+        const year = newPlanDate.getFullYear();
+        const month = newPlanDate.getMonth();
+        
+        // Validasi bahwa plan_date adalah tanggal pertama dari bulan (01)
+        const dayOfMonth = newPlanDate.getDate();
+        if (dayOfMonth !== 1) {
+          throw new BadRequestException(
+            `plan_date harus berupa tanggal pertama dari bulan (01). ` +
+            `Tanggal yang dikirim: ${updateDto.plan_date}. ` +
+            `Gunakan format YYYY-MM-01 (contoh: 2025-09-01)`
+          );
+        }
+        
+        // Validasi bahwa plan_date tidak boleh di masa lalu (untuk bulan yang sudah lewat)
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        const currentMonth = today.getMonth();
+        
+        if (year < currentYear || (year === currentYear && month < currentMonth)) {
+          throw new BadRequestException(
+            `Tidak dapat mengupdate plan untuk bulan yang sudah lewat. ` +
+            `Bulan yang dipilih: ${year}-${String(month + 1).padStart(2, '0')}. ` +
+            `Bulan saat ini: ${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`
+          );
+        }
+        
+        // Cek apakah sudah ada data untuk bulan yang sama di tahun yang sama (kecuali record yang sedang diupdate)
+        const startOfMonth = new Date(year, month, 1);
+        const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
+        
+        const existingPlan = await this.parentPlanWorkingHourRepository
+          .createQueryBuilder('ppwh')
+          .where('ppwh.plan_date BETWEEN :startOfMonth AND :endOfMonth', { 
+            startOfMonth, 
+            endOfMonth 
+          })
+          .andWhere('ppwh.deletedAt IS NULL') // Hanya cek data yang tidak di-soft delete
+          .andWhere('ppwh.id != :currentId', { currentId: id }) // Kecualikan record yang sedang diupdate
+          .getOne();
+
+        if (existingPlan) {
+          const monthNames = [
+            'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+          ];
+          throw new BadRequestException(
+            `Data untuk bulan ${monthNames[month]} ${year} sudah ada dalam sistem. ` +
+            `Silakan gunakan bulan lain atau update data yang sudah ada.`
+          );
+        }
+        
         parentPlan.plan_date = new Date(updateDto.plan_date);
         await queryRunner.manager.save(ParentPlanWorkingHour, parentPlan);
       }
