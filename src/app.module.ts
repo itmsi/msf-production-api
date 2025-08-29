@@ -26,6 +26,7 @@ import { BargeFormModule } from './modules/barge-form/barge-form.module';
 import { FuelConsumptionModule } from './modules/fuel-consumption/fuel-consumption.module';
 import { HaulingListModule } from './modules/hauling-list/hauling-list.module';
 import { HaulingProblemModule } from './modules/hauling-problem/hauling-problem.module';
+import { BargingListModule } from './modules/barging-list/barging-list.module';
 import { S3Module } from './integrations/s3/s3.module';
 
 @Module({
@@ -70,6 +71,7 @@ import { S3Module } from './integrations/s3/s3.module';
     FuelConsumptionModule,
     HaulingListModule,
     HaulingProblemModule,
+    BargingListModule,
     S3Module,
   ],
 })
