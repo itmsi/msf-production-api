@@ -13,6 +13,9 @@ export class HaulingListResponseDto {
   @ApiProperty({ description: 'Waktu' })
   time: string;
 
+  @ApiProperty({ description: 'Range waktu dalam format jam (contoh: 09-10)' })
+  time_range: string;
+
   @ApiProperty({ description: 'ID unit loading' })
   unit_loading_id: number;
 

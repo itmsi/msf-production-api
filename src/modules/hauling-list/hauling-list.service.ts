@@ -396,11 +396,15 @@ export class HaulingListService {
   }
 
   private mapToResponseDto(haulingList: HaulingList): HaulingListResponseDto {
+    // Hitung time range dari time
+    const timeRange = this.calculateTimeRange(haulingList.time);
+    
     return {
       id: haulingList.id,
       activity_date: haulingList.activityDate.toISOString().split('T')[0],
       shift: haulingList.shift,
       time: haulingList.time.toISOString(),
+      time_range: timeRange,
       unit_loading_id: haulingList.unitLoadingId,
       unit_loading_name: haulingList.unitLoading?.no_unit || '',
       unit_hauler_id: haulingList.unitHaulerId,
@@ -417,5 +421,17 @@ export class HaulingListService {
       createdAt: haulingList.createdAt,
       updatedAt: haulingList.updatedAt,
     };
+  }
+
+  private calculateTimeRange(time: Date): string {
+    // Gunakan UTC time untuk menghindari masalah timezone
+    const hours = time.getUTCHours();
+    const nextHour = hours + 1;
+    
+    // Format: HH-HH (contoh: 07-08, 14-15)
+    const currentHour = hours.toString().padStart(2, '0');
+    const nextHourStr = nextHour.toString().padStart(2, '0');
+    
+    return `${currentHour}-${nextHourStr}`;
   }
 }

@@ -63,36 +63,25 @@ curl -X 'GET' \
   "data": [
     {
       "id": 1,
-      "activity_date": "2024-01-15T00:00:00.000Z",
+      "activity_date": "2024-01-15",
       "shift": "ds",
       "time": "2024-01-15T08:00:00.000Z",
+      "time_range": "08-09",
+      "unit_loading_id": 6,
+      "unit_loading_name": "KFM-DT-001",
+      "unit_hauler_id": 7,
+      "unit_hauler_name": "KFM-DT-002",
       "material": "ore",
+      "loading_point_id": 2,
+      "loading_point_name": "Loading Point A",
+      "dumping_point_op_id": 2,
+      "dumping_point_op_name": "Dumping Point OP A",
+      "dumping_point_barge_id": 2,
+      "dumping_point_barge_name": "Dumping Point Barge A",
       "vessel": 5,
       "total_tonnage": 175,
-      "unit_loading": {
-        "id": 6,
-        "no_unit": "KFM-DT-001",
-        "unit_type_name": "DT"
-      },
-      "unit_hauler": {
-        "id": 7,
-        "no_unit": "KFM-DT-002",
-        "unit_type_name": "DT"
-      },
-      "loading_point": {
-        "id": 2,
-        "name": "Loading Point A"
-      },
-      "dumping_point_op": {
-        "id": 2,
-        "name": "Dumping Point OP A"
-      },
-      "dumping_point_barge": {
-        "id": 2,
-        "name": "Dumping Point Barge A"
-      },
-      "created_at": "2024-01-15T08:00:00.000Z",
-      "updated_at": "2024-01-15T08:00:00.000Z"
+      "createdAt": "2024-01-15T08:00:00.000Z",
+      "updatedAt": "2024-01-15T08:00:00.000Z"
     }
   ],
   "pagination": {
@@ -111,3 +100,7 @@ curl -X 'GET' \
 - Jika hanya `start_date` yang disediakan, akan mencari data dengan `activity_date` >= start_date
 - Jika hanya `end_date` yang disediakan, akan mencari data dengan `activity_date` <= end_date
 - Filter daterange dapat dikombinasikan dengan filter lainnya
+- **Time Range**: Field `time_range` otomatis dihitung dari field `time` dengan format "HH-HH" (contoh: 09-10, 14-15)
+  - Format menunjukkan rentang jam dari waktu yang ditentukan
+  - Jika time = 09:12, maka time_range = "09-10"
+  - Jika time = 14:30, maka time_range = "14-15"
