@@ -1,102 +1,95 @@
 # Hauling List Module
 
-Modul ini menangani operasi CRUD untuk data hauling list yang tersimpan di tabel `r_ccr_hauling`.
-
-## Fitur
-
-- **Create**: Membuat data hauling list baru
-- **Read**: Mengambil data hauling list dengan pagination dan filter
-- **Update**: Mengupdate data hauling list yang ada
-- **Delete**: Menghapus data hauling list
-- **Authentication**: Menggunakan JWT Bearer Token
-
-## Struktur Data
-
-### Input (POST/PATCH)
-- `activity_date`: Tanggal aktivitas (date format: YYYY-MM-DD)
-- `shift`: Shift kerja (enum: 'ds' atau 'ns')
-- `time`: Waktu aktivitas (timestamp format: ISO 8601)
-- `unit_loading_id`: ID unit loading
-- `unit_hauler_id`: ID unit hauler
-- `material`: Jenis material (enum: 'biomas', 'boulder', 'ob', 'ore', 'ore-barge', 'quarry')
-- `loading_point_id`: ID loading point
-- `dumping_point_op_id`: ID dumping point operation (nullable)
-- `dumping_point_barge_id`: ID dumping point barge (nullable)
-- `vessel`: Jumlah vessel
-
-### Output (Response)
-- Semua field input ditampilkan
-- `unit_loading_name`: Nama unit loading (dari join dengan tabel m_population)
-- `unit_hauler_name`: Nama unit hauler (dari join dengan tabel m_population)
-- `loading_point_name`: Nama loading point (dari join dengan tabel m_operation_points)
-- `dumping_point_op_name`: Nama dumping point operation (dari join dengan tabel m_operation_points)
-- `dumping_point_barge_name`: Nama dumping point barge (dari join dengan tabel m_barge)
-- `total_tonnage`: Total tonnage (otomatis dihitung: vessel * 35)
+Module ini menangani operasi CRUD untuk hauling list dan activities (operation points).
 
 ## Endpoints
 
-### POST `/api/hauling-list`
-Membuat data hauling list baru.
-**Authentication**: JWT Bearer Token required
+### Hauling List Endpoints
 
-### GET `/api/hauling-list`
-Mengambil semua data hauling list dengan pagination dan filter.
-**Authentication**: JWT Bearer Token required
+- `GET /api/hauling-list` - Mengambil semua data hauling list dengan pagination dan filter
+- `POST /api/hauling-list` - Membuat data hauling list baru
+- `GET /api/hauling-list/:id` - Mengambil data hauling list berdasarkan ID
+- `PATCH /api/hauling-list/:id` - Update data hauling list
+- `DELETE /api/hauling-list/:id` - Hapus data hauling list
 
-**Query Parameters:**
-- `page`: Nomor halaman (default: 1)
-- `limit`: Jumlah data per halaman (default: 10)
-- `activity_date`: Filter berdasarkan tanggal aktivitas
-- `shift`: Filter berdasarkan shift ('ds' atau 'ns')
-- `material`: Filter berdasarkan material (enum values)
-- `unit_loading_name`: Filter berdasarkan nama unit loading
-- `unit_hauler_name`: Filter berdasarkan nama unit hauler
+### Activities Endpoints
 
-### GET `/api/hauling-list/:id`
-Mengambil data hauling list berdasarkan ID.
-**Authentication**: JWT Bearer Token required
+- `GET /api/hauling-list/activities` - Mengambil data activities (operation points) dengan pagination, filter, dan sorting
 
-### PATCH `/api/hauling-list/:id`
-Mengupdate data hauling list berdasarkan ID.
-**Authentication**: JWT Bearer Token required
+## Activities Endpoint Details
 
-### DELETE `/api/hauling-list/:id`
-Menghapus data hauling list berdasarkan ID.
-**Authentication**: JWT Bearer Token required
+Endpoint `/api/hauling-list/activities` menyediakan fitur:
 
-## Relasi Database
+### Features
+- ✅ **Pagination** - Kontrol jumlah data per halaman
+- ✅ **Filtering** - Filter berdasarkan nama, tipe, dan site
+- ✅ **Sorting** - Urutkan berdasarkan field tertentu
+- ✅ **Limit** - Batasi jumlah data yang dikembalikan
+- ✅ **Response Standard** - Format response yang konsisten
 
-- `unit_loading_id` → `m_population.id` (untuk nama unit loading)
-- `unit_hauler_id` → `m_population.id` (untuk nama unit hauler)
-- `loading_point_id` → `m_operation_points.id` (untuk nama loading point)
-- `dumping_point_op_id` → `m_operation_points.id` (untuk nama dumping point operation)
-- `dumping_point_barge_id` → `m_barge.id` (untuk nama dumping point barge)
+### Query Parameters
+- `page` - Nomor halaman (default: 1)
+- `limit` - Jumlah data per halaman (default: 10)
+- `name` - Filter nama operation point
+- `type` - Filter tipe operation point (loading/dumping/stockpile)
+- `site_name` - Filter nama site
+- `orderBy` - Field untuk pengurutan
+- `orderDirection` - Arah pengurutan (ASC/DESC)
 
-## Validasi
+### Response Format
+```json
+{
+  "statusCode": 200,
+  "message": "Data activities berhasil diambil",
+  "data": [
+    {
+      "id": 1,
+      "name": "OP-001",
+      "longitude": 106.8456,
+      "latitude": -6.2088
+    }
+  ],
+  "pagination": {
+    "total": 15,
+    "page": 1,
+    "limit": 10,
+    "lastPage": 2
+  }
+}
+```
 
-- Semua field required kecuali `dumping_point_op_id` dan `dumping_point_barge_id`
-- `activity_date` harus dalam format date yang valid (YYYY-MM-DD)
-- `time` harus dalam format timestamp yang valid (ISO 8601)
-- `shift` harus salah satu dari: 'ds', 'ns'
-- `material` harus salah satu dari: 'biomas', 'boulder', 'ob', 'ore', 'ore-barge', 'quarry'
-- `vessel` harus berupa angka positif
-- `total_tonnage` dihitung otomatis (vessel * 35)
+## Data Source
+
+Activities endpoint mengambil data dari:
+- **Primary Table**: `m_operation_points`
+- **Joined Table**: `m_sites` (untuk informasi site)
 
 ## Authentication
 
-Modul ini menggunakan JWT Bearer Token untuk autentikasi. Semua endpoint memerlukan token yang valid yang dikirim melalui header:
+Semua endpoint memerlukan JWT Bearer Token untuk authentication.
+
+## Documentation
+
+Untuk dokumentasi lengkap, lihat:
+- [Activities API Documentation](./ACTIVITIES_API_DOCUMENTATION.md)
+- [API Examples](./API_EXAMPLES.md)
+
+## Usage Examples
+
+### Basic Activities Request
+```bash
+curl -X GET "http://localhost:3000/api/hauling-list/activities" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
-Authorization: Bearer <jwt_token>
+
+### With Filters and Pagination
+```bash
+curl -X GET "http://localhost:3000/api/hauling-list/activities?type=loading&page=1&limit=20" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-## Pagination
-
-Modul ini menggunakan helper pagination yang sudah tersedia di aplikasi untuk menangani pagination dan filter data.
-
-## Swagger Documentation
-
-Semua endpoint sudah didokumentasikan dengan Swagger dan menampilkan:
-- Parameter yang diperlukan
-- Response schema
-- Authentication requirements
-- Enum values untuk shift dan material
+### With Sorting
+```bash
+curl -X GET "http://localhost:3000/api/hauling-list/activities?orderBy=name&orderDirection=DESC" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```

@@ -2,15 +2,21 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, QueryFailedError } from 'typeorm';
 import { HaulingList } from './entities/hauling-list.entity';
-import { CreateHaulingListDto, UpdateHaulingListDto, QueryHaulingListDto, HaulingListResponseDto } from './dto';
+import { CreateHaulingListDto, UpdateHaulingListDto, QueryHaulingListDto, HaulingListResponseDto, QueryActivitiesDto, ActivitiesResponseDto } from './dto';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import { successResponse } from '../../common/helpers/response.helper';
+import { OperationPoints } from '../operation-points/entities/operation-points.entity';
+import { Sites } from '../sites/entities/sites.entity';
 
 @Injectable()
 export class HaulingListService {
   constructor(
     @InjectRepository(HaulingList)
     private readonly haulingListRepository: Repository<HaulingList>,
+    @InjectRepository(OperationPoints)
+    private readonly operationPointsRepository: Repository<OperationPoints>,
+    @InjectRepository(Sites)
+    private readonly sitesRepository: Repository<Sites>,
   ) {}
 
   async create(createHaulingListDto: CreateHaulingListDto): Promise<any> {
@@ -303,6 +309,73 @@ export class HaulingListService {
     return successResponse(
       null,
       'Data hauling list berhasil dihapus'
+    );
+  }
+
+  async getActivities(queryDto: QueryActivitiesDto): Promise<any> {
+    const { page = 1, limit = 10, name, type, site_name, orderBy = 'id', orderDirection = 'ASC' } = queryDto;
+    
+    const queryBuilder = this.operationPointsRepository
+      .createQueryBuilder('op')
+      .leftJoin('op.site', 'site')
+      .select([
+        'op.id as op_id',
+        'op.name as op_name',
+        'op.longitude as op_longitude',
+        'op.latitude as op_latitude',
+        'site.name as site_name'
+      ]);
+
+    // Apply filters
+    if (name) {
+      queryBuilder.andWhere('op.name ILIKE :name', { 
+        name: `%${name}%` 
+      });
+    }
+
+    if (type) {
+      queryBuilder.andWhere('op.type = :type', { 
+        type 
+      });
+    }
+
+    if (site_name) {
+      queryBuilder.andWhere('site.name ILIKE :site_name', { 
+        site_name: `%${site_name}%` 
+      });
+    }
+
+    // Get total count
+    const total = await queryBuilder.getCount();
+
+    // Apply ordering
+    if (orderBy === 'site_name') {
+      queryBuilder.orderBy('site.name', orderDirection);
+    } else {
+      queryBuilder.orderBy(`op.${orderBy}`, orderDirection);
+    }
+
+    // Apply pagination
+    const offset = (page - 1) * limit;
+    queryBuilder.skip(offset).take(limit);
+
+    // Get data
+    const data = await queryBuilder.getRawMany();
+
+    // Map to response DTOs
+    const mappedData: ActivitiesResponseDto[] = data.map(item => ({
+      id: item.op_id,
+      name: item.op_name,
+      longitude: item.op_longitude,
+      latitude: item.op_latitude,
+    }));
+
+    return paginateResponse(
+      mappedData,
+      total,
+      page,
+      limit,
+      'Data activities berhasil diambil'
     );
   }
 

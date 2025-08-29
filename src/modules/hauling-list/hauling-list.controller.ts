@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { HaulingListService } from './hauling-list.service';
-import { CreateHaulingListDto, UpdateHaulingListDto, QueryHaulingListDto, HaulingListResponseDto } from './dto';
+import { CreateHaulingListDto, UpdateHaulingListDto, QueryHaulingListDto, HaulingListResponseDto, QueryActivitiesDto, ActivitiesResponseDto } from './dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 
 @ApiTags('Hauling List')
@@ -105,6 +105,45 @@ export class HaulingListController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   findAll(@Query() queryDto: QueryHaulingListDto) {
     return this.haulingListService.findAll(queryDto);
+  }
+
+  @Get('activities')
+  @ApiOperation({ summary: 'Mengambil data activities (operation points) dengan pagination dan filter' })
+  @ApiQuery({ name: 'page', required: false, description: 'Nomor halaman', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, description: 'Jumlah data per halaman', example: 10 })
+  @ApiQuery({ name: 'name', required: false, description: 'Filter berdasarkan nama operation point', example: 'OP-001' })
+  @ApiQuery({ name: 'type', required: false, description: 'Filter berdasarkan tipe operation point', enum: ['loading', 'dumping', 'stockpile'], example: 'loading' })
+  @ApiQuery({ name: 'site_name', required: false, description: 'Filter berdasarkan nama site', example: 'Site A' })
+  @ApiQuery({ name: 'orderBy', required: false, description: 'Urutan berdasarkan field', enum: ['id', 'name', 'type', 'longitude', 'latitude', 'createdAt'], example: 'name' })
+  @ApiQuery({ name: 'orderDirection', required: false, description: 'Urutan ascending atau descending', enum: ['ASC', 'DESC'], example: 'ASC' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Data activities berhasil diambil',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 200 },
+        message: { type: 'string', example: 'Data activities berhasil diambil' },
+        data: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/ActivitiesResponseDto' }
+        },
+        pagination: {
+          type: 'object',
+          properties: {
+            total: { type: 'number', example: 5 },
+            page: { type: 'number', example: 1 },
+            limit: { type: 'number', example: 10 },
+            lastPage: { type: 'number', example: 1 }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  getActivities(@Query() queryDto: QueryActivitiesDto) {
+    return this.haulingListService.getActivities(queryDto);
   }
 
   @Get(':id')
