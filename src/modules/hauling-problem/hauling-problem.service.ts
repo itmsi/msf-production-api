@@ -142,6 +142,29 @@ export class HaulingProblemService {
         });
       }
 
+      // Filter berdasarkan date range
+      if (query.start_date && query.end_date) {
+        const startDate = new Date(query.start_date);
+        const endDate = new Date(query.end_date);
+        endDate.setDate(endDate.getDate() + 1); // Include end date
+        
+        qb.andWhere('hp.activityDate >= :startDate AND hp.activityDate < :endDate', {
+          startDate: startDate,
+          endDate: endDate,
+        });
+      } else if (query.start_date) {
+        const startDate = new Date(query.start_date);
+        qb.andWhere('hp.activityDate >= :startDate', {
+          startDate: startDate,
+        });
+      } else if (query.end_date) {
+        const endDate = new Date(query.end_date);
+        endDate.setDate(endDate.getDate() + 1); // Include end date
+        qb.andWhere('hp.activityDate < :endDate', {
+          endDate: endDate,
+        });
+      }
+
       // Filter berdasarkan shift
       if (query.shift) {
         qb.andWhere('hp.shift = :shift', { shift: query.shift });

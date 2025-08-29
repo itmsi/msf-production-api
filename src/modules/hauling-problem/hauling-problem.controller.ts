@@ -104,6 +104,18 @@ export class HaulingProblemController {
     type: String,
   })
   @ApiQuery({
+    name: 'start_date',
+    required: false,
+    description: 'Filter berdasarkan tanggal mulai aktivitas (format: YYYY-MM-DD)',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'end_date',
+    required: false,
+    description: 'Filter berdasarkan tanggal akhir aktivitas (format: YYYY-MM-DD)',
+    type: String,
+  })
+  @ApiQuery({
     name: 'shift',
     required: false,
     description: 'Filter berdasarkan shift (ds atau ns)',

@@ -264,6 +264,24 @@ export class GetHaulingProblemQueryDto {
   activity_date?: string;
 
   @ApiProperty({
+    description: 'Filter berdasarkan tanggal mulai aktivitas (YYYY-MM-DD)',
+    example: '2024-01-01',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'start_date harus berupa string' })
+  start_date?: string;
+
+  @ApiProperty({
+    description: 'Filter berdasarkan tanggal akhir aktivitas (YYYY-MM-DD)',
+    example: '2024-01-31',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'end_date harus berupa string' })
+  end_date?: string;
+
+  @ApiProperty({
     description: 'Filter berdasarkan shift',
     enum: ShiftType,
     example: 'ds',

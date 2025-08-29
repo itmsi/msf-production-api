@@ -80,6 +80,8 @@ Mengambil semua data hauling problem dengan pagination dan filter.
 - `page`: Nomor halaman (default: 1)
 - `limit`: Jumlah data per halaman (default: 10, max: 100)
 - `activity_date`: Filter berdasarkan tanggal aktivitas (format: YYYY-MM-DD)
+- `start_date`: Filter berdasarkan tanggal mulai aktivitas (format: YYYY-MM-DD)
+- `end_date`: Filter berdasarkan tanggal akhir aktivitas (format: YYYY-MM-DD)
 - `shift`: Filter berdasarkan shift ('ds' atau 'ns')
 - `activities_id`: Filter berdasarkan ID aktivitas
 - `site_id`: Filter berdasarkan ID site
@@ -90,6 +92,29 @@ Mengambil semua data hauling problem dengan pagination dan filter.
 **Contoh Request:**
 ```bash
 GET /api/hauling-problem?page=1&limit=10&shift=ds&search=excavator&sortBy=createdAt&sortOrder=DESC
+```
+
+**Filter Date Range:**
+Anda dapat menggunakan kombinasi `start_date` dan `end_date` untuk filter berdasarkan rentang tanggal:
+
+**Contoh 1: Filter rentang tanggal lengkap**
+```bash
+GET /api/hauling-problem?start_date=2024-01-01&end_date=2024-01-31
+```
+
+**Contoh 2: Filter dari tanggal tertentu ke atas**
+```bash
+GET /api/hauling-problem?start_date=2024-01-15
+```
+
+**Contoh 3: Filter sampai tanggal tertentu ke bawah**
+```bash
+GET /api/hauling-problem?end_date=2024-01-15
+```
+
+**Contoh 4: Kombinasi filter daterange dengan filter lain**
+```bash
+GET /api/hauling-problem?start_date=2024-01-01&end_date=2024-01-31&shift=ds&search=excavator
 ```
 
 **Response Success (200):**
@@ -382,3 +407,9 @@ curl -X DELETE http://localhost:3000/api/hauling-problem/1 \
 - Field `duration` otomatis dihitung dan tidak perlu diisi manual
 - Relasi dengan tabel `m_activities` dan `m_sites` menggunakan eager loading
 - Implementasi menggunakan soft delete untuk menjaga integritas data
+- **Filter Date Range**: Dukungan filter daterange dengan parameter `start_date` dan `end_date`
+  - Format tanggal menggunakan ISO 8601 (YYYY-MM-DD)
+  - Jika `start_date` dan `end_date` keduanya disediakan, akan mencari data dengan `activity_date` di antara kedua tanggal tersebut (inclusive)
+  - Jika hanya `start_date` yang disediakan, akan mencari data dengan `activity_date` >= start_date
+  - Jika hanya `end_date` yang disediakan, akan mencari data dengan `activity_date` <= end_date
+  - Filter daterange dapat dikombinasikan dengan filter lainnya
