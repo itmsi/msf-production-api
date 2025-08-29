@@ -81,6 +81,14 @@ export class ActivitiesController {
     description: 'Filter berdasarkan status aktivitas',
   })
   @ApiQuery({
+    name: 'status_multiple',
+    required: false,
+    enum: ActivityStatus,
+    description: 'Filter berdasarkan multiple status aktivitas (comma-separated atau array format)',
+    isArray: true,
+    type: [String],
+  })
+  @ApiQuery({
     name: 'sortBy',
     required: false,
     type: String,

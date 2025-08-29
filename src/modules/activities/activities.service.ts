@@ -61,6 +61,7 @@ export class ActivitiesService {
       const search = query.search?.toLowerCase() ?? '';
       const name = query.name?.toLowerCase() ?? '';
       const status = query.status?.toLowerCase() ?? '';
+      const statusMultiple = query.status_multiple || [];
       const sortBy = query.sortBy ?? 'id';
       const sortOrder = query.sortOrder ?? 'DESC';
 
@@ -71,6 +72,7 @@ export class ActivitiesService {
         search,
         name,
         status,
+        statusMultiple,
         sortBy,
         sortOrder,
       });
@@ -109,6 +111,17 @@ export class ActivitiesService {
         );
         qb.andWhere('activities.status = :status', {
           status: status,
+        });
+      }
+
+      // Filter by multiple status
+      if (statusMultiple && statusMultiple.length > 0) {
+        console.log(
+          'ActivitiesService.findAll - Adding status_multiple filter:',
+          statusMultiple,
+        );
+        qb.andWhere('activities.status IN (:...statusMultiple)', {
+          statusMultiple: statusMultiple,
         });
       }
 

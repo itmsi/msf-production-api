@@ -410,7 +410,7 @@ export class BaseDataProductionService {
           date: parent.activityDate,
           shift: parent.shift,
           driver: employeesMap.get(parent.driverId) || `Driver ${parent.driverId}`,
-          activity: 'N/A',
+          activity: this.getActivityDisplayName(baseData?.activity),
           unit: populationsMap.get(parent.populationId) || `Unit ${parent.populationId}`,
           start_shift: parent.startShift,
           end_shift: parent.endShift,
@@ -442,6 +442,21 @@ export class BaseDataProductionService {
     } catch (error) {
       console.error('Error in findAll:', error);
       throw error;
+    }
+  }
+
+  private getActivityDisplayName(activity: string | null): string {
+    if (!activity) return 'N/A';
+    
+    switch (activity.toLowerCase()) {
+      case 'hauling':
+        return 'Hauling';
+      case 'barging':
+        return 'Barging';
+      case 'direct':
+        return 'Direct';
+      default:
+        return activity;
     }
   }
 

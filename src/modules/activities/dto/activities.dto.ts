@@ -5,7 +5,9 @@ import {
   IsString,
   IsNumberString,
   IsEnum,
+  IsArray,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export enum ActivityStatus {
   WORKING = 'working',
@@ -148,6 +150,28 @@ export class GetActivitiesQueryDto {
   @IsString()
   @IsEnum(ActivityStatus)
   status?: ActivityStatus;
+
+  @ApiProperty({
+    required: false,
+    example: 'idle,delay',
+    description: 'Filter berdasarkan multiple status aktivitas (comma-separated atau array format)',
+    enum: ActivityStatus,
+    isArray: true,
+    type: [String],
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.split(',').map(s => s.trim());
+    }
+    if (Array.isArray(value)) {
+      return value;
+    }
+    return [];
+  })
+  @IsArray()
+  @IsEnum(ActivityStatus, { each: true })
+  status_multiple?: ActivityStatus[];
 
   @ApiProperty({
     required: false,

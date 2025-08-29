@@ -1,6 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsNumber, IsIn } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsOptional, IsString, IsNumber, IsIn, IsArray } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
+
+export enum ActivityStatus {
+  WORKING = 'working',
+  BREAKDOWN = 'breakdown',
+  IDLE = 'idle',
+  DELAY = 'delay',
+}
 
 export class QueryActivitiesDto {
   @ApiPropertyOptional({
@@ -48,6 +55,32 @@ export class QueryActivitiesDto {
   @IsOptional()
   @IsString()
   site_name?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter berdasarkan status aktivitas (single value)',
+    example: 'working',
+    enum: ActivityStatus,
+  })
+  @IsOptional()
+  @IsString()
+  @IsIn(Object.values(ActivityStatus))
+  status?: ActivityStatus;
+
+  @ApiPropertyOptional({
+    description: 'Filter berdasarkan multiple status aktivitas (comma-separated)',
+    example: 'idle,delay',
+    enum: ActivityStatus,
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.split(',').map(s => s.trim());
+    }
+    return value;
+  })
+  @IsArray()
+  @IsIn(Object.values(ActivityStatus), { each: true })
+  status_multiple?: ActivityStatus[];
 
   @ApiPropertyOptional({
     description: 'Urutan berdasarkan field',
