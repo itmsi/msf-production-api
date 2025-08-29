@@ -105,6 +105,41 @@ export class BargingProblemService {
         qb.andWhere('bargingProblem.siteId = :siteId', { siteId });
       }
 
+      // Filter berdasarkan activity_date
+      if (query.activity_date) {
+        const activityDate = new Date(query.activity_date);
+        const nextDay = new Date(activityDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+        
+        qb.andWhere('bargingProblem.activityDate >= :startDate AND bargingProblem.activityDate < :endDate', {
+          startDate: activityDate,
+          endDate: nextDay,
+        });
+      }
+
+      // Filter berdasarkan date range
+      if (query.start_date && query.end_date) {
+        const startDate = new Date(query.start_date);
+        const endDate = new Date(query.end_date);
+        endDate.setDate(endDate.getDate() + 1); // Include end date
+        
+        qb.andWhere('bargingProblem.activityDate >= :startDate AND bargingProblem.activityDate < :endDate', {
+          startDate: startDate,
+          endDate: endDate,
+        });
+      } else if (query.start_date) {
+        const startDate = new Date(query.start_date);
+        qb.andWhere('bargingProblem.activityDate >= :startDate', {
+          startDate: startDate,
+        });
+      } else if (query.end_date) {
+        const endDate = new Date(query.end_date);
+        endDate.setDate(endDate.getDate() + 1); // Include end date
+        qb.andWhere('bargingProblem.activityDate < :endDate', {
+          endDate: endDate,
+        });
+      }
+
       // Validate sortBy field to prevent SQL injection
       const allowedSortFields = [
         'id',

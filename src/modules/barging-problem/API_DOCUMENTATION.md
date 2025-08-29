@@ -98,6 +98,9 @@ Modul Barging Problem digunakan untuk mengelola data problem yang terjadi pada a
 #### Query Parameters
 - `page` (optional): Nomor halaman (default: 1)
 - `limit` (optional): Jumlah data per halaman (default: 10, max: 100)
+- `activity_date` (optional): Filter berdasarkan tanggal aktivitas (format: YYYY-MM-DD)
+- `start_date` (optional): Filter berdasarkan tanggal mulai aktivitas (format: YYYY-MM-DD)
+- `end_date` (optional): Filter berdasarkan tanggal akhir aktivitas (format: YYYY-MM-DD)
 - `search` (optional): Pencarian umum di field remark, barge name, activities name, dan site name
 - `shift` (optional): Filter berdasarkan shift ('ds' atau 'ns')
 - `barge_id` (optional): Filter berdasarkan ID barge
@@ -109,6 +112,29 @@ Modul Barging Problem digunakan untuk mengelola data problem yang terjadi pada a
 #### Contoh Request
 ```bash
 GET /api/barging-problem?page=1&limit=10&search=excavator&shift=ds&sortBy=createdAt&sortOrder=DESC
+```
+
+#### Filter Date Range
+Anda dapat menggunakan kombinasi `start_date` dan `end_date` untuk filter berdasarkan rentang tanggal:
+
+**Contoh 1: Filter rentang tanggal lengkap**
+```bash
+GET /api/barging-problem?start_date=2024-01-01&end_date=2024-01-31
+```
+
+**Contoh 2: Filter dari tanggal tertentu ke atas**
+```bash
+GET /api/barging-problem?start_date=2024-01-15
+```
+
+**Contoh 3: Filter sampai tanggal tertentu ke bawah**
+```bash
+GET /api/barging-problem?end_date=2024-01-15
+```
+
+**Contoh 4: Kombinasi filter daterange dengan filter lain**
+```bash
+GET /api/barging-problem?start_date=2024-01-01&end_date=2024-01-31&shift=ds&search=excavator
 ```
 
 #### Response Success (200)
@@ -378,3 +404,9 @@ curl -X DELETE http://localhost:3000/api/barging-problem/1 \
 - Implementasi menggunakan soft delete untuk menjaga integritas data
 - Response format konsisten dengan helper function yang sudah ada
 - Semua endpoint dilindungi dengan JWT authentication
+- **Filter Date Range**: Dukungan filter daterange dengan parameter `start_date` dan `end_date`
+  - Format tanggal menggunakan ISO 8601 (YYYY-MM-DD)
+  - Jika `start_date` dan `end_date` keduanya disediakan, akan mencari data dengan `activity_date` di antara kedua tanggal tersebut (inclusive)
+  - Jika hanya `start_date` yang disediakan, akan mencari data dengan `activity_date` >= start_date
+  - Jika hanya `end_date` yang disediakan, akan mencari data dengan `activity_date` <= end_date
+  - Filter daterange dapat dikombinasikan dengan filter lainnya

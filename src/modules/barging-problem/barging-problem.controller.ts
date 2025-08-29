@@ -173,6 +173,24 @@ export class BargingProblemController {
     description: 'Pencarian berdasarkan remark, barge name, activities name, atau site name',
   })
   @ApiQuery({
+    name: 'activity_date',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan tanggal aktivitas (format: YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'start_date',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan tanggal mulai aktivitas (format: YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'end_date',
+    required: false,
+    type: String,
+    description: 'Filter berdasarkan tanggal akhir aktivitas (format: YYYY-MM-DD)',
+  })
+  @ApiQuery({
     name: 'shift',
     required: false,
     enum: ['ds', 'ns'],
