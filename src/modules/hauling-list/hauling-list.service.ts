@@ -110,6 +110,22 @@ export class HaulingListService {
       });
     }
 
+    // Apply date range filters
+    if (filters.start_date && filters.end_date) {
+      queryBuilder.andWhere('hauling.activityDate BETWEEN :start_date AND :end_date', {
+        start_date: filters.start_date,
+        end_date: filters.end_date
+      });
+    } else if (filters.start_date) {
+      queryBuilder.andWhere('hauling.activityDate >= :start_date', {
+        start_date: filters.start_date
+      });
+    } else if (filters.end_date) {
+      queryBuilder.andWhere('hauling.activityDate <= :end_date', {
+        end_date: filters.end_date
+      });
+    }
+
     if (filters.shift) {
       queryBuilder.andWhere('hauling.shift = :shift', { 
         shift: filters.shift 

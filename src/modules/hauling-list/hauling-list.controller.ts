@@ -74,6 +74,8 @@ export class HaulingListController {
   @ApiQuery({ name: 'page', required: false, description: 'Nomor halaman', example: 1 })
   @ApiQuery({ name: 'limit', required: false, description: 'Jumlah data per halaman', example: 10 })
   @ApiQuery({ name: 'activity_date', required: false, description: 'Filter berdasarkan tanggal aktivitas', example: '2024-01-15' })
+  @ApiQuery({ name: 'start_date', required: false, description: 'Filter berdasarkan tanggal mulai aktivitas (YYYY-MM-DD)', example: '2024-01-01' })
+  @ApiQuery({ name: 'end_date', required: false, description: 'Filter berdasarkan tanggal akhir aktivitas (YYYY-MM-DD)', example: '2024-01-31' })
   @ApiQuery({ name: 'shift', required: false, description: 'Filter berdasarkan shift', enum: ['ds', 'ns'], example: 'ds' })
   @ApiQuery({ name: 'material', required: false, description: 'Filter berdasarkan material', enum: ['biomas', 'boulder', 'ob', 'ore', 'ore-barge', 'quarry'], example: 'ore' })
   @ApiQuery({ name: 'unit_loading_name', required: false, description: 'Filter berdasarkan nama unit loading', example: 'KFM-DT-001' })
