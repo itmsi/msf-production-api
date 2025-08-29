@@ -74,11 +74,15 @@ export class BargingListService {
       ? bargingList.time.toISOString()
       : new Date(bargingList.time).toISOString();
 
+    // Hitung time range dari time
+    const timeRange = this.calculateTimeRange(bargingList.time);
+
     return {
       id: bargingList.id,
       activity_date: activityDate,
       shift: bargingList.shift,
       time: time,
+      time_range: timeRange,
       unit_hauler_id: bargingList.unitHaulerId,
       unit_hauler_name: bargingList.unitHauler?.no_unit || '',
       barge_id: bargingList.bargeId,
@@ -99,6 +103,21 @@ export class BargingListService {
       .leftJoinAndSelect('barging.unitHauler', 'unitHauler')
       .leftJoinAndSelect('barging.barge', 'barge')
       .where('barging.deletedAt IS NULL');
+  }
+
+  /**
+   * Hitung time range dari time dengan format HH-HH
+   */
+  private calculateTimeRange(time: Date): string {
+    // Gunakan UTC time untuk menghindari masalah timezone
+    const hours = time.getUTCHours();
+    const nextHour = hours + 1;
+    
+    // Format: HH-HH (contoh: 08-09, 14-15)
+    const currentHour = hours.toString().padStart(2, '0');
+    const nextHourStr = nextHour.toString().padStart(2, '0');
+    
+    return `${currentHour}-${nextHourStr}`;
   }
 
   /**

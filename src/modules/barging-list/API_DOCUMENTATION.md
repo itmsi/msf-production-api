@@ -61,6 +61,7 @@ Modul Barging List digunakan untuk mengelola data aktivitas barging yang meliput
     "activity_date": "2025-01-15",
     "shift": "ds",
     "time": "2025-01-15T08:00:00.000Z",
+    "time_range": "08-09",
     "unit_hauler_id": 1,
     "unit_hauler_name": "DT-001",
     "barge_id": 1,
@@ -112,6 +113,7 @@ GET /api/barging-list?page=1&limit=10&search=DT-001&shift=ds&date_from=2025-01-0
       "activity_date": "2025-01-15",
       "shift": "ds",
       "time": "2025-01-15T08:00:00.000Z",
+      "time_range": "08-09",
       "unit_hauler_id": 1,
       "unit_hauler_name": "DT-001",
       "barge_id": 1,
@@ -320,3 +322,7 @@ curl -X DELETE http://localhost:3000/api/barging-list/1
 4. **Pagination**: Support pagination dengan metadata lengkap
 5. **Search & Filter**: Support pencarian dan berbagai jenis filter
 6. **Soft Delete**: Data tidak benar-benar dihapus, hanya ditandai sebagai deleted
+7. **Time Range**: Field `time_range` otomatis dihitung dari field `time` dengan format "HH-HH" (contoh: 08-09, 14-15)
+   - Format menunjukkan rentang jam dari waktu yang ditentukan
+   - Jika time = 08:12, maka time_range = "08-09"
+   - Jika time = 14:30, maka time_range = "14-15"

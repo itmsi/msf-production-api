@@ -147,6 +147,12 @@ export class BargingListResponseDto {
   time: string;
 
   @ApiProperty({
+    description: 'Range waktu dalam format jam (contoh: 08-09)',
+    example: '08-09',
+  })
+  time_range: string;
+
+  @ApiProperty({
     description: 'ID unit hauler',
     example: 1,
   })
