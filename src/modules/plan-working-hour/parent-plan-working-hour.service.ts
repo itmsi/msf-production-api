@@ -180,7 +180,7 @@ export class ParentPlanWorkingHourService {
           is_holiday_day: isSunday,
           is_schedule_day: !isSunday,
           working_day_longshift: createDto.total_working_day_longshift,
-          working_hour_longshift: createDto.total_working_hour_longshift,
+          working_hour_longshift: 0, // Set default ke 0 sesuai permintaan
           working_hour_month: createDto.total_working_hour_month / daysInMonth,
           working_hour_day: createDto.total_working_hour_day,
           mohh_per_month: createDto.total_mohh_per_month,
@@ -1054,6 +1054,7 @@ export class ParentPlanWorkingHourService {
           ),
           mohh_per_month: this.roundToTwoDecimals(pwh.mohh_per_month || 0),
           schedule_day: this.roundToTwoDecimals(pwh.schedule_day || 1),
+          working_longshift: pwh.working_longshift || false, // ambil langsung dari kolom working_longshift yang bertipe boolean
           total_delay: this.roundToTwoDecimals(totalDelay),
           total_idle: this.roundToTwoDecimals(totalIdle),
           total_breakdown: this.roundToTwoDecimals(totalBreakdown),
@@ -1258,6 +1259,7 @@ export class ParentPlanWorkingHourService {
       schedule_day: this.roundToTwoDecimals(
         planWorkingHour.schedule_day || 1,
       ),
+      working_longshift: planWorkingHour.working_longshift || false, // ambil langsung dari kolom working_longshift yang bertipe boolean
       details: details.map((group) => ({
         name: group.name,
         group_detail: group.group_detail.map((activity) => ({

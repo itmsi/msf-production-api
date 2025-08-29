@@ -41,6 +41,9 @@ export class PlanWorkingHour {
   @Column({ type: 'int', nullable: true })
   working_hour_longshift: number;
 
+  @Column({ type: 'boolean', default: false, nullable: false })
+  working_longshift: boolean;
+
   @Column({ type: 'float', nullable: true })
   mohh_per_month: number;
 

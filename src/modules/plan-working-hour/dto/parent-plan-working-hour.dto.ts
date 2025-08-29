@@ -519,6 +519,12 @@ export class ParentPlanWorkingHourDetailResponseDto {
   mohh_per_month: number;
 
   @ApiProperty({
+    description: 'Status long shift dari kolom working_longshift (boolean: true = ada long shift, false = tidak ada long shift)',
+    example: true,
+  })
+  working_longshift: boolean;
+
+  @ApiProperty({
     description: 'Total delay',
     example: 10,
   })
@@ -680,6 +686,12 @@ export class ParentPlanWorkingHourDetailByIdResponseDto {
     example: 1000,
   })
   total_mohh_per_month: number;
+
+  @ApiProperty({
+    description: 'Status long shift dari kolom working_longshift (boolean: true = ada long shift, false = tidak ada long shift)',
+    example: true,
+  })
+  working_longshift: boolean;
 
   @ApiProperty({
     description: 'Detail aktivitas dikelompokkan berdasarkan status',

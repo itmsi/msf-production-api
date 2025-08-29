@@ -61,6 +61,7 @@ export class ParentPlanWorkingHourController {
       - is_holiday_day: true jika hari minggu
       - is_schedule_day: true jika bukan hari minggu
       - working_hour: total_working_hour ÷ jumlah hari di bulan
+      - working_hour_longshift: 0 (selalu di-set ke 0)
       - parent_plan_working_hour_id: ID dari parent yang dibuat
     `,
   })
@@ -78,7 +79,7 @@ export class ParentPlanWorkingHourController {
           total_working_hour_month: 184,
           total_working_day_longshift: 5,
           total_working_hour_day: 8,
-          total_working_hour_longshift: 12,
+          total_working_hour_longshift: 0,
           total_mohh_per_month: 1000,
           detail: [
             {
@@ -111,7 +112,7 @@ export class ParentPlanWorkingHourController {
         total_working_hour_month: 184,
         total_working_day_longshift: 5,
         total_working_hour_day: 8,
-        total_working_hour_longshift: 12,
+        total_working_hour_longshift: 0,
         total_mohh_per_month: 1000,
         createdAt: '2025-08-21T00:00:00.000Z',
         updatedAt: '2025-08-21T00:00:00.000Z',
@@ -125,7 +126,7 @@ export class ParentPlanWorkingHourController {
             working_hour_month: 5.94,
             working_hour_day: 5.94,
             working_day_longshift: 5,
-            working_hour_longshift: 12,
+            working_hour_longshift: 0,
             mohh_per_month: 1000,
             parent_plan_working_hour_id: 1,
             createdAt: '2025-08-21T00:00:00.000Z',
@@ -434,6 +435,7 @@ export class ParentPlanWorkingHourController {
           total_working_day_longshift: 5,
           total_working_hour_longshift: '12.00',
           total_mohh_per_month: 1000,
+          working_longshift: true,
           details: [
             {
               name: 'Delay',
