@@ -283,6 +283,16 @@ export class GetUnitTypesQueryDto {
   @IsOptional()
   @IsString()
   sortOrder?: 'ASC' | 'DESC';
+
+  @ApiProperty({
+    required: false,
+    example: 'false',
+    description: 'Jika true, data akan dikelompokkan berdasarkan unit_name. Jika false, data ditampilkan tanpa pengelompokan',
+    default: false,
+  })
+  @IsOptional()
+  @IsString()
+  is_group?: string;
 }
 
 export class PaginationMetaDto {
@@ -329,6 +339,20 @@ export class UnitTypeListResponseDto {
     description: 'Informasi pagination',
   })
   meta: PaginationMetaDto;
+}
+
+export class GroupedUnitTypeDto {
+  @ApiProperty({
+    example: 1,
+    description: 'ID unit type',
+  })
+  id: number;
+
+  @ApiProperty({
+    example: 'Excavator',
+    description: 'Nama unit yang dikelompokkan',
+  })
+  unit_name: string;
 }
 
 export class SingleUnitTypeResponseDto {

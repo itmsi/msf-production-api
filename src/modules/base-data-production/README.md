@@ -39,7 +39,7 @@ Membuat data produksi baru dengan detail.
 **Request Body:**
 ```json
 {
-  "populationId": 1,
+  "population_id": 1,
   "activity_date": "2025-08-21",
   "shift": "ds",
   "driver_id": 1,

@@ -77,6 +77,7 @@ export class UnitTypeService {
       const modelName = query.model_name?.toLowerCase() ?? '';
       const sortBy = query.sortBy ?? 'id';
       const sortOrder = query.sortOrder ?? 'DESC';
+      const isGroup = query.is_group === 'true';
 
       // Validate limit
       if (limit > 100) {
@@ -135,32 +136,98 @@ export class UnitTypeService {
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
-      qb.orderBy(`unitType.${validSortBy}`, validSortOrder)
-        .skip(skip)
-        .take(limit);
+      let result, total;
 
-      const [result, total] = await qb.getManyAndCount();
+      if (isGroup) {
+        // Query terpisah untuk grouping - hanya ambil unit_name yang unik
+        const groupQuery = this.unitTypeRepository
+          .createQueryBuilder('unitType')
+          .select('DISTINCT unitType.unit_name', 'unit_name')
+          .addSelect('MIN(unitType.id)', 'id')
+          .where('unitType.deletedAt IS NULL');
+
+        // Apply filters to group query
+        if (search) {
+          groupQuery.andWhere(
+            '(unitType.unit_name ILIKE :search OR unitType.type_name ILIKE :search OR unitType.model_name ILIKE :search)',
+            { search: `%${search}%` },
+          );
+        }
+
+        if (brandId) {
+          groupQuery.andWhere('unitType.brand_id = :brandId', { brandId });
+        }
+
+        if (unitName) {
+          groupQuery.andWhere('unitType.unit_name ILIKE :unitName', {
+            unitName: `%${unitName}%`,
+          });
+        }
+
+        if (typeName) {
+          groupQuery.andWhere('unitType.type_name ILIKE :typeName', {
+            typeName: `%${typeName}%`,
+          });
+        }
+
+        if (modelName) {
+          groupQuery.andWhere('unitType.model_name ILIKE :modelName', {
+            modelName: `%${modelName}%`,
+          });
+        }
+
+        // Group by unit_name and get distinct values
+        groupQuery
+          .groupBy('unitType.unit_name')
+          .orderBy('unitType.unit_name', 'ASC');
+
+        const groupedResult = await groupQuery.getRawMany();
+        
+        // Apply pagination to grouped results
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        result = groupedResult.slice(startIndex, endIndex);
+        total = groupedResult.length;
+      } else {
+        // Normal query with all fields
+        qb.orderBy(`unitType.${validSortBy}`, validSortOrder)
+          .skip(skip)
+          .take(limit);
+
+        [result, total] = await qb.getManyAndCount();
+      }
 
       // Transform result to DTO format
-      const transformedResult = result.map((unitType) => ({
-        id: unitType.id,
-        brand_id: unitType.brand_id,
-        unit_name: unitType.unit_name,
-        type_name: unitType.type_name,
-        model_name: unitType.model_name,
-        createdAt: unitType.createdAt,
-        updatedAt: unitType.updatedAt,
-        brand: unitType.brand
-          ? {
-              id: unitType.brand.id,
-              brand_name: unitType.brand.brand_name,
-            }
-          : undefined,
-      }));
+      let transformedResult;
+      let finalTotal = total;
+      
+      if (isGroup) {
+        // Transform grouped result (hanya id dan unit_name)
+        transformedResult = result.map((item) => ({
+          unit_name: item.unit_name,
+          id: item.id
+        }));
+      } else {
+        transformedResult = result.map((unitType) => ({
+          id: unitType.id,
+          brand_id: unitType.brand_id,
+          unit_name: unitType.unit_name,
+          type_name: unitType.type_name,
+          model_name: unitType.model_name,
+          createdAt: unitType.createdAt,
+          updatedAt: unitType.updatedAt,
+          brand: unitType.brand
+            ? {
+                id: unitType.brand.id,
+                brand_name: unitType.brand.brand_name,
+              }
+            : undefined,
+        }));
+      }
 
       return paginateResponse(
         transformedResult,
-        total,
+        finalTotal,
         page,
         limit,
         'Data unit type berhasil diambil',

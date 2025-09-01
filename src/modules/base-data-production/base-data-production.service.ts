@@ -45,7 +45,7 @@ export class BaseDataProductionService {
 
       // Create parent base data pro
       const parentBaseDataPro = this.parentBaseDataProRepository.create({
-        populationId: createDto.populationId,
+        populationId: createDto.population_id,
         activityDate: new Date(createDto.activityDate),
         shift: createDto.shift,
         driverId: createDto.driverId,
@@ -94,7 +94,7 @@ export class BaseDataProductionService {
       // Transform data to response format
       const transformedData = {
         id: createdData.id,
-        populationId: createdData.populationId,
+        population_id: createdData.populationId,
         activityDate: createdData.activityDate,
         shift: createdData.shift,
         driverId: createdData.driverId,
@@ -157,10 +157,10 @@ export class BaseDataProductionService {
 
   private async validateForeignKeys(createDto: CreateBaseDataProductionDto): Promise<void> {
     // Validate Population ID
-    const population = await this.populationRepository.findOne({ where: { id: createDto.populationId } });
-    if (!population) {
-      throw new BadRequestException(`Unit dengan ID ${createDto.populationId} tidak ditemukan di tabel population`);
-    }
+          const population = await this.populationRepository.findOne({ where: { id: createDto.population_id } });
+      if (!population) {
+        throw new BadRequestException(`Unit dengan ID ${createDto.population_id} tidak ditemukan di tabel population`);
+      }
 
     // Validate Driver ID
     const driver = await this.employeeRepository.findOne({ where: { id: createDto.driverId } });
@@ -209,7 +209,7 @@ export class BaseDataProductionService {
     }
 
     // Update parent base data pro
-    if (updateDto.populationId !== undefined) parentBaseDataPro.populationId = updateDto.populationId;
+          if (updateDto.population_id !== undefined) parentBaseDataPro.populationId = updateDto.population_id;
     if (updateDto.activityDate !== undefined) parentBaseDataPro.activityDate = new Date(updateDto.activityDate);
     if (updateDto.shift !== undefined) parentBaseDataPro.shift = updateDto.shift;
     if (updateDto.driverId !== undefined) parentBaseDataPro.driverId = updateDto.driverId;
@@ -299,7 +299,7 @@ export class BaseDataProductionService {
     // Transform data to response format
     const transformedData = {
       id: updatedData.id,
-      populationId: updatedData.populationId,
+              population_id: updatedData.populationId,
       activityDate: updatedData.activityDate,
       shift: updatedData.shift,
       driverId: updatedData.driverId,
@@ -474,7 +474,7 @@ export class BaseDataProductionService {
       // Transform data to response format
       const transformedData = {
         id: parentBaseDataPro.id,
-        populationId: parentBaseDataPro.populationId,
+        population_id: parentBaseDataPro.populationId,
         activityDate: parentBaseDataPro.activityDate,
         shift: parentBaseDataPro.shift,
         driverId: parentBaseDataPro.driverId,

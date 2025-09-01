@@ -106,7 +106,7 @@ export class CreateBaseDataProductionDto {
   @ApiProperty({ description: 'ID population/unit', example: 6 })
   @IsInt()
   @IsNotEmpty()
-  populationId: number;
+  population_id: number;
 
   @ApiProperty({ description: 'Activity date', example: '2025-08-21' })
   @IsString()

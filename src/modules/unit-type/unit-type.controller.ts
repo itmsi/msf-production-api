@@ -27,6 +27,7 @@ import {
   UnitTypeResponseDto,
   UnitTypeListResponseDto,
   SingleUnitTypeResponseDto,
+  GroupedUnitTypeDto,
 } from './dto/unit-type.dto';
 
 @ApiTags('Unit Type')
@@ -39,7 +40,7 @@ export class UnitTypeController {
   @Get()
   @ApiOperation({
     summary:
-      'Mendapatkan semua data unit type dengan pagination, filtering, dan sorting',
+      'Mendapatkan semua data unit type dengan pagination, filtering, sorting, dan grouping',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -47,6 +48,7 @@ export class UnitTypeController {
       - Filter berdasarkan brand_id, unit_name, type_name, dan model_name
       - Sorting berdasarkan field tertentu (id, brand_id, unit_name, type_name, model_name, createdAt, updatedAt)
       - Urutan sorting ASC atau DESC
+      - Grouping berdasarkan unit_name dengan parameter is_group (hanya menampilkan id dan unit_name)
     `,
   })
   @ApiQuery({
@@ -103,48 +105,83 @@ export class UnitTypeController {
     enum: ['ASC', 'DESC'],
     description: 'Urutan sorting',
   })
+  @ApiQuery({
+    name: 'is_group',
+    required: false,
+    type: String,
+    description: 'Jika true, data akan dikelompokkan berdasarkan unit_name. Jika false, data ditampilkan tanpa pengelompokan',
+  })
   @SwaggerApiResponse({
     status: 200,
     description: 'Data unit type berhasil diambil',
     type: UnitTypeListResponseDto,
     schema: {
-      example: {
-        statusCode: 200,
-        message: 'Data unit type berhasil diambil',
-        data: [
-          {
-            id: 1,
-            brand_id: 1,
-            unit_name: 'Excavator',
-            type_name: 'Heavy Equipment',
-            model_name: 'PC200-8',
-            createdAt: '2024-01-01T00:00:00.000Z',
-            updatedAt: '2024-01-01T00:00:00.000Z',
-            brand: {
-              id: 1,
-              brand_name: 'Komatsu',
+      oneOf: [
+        {
+          example: {
+            statusCode: 200,
+            message: 'Data unit type berhasil diambil',
+            data: [
+              {
+                id: 1,
+                brand_id: 1,
+                unit_name: 'Excavator',
+                type_name: 'Heavy Equipment',
+                model_name: 'PC200-8',
+                createdAt: '2024-01-01T00:00:00.000Z',
+                updatedAt: '2024-01-01T00:00:00.000Z',
+                brand: {
+                  id: 1,
+                  brand_name: 'Komatsu',
+                },
+              },
+              {
+                id: 2,
+                brand_id: 1,
+                unit_name: 'Excavator',
+                type_name: 'Heavy Equipment',
+                model_name: 'PC300-8',
+                createdAt: '2024-01-01T00:00:00.000Z',
+                updatedAt: '2024-01-01T00:00:00.000Z',
+                brand: {
+                  id: 1,
+                  brand_name: 'Komatsu',
+                },
+              },
+            ],
+            meta: {
+              total: 2,
+              page: 1,
+              limit: 10,
             },
           },
-          {
-            id: 2,
-            brand_id: 1,
-            unit_name: 'Excavator',
-            type_name: 'Heavy Equipment',
-            model_name: 'PC300-8',
-            createdAt: '2024-01-01T00:00:00.000Z',
-            updatedAt: '2024-01-01T00:00:00.000Z',
-            brand: {
-              id: 1,
-              brand_name: 'Komatsu',
-            },
-          },
-        ],
-        meta: {
-          total: 2,
-          page: 1,
-          limit: 10,
         },
-      },
+        {
+          example: {
+            statusCode: 200,
+            message: 'Data unit type berhasil diambil',
+            data: [
+              {
+                id: 1,
+                unit_name: 'Excavator'
+              },
+              {
+                id: 2,
+                unit_name: 'Dump Truck'
+              },
+              {
+                id: 3,
+                unit_name: 'Loader'
+              }
+            ],
+            meta: {
+              total: 3,
+              page: 1,
+              limit: 10,
+            },
+          },
+        },
+      ],
     },
   })
   @SwaggerApiResponse({
