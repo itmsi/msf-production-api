@@ -40,8 +40,8 @@ export class ParentPlanProductionService {
 
     // Hitung jumlah hari dalam bulan
     const totalCalendarDays = this.getDaysInMonth(planDate);
-    const totalHolidayDays = this.getSundaysInMonth(planDate);
-    const totalAvailableDays = totalCalendarDays - totalHolidayDays;
+    const totalHolidayDays = 0; // Tidak ada hari libur, semua hari tersedia
+    const totalAvailableDays = totalCalendarDays; // Semua hari tersedia
 
     // Buat parent plan production
     const parentPlanProduction = this.parentPlanProductionRepository.create({
@@ -110,7 +110,6 @@ export class ParentPlanProductionService {
         planDate.getMonth(),
         day,
       );
-      const isSunday = currentDate.getDay() === 0; // 0 = Sunday
 
       // Hitung nilai-nilai berdasarkan logika yang diminta
       const dailyOldStock = oldStockGlobal;
@@ -123,8 +122,8 @@ export class ParentPlanProductionService {
       const planProduction: Partial<PlanProduction> = {
         plan_date: currentDate,
         is_calender_day: true, // Selalu true karena ada tanggal
-        is_holiday_day: isSunday, // True jika hari minggu
-        is_available_day: !isSunday, // False jika hari minggu
+        is_holiday_day: false, // Tidak ada hari libur, semua hari tersedia
+        is_available_day: true, // Semua hari tersedia
         average_day_ewh: averageDayEwh,
         average_shift_ewh: averageMonthEwh,
         ob_target: obTarget,
@@ -465,8 +464,8 @@ export class ParentPlanProductionService {
 
     if (updateDto.plan_date) {
       totalCalendarDays = this.getDaysInMonth(planDate);
-      totalHolidayDays = this.getSundaysInMonth(planDate);
-      totalAvailableDays = totalCalendarDays - totalHolidayDays;
+      totalHolidayDays = 0; // Tidak ada hari libur, semua hari tersedia
+      totalAvailableDays = totalCalendarDays; // Semua hari tersedia
     }
 
     // Update fields
@@ -592,7 +591,6 @@ export class ParentPlanProductionService {
         planDate.getMonth(),
         day,
       );
-      const isSunday = currentDate.getDay() === 0; // 0 = Sunday
 
       // Hitung nilai-nilai berdasarkan logika yang diminta
       const dailyOldStock = oldStockGlobal;
@@ -605,8 +603,8 @@ export class ParentPlanProductionService {
       // Update fields pada data yang sudah ada
       existingPlan.plan_date = currentDate;
       existingPlan.is_calender_day = true; // Selalu true karena ada tanggal
-      existingPlan.is_holiday_day = isSunday; // True jika hari minggu
-      existingPlan.is_available_day = !isSunday; // False jika hari minggu
+      existingPlan.is_holiday_day = false; // Tidak ada hari libur, semua hari tersedia
+      existingPlan.is_available_day = true; // Semua hari tersedia
       existingPlan.average_day_ewh = averageDayEwh;
       existingPlan.average_shift_ewh = averageMonthEwh;
       existingPlan.ob_target = obTarget;
