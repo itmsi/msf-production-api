@@ -63,7 +63,7 @@ export class NumberFormatInterceptor implements NestInterceptor {
     const skipFields = [
       'id', 'createdAt', 'updatedAt', 'deletedAt', 'plan_date', 'date',
       'is_calender_day', 'is_holiday_day', 'is_available_day',
-      'schedule_day', 'total_fleet'
+      'schedule_day', 'total_fleet', 'month_year'
     ];
 
     // Skip jika key ada dalam daftar skip

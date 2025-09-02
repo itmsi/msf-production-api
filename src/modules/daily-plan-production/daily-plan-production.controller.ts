@@ -373,4 +373,24 @@ export class DailyPlanProductionController {
   remove(@Param('id') id: string) {
     return this.dailyPlanProductionService.remove(+id);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('test/update-parent/:parentId')
+  @ApiOperation({
+    summary: 'Test Update Parent Plan Production',
+    description: 'Test endpoint untuk mengupdate parent plan production',
+  })
+  async testUpdateParent(@Param('parentId') parentId: string) {
+    return this.dailyPlanProductionService.testUpdateParent(+parentId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('force-update-parent/:parentId')
+  @ApiOperation({
+    summary: 'Force Update Parent Plan Production',
+    description: 'Force update parent plan production dengan perhitungan ulang',
+  })
+  async forceUpdateParent(@Param('parentId') parentId: string) {
+    return this.dailyPlanProductionService.forceUpdateParent(+parentId);
+  }
 }

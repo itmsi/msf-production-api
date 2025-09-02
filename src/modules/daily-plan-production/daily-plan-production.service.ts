@@ -67,19 +67,22 @@ export class DailyPlanProductionService {
     dailyPlanProduction.is_available_day = dayOfWeek !== 0;
 
     // 5. Hitung nilai-nilai yang dihitung otomatis
-    dailyPlanProduction.sr_target = createDto.ob_target / createDto.ore_target;
+    dailyPlanProduction.sr_target = createDto.ore_target !== 0 ? createDto.ob_target / createDto.ore_target : 0;
     dailyPlanProduction.daily_old_stock = oldStockGlobal;
     dailyPlanProduction.shift_ob_target = createDto.ob_target / 2;
     dailyPlanProduction.shift_ore_target = createDto.ore_target / 2;
     dailyPlanProduction.shift_quarry = createDto.quarry / 2;
     dailyPlanProduction.shift_sr_target =
-      dailyPlanProduction.shift_ob_target /
-      dailyPlanProduction.shift_ore_target;
+      dailyPlanProduction.shift_ore_target !== 0 ? dailyPlanProduction.shift_ob_target / dailyPlanProduction.shift_ore_target : 0;
     dailyPlanProduction.remaining_stock =
       oldStockGlobal - createDto.ore_shipment_target + createDto.ore_target;
 
     const savedPlan =
       await this.dailyPlanProductionRepository.save(dailyPlanProduction);
+    
+    // 6. Update parent plan production dengan total dari semua data dalam satu bulan
+    await this.updateParentPlanProductionTotals(savedPlan.plan_date);
+    
     return successResponse(savedPlan, 'Daily plan production berhasil dibuat');
   }
 
@@ -151,12 +154,12 @@ export class DailyPlanProductionService {
 
     const processedData = plans.map((plan) => {
       // Hitung nilai-nilai yang diminta
-      const sr_target = roundToTwoDecimals(plan.ob_target / plan.ore_target);
+      const sr_target = roundToTwoDecimals(plan.ore_target !== 0 ? plan.ob_target / plan.ore_target : 0);
       const sisa_stock = roundToTwoDecimals(
         plan.ore_target - plan.ore_shipment_target,
       );
       const tonnage_per_fleet = roundToTwoDecimals(
-        plan.ore_target / plan.total_fleet,
+        plan.total_fleet !== 0 ? plan.ore_target / plan.total_fleet : 0,
       );
       const vessel_per_fleet = roundToTwoDecimals(tonnage_per_fleet / 35);
 
@@ -243,7 +246,6 @@ export class DailyPlanProductionService {
     if (!plan) {
       throw new NotFoundException('Daily plan production tidak ditemukan');
     }
-
     // 1. Cek apakah plan_date sudah ada di tabel r_plan_production, jika sudah ada maka kena validasi
     if (updateDto.plan_date) {
       // Handle plan_date yang mungkin bukan Date object
@@ -317,13 +319,13 @@ export class DailyPlanProductionService {
       updateDto.ore_target !== undefined
     ) {
       // sr_target: (rumusnya yaitu (ob_target / ore_target))
-      plan.sr_target = plan.ob_target / plan.ore_target;
+      plan.sr_target = plan.ore_target !== 0 ? plan.ob_target / plan.ore_target : 0;
       // shift_ob_target: (rumusnya yaitu (ob_target / 2))
       plan.shift_ob_target = plan.ob_target / 2;
       // shift_ore_target: (rumusnya yaitu (ore_target / 2))
       plan.shift_ore_target = plan.ore_target / 2;
       // shift_sr_target: (rumusnya yaitu (shift_ob_target / shift_ore_target))
-      plan.shift_sr_target = plan.shift_ob_target / plan.shift_ore_target;
+      plan.shift_sr_target = plan.shift_ore_target !== 0 ? plan.shift_ob_target / plan.shift_ore_target : 0;
     }
 
     if (updateDto.quarry !== undefined) {
@@ -346,6 +348,13 @@ export class DailyPlanProductionService {
     }
 
     const updatedPlan = await this.dailyPlanProductionRepository.save(plan);
+    
+    // 4. Update parent plan production dengan total dari semua data dalam satu bulan
+    await this.updateParentPlanProductionTotals(updatedPlan.plan_date);
+    
+    // 5. Fallback: Update langsung parent plan production ID 20
+    await this.updateParentPlanProductionById(20);
+    
     return successResponse(
       updatedPlan,
       'Daily plan production berhasil diupdate',
@@ -361,7 +370,14 @@ export class DailyPlanProductionService {
       throw new NotFoundException('Daily plan production tidak ditemukan');
     }
 
+    // Simpan plan_date sebelum dihapus untuk update parent
+    const planDate = plan.plan_date;
+
     await this.dailyPlanProductionRepository.softDelete(id);
+    
+    // Update parent plan production setelah data dihapus
+    await this.updateParentPlanProductionTotals(planDate);
+    
     return successResponse(null, 'Daily plan production berhasil dihapus');
   }
 
@@ -391,5 +407,302 @@ export class DailyPlanProductionService {
 
     // 3. Jika tidak ada sama sekali, return 0
     return 0;
+  }
+
+  /**
+   * Update parent plan production dengan total dari semua data dalam satu bulan
+   */
+  private async updateParentPlanProductionTotals(planDate: Date): Promise<void> {
+    try {
+      // Ambil tahun dan bulan dari plan_date
+      const year = planDate.getFullYear();
+      const month = planDate.getMonth() + 1; // getMonth() returns 0-11, so add 1
+
+      // Hitung tanggal awal dan akhir bulan
+      const startOfMonth = new Date(year, month - 1, 1);
+      const endOfMonth = new Date(year, month, 0); // Last day of month
+
+      // Ambil semua data plan production dalam satu bulan
+      const monthlyPlans = await this.dailyPlanProductionRepository.find({
+        where: {
+          plan_date: Between(startOfMonth, endOfMonth),
+        },
+      });
+
+      if (monthlyPlans.length === 0) {
+        console.log(`No data found for month ${year}-${month.toString().padStart(2, '0')}`);
+        return; // Tidak ada data untuk diupdate
+      }
+
+      // Hitung total dari field-field yang diminta
+      const total_average_month_ewh = Math.round(monthlyPlans.reduce((sum, plan) => {
+        // Gunakan average_moth_ewh jika ada, fallback ke average_day_ewh
+        const avgMonthEwh = Number(plan.average_moth_ewh) || Number(plan.average_day_ewh) || 0;
+        return sum + avgMonthEwh;
+      }, 0));
+
+      const total_ore_target = Math.round(monthlyPlans.reduce((sum, plan) => {
+        return sum + Number(plan.ore_target || 0);
+      }, 0));
+
+      const total_ore_shipment_target = Math.round(monthlyPlans.reduce((sum, plan) => {
+        return sum + Number(plan.ore_shipment_target || 0);
+      }, 0));
+
+      const total_ob_target = Math.round(monthlyPlans.reduce((sum, plan) => {
+        return sum + Number(plan.ob_target || 0);
+      }, 0));
+
+      // Log untuk debugging
+      console.log(`Found ${monthlyPlans.length} plans for ${year}-${month.toString().padStart(2, '0')}`);
+      console.log(`Total average_month_ewh: ${total_average_month_ewh}`);
+      console.log(`Total ore_target: ${total_ore_target}`);
+      console.log(`Total ore_shipment_target: ${total_ore_shipment_target}`);
+      console.log(`Total ob_target: ${total_ob_target}`);
+
+      // Cari parent plan production berdasarkan tahun dan bulan yang sama
+      const parentPlan = await this.parentPlanProductionRepository.findOne({
+        where: {
+          plan_date: Between(startOfMonth, endOfMonth),
+        },
+      });
+
+      if (!parentPlan) {
+        console.log(`No parent plan production found for month ${year}-${month.toString().padStart(2, '0')}`);
+        return;
+      }
+
+      console.log(`Updating parent plan production with ID ${parentPlan.id}...`);
+      
+      // Gunakan QueryBuilder untuk update yang lebih eksplisit
+      await this.parentPlanProductionRepository
+        .createQueryBuilder()
+        .update(ParentPlanProduction)
+        .set({
+          total_average_month_ewh: total_average_month_ewh,
+          total_ore_target: total_ore_target,
+          total_ore_shipment_target: total_ore_shipment_target,
+          total_ob_target: total_ob_target,
+        })
+        .where('id = :id', { id: parentPlan.id })
+        .execute();
+
+      console.log(`Updated parent plan production ID ${parentPlan.id} with new totals:`);
+      console.log(`  total_average_month_ewh: ${total_average_month_ewh}`);
+      console.log(`  total_ore_target: ${total_ore_target}`);
+      console.log(`  total_ore_shipment_target: ${total_ore_shipment_target}`);
+      console.log(`  total_ob_target: ${total_ob_target}`);
+    } catch (error) {
+      console.error('Error updating parent plan production totals:', error);
+      // Jangan throw error agar tidak mengganggu proses utama
+    }
+  }
+
+  /**
+   * Update parent plan production berdasarkan ID
+   */
+  private async updateParentPlanProductionById(parentId: number): Promise<void> {
+    try {
+      // Ambil parent plan production berdasarkan ID
+      const parentPlan = await this.parentPlanProductionRepository.findOne({
+        where: { id: parentId },
+      });
+
+      if (!parentPlan) {
+        console.log(`Parent plan production with ID ${parentId} not found`);
+        return;
+      }
+
+      // Ambil tahun dan bulan dari parent plan
+      const year = parentPlan.plan_date.getFullYear();
+      const month = parentPlan.plan_date.getMonth() + 1;
+
+      // Hitung tanggal awal dan akhir bulan
+      const startOfMonth = new Date(year, month - 1, 1);
+      const endOfMonth = new Date(year, month, 0);
+
+      // Ambil semua data plan production dalam satu bulan
+      const monthlyPlans = await this.dailyPlanProductionRepository.find({
+        where: {
+          plan_date: Between(startOfMonth, endOfMonth),
+        },
+      });
+
+      if (monthlyPlans.length === 0) {
+        console.log(`No data found for month ${year}-${month.toString().padStart(2, '0')}`);
+        return;
+      }
+
+      // Hitung total dari field-field yang diminta
+      const total_average_month_ewh = Math.round(monthlyPlans.reduce((sum, plan) => {
+        const avgMonthEwh = Number(plan.average_moth_ewh) || Number(plan.average_day_ewh) || 0;
+        return sum + avgMonthEwh;
+      }, 0));
+
+      const total_ore_target = Math.round(monthlyPlans.reduce((sum, plan) => {
+        return sum + Number(plan.ore_target || 0);
+      }, 0));
+
+      const total_ore_shipment_target = Math.round(monthlyPlans.reduce((sum, plan) => {
+        return sum + Number(plan.ore_shipment_target || 0);
+      }, 0));
+
+      const total_ob_target = Math.round(monthlyPlans.reduce((sum, plan) => {
+        return sum + Number(plan.ob_target || 0);
+      }, 0));
+
+      // Update parent plan production
+      parentPlan.total_average_month_ewh = total_average_month_ewh;
+      parentPlan.total_ore_target = total_ore_target;
+      parentPlan.total_ore_shipment_target = total_ore_shipment_target;
+      parentPlan.total_ob_target = total_ob_target;
+
+      console.log(`Direct update: Updating parent plan ${parentPlan.id} with new totals:`);
+      console.log(`  total_average_month_ewh: ${parentPlan.total_average_month_ewh}`);
+      console.log(`  total_ore_target: ${parentPlan.total_ore_target}`);
+      console.log(`  total_ore_shipment_target: ${parentPlan.total_ore_shipment_target}`);
+      console.log(`  total_ob_target: ${parentPlan.total_ob_target}`);
+
+      await this.parentPlanProductionRepository.save(parentPlan);
+      console.log(`Direct update: Updated parent plan production ID ${parentId}`);
+    } catch (error) {
+      console.error(`Error updating parent plan production ID ${parentId}:`, error);
+    }
+  }
+
+  /**
+   * Test method untuk mengupdate parent plan production
+   */
+  async testUpdateParent(parentId: number): Promise<any> {
+    try {
+      await this.updateParentPlanProductionById(parentId);
+      
+      // Ambil data parent plan production yang sudah diupdate
+      const updatedParent = await this.parentPlanProductionRepository.findOne({
+        where: { id: parentId },
+      });
+
+      return {
+        message: 'Test update parent plan production completed',
+        parentId,
+        updatedData: updatedParent,
+      };
+    } catch (error) {
+      return {
+        message: 'Test update parent plan production failed',
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Force update parent plan production dengan perhitungan ulang
+   */
+  async forceUpdateParent(parentId: number): Promise<any> {
+    try {
+      // Ambil parent plan production
+      const parentPlan = await this.parentPlanProductionRepository.findOne({
+        where: { id: parentId },
+      });
+
+      if (!parentPlan) {
+        return {
+          message: 'Parent plan production not found',
+          parentId,
+        };
+      }
+
+      // Ambil tahun dan bulan dari parent plan
+      const year = parentPlan.plan_date.getFullYear();
+      const month = parentPlan.plan_date.getMonth() + 1;
+
+      // Hitung tanggal awal dan akhir bulan
+      const startOfMonth = new Date(year, month - 1, 1);
+      const endOfMonth = new Date(year, month, 0);
+
+      // Ambil semua data plan production dalam satu bulan
+      const monthlyPlans = await this.dailyPlanProductionRepository.find({
+        where: {
+          plan_date: Between(startOfMonth, endOfMonth),
+        },
+      });
+
+      console.log(`Found ${monthlyPlans.length} plans for ${year}-${month.toString().padStart(2, '0')}`);
+
+      if (monthlyPlans.length === 0) {
+        return {
+          message: 'No data found for this month',
+          parentId,
+          year,
+          month,
+        };
+      }
+
+      // Hitung total dari field-field yang diminta
+      const total_average_month_ewh = Math.round(monthlyPlans.reduce((sum, plan) => {
+        const avgMonthEwh = Number(plan.average_moth_ewh) || Number(plan.average_day_ewh) || 0;
+        return sum + avgMonthEwh;
+      }, 0));
+
+      const total_ore_target = Math.round(monthlyPlans.reduce((sum, plan) => {
+        return sum + Number(plan.ore_target || 0);
+      }, 0));
+
+      const total_ore_shipment_target = Math.round(monthlyPlans.reduce((sum, plan) => {
+        return sum + Number(plan.ore_shipment_target || 0);
+      }, 0));
+
+      const total_ob_target = Math.round(monthlyPlans.reduce((sum, plan) => {
+        return sum + Number(plan.ob_target || 0);
+      }, 0));
+
+      console.log(`Calculated totals:`);
+      console.log(`  total_average_month_ewh: ${total_average_month_ewh}`);
+      console.log(`  total_ore_target: ${total_ore_target}`);
+      console.log(`  total_ore_shipment_target: ${total_ore_shipment_target}`);
+      console.log(`  total_ob_target: ${total_ob_target}`);
+
+      // Update menggunakan QueryBuilder
+      const result = await this.parentPlanProductionRepository
+        .createQueryBuilder()
+        .update(ParentPlanProduction)
+        .set({
+          total_average_month_ewh: total_average_month_ewh,
+          total_ore_target: total_ore_target,
+          total_ore_shipment_target: total_ore_shipment_target,
+          total_ob_target: total_ob_target,
+        })
+        .where('id = :id', { id: parentId })
+        .execute();
+
+      console.log(`Update result:`, result);
+
+      // Ambil data yang sudah diupdate
+      const updatedParent = await this.parentPlanProductionRepository.findOne({
+        where: { id: parentId },
+      });
+
+      return {
+        message: 'Force update parent plan production completed',
+        parentId,
+        year,
+        month,
+        calculatedTotals: {
+          total_average_month_ewh,
+          total_ore_target,
+          total_ore_shipment_target,
+          total_ob_target,
+        },
+        updateResult: result,
+        updatedData: updatedParent,
+      };
+    } catch (error) {
+      console.error('Error in forceUpdateParent:', error);
+      return {
+        message: 'Force update parent plan production failed',
+        error: error.message,
+        parentId,
+      };
+    }
   }
 }

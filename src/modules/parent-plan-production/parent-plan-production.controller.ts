@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -29,6 +30,7 @@ import {
   UpdateParentPlanProductionDto,
 } from './dto/parent-plan-production.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
+import { NumberFormatInterceptor } from '../../common/interceptors/number-format.interceptor';
 import { Pagination } from '../../common/helpers/public.helper';
 import { successResponse } from '../../common/helpers/response.helper';
 
@@ -36,6 +38,7 @@ import { successResponse } from '../../common/helpers/response.helper';
 @ApiBearerAuth('jwt')
 @Controller('parent-plan-production')
 @UseGuards(JwtAuthGuard)
+@UseInterceptors(NumberFormatInterceptor)
 @ApiExtraModels(CreateParentPlanProductionDto)
 export class ParentPlanProductionController {
   constructor(
