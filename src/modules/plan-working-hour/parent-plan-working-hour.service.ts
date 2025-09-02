@@ -527,7 +527,36 @@ export class ParentPlanWorkingHourService {
         Object.keys(activitiesByStatus),
       );
 
-      // Buat response dengan format yang diinginkan
+      // Buat response dengan format yang diinginkan - selalu tampilkan idle, delay, breakdown
+      const allowedStatuses = ['idle', 'delay', 'breakdown'];
+      const filteredActivities = Object.entries(activitiesByStatus)
+        .filter(([status]) => allowedStatuses.includes(status.toLowerCase()))
+        .sort(([statusA], [statusB]) => {
+          const order = { 'idle': 0, 'delay': 1, 'breakdown': 2 };
+          return order[statusA.toLowerCase()] - order[statusB.toLowerCase()];
+        });
+
+      // Pastikan semua status yang diinginkan selalu ada dalam response
+      const finalDetails: Array<{
+        name: string;
+        group_detail: any[];
+      }> = [];
+      for (const status of allowedStatuses) {
+        const existingStatus = filteredActivities.find(([s]) => s.toLowerCase() === status);
+        if (existingStatus) {
+          finalDetails.push({
+            name: status.charAt(0).toUpperCase() + status.slice(1),
+            group_detail: existingStatus[1],
+          });
+        } else {
+          // Jika status tidak ada, tambahkan dengan group_detail kosong
+          finalDetails.push({
+            name: status.charAt(0).toUpperCase() + status.slice(1),
+            group_detail: [],
+          });
+        }
+      }
+
       const response = {
         id: parentPlan.id,
         plan_date: parentPlan.plan_date,
@@ -538,12 +567,7 @@ export class ParentPlanWorkingHourService {
           parentPlan.total_working_hour_longshift,
         ),
         total_mohh_per_month: parentPlan.total_mohh_per_month,
-        details: Object.entries(activitiesByStatus).map(
-          ([status, activities]) => ({
-            name: status.charAt(0).toUpperCase() + status.slice(1), // Capitalize first letter
-            group_detail: activities,
-          }),
-        ),
+        details: finalDetails,
       };
 
       console.log('Response created successfully:', response);
@@ -1222,8 +1246,12 @@ export class ParentPlanWorkingHourService {
           activities_hour: detail.activities_hour || 0,
         })) || [];
 
-    // Create details array - hanya menampilkan Delay, Idle, dan Breakdown
+    // Create details array - urutan: Idle, Delay, Breakdown
     const details = [
+      {
+        name: 'Idle',
+        group_detail: idleActivities,
+      },
       {
         name: 'Delay',
         group_detail: delayActivities,
@@ -1231,10 +1259,6 @@ export class ParentPlanWorkingHourService {
       {
         name: 'Breakdown',
         group_detail: breakdownActivities,
-      },
-      {
-        name: 'Idle',
-        group_detail: idleActivities,
       },
     ];
 
