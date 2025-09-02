@@ -290,8 +290,18 @@ export class DailyPlanProductionService {
       plan.average_day_ewh = updateDto.average_day_ewh;
     if (updateDto.average_month_ewh !== undefined)
       plan.average_moth_ewh = updateDto.average_month_ewh;
-    if (updateDto.schedule_day !== undefined)
+    if (updateDto.schedule_day !== undefined) {
       plan.schedule_day = updateDto.schedule_day;
+      
+      // Update is_available_day dan is_holiday_day berdasarkan schedule_day
+      if (updateDto.schedule_day === 0) {
+        plan.is_available_day = false;
+        plan.is_holiday_day = true;
+      } else if (updateDto.schedule_day === 1 || updateDto.schedule_day === 0.5) {
+        plan.is_available_day = true;
+        plan.is_holiday_day = false;
+      }
+    }
     if (updateDto.ob_target !== undefined) plan.ob_target = updateDto.ob_target;
     if (updateDto.ore_target !== undefined)
       plan.ore_target = updateDto.ore_target;
