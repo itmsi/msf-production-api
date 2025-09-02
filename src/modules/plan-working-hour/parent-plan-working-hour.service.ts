@@ -48,30 +48,39 @@ export class ParentPlanWorkingHourService {
   async create(
     createDto: CreateParentPlanWorkingHourDto,
   ): Promise<ParentPlanWorkingHour> {
-    // Validasi duplikat bulan di tahun yang sama
-    const planDate = new Date(createDto.plan_date);
-    const year = planDate.getFullYear();
-    const month = planDate.getMonth();
+    // Konversi otomatis plan_date ke tanggal pertama dari bulan jika bukan tanggal pertama
+    const inputDate = new Date(createDto.plan_date);
+    const year = inputDate.getFullYear();
+    const month = inputDate.getMonth();
+    const day = inputDate.getDate();
     
-    // Validasi bahwa plan_date adalah tanggal pertama dari bulan (01)
-    const dayOfMonth = planDate.getDate();
-    if (dayOfMonth !== 1) {
-      throw new BadRequestException(
-        `plan_date harus berupa tanggal pertama dari bulan (01). ` +
-        `Tanggal yang dikirim: ${createDto.plan_date}. ` +
-        `Gunakan format YYYY-MM-01 (contoh: 2025-08-01)`
-      );
+    // Jika tanggal sudah tanggal pertama (01), gunakan langsung
+    // Jika bukan tanggal pertama, konversi ke tanggal pertama dari bulan yang sama
+    let planDate: Date;
+    if (day === 1) {
+      // Tanggal sudah tanggal pertama, gunakan langsung
+      planDate = inputDate;
+      console.log(`Tanggal sudah tanggal pertama: ${createDto.plan_date}`);
+    } else {
+      // Konversi ke tanggal pertama dari bulan yang sama
+      planDate = new Date(year, month, 1);
+      createDto.plan_date = planDate.toISOString().split('T')[0];
+      console.log(`Tanggal dikonversi dari ${inputDate.toISOString()} menjadi ${createDto.plan_date}`);
     }
+    
+    // Validasi duplikat bulan di tahun yang sama
+    const yearAfterConversion = planDate.getFullYear();
+    const monthAfterConversion = planDate.getMonth();
     
     // Validasi bahwa plan_date tidak boleh di masa lalu (untuk bulan yang sudah lewat)
     const today = new Date();
     const currentYear = today.getFullYear();
     const currentMonth = today.getMonth();
     
-    if (year < currentYear || (year === currentYear && month < currentMonth)) {
+    if (yearAfterConversion < currentYear || (yearAfterConversion === currentYear && monthAfterConversion < currentMonth)) {
       throw new BadRequestException(
         `Tidak dapat membuat plan untuk bulan yang sudah lewat. ` +
-        `Bulan yang dipilih: ${year}-${String(month + 1).padStart(2, '0')}. ` +
+        `Bulan yang dipilih: ${yearAfterConversion}-${String(monthAfterConversion + 1).padStart(2, '0')}. ` +
         `Bulan saat ini: ${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`
       );
     }
@@ -126,8 +135,8 @@ export class ParentPlanWorkingHourService {
     
     // Cek apakah sudah ada data untuk bulan yang sama di tahun yang sama
     // Menggunakan pendekatan yang kompatibel dengan berbagai database
-    const startOfMonth = new Date(year, month, 1);
-    const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
+    const startOfMonth = new Date(yearAfterConversion, monthAfterConversion, 1);
+    const endOfMonth = new Date(yearAfterConversion, monthAfterConversion + 1, 0, 23, 59, 59, 999);
     
     // Query untuk mencari data yang plan_date-nya berada dalam rentang bulan yang sama
     // Menggunakan BETWEEN untuk kompatibilitas yang lebih baik
@@ -147,7 +156,7 @@ export class ParentPlanWorkingHourService {
         'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
       ];
       throw new BadRequestException(
-        `Data untuk bulan ${monthNames[month]} ${year} sudah ada dalam sistem. ` +
+        `Data untuk bulan ${monthNames[monthAfterConversion]} ${yearAfterConversion} sudah ada dalam sistem. ` +
         `Silakan gunakan bulan lain atau update data yang sudah ada.`
       );
     }
@@ -164,7 +173,9 @@ export class ParentPlanWorkingHourService {
         total_holiday_day: totalHolidayDay,
         total_available_day: totalAvailableDay,
         total_working_hour_month: createDto.total_working_hour_month,
-        total_working_day_longshift: createDto.total_working_day_longshift,
+        total_working_day_longshift: typeof createDto.total_working_day_longshift === 'boolean' 
+          ? (createDto.total_working_day_longshift ? 1 : 0) 
+          : createDto.total_working_day_longshift,
         total_working_hour_day: createDto.total_working_hour_day,
         total_working_hour_longshift: createDto.total_working_hour_longshift,
         total_mohh_per_month: createDto.total_mohh_per_month,
@@ -176,9 +187,8 @@ export class ParentPlanWorkingHourService {
       );
 
       // 2. Generate tanggal untuk bulan yang dipilih
-      const planDate = new Date(createDto.plan_date);
-      const year = planDate.getFullYear();
-      const month = planDate.getMonth();
+      const year = yearAfterConversion;
+      const month = monthAfterConversion;
       const daysInMonth = new Date(year, month + 1, 0).getDate();
 
       // 3. Insert ke tabel r_plan_working_hour untuk setiap tanggal
@@ -193,13 +203,29 @@ export class ParentPlanWorkingHourService {
           is_holiday_day: false, // auto false semua
           is_schedule_day: true, // semua hari dihitung hari kerja jadi auto true semua
           schedule_day: 1, // default schedule_day = 1 untuk semua hari
-          working_day_longshift: createDto.total_working_day_longshift,
+          working_day_longshift: typeof createDto.total_working_day_longshift === 'boolean' 
+            ? (createDto.total_working_day_longshift ? 1 : 0) 
+            : createDto.total_working_day_longshift,
           working_hour_longshift: 0, // Set default ke 0 sesuai permintaan
           working_hour_month: createDto.total_working_hour_month / daysInMonth,
           working_hour_day: createDto.total_working_hour_day,
           mohh_per_month: createDto.total_mohh_per_month,
           parent_plan_working_hour_id: savedParentPlan.id,
         });
+
+        // Update working_longshift berdasarkan total_working_day_longshift
+        if (typeof createDto.total_working_day_longshift === 'boolean') {
+          // Jika total_working_day_longshift adalah boolean
+          planWorkingHour.working_longshift = createDto.total_working_day_longshift;
+          planWorkingHour.working_day_longshift = createDto.total_working_day_longshift ? 1 : 0;
+          planWorkingHour.working_hour_longshift = createDto.total_working_day_longshift ? (createDto.total_working_hour_longshift || 0) : 0;
+        } else {
+          // Jika total_working_day_longshift adalah number
+          const isLongshift = createDto.total_working_day_longshift > 0;
+          planWorkingHour.working_longshift = isLongshift;
+          planWorkingHour.working_day_longshift = createDto.total_working_day_longshift;
+          planWorkingHour.working_hour_longshift = isLongshift ? (createDto.total_working_hour_longshift || 0) : 0;
+        }
 
         planWorkingHours.push(planWorkingHour);
       }
@@ -228,6 +254,34 @@ export class ParentPlanWorkingHourService {
         PlanWorkingHourDetail,
         planWorkingHourDetails,
       );
+
+      // 5. Update total_working_hour_month dan total_working_hour_day di parent plan berdasarkan jumlah dari r_plan_working_hour
+      const updatedPlanWorkingHours = await queryRunner.manager.find(
+        PlanWorkingHour,
+        {
+          where: { parent_plan_working_hour_id: savedParentPlan.id },
+        },
+      );
+
+      if (updatedPlanWorkingHours.length > 0) {
+        // Hitung total working_hour_month dari semua record di r_plan_working_hour
+        const totalWorkingHourMonth = updatedPlanWorkingHours.reduce(
+          (sum, pwh) => sum + (pwh.working_hour_month || 0),
+          0
+        );
+
+        // Hitung total working_hour_day dari semua record di r_plan_working_hour
+        const totalWorkingHourDay = updatedPlanWorkingHours.reduce(
+          (sum, pwh) => sum + (pwh.working_hour_day || 0),
+          0
+        );
+
+        // Update parent plan dengan nilai yang dihitung (dibulatkan ke 2 desimal)
+        savedParentPlan.total_working_hour_month = Math.round(totalWorkingHourMonth * 100) / 100;
+        savedParentPlan.total_working_hour_day = Math.round(totalWorkingHourDay * 100) / 100;
+
+        await queryRunner.manager.save(ParentPlanWorkingHour, savedParentPlan);
+      }
 
       await queryRunner.commitTransaction();
 
@@ -623,19 +677,18 @@ export class ParentPlanWorkingHourService {
 
       // 2. Validasi duplikat bulan jika plan_date diupdate
       if (updateDto.plan_date) {
-        const newPlanDate = new Date(updateDto.plan_date);
-        const year = newPlanDate.getFullYear();
-        const month = newPlanDate.getMonth();
+        // Konversi otomatis plan_date ke tanggal pertama dari bulan
+        const inputDate = new Date(updateDto.plan_date);
+        const year = inputDate.getFullYear();
+        const month = inputDate.getMonth();
         
-        // Validasi bahwa plan_date adalah tanggal pertama dari bulan (01)
-        const dayOfMonth = newPlanDate.getDate();
-        if (dayOfMonth !== 1) {
-          throw new BadRequestException(
-            `plan_date harus berupa tanggal pertama dari bulan (01). ` +
-            `Tanggal yang dikirim: ${updateDto.plan_date}. ` +
-            `Gunakan format YYYY-MM-01 (contoh: 2025-09-01)`
-          );
-        }
+        // Buat tanggal pertama dari bulan yang sama
+        const newPlanDate = new Date(year, month, 1);
+        
+        // Update plan_date dengan tanggal yang sudah dikonversi
+        updateDto.plan_date = newPlanDate.toISOString().split('T')[0];
+        
+        console.log(`Tanggal dikonversi dari ${inputDate.toISOString()} menjadi ${updateDto.plan_date}`);
         
         // Validasi bahwa plan_date tidak boleh di masa lalu (untuk bulan yang sudah lewat)
         const today = new Date();
@@ -693,7 +746,9 @@ export class ParentPlanWorkingHourService {
         parentPlan.total_working_hour_month = updateDto.total_working_hour_month;
       }
       if (updateDto.total_working_day_longshift !== undefined) {
-        parentPlan.total_working_day_longshift = updateDto.total_working_day_longshift;
+        parentPlan.total_working_day_longshift = typeof updateDto.total_working_day_longshift === 'boolean' 
+          ? (updateDto.total_working_day_longshift ? 1 : 0) 
+          : updateDto.total_working_day_longshift;
       }
       if (updateDto.total_working_hour_day !== undefined) {
         parentPlan.total_working_hour_day = updateDto.total_working_hour_day;
@@ -722,9 +777,26 @@ export class ParentPlanWorkingHourService {
         // Update data yang sudah ada - hanya update field yang ada di request
         for (const planWorkingHour of existingPlanWorkingHours) {
           if (updateDto.total_working_day_longshift !== undefined) {
-            planWorkingHour.working_day_longshift = updateDto.total_working_day_longshift;
-          }
-          if (updateDto.total_working_hour_longshift !== undefined) {
+            // Convert boolean to number if needed
+            const workingDayLongshift = typeof updateDto.total_working_day_longshift === 'boolean' 
+              ? (updateDto.total_working_day_longshift ? 1 : 0) 
+              : updateDto.total_working_day_longshift;
+            
+            // Update working_longshift berdasarkan total_working_day_longshift
+            if (typeof updateDto.total_working_day_longshift === 'boolean') {
+              // Jika total_working_day_longshift adalah boolean
+              planWorkingHour.working_longshift = updateDto.total_working_day_longshift;
+              planWorkingHour.working_day_longshift = updateDto.total_working_day_longshift ? 1 : 0;
+              planWorkingHour.working_hour_longshift = updateDto.total_working_day_longshift ? (updateDto.total_working_hour_longshift || 0) : 0;
+            } else {
+              // Jika total_working_day_longshift adalah number
+              const isLongshift = workingDayLongshift > 0;
+              planWorkingHour.working_longshift = isLongshift;
+              planWorkingHour.working_day_longshift = workingDayLongshift;
+              planWorkingHour.working_hour_longshift = isLongshift ? (updateDto.total_working_hour_longshift || 0) : 0;
+            }
+          } else if (updateDto.total_working_hour_longshift !== undefined) {
+            // Jika hanya total_working_hour_longshift yang diupdate
             planWorkingHour.working_hour_longshift = updateDto.total_working_hour_longshift;
           }
           if (updateDto.total_working_hour_month !== undefined) {
@@ -744,7 +816,35 @@ export class ParentPlanWorkingHourService {
         );
       }
 
-      // 5. Update data yang sudah ada di r_plan_working_hour_detail (bukan hapus dan insert ulang)
+      // 5. Update total_working_hour_month dan total_working_hour_day di parent plan berdasarkan jumlah dari r_plan_working_hour
+      const updatedPlanWorkingHours = await queryRunner.manager.find(
+        PlanWorkingHour,
+        {
+          where: { parent_plan_working_hour_id: id },
+        },
+      );
+
+      if (updatedPlanWorkingHours.length > 0) {
+        // Hitung total working_hour_month dari semua record di r_plan_working_hour
+        const totalWorkingHourMonth = updatedPlanWorkingHours.reduce(
+          (sum, pwh) => sum + (pwh.working_hour_month || 0),
+          0
+        );
+
+        // Hitung total working_hour_day dari semua record di r_plan_working_hour
+        const totalWorkingHourDay = updatedPlanWorkingHours.reduce(
+          (sum, pwh) => sum + (pwh.working_hour_day || 0),
+          0
+        );
+
+        // Update parent plan dengan nilai yang dihitung (dibulatkan ke 2 desimal)
+        parentPlan.total_working_hour_month = Math.round(totalWorkingHourMonth * 100) / 100;
+        parentPlan.total_working_hour_day = Math.round(totalWorkingHourDay * 100) / 100;
+
+        await queryRunner.manager.save(ParentPlanWorkingHour, parentPlan);
+      }
+
+      // 6. Update data yang sudah ada di r_plan_working_hour_detail (bukan hapus dan insert ulang)
       if (updateDto.detail && updateDto.detail.length > 0) {
         // Ambil semua plan working hour IDs
         const planWorkingHourIds = existingPlanWorkingHours.map(
@@ -779,7 +879,7 @@ export class ParentPlanWorkingHourService {
 
       await queryRunner.commitTransaction();
 
-      // 6. Return response dengan format yang sama seperti findOne
+      // 7. Return response dengan format yang sama seperti findOne
       return await this.findOne(id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -874,12 +974,27 @@ export class ParentPlanWorkingHourService {
         for (const planWorkingHour of existingPlanWorkingHours) {
           // Update field yang relevan dengan field baru
           if (updateDto.working_day_longshift !== undefined) {
-            planWorkingHour.working_day_longshift =
-              updateDto.working_day_longshift;
-          }
-          if (updateDto.working_hour_longshift !== undefined) {
-            planWorkingHour.working_hour_longshift =
-              updateDto.working_hour_longshift;
+            // Convert boolean to number if needed
+            const workingDayLongshift = typeof updateDto.working_day_longshift === 'boolean' 
+              ? (updateDto.working_day_longshift ? 1 : 0) 
+              : updateDto.working_day_longshift;
+            
+            // Update working_longshift berdasarkan working_day_longshift
+            if (typeof updateDto.working_day_longshift === 'boolean') {
+              // Jika working_day_longshift adalah boolean
+              planWorkingHour.working_longshift = updateDto.working_day_longshift;
+              planWorkingHour.working_day_longshift = updateDto.working_day_longshift ? 1 : 0;
+              planWorkingHour.working_hour_longshift = updateDto.working_day_longshift ? (updateDto.working_hour_longshift || 0) : 0;
+            } else {
+              // Jika working_day_longshift adalah number
+              const isLongshift = workingDayLongshift > 0;
+              planWorkingHour.working_longshift = isLongshift;
+              planWorkingHour.working_day_longshift = workingDayLongshift;
+              planWorkingHour.working_hour_longshift = isLongshift ? (updateDto.working_hour_longshift || 0) : 0;
+            }
+          } else if (updateDto.working_hour_longshift !== undefined) {
+            // Jika hanya working_hour_longshift yang diupdate
+            planWorkingHour.working_hour_longshift = updateDto.working_hour_longshift;
           }
           if (updateDto.working_hour_month !== undefined) {
             planWorkingHour.working_hour_month =
@@ -947,9 +1062,37 @@ export class ParentPlanWorkingHourService {
         );
       }
 
+      // 5. Update total_working_hour_month dan total_working_hour_day di parent plan berdasarkan jumlah dari r_plan_working_hour
+      const updatedPlanWorkingHours = await queryRunner.manager.find(
+        PlanWorkingHour,
+        {
+          where: { parent_plan_working_hour_id: id },
+        },
+      );
+
+      if (updatedPlanWorkingHours.length > 0) {
+        // Hitung total working_hour_month dari semua record di r_plan_working_hour
+        const totalWorkingHourMonth = updatedPlanWorkingHours.reduce(
+          (sum, pwh) => sum + (pwh.working_hour_month || 0),
+          0
+        );
+
+        // Hitung total working_hour_day dari semua record di r_plan_working_hour
+        const totalWorkingHourDay = updatedPlanWorkingHours.reduce(
+          (sum, pwh) => sum + (pwh.working_hour_day || 0),
+          0
+        );
+
+        // Update parent plan dengan nilai yang dihitung (dibulatkan ke 2 desimal)
+        parentPlan.total_working_hour_month = Math.round(totalWorkingHourMonth * 100) / 100;
+        parentPlan.total_working_hour_day = Math.round(totalWorkingHourDay * 100) / 100;
+
+        await queryRunner.manager.save(ParentPlanWorkingHour, parentPlan);
+      }
+
       await queryRunner.commitTransaction();
 
-      // 5. Return response dengan format yang sama seperti findOne
+      // 6. Return response dengan format yang sama seperti findOne
       return await this.findOne(id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -1440,8 +1583,22 @@ export class ParentPlanWorkingHourService {
           ? (updateDto.working_day_longshift ? 1 : 0) 
           : updateDto.working_day_longshift;
         planWorkingHour.working_day_longshift = workingDayLongshift;
-      }
-      if (updateDto.working_hour_longshift !== undefined) {
+        
+        // Update working_longshift berdasarkan working_day_longshift
+        if (typeof updateDto.working_day_longshift === 'boolean') {
+          // Jika working_day_longshift adalah boolean
+          planWorkingHour.working_longshift = updateDto.working_day_longshift;
+          planWorkingHour.working_day_longshift = updateDto.working_day_longshift ? 1 : 0;
+          planWorkingHour.working_hour_longshift = updateDto.working_day_longshift ? (updateDto.working_hour_longshift || 0) : 0;
+        } else {
+          // Jika working_day_longshift adalah number
+          const isLongshift = workingDayLongshift > 0;
+          planWorkingHour.working_longshift = isLongshift;
+          planWorkingHour.working_day_longshift = workingDayLongshift;
+          planWorkingHour.working_hour_longshift = isLongshift ? (updateDto.working_hour_longshift || 0) : 0;
+        }
+      } else if (updateDto.working_hour_longshift !== undefined) {
+        // Jika hanya working_hour_longshift yang diupdate
         planWorkingHour.working_hour_longshift = updateDto.working_hour_longshift;
       }
       if (updateDto.working_hour_month !== undefined) {
@@ -1496,9 +1653,37 @@ export class ParentPlanWorkingHourService {
         );
       }
 
+      // 5. Update total_working_hour_month dan total_working_hour_day di parent plan berdasarkan jumlah dari r_plan_working_hour
+      const updatedPlanWorkingHours = await queryRunner.manager.find(
+        PlanWorkingHour,
+        {
+          where: { parent_plan_working_hour_id: parentPlan.id },
+        },
+      );
+
+      if (updatedPlanWorkingHours.length > 0) {
+        // Hitung total working_hour_month dari semua record di r_plan_working_hour
+        const totalWorkingHourMonth = updatedPlanWorkingHours.reduce(
+          (sum, pwh) => sum + (pwh.working_hour_month || 0),
+          0
+        );
+
+        // Hitung total working_hour_day dari semua record di r_plan_working_hour
+        const totalWorkingHourDay = updatedPlanWorkingHours.reduce(
+          (sum, pwh) => sum + (pwh.working_hour_day || 0),
+          0
+        );
+
+        // Update parent plan dengan nilai yang dihitung (dibulatkan ke 2 desimal)
+        parentPlan.total_working_hour_month = Math.round(totalWorkingHourMonth * 100) / 100;
+        parentPlan.total_working_hour_day = Math.round(totalWorkingHourDay * 100) / 100;
+
+        await queryRunner.manager.save(ParentPlanWorkingHour, parentPlan);
+      }
+
       await queryRunner.commitTransaction();
 
-      // 5. Return response dengan format yang sama seperti getDetailById
+      // 6. Return response dengan format yang sama seperti getDetailById
       return await this.getDetailById(id);
     } catch (error) {
       await queryRunner.rollbackTransaction();

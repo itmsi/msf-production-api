@@ -7,6 +7,7 @@ import {
   IsNumberString,
   IsString,
   ValidateIf,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiExtraModels } from '@nestjs/swagger';
@@ -70,7 +71,7 @@ export class CreateParentPlanWorkingHourDto {
   total_working_hour_month: number;
 
   @ApiProperty({
-    description: 'Total hari kerja dengan long shift',
+    description: 'Total hari kerja dengan long shift (boolean: true/false, atau number: jumlah hari)',
     example: 5,
     type: 'number',
     required: true,
@@ -80,10 +81,15 @@ export class CreateParentPlanWorkingHourDto {
       '10': { summary: '10 hari long shift', value: 10 },
       '15': { summary: '15 hari long shift', value: 15 },
       '0': { summary: 'Tidak ada long shift', value: 0 },
+      'true': { summary: 'Aktifkan long shift', value: true },
+      'false': { summary: 'Nonaktifkan long shift', value: false },
     },
   })
+  @ValidateIf((o) => typeof o.total_working_day_longshift === 'number')
   @IsNumber()
-  total_working_day_longshift: number;
+  @ValidateIf((o) => typeof o.total_working_day_longshift === 'boolean')
+  @IsBoolean()
+  total_working_day_longshift: number | boolean;
 
   @ApiProperty({
     description: 'Total jam kerja per hari',
@@ -168,10 +174,10 @@ export class ParentPlanWorkingHourResponseDto {
   total_working_hour_month: number;
 
   @ApiProperty({
-    description: 'Total hari kerja dengan long shift',
+    description: 'Total hari kerja dengan long shift (boolean: true/false, atau number: jumlah hari)',
     example: 5,
   })
-  total_working_day_longshift: number;
+  total_working_day_longshift: number | boolean;
 
   @ApiProperty({ description: 'Total jam kerja per hari', example: 8 })
   total_working_hour_day: number;
@@ -645,10 +651,10 @@ export class ParentPlanWorkingHourDetailByIdResponseDto {
   total_working_hour_day: number;
 
   @ApiProperty({
-    description: 'Total hari kerja longshift',
+    description: 'Total hari kerja longshift (boolean: true/false, atau number: jumlah hari)',
     example: 5,
   })
-  total_working_day_longshift: number;
+  total_working_day_longshift: number | boolean;
 
   @ApiProperty({
     description: 'Total jam kerja longshift',
@@ -697,14 +703,17 @@ export class UpdateDetailParentPlanWorkingHourDto {
   working_hour_month: number;
 
   @ApiProperty({
-    description: 'Total hari kerja dengan long shift',
+    description: 'Total hari kerja dengan long shift (boolean: true/false, atau number: jumlah hari)',
     example: 5,
     type: 'number',
     required: true,
     minimum: 0,
   })
+  @ValidateIf((o) => typeof o.working_day_longshift === 'number')
   @IsNumber()
-  working_day_longshift: number;
+  @ValidateIf((o) => typeof o.working_day_longshift === 'boolean')
+  @IsBoolean()
+  working_day_longshift: number | boolean;
 
   @ApiProperty({
     description: 'Total jam kerja per hari',
@@ -824,15 +833,18 @@ export class UpdateParentPlanWorkingHourSimpleDto {
   total_working_hour_month?: number;
 
   @ApiProperty({
-    description: 'Total hari kerja dengan long shift',
+    description: 'Total hari kerja dengan long shift (boolean: true/false, atau number: jumlah hari)',
     example: 5,
     type: 'number',
     required: false,
     minimum: 0,
   })
   @IsOptional()
+  @ValidateIf((o) => o.total_working_day_longshift !== undefined && typeof o.total_working_day_longshift === 'number')
   @IsNumber()
-  total_working_day_longshift?: number;
+  @ValidateIf((o) => o.total_working_day_longshift !== undefined && typeof o.total_working_day_longshift === 'boolean')
+  @IsBoolean()
+  total_working_day_longshift?: number | boolean;
 
   @ApiProperty({
     description: 'Total jam kerja per hari',
