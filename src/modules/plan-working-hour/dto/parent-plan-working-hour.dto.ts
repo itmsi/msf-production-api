@@ -255,6 +255,12 @@ export class ParentPlanWorkingHourSummaryResponseDto {
   holiday_day: number;
 
   @ApiProperty({
+    example: 31,
+    description: 'Total hari kalender (schedule_day + holiday_day)',
+  })
+  calendar_day: number;
+
+  @ApiProperty({
     example: 216,
     description: 'Jumlah value di kolom working_hour_month',
   })

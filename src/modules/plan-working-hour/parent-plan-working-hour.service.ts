@@ -428,6 +428,7 @@ export class ParentPlanWorkingHourService {
         month_year: monthYear,
         schedule_day: parseInt(result.schedule_day) || 0,
         holiday_day: parseInt(result.holiday_day) || 0,
+        calendar_day: parseInt(result.schedule_day) + parseInt(result.holiday_day) || 0,
         working_hour_month: roundToTwoDecimals(
           parseFloat(result.working_hour_month) || 0,
         ),

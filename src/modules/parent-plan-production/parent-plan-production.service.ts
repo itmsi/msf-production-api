@@ -360,6 +360,7 @@ export class ParentPlanProductionService {
           month_year: `${planYear.toString().padStart(4, '0')}-${(planMonth + 1).toString().padStart(2, '0')}`,
           available_day: availableDay,
           holiday_day: holidayDay,
+          calendar_day: availableDay + holidayDay,
           average_month_ewh: parent.total_average_month_ewh,
           average_day_ewh: parent.total_average_day_ewh,
           ob_target: parent.total_ob_target,

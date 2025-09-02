@@ -457,6 +457,12 @@ export class ParentPlanProductionSummaryResponseDto {
   holiday_day: number;
 
   @ApiProperty({
+    description: 'Total hari kalender (available_day + holiday_day)',
+    example: 31,
+  })
+  calendar_day: number;
+
+  @ApiProperty({
     description: 'Rata-rata EWH bulanan',
     example: 4500.0,
   })
