@@ -60,37 +60,6 @@ export class CreateParentPlanWorkingHourDto {
   plan_date: string;
 
   @ApiProperty({
-    description: 'Total hari kalender dalam bulan',
-    example: 31,
-    type: 'number',
-    required: true,
-    minimum: 28,
-    maximum: 31,
-  })
-  @IsNumber()
-  total_calendar_day: number;
-
-  @ApiProperty({
-    description: 'Total hari libur dalam bulan',
-    example: 8,
-    type: 'number',
-    required: true,
-    minimum: 0,
-  })
-  @IsNumber()
-  total_holiday_day: number;
-
-  @ApiProperty({
-    description: 'Total hari tersedia untuk kerja',
-    example: 23,
-    type: 'number',
-    required: true,
-    minimum: 0,
-  })
-  @IsNumber()
-  total_available_day: number;
-
-  @ApiProperty({
     description: 'Total jam kerja dalam bulan',
     example: 184,
     type: 'number',

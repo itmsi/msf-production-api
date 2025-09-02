@@ -28,6 +28,23 @@ export class ParentPlanWorkingHourService {
     private dataSource: DataSource,
   ) {}
 
+  // Helper method untuk menghitung jumlah hari dalam bulan
+  private getDaysInMonth(date: Date): number {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    return new Date(year, month + 1, 0).getDate();
+  }
+
+  // Helper method untuk menghitung jumlah hari kerja dalam bulan (termasuk hari sabtu dan minggu)
+  private getWorkingDaysInMonth(date: Date): number {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const daysInMonth = this.getDaysInMonth(date);
+    
+    // Semua hari dihitung sebagai hari kerja (termasuk sabtu dan minggu)
+    return daysInMonth;
+  }
+
   async create(
     createDto: CreateParentPlanWorkingHourDto,
   ): Promise<ParentPlanWorkingHour> {
@@ -59,13 +76,10 @@ export class ParentPlanWorkingHourService {
       );
     }
     
-    // Validasi bahwa total_available_day + total_holiday_day = total_calendar_day
-    // if (createDto.total_available_day + createDto.total_holiday_day !== createDto.total_calendar_day) {
-    //   throw new BadRequestException(
-    //     `Total hari tersedia + total hari libur harus sama dengan total hari kalender. ` +
-    //     `${createDto.total_available_day} + ${createDto.total_holiday_day} ≠ ${createDto.total_calendar_day}`
-    //   );
-    // }
+    // Hitung field yang diperlukan otomatis
+    const totalCalendarDay = this.getDaysInMonth(planDate);
+    const totalHolidayDay = 0; // Default 0 sesuai permintaan
+    const totalAvailableDay = this.getWorkingDaysInMonth(planDate);
     
     // Validasi detail activities tidak kosong
     if (!createDto.detail || createDto.detail.length === 0) {
@@ -146,9 +160,9 @@ export class ParentPlanWorkingHourService {
       // 1. Insert ke tabel r_parent_plan_working_hour
       const parentPlan = this.parentPlanWorkingHourRepository.create({
         plan_date: new Date(createDto.plan_date),
-        total_calendar_day: createDto.total_calendar_day,
-        total_holiday_day: createDto.total_holiday_day,
-        total_available_day: createDto.total_available_day,
+        total_calendar_day: totalCalendarDay,
+        total_holiday_day: totalHolidayDay,
+        total_available_day: totalAvailableDay,
         total_working_hour_month: createDto.total_working_hour_month,
         total_working_day_longshift: createDto.total_working_day_longshift,
         total_working_hour_day: createDto.total_working_hour_day,
