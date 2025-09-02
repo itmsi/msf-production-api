@@ -78,8 +78,8 @@ export class ParentPlanWorkingHourService {
     
     // Hitung field yang diperlukan otomatis
     const totalCalendarDay = this.getDaysInMonth(planDate);
-    const totalHolidayDay = 0; // Default 0 sesuai permintaan
-    const totalAvailableDay = this.getWorkingDaysInMonth(planDate);
+    const totalHolidayDay = 0; // Semua hari bukan holiday, jadi 0
+    const totalAvailableDay = this.getDaysInMonth(planDate); // Semua hari adalah hari kerja
     
     // Validasi detail activities tidak kosong
     if (!createDto.detail || createDto.detail.length === 0) {
@@ -186,13 +186,13 @@ export class ParentPlanWorkingHourService {
 
       for (let day = 1; day <= daysInMonth; day++) {
         const currentDate = new Date(year, month, day);
-        const isSunday = currentDate.getDay() === 0; // 0 = Sunday
 
         const planWorkingHour = this.planWorkingHourRepository.create({
           plan_date: currentDate,
-          is_calender_day: !isSunday,
-          is_holiday_day: isSunday,
-          is_schedule_day: !isSunday,
+          is_calender_day: true, // auto true semua
+          is_holiday_day: false, // auto false semua
+          is_schedule_day: true, // semua hari dihitung hari kerja jadi auto true semua
+          schedule_day: 1, // default schedule_day = 1 untuk semua hari
           working_day_longshift: createDto.total_working_day_longshift,
           working_hour_longshift: 0, // Set default ke 0 sesuai permintaan
           working_hour_month: createDto.total_working_hour_month / daysInMonth,
@@ -310,13 +310,13 @@ export class ParentPlanWorkingHourService {
         'ppwh.plan_date as plan_date',
         'ppwh.createdAt as createdAt',
         'ppwh.updatedAt as updatedAt',
-        'COUNT(CASE WHEN pwh.is_schedule_day = true THEN 1 END) as schedule_day',
-        'COUNT(CASE WHEN pwh.is_holiday_day = true THEN 1 END) as holiday_day',
-        'SUM(COALESCE(pwh.working_hour_month, 0)) as working_hour_month',
-        'SUM(COALESCE(pwh.working_hour_day, 0)) as working_hour_day',
-        'SUM(COALESCE(pwh.working_hour_longshift, 0)) as working_hour_longshift',
-        'SUM(COALESCE(pwh.working_day_longshift, 0)) as working_day_longshift',
-        'COALESCE(pwh.mohh_per_month, 0) as total_mohh',
+        'COUNT(DISTINCT CASE WHEN pwh.is_schedule_day = true THEN pwh.plan_date END) as schedule_day',
+        'COUNT(DISTINCT CASE WHEN pwh.is_holiday_day = true THEN pwh.plan_date END) as holiday_day',
+        'ppwh.total_working_hour_month as working_hour_month',
+        'ppwh.total_working_hour_day as working_hour_day',
+        'ppwh.total_working_hour_longshift as working_hour_longshift',
+        'ppwh.total_working_day_longshift as working_day_longshift',
+        'ppwh.total_mohh_per_month as total_mohh',
         'SUM(CASE WHEN a.status = :delayStatus THEN COALESCE(pwhd.activities_hour, 0) ELSE 0 END) as total_delay',
         'SUM(CASE WHEN a.status = :idleStatus THEN COALESCE(pwhd.activities_hour, 0) ELSE 0 END) as total_idle',
         'SUM(CASE WHEN a.status = :breakdownStatus THEN COALESCE(pwhd.activities_hour, 0) ELSE 0 END) as total_breakdown',
@@ -347,7 +347,7 @@ export class ParentPlanWorkingHourService {
     }
 
     queryBuilder.groupBy(
-      'ppwh.id, ppwh.plan_date, ppwh.createdAt, ppwh.updatedAt, pwh.mohh_per_month',
+      'ppwh.id, ppwh.plan_date, ppwh.createdAt, ppwh.updatedAt',
     );
 
     // Get total count for pagination
@@ -893,6 +893,18 @@ export class ParentPlanWorkingHourService {
           }
           if (updateDto.schedule_day !== undefined) {
             planWorkingHour.schedule_day = updateDto.schedule_day;
+            
+            // Set is_schedule_day dan is_holiday_day berdasarkan schedule_day
+            if (updateDto.schedule_day === 1) {
+              planWorkingHour.is_schedule_day = true;
+              planWorkingHour.is_holiday_day = false;
+            } else if (updateDto.schedule_day === 0.5) {
+              planWorkingHour.is_schedule_day = false;
+              planWorkingHour.is_holiday_day = false;
+            } else if (updateDto.schedule_day === 0) {
+              planWorkingHour.is_schedule_day = false;
+              planWorkingHour.is_holiday_day = true;
+            }
           }
         }
 
@@ -1092,7 +1104,7 @@ export class ParentPlanWorkingHourService {
             pwh.working_day_longshift || 0,
           ),
           mohh_per_month: this.roundToTwoDecimals(pwh.mohh_per_month || 0),
-          schedule_day: this.roundToTwoDecimals(pwh.schedule_day || 1),
+          schedule_day: pwh.schedule_day,
           working_longshift: pwh.working_longshift || false, // ambil langsung dari kolom working_longshift yang bertipe boolean
           total_delay: this.roundToTwoDecimals(totalDelay),
           total_idle: this.roundToTwoDecimals(totalIdle),
@@ -1131,6 +1143,9 @@ export class ParentPlanWorkingHourService {
         `Plan working hour dengan ID ${id} tidak ditemukan`,
       );
     }
+
+    // Debug: Log schedule_day value dari database
+    console.log(`Debug - ID: ${id}, schedule_day from DB:`, planWorkingHour.schedule_day);
 
     // Hitung total berdasarkan status activities
     let totalDelay = 0;
@@ -1295,9 +1310,7 @@ export class ParentPlanWorkingHourService {
       total_mohh_per_month: this.roundToTwoDecimals(
         planWorkingHour.mohh_per_month || 0,
       ),
-      schedule_day: this.roundToTwoDecimals(
-        planWorkingHour.schedule_day || 1,
-      ),
+      schedule_day: planWorkingHour.schedule_day,
       working_longshift: planWorkingHour.working_longshift || false, // ambil langsung dari kolom working_longshift yang bertipe boolean
       details: details.map((group) => ({
         name: group.name,
@@ -1422,7 +1435,11 @@ export class ParentPlanWorkingHourService {
 
       // 3. Update data di r_plan_working_hour
       if (updateDto.working_day_longshift !== undefined) {
-        planWorkingHour.working_day_longshift = updateDto.working_day_longshift;
+        // Convert boolean to number if needed
+        const workingDayLongshift = typeof updateDto.working_day_longshift === 'boolean' 
+          ? (updateDto.working_day_longshift ? 1 : 0) 
+          : updateDto.working_day_longshift;
+        planWorkingHour.working_day_longshift = workingDayLongshift;
       }
       if (updateDto.working_hour_longshift !== undefined) {
         planWorkingHour.working_hour_longshift = updateDto.working_hour_longshift;
@@ -1438,6 +1455,18 @@ export class ParentPlanWorkingHourService {
       }
       if (updateDto.schedule_day !== undefined) {
         planWorkingHour.schedule_day = updateDto.schedule_day;
+        
+        // Set is_schedule_day dan is_holiday_day berdasarkan schedule_day
+        if (updateDto.schedule_day === 1) {
+          planWorkingHour.is_schedule_day = true;
+          planWorkingHour.is_holiday_day = false;
+        } else if (updateDto.schedule_day === 0.5) {
+          planWorkingHour.is_schedule_day = false;
+          planWorkingHour.is_holiday_day = false;
+        } else if (updateDto.schedule_day === 0) {
+          planWorkingHour.is_schedule_day = false;
+          planWorkingHour.is_holiday_day = true;
+        }
       }
 
       await queryRunner.manager.save(PlanWorkingHour, planWorkingHour);
