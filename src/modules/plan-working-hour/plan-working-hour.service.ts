@@ -436,8 +436,20 @@ export class PlanWorkingHourService {
       }
     });
 
+    // Filter hanya status yang diinginkan: idle, delay, breakdown
+    const allowedStatuses = ['idle', 'delay', 'breakdown'];
+    const filteredGroupedData = Object.entries(groupedData).filter(([status]) => 
+      allowedStatuses.includes(status.toLowerCase())
+    );
+
+    // Urutkan sesuai urutan yang diinginkan: idle, delay, breakdown
+    const sortedGroupedData = filteredGroupedData.sort(([statusA], [statusB]) => {
+      const order = { 'idle': 0, 'delay': 1, 'breakdown': 2 };
+      return order[statusA.toLowerCase()] - order[statusB.toLowerCase()];
+    });
+
     // Transform ke format yang diminta
-    const result = Object.entries(groupedData).map(([status, activities]) => ({
+    const result = sortedGroupedData.map(([status, activities]) => ({
       name: status.charAt(0).toUpperCase() + status.slice(1), // Capitalize first letter
       group_detail: activities,
     }));
