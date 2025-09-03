@@ -581,6 +581,7 @@ export class BaseDataProductionService {
           dumpingPointOpId: detail.dumpingPointOpId,
           dumpingPointBargeId: detail.dumpingPointBargeId,
           activity: detail.activity,
+          activityDisplayName: this.getActivityDisplayName(detail.activity),
           mroundDistance: detail.mroundDistance,
           distance: detail.distance,
           totalVessel: detail.totalVessel,
