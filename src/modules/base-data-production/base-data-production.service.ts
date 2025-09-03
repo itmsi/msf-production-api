@@ -10,6 +10,7 @@ import { Employee } from '../employee/entities/employee.entity';
 import { Sites } from '../sites/entities/sites.entity';
 import { Barge } from '../barge/entities/barge.entity';
 import { OperationPoints } from '../operation-points/entities/operation-points.entity';
+import { Users } from '../users/entities/users.entity';
 import { 
   CreateBaseDataProductionDto, 
   UpdateBaseDataProductionDto, 
@@ -36,6 +37,8 @@ export class BaseDataProductionService {
     private bargeRepository: Repository<Barge>,
     @InjectRepository(OperationPoints)
     private operationPointsRepository: Repository<OperationPoints>,
+    @InjectRepository(Users)
+    private usersRepository: Repository<Users>,
   ) {}
 
   async create(createDto: CreateBaseDataProductionDto, userId: number) {
@@ -169,7 +172,10 @@ export class BaseDataProductionService {
 
     // Validate Driver ID if provided
     if (updateDto.driverId !== undefined) {
-      const driver = await this.employeeRepository.findOne({ where: { id: updateDto.driverId, deletedAt: IsNull() } });
+      const driver = await this.usersRepository.findOne({ 
+        where: { id: updateDto.driverId, deletedAt: IsNull() },
+        relations: ['employees']
+      });
       if (!driver) {
         throw new BadRequestException(`Driver dengan ID ${updateDto.driverId} tidak ditemukan`);
       }
@@ -215,7 +221,10 @@ export class BaseDataProductionService {
     }
 
     // Validate Driver ID
-    const driver = await this.employeeRepository.findOne({ where: { id: createDto.driverId, deletedAt: IsNull() } });
+    const driver = await this.usersRepository.findOne({ 
+      where: { id: createDto.driverId, deletedAt: IsNull() },
+      relations: ['employees']
+    });
     if (!driver) {
       throw new BadRequestException(`Driver dengan ID ${createDto.driverId} tidak ditemukan`);
     }
