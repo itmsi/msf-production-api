@@ -21,7 +21,7 @@ Modul ini menangani data rencana produksi harian untuk sistem MSF Production.
 | `ore_target` | `DOUBLE PRECISION` | ❌ | Target bijih |
 | `quarry` | `DOUBLE PRECISION` | ❌ | Target quarry |
 | `remaining_stock` | `DOUBLE PRECISION` | ❌ | Stok tersisa |
-| `sr_target` | `DOUBLE PRECISION` | ❌ | Target SR (Stripping Ratio) - Calculated: (ore_target / ob_target) |
+| `sr_target` | `DOUBLE PRECISION` | ❌ | Target SR (Stripping Ratio) - Calculated: (ob_target / ore_target) |
 | `ore_shipment_target` | `DOUBLE PRECISION` | ❌ | Target pengiriman bijih |
 | `total_fleet` | `INTEGER` | ❌ | Total fleet |
 | `daily_old_stock` | `DOUBLE PRECISION` | ❌ | Stok lama harian - Calculated: (old stock global - ore shipment + ore target) |
@@ -53,7 +53,7 @@ Modul ini menangani data rencana produksi harian untuk sistem MSF Production.
 
 ### SR Target
 ```
-sr_target = ore_target / ob_target
+sr_target = ob_target / ore_target
 ```
 
 ### Daily Old Stock

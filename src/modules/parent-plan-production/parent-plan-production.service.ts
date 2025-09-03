@@ -366,7 +366,7 @@ export class ParentPlanProductionService {
           ob_target: parent.total_ob_target,
           ore_target: parent.total_ore_target,
           quarry_target: parent.total_quarry_target,
-          sr_target: parent.total_ore_target / parent.total_ob_target,
+          sr_target: parent.total_ob_target / parent.total_ore_target,
           ore_shipment_target: parent.total_ore_shipment_target,
           sisa_stock: parent.total_sisa_stock,
           is_available_to_edit: isAvailableToEdit,

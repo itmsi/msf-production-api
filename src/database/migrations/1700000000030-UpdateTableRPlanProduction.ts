@@ -21,7 +21,7 @@ export class UpdateTableRPlanProduction1700000000030
 
     // Update comments for calculated fields (PostgreSQL syntax)
     await queryRunner.query(
-      `COMMENT ON COLUMN r_plan_production.sr_target IS 'Calculated: (ore_target / ob_target)'`,
+      `COMMENT ON COLUMN r_plan_production.sr_target IS 'Calculated: (ob_target / ore_target)'`,
     );
 
     await queryRunner.query(

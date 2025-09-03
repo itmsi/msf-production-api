@@ -50,7 +50,7 @@ export class CreatePlanProductionTable1700000000036
     `);
 
     await queryRunner.query(`
-      COMMENT ON COLUMN "TB_R_Plan_Production"."sr_target" IS 'Calculated: (ore_target / ob_target)'
+      COMMENT ON COLUMN "TB_R_Plan_Production"."sr_target" IS 'Calculated: (ob_target / ore_target)'
     `);
 
     await queryRunner.query(`
