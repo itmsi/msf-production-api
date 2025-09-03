@@ -26,6 +26,9 @@ Module ini menangani operasi CRUD untuk data produksi dasar yang terdiri dari du
 - `total_hm` - Total hour meter
 - `loading_point_id` - ID loading point
 - `dumping_point_id` - ID dumping point
+- `dumping_point_op_id` - ID dumping point operation (nullable)
+- `dumping_point_barge_id` - ID dumping point barge (nullable)
+- `activity` - Jenis aktivitas (hauling, barging, direct, support)
 - `mround_distance` - Mround distance
 - `distance` - Distance
 - `total_vessel` - Total vessel

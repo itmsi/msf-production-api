@@ -24,6 +24,7 @@ export enum ActivityType {
   HAULING = 'hauling',
   BARGING = 'barging',
   DIRECT = 'direct',
+  SUPPORT = 'support',
 }
 
 @Entity('r_base_data_pro')

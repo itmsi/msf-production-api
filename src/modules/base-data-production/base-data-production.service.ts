@@ -455,6 +455,8 @@ export class BaseDataProductionService {
         return 'Barging';
       case 'direct':
         return 'Direct';
+      case 'support':
+        return 'Support';
       default:
         return activity;
     }
