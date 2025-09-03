@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, Between, In } from 'typeorm';
+import { Repository, Like, Between, In, IsNull } from 'typeorm';
 import { 
   ParentBaseDataPro, 
   BaseDataPro 
@@ -42,6 +42,9 @@ export class BaseDataProductionService {
     try {
       // Validate foreign key constraints
       await this.validateForeignKeys(createDto);
+
+      // Validate KM and HM values
+      this.validateKmAndHmValues(createDto);
 
       // Create parent base data pro
       const parentBaseDataPro = this.parentBaseDataProRepository.create({
@@ -155,34 +158,83 @@ export class BaseDataProductionService {
     }
   }
 
+  private async validateForeignKeysForUpdate(updateDto: UpdateBaseDataProductionDto): Promise<void> {
+    // Validate Population ID if provided
+    if (updateDto.population_id !== undefined) {
+      const population = await this.populationRepository.findOne({ where: { id: updateDto.population_id, deletedAt: IsNull() } });
+      if (!population) {
+        throw new BadRequestException(`Unit dengan ID ${updateDto.population_id} tidak ditemukan di tabel population`);
+      }
+    }
+
+    // Validate Driver ID if provided
+    if (updateDto.driverId !== undefined) {
+      const driver = await this.employeeRepository.findOne({ where: { id: updateDto.driverId, deletedAt: IsNull() } });
+      if (!driver) {
+        throw new BadRequestException(`Driver dengan ID ${updateDto.driverId} tidak ditemukan`);
+      }
+    }
+
+    // Validate Loading Point IDs if detail is provided
+    if (updateDto.detail && updateDto.detail.length > 0) {
+      for (const detail of updateDto.detail) {
+        const loadingPoint = await this.sitesRepository.findOne({ where: { id: detail.loadingPointId, deletedAt: IsNull() } });
+        if (!loadingPoint) {
+          throw new BadRequestException(`Loading Point dengan ID ${detail.loadingPointId} tidak ditemukan`);
+        }
+
+        const dumpingPoint = await this.sitesRepository.findOne({ where: { id: detail.dumpingPointId, deletedAt: IsNull() } });
+        if (!dumpingPoint) {
+          throw new BadRequestException(`Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan`);
+        }
+
+        // Validate Dumping Point Operation ID if provided
+        if (detail.dumpingPointOpId) {
+          const dumpingPointOp = await this.operationPointsRepository.findOne({ where: { id: detail.dumpingPointOpId, deletedAt: IsNull() } });
+          if (!dumpingPointOp) {
+            throw new BadRequestException(`Dumping Point Operation dengan ID ${detail.dumpingPointOpId} tidak ditemukan`);
+          }
+        }
+
+        // Validate Dumping Point Barge ID if provided
+        if (detail.dumpingPointBargeId) {
+          const dumpingPointBarge = await this.bargeRepository.findOne({ where: { id: detail.dumpingPointBargeId, deletedAt: IsNull() } });
+          if (!dumpingPointBarge) {
+            throw new BadRequestException(`Dumping Point Barge dengan ID ${detail.dumpingPointBargeId} tidak ditemukan`);
+          }
+        }
+      }
+    }
+  }
+
   private async validateForeignKeys(createDto: CreateBaseDataProductionDto): Promise<void> {
     // Validate Population ID
-          const population = await this.populationRepository.findOne({ where: { id: createDto.population_id } });
-      if (!population) {
-        throw new BadRequestException(`Unit dengan ID ${createDto.population_id} tidak ditemukan di tabel population`);
-      }
+    const population = await this.populationRepository.findOne({ where: { id: createDto.population_id, deletedAt: IsNull() } });
+    if (!population) {
+      throw new BadRequestException(`Unit dengan ID ${createDto.population_id} tidak ditemukan di tabel population`);
+    }
 
     // Validate Driver ID
-    const driver = await this.employeeRepository.findOne({ where: { id: createDto.driverId } });
+    const driver = await this.employeeRepository.findOne({ where: { id: createDto.driverId, deletedAt: IsNull() } });
     if (!driver) {
       throw new BadRequestException(`Driver dengan ID ${createDto.driverId} tidak ditemukan`);
     }
 
     // Validate Loading Point IDs
     for (const detail of createDto.detail) {
-      const loadingPoint = await this.sitesRepository.findOne({ where: { id: detail.loadingPointId } });
+      const loadingPoint = await this.sitesRepository.findOne({ where: { id: detail.loadingPointId, deletedAt: IsNull() } });
       if (!loadingPoint) {
         throw new BadRequestException(`Loading Point dengan ID ${detail.loadingPointId} tidak ditemukan`);
       }
 
-      const dumpingPoint = await this.sitesRepository.findOne({ where: { id: detail.dumpingPointId } });
+      const dumpingPoint = await this.sitesRepository.findOne({ where: { id: detail.dumpingPointId, deletedAt: IsNull() } });
       if (!dumpingPoint) {
         throw new BadRequestException(`Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan`);
       }
 
       // Validate Dumping Point Operation ID if provided
       if (detail.dumpingPointOpId) {
-        const dumpingPointOp = await this.operationPointsRepository.findOne({ where: { id: detail.dumpingPointOpId } });
+        const dumpingPointOp = await this.operationPointsRepository.findOne({ where: { id: detail.dumpingPointOpId, deletedAt: IsNull() } });
         if (!dumpingPointOp) {
           throw new BadRequestException(`Dumping Point Operation dengan ID ${detail.dumpingPointOpId} tidak ditemukan`);
         }
@@ -190,10 +242,24 @@ export class BaseDataProductionService {
 
       // Validate Dumping Point Barge ID if provided
       if (detail.dumpingPointBargeId) {
-        const dumpingPointBarge = await this.bargeRepository.findOne({ where: { id: detail.dumpingPointBargeId } });
+        const dumpingPointBarge = await this.bargeRepository.findOne({ where: { id: detail.dumpingPointBargeId, deletedAt: IsNull() } });
         if (!dumpingPointBarge) {
           throw new BadRequestException(`Dumping Point Barge dengan ID ${detail.dumpingPointBargeId} tidak ditemukan`);
         }
+      }
+    }
+  }
+
+  private validateKmAndHmValues(createDto: CreateBaseDataProductionDto): void {
+    for (const detail of createDto.detail) {
+      // Validate KM values
+      if (detail.kmAkhir <= detail.kmAwal) {
+        throw new BadRequestException(`Kilometer akhir (${detail.kmAkhir}) harus lebih besar dari kilometer awal (${detail.kmAwal})`);
+      }
+
+      // Validate HM values
+      if (detail.hmAkhir <= detail.hmAwal) {
+        throw new BadRequestException(`Hour meter akhir (${detail.hmAkhir}) harus lebih besar dari hour meter awal (${detail.hmAwal})`);
       }
     }
   }
@@ -206,6 +272,16 @@ export class BaseDataProductionService {
     
     if (!parentBaseDataPro) {
       throw new NotFoundException(`Base data production with ID ${id} not found`);
+    }
+
+    // Validate foreign key constraints if provided
+    if (updateDto.population_id || updateDto.driverId || updateDto.detail) {
+      await this.validateForeignKeysForUpdate(updateDto);
+    }
+
+    // Validate KM and HM values if detail is provided
+    if (updateDto.detail && updateDto.detail.length > 0) {
+      this.validateKmAndHmValues(updateDto as CreateBaseDataProductionDto);
     }
 
     // Update parent base data pro
