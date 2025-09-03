@@ -38,7 +38,7 @@ export class ParentPlanWorkingHour {
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   total_working_hour_longshift: number;
 
-  @Column({ type: 'int', nullable: true })
+  @Column({ type: 'float', nullable: true })
   total_mohh_per_month: number;
 
   @CreateDateColumn()

@@ -209,7 +209,7 @@ export class ParentPlanWorkingHourService {
           working_hour_longshift: 0, // Set default ke 0 sesuai permintaan
           working_hour_month: createDto.total_working_hour_month / daysInMonth,
           working_hour_day: createDto.total_working_hour_day,
-          mohh_per_month: createDto.total_mohh_per_month,
+          mohh_per_month: createDto.total_mohh_per_month / daysInMonth, // Dibagi jumlah hari di bulan
           parent_plan_working_hour_id: savedParentPlan.id,
         });
 
@@ -255,7 +255,8 @@ export class ParentPlanWorkingHourService {
         planWorkingHourDetails,
       );
 
-      // 5. Update total_working_hour_month dan total_working_hour_day di parent plan berdasarkan jumlah dari r_plan_working_hour
+      // 5. Update total_working_hour_month di parent plan berdasarkan jumlah dari r_plan_working_hour
+      // Dan langsung update total_working_hour_day dari payload tanpa akumulasi
       const updatedPlanWorkingHours = await queryRunner.manager.find(
         PlanWorkingHour,
         {
@@ -270,15 +271,32 @@ export class ParentPlanWorkingHourService {
           0
         );
 
-        // Hitung total working_hour_day dari semua record di r_plan_working_hour
-        const totalWorkingHourDay = updatedPlanWorkingHours.reduce(
-          (sum, pwh) => sum + (pwh.working_hour_day || 0),
+        // Hitung total mohh_per_month dari semua record di r_plan_working_hour
+        const totalMohhPerMonth = updatedPlanWorkingHours.reduce(
+          (sum, pwh) => sum + (pwh.mohh_per_month || 0),
           0
         );
 
-        // Update parent plan dengan nilai yang dihitung (dibulatkan ke 2 desimal)
+        // Update parent plan dengan nilai yang dihitung untuk total_working_hour_month (dibulatkan ke 2 desimal)
         savedParentPlan.total_working_hour_month = Math.round(totalWorkingHourMonth * 100) / 100;
-        savedParentPlan.total_working_hour_day = Math.round(totalWorkingHourDay * 100) / 100;
+        
+        // Update total_mohh_per_month di parent plan berdasarkan jumlah dari r_plan_working_hour (dibulatkan ke 2 desimal)
+        savedParentPlan.total_mohh_per_month = Math.round(totalMohhPerMonth * 100) / 100;
+        
+        // Langsung update total_working_hour_day dari payload tanpa akumulasi dari r_plan_working_hour
+        if (createDto.total_working_hour_day !== undefined) {
+          savedParentPlan.total_working_hour_day = createDto.total_working_hour_day;
+        }
+        
+        // Langsung update total_working_hour_longshift dan total_working_day_longshift dari payload
+        if (createDto.total_working_hour_longshift !== undefined) {
+          savedParentPlan.total_working_hour_longshift = createDto.total_working_hour_longshift;
+        }
+        if (createDto.total_working_day_longshift !== undefined) {
+          savedParentPlan.total_working_day_longshift = typeof createDto.total_working_day_longshift === 'boolean' 
+            ? (createDto.total_working_day_longshift ? 1 : 0) 
+            : createDto.total_working_day_longshift;
+        }
 
         await queryRunner.manager.save(ParentPlanWorkingHour, savedParentPlan);
       }
@@ -806,7 +824,7 @@ export class ParentPlanWorkingHourService {
             planWorkingHour.working_hour_day = updateDto.total_working_hour_day;
           }
           if (updateDto.total_mohh_per_month !== undefined) {
-            planWorkingHour.mohh_per_month = updateDto.total_mohh_per_month;
+            planWorkingHour.mohh_per_month = updateDto.total_mohh_per_month / existingPlanWorkingHours.length;
           }
         }
 
@@ -816,7 +834,8 @@ export class ParentPlanWorkingHourService {
         );
       }
 
-      // 5. Update total_working_hour_month dan total_working_hour_day di parent plan berdasarkan jumlah dari r_plan_working_hour
+      // 5. Update total_working_hour_month di parent plan berdasarkan jumlah dari r_plan_working_hour
+      // Dan langsung update total_working_hour_day dari payload tanpa akumulasi
       const updatedPlanWorkingHours = await queryRunner.manager.find(
         PlanWorkingHour,
         {
@@ -831,15 +850,32 @@ export class ParentPlanWorkingHourService {
           0
         );
 
-        // Hitung total working_hour_day dari semua record di r_plan_working_hour
-        const totalWorkingHourDay = updatedPlanWorkingHours.reduce(
-          (sum, pwh) => sum + (pwh.working_hour_day || 0),
+        // Hitung total mohh_per_month dari semua record di r_plan_working_hour
+        const totalMohhPerMonth = updatedPlanWorkingHours.reduce(
+          (sum, pwh) => sum + (pwh.mohh_per_month || 0),
           0
         );
 
-        // Update parent plan dengan nilai yang dihitung (dibulatkan ke 2 desimal)
+        // Update parent plan dengan nilai yang dihitung untuk total_working_hour_month (dibulatkan ke 2 desimal)
         parentPlan.total_working_hour_month = Math.round(totalWorkingHourMonth * 100) / 100;
-        parentPlan.total_working_hour_day = Math.round(totalWorkingHourDay * 100) / 100;
+        
+        // Update total_mohh_per_month di parent plan berdasarkan jumlah dari r_plan_working_hour (dibulatkan ke 2 desimal)
+        parentPlan.total_mohh_per_month = Math.round(totalMohhPerMonth * 100) / 100;
+        
+        // Langsung update total_working_hour_day dari payload tanpa akumulasi dari r_plan_working_hour
+        if (updateDto.total_working_hour_day !== undefined) {
+          parentPlan.total_working_hour_day = updateDto.total_working_hour_day;
+        }
+
+        // Langsung update total_working_hour_longshift dan total_working_day_longshift dari payload
+        if (updateDto.total_working_hour_longshift !== undefined) {
+          parentPlan.total_working_hour_longshift = updateDto.total_working_hour_longshift;
+        }
+        if (updateDto.total_working_day_longshift !== undefined) {
+          parentPlan.total_working_day_longshift = typeof updateDto.total_working_day_longshift === 'boolean' 
+            ? (updateDto.total_working_day_longshift ? 1 : 0) 
+            : updateDto.total_working_day_longshift;
+        }
 
         await queryRunner.manager.save(ParentPlanWorkingHour, parentPlan);
       }
@@ -1004,7 +1040,7 @@ export class ParentPlanWorkingHourService {
             planWorkingHour.working_hour_day = updateDto.working_hour_day;
           }
           if (updateDto.mohh_per_month !== undefined) {
-            planWorkingHour.mohh_per_month = updateDto.mohh_per_month;
+            planWorkingHour.mohh_per_month = updateDto.mohh_per_month / existingPlanWorkingHours.length;
           }
           if (updateDto.schedule_day !== undefined) {
             planWorkingHour.schedule_day = updateDto.schedule_day;
@@ -1062,7 +1098,8 @@ export class ParentPlanWorkingHourService {
         );
       }
 
-      // 5. Update total_working_hour_month dan total_working_hour_day di parent plan berdasarkan jumlah dari r_plan_working_hour
+      // 5. Update total_working_hour_month di parent plan berdasarkan jumlah dari r_plan_working_hour
+      // Dan langsung update total_working_hour_day dari payload tanpa akumulasi
       const updatedPlanWorkingHours = await queryRunner.manager.find(
         PlanWorkingHour,
         {
@@ -1077,15 +1114,22 @@ export class ParentPlanWorkingHourService {
           0
         );
 
-        // Hitung total working_hour_day dari semua record di r_plan_working_hour
-        const totalWorkingHourDay = updatedPlanWorkingHours.reduce(
-          (sum, pwh) => sum + (pwh.working_hour_day || 0),
+        // Hitung total mohh_per_month dari semua record di r_plan_working_hour
+        const totalMohhPerMonth = updatedPlanWorkingHours.reduce(
+          (sum, pwh) => sum + (pwh.mohh_per_month || 0),
           0
         );
 
-        // Update parent plan dengan nilai yang dihitung (dibulatkan ke 2 desimal)
+        // Update parent plan dengan nilai yang dihitung untuk total_working_hour_month (dibulatkan ke 2 desimal)
         parentPlan.total_working_hour_month = Math.round(totalWorkingHourMonth * 100) / 100;
-        parentPlan.total_working_hour_day = Math.round(totalWorkingHourDay * 100) / 100;
+        
+        // Update total_mohh_per_month di parent plan berdasarkan jumlah dari r_plan_working_hour (dibulatkan ke 2 desimal)
+        parentPlan.total_mohh_per_month = Math.round(totalMohhPerMonth * 100) / 100;
+        
+        // Langsung update total_working_hour_day dari payload tanpa akumulasi dari r_plan_working_hour
+        if (updateDto.working_hour_day !== undefined) {
+          parentPlan.total_working_hour_day = updateDto.working_hour_day;
+        }
 
         await queryRunner.manager.save(ParentPlanWorkingHour, parentPlan);
       }
@@ -1653,7 +1697,8 @@ export class ParentPlanWorkingHourService {
         );
       }
 
-      // 5. Update total_working_hour_month dan total_working_hour_day di parent plan berdasarkan jumlah dari r_plan_working_hour
+      // 5. Update total_working_hour_month di parent plan berdasarkan jumlah dari r_plan_working_hour
+      // Dan langsung update total_working_hour_day dari payload tanpa akumulasi
       const updatedPlanWorkingHours = await queryRunner.manager.find(
         PlanWorkingHour,
         {
@@ -1668,15 +1713,32 @@ export class ParentPlanWorkingHourService {
           0
         );
 
-        // Hitung total working_hour_day dari semua record di r_plan_working_hour
-        const totalWorkingHourDay = updatedPlanWorkingHours.reduce(
-          (sum, pwh) => sum + (pwh.working_hour_day || 0),
+        // Hitung total mohh_per_month dari semua record di r_plan_working_hour
+        const totalMohhPerMonth = updatedPlanWorkingHours.reduce(
+          (sum, pwh) => sum + (pwh.mohh_per_month || 0),
           0
         );
 
-        // Update parent plan dengan nilai yang dihitung (dibulatkan ke 2 desimal)
+        // Update parent plan dengan nilai yang dihitung untuk total_working_hour_month (dibulatkan ke 2 desimal)
         parentPlan.total_working_hour_month = Math.round(totalWorkingHourMonth * 100) / 100;
-        parentPlan.total_working_hour_day = Math.round(totalWorkingHourDay * 100) / 100;
+        
+        // Update total_mohh_per_month di parent plan berdasarkan jumlah dari r_plan_working_hour (dibulatkan ke 2 desimal)
+        parentPlan.total_mohh_per_month = Math.round(totalMohhPerMonth * 100) / 100;
+        
+        // Langsung update total_working_hour_day dari payload tanpa akumulasi dari r_plan_working_hour
+        if (updateDto.working_hour_day !== undefined) {
+          parentPlan.total_working_hour_day = updateDto.working_hour_day;
+        }
+
+        // Langsung update total_working_hour_longshift dan total_working_day_longshift dari payload
+        if (updateDto.working_hour_longshift !== undefined) {
+          parentPlan.total_working_hour_longshift = updateDto.working_hour_longshift;
+        }
+        if (updateDto.working_day_longshift !== undefined) {
+          parentPlan.total_working_day_longshift = typeof updateDto.working_day_longshift === 'boolean' 
+            ? (updateDto.working_day_longshift ? 1 : 0) 
+            : updateDto.working_day_longshift;
+        }
 
         await queryRunner.manager.save(ParentPlanWorkingHour, parentPlan);
       }
