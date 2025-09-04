@@ -154,4 +154,99 @@ export class DashboardService {
       },
     };
   }
+
+  async getBargeStatus() {
+    return {
+      statusCode: 200,
+      message: 'success',
+      data: {
+        barging_ore: [
+          {
+            name: 'progress',
+            value: 10,
+            fill: '#3BAF9F',
+          },
+        ],
+        list: [
+          {
+            variable: 'Barge',
+            target: 100,
+            actual: 90,
+            dev: 6,
+            percent: 12,
+          },
+        ],
+        gain_lost: [
+          { name: 'Target', value: 9000, type: 'increase', base: 0, height: 9000 },
+          { name: 'PDTY', value: 1000, type: 'increase', base: 9000, height: 1000 },
+          { name: 'PA', value: 1500, type: 'increase', base: 10000, height: 1500 },
+          { name: 'UA', value: -2000, type: 'decrease', base: 11500, height: 2000 },
+          { name: 'Actual', value: 9500, type: 'total', base: 0, height: 9500 },
+        ],
+      },
+    };
+  }
+
+  async getLostTimeSummary() {
+    return {
+      statusCode: 200,
+      message: 'success',
+      data: {
+        mohh: [
+          { name: 'STB', value: 2224.3, color: '#34d399' },
+          { name: 'BD', value: 1.1, color: '#d1d5db' },
+          { name: 'EWH', value: 270.6, color: '#10b981' },
+        ],
+        lost_time: [
+          { name: 'Rain', value: 0.3, color: '#1e3a8a' },
+          { name: 'Slippery', value: 0.1, color: '#d1d5db' },
+          { name: 'MHR', value: 0.25, color: '#34d399' },
+          { name: 'Internal', value: 0.2, color: '#fbbf24' },
+          { name: 'External', value: 0.35, color: '#60a5fa' },
+        ],
+        tables: [
+          {
+            title: 'PA',
+            data: [
+              {
+                target: 1000,
+                actual: 1000,
+                percent: 10,
+              },
+            ],
+          },
+          {
+            title: 'MA',
+            data: [
+              {
+                target: 1000,
+                actual: 1000,
+                percent: 10,
+              },
+            ],
+          },
+          {
+            title: 'UA',
+            data: [
+              {
+                target: 1000,
+                actual: 1000,
+                percent: 10,
+              },
+            ],
+          },
+          {
+            title: 'EU',
+            data: [
+              {
+                target: 1000,
+                actual: 1000,
+                percent: 10,
+              },
+            ],
+          },
+        ],
+      },
+    };
+  }
 }

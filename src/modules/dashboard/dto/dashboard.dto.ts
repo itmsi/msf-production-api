@@ -226,3 +226,135 @@ export class BargeListResponseDto {
   @ApiProperty({ description: 'Barge list data', type: BargeListDataDto })
   data: BargeListDataDto;
 }
+
+// DTO untuk barge-status endpoint
+export class BargeOreItemDto {
+  @ApiProperty({ description: 'Progress name', example: 'progress' })
+  name: string;
+
+  @ApiProperty({ description: 'Progress value', example: 10 })
+  value: number;
+
+  @ApiProperty({ description: 'Fill color', example: '#3BAF9F' })
+  fill: string;
+}
+
+export class BargeStatusListItemDto {
+  @ApiProperty({ description: 'Variable name', example: 'Barge' })
+  variable: string;
+
+  @ApiProperty({ description: 'Target value', example: 100 })
+  target: number;
+
+  @ApiProperty({ description: 'Actual value', example: 90 })
+  actual: number;
+
+  @ApiProperty({ description: 'Deviation value', example: 6 })
+  dev: number;
+
+  @ApiProperty({ description: 'Percentage', example: 12 })
+  percent: number;
+}
+
+export class BargeStatusGainLostItemDto {
+  @ApiProperty({ description: 'Name', example: 'Target' })
+  name: string;
+
+  @ApiProperty({ description: 'Value', example: 9000 })
+  value: number;
+
+  @ApiProperty({ description: 'Type', example: 'increase' })
+  type: string;
+
+  @ApiProperty({ description: 'Base value', example: 0 })
+  base: number;
+
+  @ApiProperty({ description: 'Height value', example: 9000 })
+  height: number;
+}
+
+export class BargeStatusDataDto {
+  @ApiProperty({ description: 'Barging ore data', type: [BargeOreItemDto] })
+  barging_ore: BargeOreItemDto[];
+
+  @ApiProperty({ description: 'List data', type: [BargeStatusListItemDto] })
+  list: BargeStatusListItemDto[];
+
+  @ApiProperty({ description: 'Gain lost data', type: [BargeStatusGainLostItemDto] })
+  gain_lost: BargeStatusGainLostItemDto[];
+}
+
+export class BargeStatusResponseDto {
+  @ApiProperty({ description: 'HTTP status code', example: 200 })
+  statusCode: number;
+
+  @ApiProperty({ description: 'Response message', example: 'success' })
+  message: string;
+
+  @ApiProperty({ description: 'Barge status data', type: BargeStatusDataDto })
+  data: BargeStatusDataDto;
+}
+
+// DTO untuk lost-time-summary endpoint
+export class LostTimeSummaryMohhItemDto {
+  @ApiProperty({ description: 'Name', example: 'STB' })
+  name: string;
+
+  @ApiProperty({ description: 'Value', example: 2224.3 })
+  value: number;
+
+  @ApiProperty({ description: 'Color', example: '#34d399' })
+  color: string;
+}
+
+export class LostTimeSummaryLostTimeItemDto {
+  @ApiProperty({ description: 'Name', example: 'Rain' })
+  name: string;
+
+  @ApiProperty({ description: 'Value', example: 0.3 })
+  value: number;
+
+  @ApiProperty({ description: 'Color', example: '#1e3a8a' })
+  color: string;
+}
+
+export class LostTimeSummaryTableDataDto {
+  @ApiProperty({ description: 'Target value', example: 1000 })
+  target: number;
+
+  @ApiProperty({ description: 'Actual value', example: 1000 })
+  actual: number;
+
+  @ApiProperty({ description: 'Percentage', example: 10 })
+  percent: number;
+}
+
+export class LostTimeSummaryTableDto {
+  @ApiProperty({ description: 'Table title', example: 'PA' })
+  title: string;
+
+  @ApiProperty({ description: 'Table data', type: [LostTimeSummaryTableDataDto] })
+  data: LostTimeSummaryTableDataDto[];
+}
+
+export class LostTimeSummaryDataDto {
+  @ApiProperty({ description: 'MOHH data', type: [LostTimeSummaryMohhItemDto] })
+  mohh: LostTimeSummaryMohhItemDto[];
+
+  @ApiProperty({ description: 'Lost time data', type: [LostTimeSummaryLostTimeItemDto] })
+  lost_time: LostTimeSummaryLostTimeItemDto[];
+
+  @ApiProperty({ description: 'Tables data', type: [LostTimeSummaryTableDto] })
+  tables: LostTimeSummaryTableDto[];
+}
+
+export class LostTimeSummaryResponseDto {
+  @ApiProperty({ description: 'HTTP status code', example: 200 })
+  statusCode: number;
+
+  @ApiProperty({ description: 'Response message', example: 'success' })
+  message: string;
+
+  @ApiProperty({ description: 'Lost time summary data', type: LostTimeSummaryDataDto })
+  data: LostTimeSummaryDataDto;
+}

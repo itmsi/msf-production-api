@@ -10,6 +10,8 @@ import {
   LostTimeResponseDto,
   DailyAchievementResponseDto,
   BargeListResponseDto,
+  BargeStatusResponseDto,
+  LostTimeSummaryResponseDto,
 } from './dto/dashboard.dto';
 
 @ApiTags('Dashboard')
@@ -72,5 +74,19 @@ export class DashboardController {
   @ApiResponse({ status: 200, description: 'Successfully retrieved barge list data', type: BargeListResponseDto })
   async getBargeList() {
     return this.dashboardService.getBargeList();
+  }
+
+  @Get('barge-status')
+  @ApiOperation({ summary: 'Get barge status data', description: 'Retrieve barge status with barging ore, list, and gain lost data' })
+  @ApiResponse({ status: 200, description: 'Successfully retrieved barge status data', type: BargeStatusResponseDto })
+  async getBargeStatus() {
+    return this.dashboardService.getBargeStatus();
+  }
+
+  @Get('lost-time-summary')
+  @ApiOperation({ summary: 'Get lost time summary data', description: 'Retrieve lost time summary with MOHH, lost time, and tables data' })
+  @ApiResponse({ status: 200, description: 'Successfully retrieved lost time summary data', type: LostTimeSummaryResponseDto })
+  async getLostTimeSummary() {
+    return this.dashboardService.getLostTimeSummary();
   }
 }
