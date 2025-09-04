@@ -45,8 +45,8 @@ export class PlanWorkingHourService {
         // Handle plan_date yang bisa berupa string atau Date
         const planDateStr =
           createDto.plan_date instanceof Date
-            ? createDto.plan_date.toISOString().split('T')[0]
-            : new Date(createDto.plan_date).toISOString().split('T')[0];
+            ? createDto.plan_date.toLocaleDateString('en-CA')
+            : new Date(createDto.plan_date).toLocaleDateString('en-CA');
 
         throw new BadRequestException(
           `Data untuk tanggal ${planDateStr} sudah ada. Silakan gunakan tanggal yang berbeda.`,

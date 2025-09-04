@@ -162,9 +162,9 @@ export class HaulingProblemResponseDto {
 
   @ApiProperty({
     description: 'Tanggal aktivitas',
-    example: '2024-01-01T00:00:00.000Z',
+    example: '2024-01-01',
   })
-  activity_date: Date;
+  activity_date: string;
 
   @ApiProperty({
     description: 'Shift kerja',

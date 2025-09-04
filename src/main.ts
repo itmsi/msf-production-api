@@ -58,7 +58,7 @@ async function bootstrap() {
   }); // http://localhost:3000/docs
   app.enableCors({
     origin: ['*'],
-    methods: 'GET,POST,PUT,DELETE',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true, // allow cookies / Authorization header
   });
   app.useGlobalFilters(new AllExceptionsFilter());

@@ -112,16 +112,16 @@ export class HaulingListService {
 
     // Apply date range filters
     if (filters.start_date && filters.end_date) {
-      queryBuilder.andWhere('hauling.activityDate BETWEEN :start_date AND :end_date', {
+      queryBuilder.andWhere('CAST(hauling.activityDate AS DATE) BETWEEN :start_date AND :end_date', {
         start_date: filters.start_date,
         end_date: filters.end_date
       });
     } else if (filters.start_date) {
-      queryBuilder.andWhere('hauling.activityDate >= :start_date', {
+      queryBuilder.andWhere('CAST(hauling.activityDate AS DATE) >= :start_date', {
         start_date: filters.start_date
       });
     } else if (filters.end_date) {
-      queryBuilder.andWhere('hauling.activityDate <= :end_date', {
+      queryBuilder.andWhere('CAST(hauling.activityDate AS DATE) <= :end_date', {
         end_date: filters.end_date
       });
     }
@@ -401,7 +401,7 @@ export class HaulingListService {
     
     return {
       id: haulingList.id,
-      activity_date: haulingList.activityDate.toISOString().split('T')[0],
+      activity_date: haulingList.activityDate.toLocaleDateString('en-CA'), // Format YYYY-MM-DD dengan timezone lokal
       shift: haulingList.shift,
       time: haulingList.time.toISOString(),
       time_range: timeRange,

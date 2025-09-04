@@ -92,7 +92,7 @@ export class HaulingProblemService {
 
       const response: HaulingProblemResponseDto = {
         id: result.id,
-        activity_date: result.activityDate,
+        activity_date: result.activityDate.toLocaleDateString('en-CA'), // Format YYYY-MM-DD dengan timezone lokal
         shift: result.shift,
         activities_id: result.activitiesId,
         activities_name: result.activities?.name || '',
@@ -201,7 +201,7 @@ export class HaulingProblemService {
       // Transform result to DTO format
       const transformedResult: HaulingProblemResponseDto[] = result.map((item) => ({
         id: item.id,
-        activity_date: item.activityDate,
+        activity_date: item.activityDate.toLocaleDateString('en-CA'), // Format YYYY-MM-DD dengan timezone lokal
         shift: item.shift,
         activities_id: item.activitiesId,
         activities_name: item.activities?.name || '',
@@ -244,7 +244,7 @@ export class HaulingProblemService {
 
       const response: HaulingProblemResponseDto = {
         id: result.id,
-        activity_date: result.activityDate,
+        activity_date: result.activityDate.toLocaleDateString('en-CA'), // Format YYYY-MM-DD dengan timezone lokal
         shift: result.shift,
         activities_id: result.activitiesId,
         activities_name: result.activities?.name || '',
@@ -338,7 +338,7 @@ export class HaulingProblemService {
 
       const response: HaulingProblemResponseDto = {
         id: result.id,
-        activity_date: result.activityDate,
+        activity_date: result.activityDate.toLocaleDateString('en-CA'), // Format YYYY-MM-DD dengan timezone lokal
         shift: result.shift,
         activities_id: result.activitiesId,
         activities_name: result.activities?.name || '',

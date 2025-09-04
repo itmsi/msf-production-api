@@ -137,7 +137,7 @@ export class CreateBaseDataProductionDto {
     if (value) {
       const date = new Date(value);
       if (!isNaN(date.getTime())) {
-        return date.toISOString().split('T')[0]; // Return YYYY-MM-DD format
+        return date.toLocaleDateString('en-CA'); // Return YYYY-MM-DD format dengan timezone lokal
       }
     }
     return value;

@@ -174,7 +174,7 @@ export class BargingProblemService {
       // Transform result to DTO format
       const transformedResult: BargingProblemResponseDto[] = result.map((item) => ({
         id: item.id,
-        activity_date: item.activityDate.toISOString(),
+        activity_date: item.activityDate.toLocaleDateString('en-CA'), // Format YYYY-MM-DD dengan timezone lokal
         shift: item.shift,
         barge_id: item.bargeId,
         barge_name: item.barge?.name || '',
@@ -216,7 +216,7 @@ export class BargingProblemService {
 
       const result: BargingProblemResponseDto = {
         id: bargingProblem.id,
-        activity_date: bargingProblem.activityDate.toISOString(),
+        activity_date: bargingProblem.activityDate.toLocaleDateString('en-CA'), // Format YYYY-MM-DD dengan timezone lokal
         shift: bargingProblem.shift,
         barge_id: bargingProblem.bargeId,
         barge_name: bargingProblem.barge?.name || '',
@@ -303,7 +303,7 @@ export class BargingProblemService {
 
       const response: BargingProblemResponseDto = {
         id: result.id,
-        activity_date: result.activityDate.toISOString(),
+        activity_date: result.activityDate.toLocaleDateString('en-CA'), // Format YYYY-MM-DD dengan timezone lokal
         shift: result.shift,
         barge_id: result.bargeId,
         barge_name: result.barge?.name || '',
@@ -428,7 +428,7 @@ export class BargingProblemService {
 
       const response: BargingProblemResponseDto = {
         id: result.id,
-        activity_date: result.activityDate.toISOString(),
+        activity_date: result.activityDate.toLocaleDateString('en-CA'), // Format YYYY-MM-DD dengan timezone lokal
         shift: result.shift,
         barge_id: result.bargeId,
         barge_name: result.barge?.name || '',

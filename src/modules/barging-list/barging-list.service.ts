@@ -65,10 +65,10 @@ export class BargingListService {
    * Transform response untuk include unit_hauler_name dan barge_name
    */
   private transformResponse(bargingList: BargingList): BargingListResponseDto {
-    // Pastikan activityDate dan time adalah Date object
+    // Pastikan activityDate dan time adalah Date object dengan timezone lokal
     const activityDate = bargingList.activityDate instanceof Date 
-      ? bargingList.activityDate.toISOString().split('T')[0]
-      : new Date(bargingList.activityDate).toISOString().split('T')[0];
+      ? bargingList.activityDate.toLocaleDateString('en-CA')
+      : new Date(bargingList.activityDate).toLocaleDateString('en-CA');
     
     const time = bargingList.time instanceof Date 
       ? bargingList.time.toISOString()

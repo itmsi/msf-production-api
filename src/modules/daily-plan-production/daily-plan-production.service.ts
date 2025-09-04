@@ -194,7 +194,7 @@ export class DailyPlanProductionService {
 
       return {
         id: plan.id,
-        date: planDate.toISOString().split('T')[0],
+        date: planDate.toLocaleDateString('en-CA'),
         calender_day: calenderDay,
         average_month_ewh: roundToTwoDecimals(
           plan.average_moth_ewh || plan.average_day_ewh,
@@ -251,14 +251,13 @@ export class DailyPlanProductionService {
       // Handle plan_date yang mungkin bukan Date object
       let currentPlanDateStr = '';
       if (plan.plan_date instanceof Date) {
-        currentPlanDateStr = plan.plan_date.toISOString().split('T')[0];
+        currentPlanDateStr = plan.plan_date.toLocaleDateString('en-CA');
       } else if (typeof plan.plan_date === 'string') {
         currentPlanDateStr = (plan.plan_date as string).split('T')[0];
       } else {
         // Fallback jika format tidak dikenali
         currentPlanDateStr = new Date(plan.plan_date as any)
-          .toISOString()
-          .split('T')[0];
+          .toLocaleDateString('en-CA');
       }
 
       if (updateDto.plan_date !== currentPlanDateStr) {

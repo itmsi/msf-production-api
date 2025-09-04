@@ -64,7 +64,7 @@ export class ParentPlanWorkingHourService {
     } else {
       // Konversi ke tanggal pertama dari bulan yang sama
       planDate = new Date(year, month, 1);
-      createDto.plan_date = planDate.toISOString().split('T')[0];
+      createDto.plan_date = planDate.toLocaleDateString('en-CA');
       console.log(`Tanggal dikonversi dari ${inputDate.toISOString()} menjadi ${createDto.plan_date}`);
     }
     
@@ -704,7 +704,7 @@ export class ParentPlanWorkingHourService {
         const newPlanDate = new Date(year, month, 1);
         
         // Update plan_date dengan tanggal yang sudah dikonversi
-        updateDto.plan_date = newPlanDate.toISOString().split('T')[0];
+        updateDto.plan_date = newPlanDate.toLocaleDateString('en-CA');
         
         console.log(`Tanggal dikonversi dari ${inputDate.toISOString()} menjadi ${updateDto.plan_date}`);
         
@@ -1278,7 +1278,7 @@ export class ParentPlanWorkingHourService {
 
         return {
           r_plan_working_hour_id: pwh.id,
-          plan_date: pwh.plan_date.toISOString().split('T')[0], // Format YYYY-MM-DD
+          plan_date: pwh.plan_date.toLocaleDateString('en-CA'), // Format YYYY-MM-DD dengan timezone lokal
           calendar_day: calendarDay,
           working_hour_day: this.roundToTwoDecimals(pwh.working_hour_day || 0),
           working_hour_month: this.roundToTwoDecimals(

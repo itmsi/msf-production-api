@@ -728,7 +728,7 @@ export class ParentPlanProductionService {
     const previousMonthDate = new Date(previousYear, previousMonth, lastDayOfPreviousMonth);
     
     // Format tanggal untuk query
-    const formattedDate = previousMonthDate.toISOString().split('T')[0];
+    const formattedDate = previousMonthDate.toLocaleDateString('en-CA');
     
     console.log(`Input date: ${planDate}`);
     console.log(`Previous month date: ${formattedDate}`);

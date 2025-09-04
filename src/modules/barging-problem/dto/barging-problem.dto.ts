@@ -182,7 +182,7 @@ export class BargingProblemResponseDto {
 
   @ApiProperty({
     description: 'Tanggal aktivitas barging problem',
-    example: '2024-01-01T00:00:00.000Z',
+    example: '2024-01-01',
   })
   activity_date: string;
 
