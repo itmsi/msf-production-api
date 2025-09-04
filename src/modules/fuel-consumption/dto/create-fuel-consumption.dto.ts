@@ -1,5 +1,26 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsString, IsDateString, IsNumber, IsOptional, IsEnum } from 'class-validator';
+import { IsInt, IsString, IsDateString, IsNumber, IsOptional, IsEnum, ValidateIf } from 'class-validator';
+import { registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator';
+
+// Custom validator for greater than comparison
+function IsGreaterThan(property: string, validationOptions?: ValidationOptions) {
+  return function (object: Object, propertyName: string) {
+    registerDecorator({
+      name: 'isGreaterThan',
+      target: object.constructor,
+      propertyName: propertyName,
+      constraints: [property],
+      options: validationOptions,
+      validator: {
+        validate(value: any, args: ValidationArguments) {
+          const [relatedPropertyName] = args.constraints;
+          const relatedValue = (args.object as any)[relatedPropertyName];
+          return value > relatedValue;
+        },
+      },
+    });
+  };
+}
 
 export class CreateFuelConsumptionDto {
   @ApiProperty({
@@ -56,6 +77,10 @@ export class CreateFuelConsumptionDto {
   })
   @IsOptional()
   @IsNumber()
+  @ValidateIf((o) => o.last_refueling_hm !== undefined && o.now_refueling_hm !== undefined)
+  @IsGreaterThan('last_refueling_hm', {
+    message: 'now_refueling_hm tidak boleh kurang dari atau sama dengan last_refueling_hm',
+  })
   now_refueling_hm?: number;
 
   @ApiProperty({
@@ -74,6 +99,10 @@ export class CreateFuelConsumptionDto {
   })
   @IsOptional()
   @IsNumber()
+  @ValidateIf((o) => o.last_refueling_km !== undefined && o.now_refueling_km !== undefined)
+  @IsGreaterThan('last_refueling_km', {
+    message: 'now_refueling_km tidak boleh kurang dari atau sama dengan last_refueling_km',
+  })
   now_refueling_km?: number;
 
   @ApiProperty({
@@ -111,6 +140,10 @@ export class CreateFuelConsumptionDto {
   })
   @IsOptional()
   @IsDateString()
+  @ValidateIf((o) => o.start_refueling_time !== undefined && o.end_refueling_time !== undefined)
+  @IsGreaterThan('start_refueling_time', {
+    message: 'end_refueling_time tidak boleh kurang dari atau sama dengan start_refueling_time',
+  })
   end_refueling_time?: string;
 
   // Calculated fields (not in request body, but needed for service)
