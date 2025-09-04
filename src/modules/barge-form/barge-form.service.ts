@@ -24,16 +24,25 @@ export class BargeFormService {
 
   async create(createBargeFormDto: CreateBargeFormDto): Promise<any> {
     try {
+      // Get barge capacity first
+      const bargeCapacityResult = await this.bargeFormRepository.query(
+        'SELECT capacity FROM m_barge WHERE id = $1',
+        [createBargeFormDto.barge_id]
+      );
+      const capacity = bargeCapacityResult.length > 0 ? bargeCapacityResult[0].capacity : null;
+      console.log('Creating barge form - barge_id:', createBargeFormDto.barge_id, 'capacity:', capacity);
+
       // Calculate capacity_per_dt if both vol_by_survey and total_vessel are provided
       let capacity_per_dt: number | null = null;
       if (createBargeFormDto.vol_by_survey && createBargeFormDto.total_vessel) {
         capacity_per_dt = createBargeFormDto.vol_by_survey / createBargeFormDto.total_vessel;
       }
 
-      // Calculate achievment if both vol_by_survey and capacity_per_dt are provided
+      // Calculate achievment if both vol_by_survey and capacity are provided
       let achievment: number | null = null;
-      if (createBargeFormDto.vol_by_survey && capacity_per_dt) {
-        achievment = Number((createBargeFormDto.vol_by_survey / capacity_per_dt).toFixed(2));
+      if (createBargeFormDto.vol_by_survey && capacity) {
+        achievment = Number((createBargeFormDto.vol_by_survey / capacity).toFixed(2));
+        console.log('Creating barge form - vol_by_survey:', createBargeFormDto.vol_by_survey, 'capacity:', capacity, 'achievment:', achievment);
       }
 
       // Calculate status based on end_loading
@@ -67,6 +76,7 @@ export class BargeFormService {
         shipment: bargeFormWithRelations!.shipment,
         barge_name: bargeFormWithRelations!.barge?.name || '',
         site_name: bargeFormWithRelations!.site?.name || '',
+        capacity: bargeFormWithRelations!.barge?.capacity || null,
         start_loading: bargeFormWithRelations!.start_loading,
         end_loading: bargeFormWithRelations!.end_loading,
         total_vessel: bargeFormWithRelations!.total_vessel ? Number(bargeFormWithRelations!.total_vessel.toFixed(2)) : null,
@@ -127,35 +137,72 @@ export class BargeFormService {
         .orderBy('bargeForm.createdAt', 'DESC')
         .getMany();
 
+      console.log('Raw bargeForms data:', JSON.stringify(bargeForms, null, 2));
+
       // Transform data to response format
-      const transformedData: BargeFormResponseDto[] = bargeForms.map((item) => ({
-        id: item.id,
-        barge_id: item.barge_id,
-        site_id: item.site_id,
-        shipment: item.shipment,
-        barge_name: item.barge?.name || '',
-        site_name: item.site?.name || '',
-        start_loading: item.start_loading,
-        end_loading: item.end_loading,
-        total_vessel: item.total_vessel ? Number(item.total_vessel.toFixed(2)) : null,
-        vol_by_survey: item.vol_by_survey ? Number(item.vol_by_survey.toFixed(2)) : null,
-        capacity_per_dt: item.capacity_per_dt ? Number(item.capacity_per_dt.toFixed(2)) : null,
-        achievment: item.achievment ? Number(item.achievment.toFixed(2)) : null,
-        remarks: item.remarks,
-        status: item.status,
+      const transformedData: BargeFormResponseDto[] = await Promise.all(bargeForms.map(async (item) => {
+        console.log('Processing item:', item.id, 'barge_id:', item.barge_id, 'vol_by_survey:', item.vol_by_survey);
+        
+        // Get barge capacity directly from database
+        const bargeCapacityResult = await this.bargeFormRepository.query(
+          'SELECT capacity FROM m_barge WHERE id = $1',
+          [item.barge_id]
+        );
+        
+        const capacity = bargeCapacityResult.length > 0 ? bargeCapacityResult[0].capacity : null;
+        console.log('Barge capacity for item', item.id, 'barge_id', item.barge_id, ':', capacity);
+        
+        // Recalculate achievement using new formula: vol_by_survey / capacity
+        let recalculatedAchievement: number | null = null;
+        if (item.vol_by_survey && capacity) {
+          recalculatedAchievement = Number((item.vol_by_survey / capacity).toFixed(2));
+          console.log('Recalculating achievement for item', item.id, '- vol_by_survey:', item.vol_by_survey, 'capacity:', capacity, 'new_achievement:', recalculatedAchievement);
+        } else {
+          console.log('Cannot calculate achievement for item', item.id, '- vol_by_survey:', item.vol_by_survey, 'capacity:', capacity);
+        }
+        
+        const result = {
+          id: item.id,
+          barge_id: item.barge_id,
+          site_id: item.site_id,
+          shipment: item.shipment,
+          barge_name: item.barge?.name || '',
+          site_name: item.site?.name || '',
+          start_loading: item.start_loading,
+          end_loading: item.end_loading,
+          total_vessel: item.total_vessel ? Number(item.total_vessel.toFixed(2)) : null,
+          vol_by_survey: item.vol_by_survey ? Number(item.vol_by_survey.toFixed(2)) : null,
+          capacity_per_dt: item.capacity_per_dt ? Number(item.capacity_per_dt.toFixed(2)) : null,
+          achievment: recalculatedAchievement, // Use recalculated achievement
+          remarks: item.remarks,
+          status: item.status,
+          capacity: capacity,
+        } as any;
+        
+        console.log('Final result object:', JSON.stringify(result, null, 2));
+        return result;
       }));
+
+      console.log('Final transformed data:', JSON.stringify(transformedData, null, 2));
 
       if (transformedData.length === 0) {
         return emptyDataResponse('No barge forms found');
       }
 
-      return paginateResponse(
-        transformedData,
-        total,
-        page,
-        limit,
-        'Barge forms retrieved successfully'
-      );
+      const response = {
+        statusCode: 200,
+        message: 'Barge forms retrieved successfully',
+        data: transformedData,
+        pagination: {
+          total,
+          page,
+          limit,
+          lastPage: Math.ceil(total / limit),
+        },
+      };
+
+      console.log('Final response:', JSON.stringify(response, null, 2));
+      return response;
     } catch (error) {
       throwError('Failed to retrieve barge forms', 500);
     }
@@ -172,6 +219,20 @@ export class BargeFormService {
         return emptyDataResponse('Barge form not found');
       }
 
+      // Get barge capacity and recalculate achievement
+      const bargeCapacityResult = await this.bargeFormRepository.query(
+        'SELECT capacity FROM m_barge WHERE id = $1',
+        [bargeForm.barge_id]
+      );
+      const capacity = bargeCapacityResult.length > 0 ? bargeCapacityResult[0].capacity : null;
+      
+      // Recalculate achievement using new formula: vol_by_survey / capacity
+      let recalculatedAchievement: number | null = null;
+      if (bargeForm.vol_by_survey && capacity) {
+        recalculatedAchievement = Number((bargeForm.vol_by_survey / capacity).toFixed(2));
+        console.log('Finding barge form', id, '- vol_by_survey:', bargeForm.vol_by_survey, 'capacity:', capacity, 'new_achievement:', recalculatedAchievement);
+      }
+
       const transformedData: BargeFormResponseDto = {
         id: bargeForm.id,
         barge_id: bargeForm.barge_id,
@@ -179,12 +240,13 @@ export class BargeFormService {
         shipment: bargeForm.shipment,
         barge_name: bargeForm.barge?.name || '',
         site_name: bargeForm.site?.name || '',
+        capacity: capacity,
         start_loading: bargeForm.start_loading,
         end_loading: bargeForm.end_loading,
         total_vessel: bargeForm.total_vessel ? Number(bargeForm.total_vessel.toFixed(2)) : null,
         vol_by_survey: bargeForm.vol_by_survey ? Number(bargeForm.vol_by_survey.toFixed(2)) : null,
         capacity_per_dt: bargeForm.capacity_per_dt ? Number(bargeForm.capacity_per_dt.toFixed(2)) : null,
-        achievment: bargeForm.achievment ? Number(bargeForm.achievment.toFixed(2)) : null,
+        achievment: recalculatedAchievement, // Use recalculated achievement
         remarks: bargeForm.remarks,
         status: bargeForm.status,
       };
@@ -205,6 +267,14 @@ export class BargeFormService {
         throw new NotFoundException('Barge form not found');
       }
 
+      // Get barge capacity first
+      const bargeCapacityResult = await this.bargeFormRepository.query(
+        'SELECT capacity FROM m_barge WHERE id = $1',
+        [bargeForm.barge_id]
+      );
+      const capacity = bargeCapacityResult.length > 0 ? bargeCapacityResult[0].capacity : null;
+      console.log('Updating barge form - barge_id:', bargeForm.barge_id, 'capacity:', capacity);
+
       // Get current values or use updated values
       const vol_by_survey = updateBargeFormDto.vol_by_survey ?? bargeForm.vol_by_survey;
       const total_vessel = updateBargeFormDto.total_vessel ?? bargeForm.total_vessel;
@@ -216,10 +286,11 @@ export class BargeFormService {
         capacity_per_dt = vol_by_survey / total_vessel;
       }
 
-      // Calculate achievment if both vol_by_survey and capacity_per_dt are provided
+      // Calculate achievment if both vol_by_survey and capacity are provided
       let achievment: number | null = null;
-      if (vol_by_survey && capacity_per_dt) {
-        achievment = Number((vol_by_survey / capacity_per_dt).toFixed(2));
+      if (vol_by_survey && capacity) {
+        achievment = Number((vol_by_survey / capacity).toFixed(2));
+        console.log('Updating barge form - vol_by_survey:', vol_by_survey, 'capacity:', capacity, 'achievment:', achievment);
       }
 
       // Calculate status based on end_loading
@@ -249,6 +320,7 @@ export class BargeFormService {
         shipment: updatedBargeForm.shipment,
         barge_name: updatedBargeForm.barge?.name || '',
         site_name: updatedBargeForm.site?.name || '',
+        capacity: updatedBargeForm.barge?.capacity || null,
         start_loading: updatedBargeForm.start_loading,
         end_loading: updatedBargeForm.end_loading,
         total_vessel: updatedBargeForm.total_vessel,

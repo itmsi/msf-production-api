@@ -38,6 +38,13 @@ export class BargeFormResponseDto {
   site_name: string;
 
   @ApiProperty({
+    description: 'Barge Capacity from m_barge table',
+    example: 1000,
+    nullable: true,
+  })
+  capacity: number | null;
+
+  @ApiProperty({
     description: 'Start Loading Date',
     example: '2024-01-01T08:00:00Z',
   })
