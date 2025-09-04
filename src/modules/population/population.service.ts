@@ -206,21 +206,21 @@ export class PopulationService {
               dumpTruckName: 'dump truck'
             });
             console.log('✅ Filter applied: Hanya dump truck (case-insensitive)');
-          } else {
-            // Jika is_dt = false, ambil semua kecuali dump truck
-            console.log('🔍 Applying filter: is_dt = false (semua kecuali dump truck)');
-            qb.andWhere('LOWER(unitType.unit_name) != LOWER(:dumpTruckName)', { 
-              dumpTruckName: 'dump truck'
+          } else if (isDt === false) {
+            // Jika is_dt = false, hanya ambil excavator
+            console.log('🔍 Applying filter: is_dt = false (hanya excavator)');
+            qb.andWhere('LOWER(unitType.unit_name) = LOWER(:excavatorName)', { 
+              excavatorName: 'excavator'
             });
-            console.log('✅ Filter applied: Semua kecuali dump truck (case-insensitive)');
+            console.log('✅ Filter applied: Hanya excavator (case-insensitive)');
           }
         } catch (error) {
           console.error('❌ Error applying is_dt filter:', error);
           console.log('🔄 Fallback: Tidak ada filter is_dt');
         }
       } else {
-        console.log('❌ Condition NOT met: No is_dt filter applied');
-        console.log('Reason: isDt is null or undefined');
+        console.log('✅ No is_dt parameter provided: Getting all data');
+        console.log('Reason: isDt is null or undefined - showing all unit types');
       }
       console.log('=== END DEBUG is_dt FILTER ===');
 
