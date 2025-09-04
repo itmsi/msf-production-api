@@ -29,6 +29,7 @@ import { HaulingProblemModule } from './modules/hauling-problem/hauling-problem.
 import { BargingListModule } from './modules/barging-list/barging-list.module';
 import { BargingProblemModule } from './modules/barging-problem/barging-problem.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { SettingDashboardModule } from './modules/setting-dashboard/setting-dashboard.module';
 import { S3Module } from './integrations/s3/s3.module';
 
 @Module({
@@ -76,6 +77,7 @@ import { S3Module } from './integrations/s3/s3.module';
     BargingListModule,
     BargingProblemModule,
     DashboardModule,
+    SettingDashboardModule,
     S3Module,
   ],
 })
