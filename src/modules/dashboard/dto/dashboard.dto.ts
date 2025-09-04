@@ -358,3 +358,168 @@ export class LostTimeSummaryResponseDto {
   @ApiProperty({ description: 'Lost time summary data', type: LostTimeSummaryDataDto })
   data: LostTimeSummaryDataDto;
 }
+
+// DTO untuk monthly/status endpoint
+export class MonthlyStatusChartDataDto {
+  @ApiProperty({ description: 'Chart data name', example: 'progress' })
+  name: string;
+
+  @ApiProperty({ description: 'Chart data value', example: 10 })
+  value: number;
+
+  @ApiProperty({ description: 'Fill color', example: '#3BAF9F' })
+  fill: string;
+}
+
+export class MonthlyStatusItemDto {
+  @ApiProperty({ description: 'Status title', example: 'OB Removing' })
+  title: string;
+
+  @ApiProperty({ description: 'Target value', example: 3000 })
+  target: number;
+
+  @ApiProperty({ description: 'Chart data', type: [MonthlyStatusChartDataDto] })
+  chart_data: MonthlyStatusChartDataDto[];
+
+  @ApiProperty({ description: 'Weekness value', example: 123 })
+  weekness: number;
+
+  @ApiProperty({ description: 'Achievement value', example: 123.123218 })
+  achievement: number;
+}
+
+export class MonthlyStatusResponseDto {
+  @ApiProperty({ description: 'HTTP status code', example: 200 })
+  statusCode: number;
+
+  @ApiProperty({ description: 'Response message', example: 'success' })
+  message: string;
+
+  @ApiProperty({ description: 'Monthly status data', type: [MonthlyStatusItemDto] })
+  data: MonthlyStatusItemDto[];
+}
+
+// DTO untuk monthly/trend-hauling-barging endpoint
+export class TrendHaulingBargingItemDto {
+  @ApiProperty({ description: 'Date in DD/MM format', example: '01/07' })
+  date: string;
+
+  @ApiProperty({ description: 'Ore barging value', example: 2500 })
+  ore_barging: number;
+
+  @ApiProperty({ description: 'Ore hauling value', example: 2000 })
+  ore_hauling: number;
+
+  @ApiProperty({ description: 'Slippery condition', example: 5 })
+  slippery: number;
+
+  @ApiProperty({ description: 'Rain condition', example: 8 })
+  rain: number;
+}
+
+export class TrendHaulingBargingResponseDto {
+  @ApiProperty({ description: 'HTTP status code', example: 200 })
+  statusCode: number;
+
+  @ApiProperty({ description: 'Response message', example: 'success' })
+  message: string;
+
+  @ApiProperty({ description: 'Trend hauling barging data', type: [TrendHaulingBargingItemDto] })
+  data: TrendHaulingBargingItemDto[];
+}
+
+// DTO untuk monthly/trend-fuel-ratio endpoint
+export class TrendFuelRatioChartItemDto {
+  @ApiProperty({ description: 'Date in DD/MM format', example: '01/07' })
+  date: string;
+
+  @ApiProperty({ description: 'FR value', example: 2500 })
+  fr: number;
+
+  @ApiProperty({ description: 'SR value', example: 2000 })
+  sr: number;
+}
+
+export class TrendFuelRatioMetaItemDto {
+  @ApiProperty({ description: 'Meta key', example: 'fr' })
+  key: string;
+
+  @ApiProperty({ description: 'Meta label', example: 'FR' })
+  label: string;
+
+  @ApiProperty({ description: 'Meta color', example: '#D96C06' })
+  color: string;
+
+  @ApiProperty({ description: 'Y-axis position', example: 'left' })
+  yAxis: string;
+}
+
+export class TrendFuelRatioDataDto {
+  @ApiProperty({ description: 'Chart data', type: [TrendFuelRatioChartItemDto] })
+  chart: TrendFuelRatioChartItemDto[];
+
+  @ApiProperty({ description: 'Meta data', type: [TrendFuelRatioMetaItemDto] })
+  meta: TrendFuelRatioMetaItemDto[];
+}
+
+export class TrendFuelRatioResponseDto {
+  @ApiProperty({ description: 'HTTP status code', example: 200 })
+  statusCode: number;
+
+  @ApiProperty({ description: 'Response message', example: 'success' })
+  message: string;
+
+  @ApiProperty({ description: 'Trend fuel ratio data', type: TrendFuelRatioDataDto })
+  data: TrendFuelRatioDataDto;
+}
+
+// DTO untuk monthly/trend-performance-unit endpoint
+export class TrendPerformanceUnitChartItemDto {
+  @ApiProperty({ description: 'Date in DD/MM format', example: '01/07' })
+  date: string;
+
+  @ApiProperty({ description: 'PA value', example: 2500 })
+  pa: number;
+
+  @ApiProperty({ description: 'MA value', example: 200 })
+  ma: number;
+
+  @ApiProperty({ description: 'UA value', example: 2000 })
+  ua: number;
+
+  @ApiProperty({ description: 'EU value', example: 2000 })
+  eu: number;
+}
+
+export class TrendPerformanceUnitMetaItemDto {
+  @ApiProperty({ description: 'Meta key', example: 'pa' })
+  key: string;
+
+  @ApiProperty({ description: 'Meta label', example: 'PA' })
+  label: string;
+
+  @ApiProperty({ description: 'Meta color', example: '#D96C06' })
+  color: string;
+
+  @ApiProperty({ description: 'Y-axis position', example: 'left' })
+  yAxis: string;
+}
+
+export class TrendPerformanceUnitDataDto {
+  @ApiProperty({ description: 'Chart data', type: [TrendPerformanceUnitChartItemDto] })
+  chart: TrendPerformanceUnitChartItemDto[];
+
+  @ApiProperty({ description: 'Meta data', type: [TrendPerformanceUnitMetaItemDto] })
+  meta: TrendPerformanceUnitMetaItemDto[];
+}
+
+export class TrendPerformanceUnitResponseDto {
+  @ApiProperty({ description: 'HTTP status code', example: 200 })
+  statusCode: number;
+
+  @ApiProperty({ description: 'Response message', example: 'success' })
+  message: string;
+
+  @ApiProperty({ description: 'Trend performance unit data', type: TrendPerformanceUnitDataDto })
+  data: TrendPerformanceUnitDataDto;
+}

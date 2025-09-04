@@ -1,5 +1,5 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
 import {
   SpiderResponseDto,
@@ -12,6 +12,10 @@ import {
   BargeListResponseDto,
   BargeStatusResponseDto,
   LostTimeSummaryResponseDto,
+  MonthlyStatusResponseDto,
+  TrendHaulingBargingResponseDto,
+  TrendFuelRatioResponseDto,
+  TrendPerformanceUnitResponseDto,
 } from './dto/dashboard.dto';
 
 @ApiTags('Dashboard')
@@ -88,5 +92,37 @@ export class DashboardController {
   @ApiResponse({ status: 200, description: 'Successfully retrieved lost time summary data', type: LostTimeSummaryResponseDto })
   async getLostTimeSummary() {
     return this.dashboardService.getLostTimeSummary();
+  }
+
+  @Get('monthly/status')
+  @ApiOperation({ summary: 'Get monthly status data', description: 'Retrieve monthly status data for various activities with progress charts' })
+  @ApiQuery({ name: 'month', description: 'Month in YYYY-MM format', example: '2025-09' })
+  @ApiResponse({ status: 200, description: 'Successfully retrieved monthly status data', type: MonthlyStatusResponseDto })
+  async getMonthlyStatus(@Query('month') month: string) {
+    return this.dashboardService.getMonthlyStatus(month);
+  }
+
+  @Get('monthly/trend-hauling-barging')
+  @ApiOperation({ summary: 'Get monthly trend hauling barging data', description: 'Retrieve monthly trend data for hauling and barging with weather conditions' })
+  @ApiQuery({ name: 'month', description: 'Month in YYYY-MM format', example: '2025-09' })
+  @ApiResponse({ status: 200, description: 'Successfully retrieved trend hauling barging data', type: TrendHaulingBargingResponseDto })
+  async getTrendHaulingBarging(@Query('month') month: string) {
+    return this.dashboardService.getTrendHaulingBarging(month);
+  }
+
+  @Get('monthly/trend-fuel-ratio')
+  @ApiOperation({ summary: 'Get monthly trend fuel ratio data', description: 'Retrieve monthly trend data for fuel ratio (FR) and specific ratio (SR)' })
+  @ApiQuery({ name: 'month', description: 'Month in YYYY-MM format', example: '2025-09' })
+  @ApiResponse({ status: 200, description: 'Successfully retrieved trend fuel ratio data', type: TrendFuelRatioResponseDto })
+  async getTrendFuelRatio(@Query('month') month: string) {
+    return this.dashboardService.getTrendFuelRatio(month);
+  }
+
+  @Get('monthly/trend-performance-unit')
+  @ApiOperation({ summary: 'Get monthly trend performance unit data', description: 'Retrieve monthly trend data for performance metrics (PA, MA, UA, EU)' })
+  @ApiQuery({ name: 'month', description: 'Month in YYYY-MM format', example: '2025-09' })
+  @ApiResponse({ status: 200, description: 'Successfully retrieved trend performance unit data', type: TrendPerformanceUnitResponseDto })
+  async getTrendPerformanceUnit(@Query('month') month: string) {
+    return this.dashboardService.getTrendPerformanceUnit(month);
   }
 }

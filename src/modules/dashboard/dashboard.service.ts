@@ -249,4 +249,138 @@ export class DashboardService {
       },
     };
   }
+
+  async getMonthlyStatus(month: string) {
+    return {
+      statusCode: 200,
+      message: 'success',
+      data: [
+        {
+          title: 'OB Removing',
+          target: 3000,
+          chart_data: [
+            {
+              name: 'progress',
+              value: 10,
+              fill: '#3BAF9F',
+            },
+          ],
+          weekness: 123,
+          achievement: 123.123218,
+        },
+        {
+          title: 'Ore Hauling',
+          target: 2950,
+          chart_data: [
+            {
+              name: 'progress',
+              value: 40,
+              fill: '#3BAF9F',
+            },
+          ],
+          weekness: 123,
+          achievement: 2700,
+        },
+        {
+          title: 'Ore Barging',
+          target: 2980,
+          chart_data: [
+            {
+              name: 'progress',
+              value: 62.88,
+              fill: '#3BAF9F',
+            },
+          ],
+          weekness: 123,
+          achievement: 2750,
+        },
+        {
+          title: 'Quarry',
+          target: 2950,
+          chart_data: [
+            {
+              name: 'progress',
+              value: 23,
+              fill: '#3BAF9F',
+            },
+          ],
+          weekness: 123,
+          achievement: 2800,
+        },
+      ],
+    };
+  }
+
+  async getTrendHaulingBarging(month: string) {
+    return {
+      statusCode: 200,
+      message: 'success',
+      data: [
+        { date: '01/07', ore_barging: 2500, ore_hauling: 2000, slippery: 5, rain: 8 },
+        { date: '02/07', ore_barging: 2500, ore_hauling: 1800, slippery: 4, rain: 6 },
+        { date: '03/07', ore_barging: 2500, ore_hauling: 1700, slippery: 6, rain: 7 },
+        { date: '04/07', ore_barging: 2500, ore_hauling: 2200, slippery: 8, rain: 9 },
+        { date: '05/07', ore_barging: 2500, ore_hauling: 2100, slippery: 10, rain: 5 },
+        { date: '06/07', ore_barging: 2500, ore_hauling: 1900, slippery: 7, rain: 8 },
+        { date: '07/07', ore_barging: 2500, ore_hauling: 2300, slippery: 9, rain: 10 },
+        { date: '08/07', ore_barging: 2500, ore_hauling: 2100, slippery: 6, rain: 6 },
+        { date: '09/07', ore_barging: 2500, ore_hauling: 2000, slippery: 5, rain: 7 },
+        { date: '10/07', ore_barging: 2500, ore_hauling: 1800, slippery: 8, rain: 8 },
+        { date: '11/07', ore_barging: 2500, ore_hauling: 2100, slippery: 7, rain: 9 },
+        { date: '12/07', ore_barging: 2500, ore_hauling: 2000, slippery: 6, rain: 7 },
+        { date: '12/07', ore_barging: 2500, ore_hauling: 2000, slippery: 6, rain: 7 },
+        { date: '12/07', ore_barging: 2500, ore_hauling: 2000, slippery: 6, rain: 7 },
+        { date: '12/07', ore_barging: 2500, ore_hauling: 2000, slippery: 6, rain: 7 },
+        { date: '12/07', ore_barging: 2500, ore_hauling: 2000, slippery: 6, rain: 7 },
+        { date: '12/07', ore_barging: 2500, ore_hauling: 2000, slippery: 6, rain: 7 },
+        { date: '12/07', ore_barging: 2500, ore_hauling: 2000, slippery: 6, rain: 7 },
+      ],
+    };
+  }
+
+  async getTrendFuelRatio(month: string) {
+    return {
+      statusCode: 200,
+      message: 'success',
+      data: {
+        chart: [
+          { date: '01/07', fr: 2500, sr: 2000 },
+          { date: '02/07', fr: 2500, sr: 1800 },
+          { date: '03/07', fr: 2500, sr: 1700 },
+          { date: '04/07', fr: 2500, sr: 2200 },
+          { date: '05/07', fr: 2500, sr: 2100 },
+          { date: '06/07', fr: 2500, sr: 1900 },
+          { date: '07/07', fr: 2500, sr: 2300 },
+          { date: '08/07', fr: 2500, sr: 2100 },
+          { date: '09/07', fr: 2500, sr: 2000 },
+          { date: '10/07', fr: 2500, sr: 1800 },
+          { date: '11/07', fr: 2500, sr: 2100 },
+          { date: '12/07', fr: 2500, sr: 2000 },
+        ],
+        meta: [
+          { key: 'fr', label: 'FR', color: '#D96C06', yAxis: 'left' },
+          { key: 'sr', label: 'SR', color: '#3E7D70', yAxis: 'left' },
+        ],
+      },
+    };
+  }
+
+  async getTrendPerformanceUnit(month: string) {
+    return {
+      statusCode: 200,
+      message: 'success',
+      data: {
+        chart: [
+          { date: '01/07', pa: 2500, ma: 200, ua: 2000, eu: 2000 },
+          { date: '02/07', pa: 2500, ma: 18200, ua: 1800, eu: 1800 },
+        ],
+        meta: [
+          { key: 'pa', label: 'PA', color: '#D96C06', yAxis: 'left' },
+          { key: 'ma', label: 'MA', color: '#3E7D70', yAxis: 'left' },
+          { key: 'ua', label: 'UA', color: '#54AD9B', yAxis: 'left' },
+          { key: 'eu', label: 'EU', color: '#D7EED2', yAxis: 'left' },
+        ],
+      },
+    };
+  }
 }
