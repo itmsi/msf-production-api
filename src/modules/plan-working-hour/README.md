@@ -85,7 +85,7 @@ curl -X 'GET' 'http://localhost:9526/api/parent-plan-working-hour?sortBy=plan_da
 - `total_delay`: Jumlah value di kolom activities_hour dengan status delay
 - `total_idle`: Jumlah value di kolom activities_hour dengan status idle
 - `total_breakdown`: Jumlah value di kolom activities_hour dengan status breakdown
-- `ewh`: Rumus: total_mohh - total_delay - total_breakdown
+- `ewh`: Rumus: total_mohh - total_delay - total_idle - total_breakdown
 - `pa`: Rumus: (ewh + total_delay + total_idle) / total_mohh
 - `ma`: Rumus: ewh / (ewh + total_breakdown)
 - `ua`: Rumus: ewh / (ewh + total_delay + total_idle)

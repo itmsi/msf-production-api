@@ -473,7 +473,7 @@ export class ParentPlanWorkingHourService {
       const totalMohh = roundToTwoDecimals(parseFloat(result.total_mohh) || 0);
 
       // Hitung EWH
-      const ewh = roundToTwoDecimals(totalMohh - totalDelay - totalBreakdown);
+      const ewh = roundToTwoDecimals(totalMohh - totalDelay - totalIdle - totalBreakdown);
 
       // Hitung PA
       const pa =
@@ -1240,7 +1240,7 @@ export class ParentPlanWorkingHourService {
 
         // Hitung metrics
         const totalMohh = pwh.mohh_per_month || 0;
-        const ewh = Math.max(0, totalMohh - totalDelay - totalBreakdown);
+        const ewh = Math.max(0, totalMohh - totalDelay - totalIdle - totalBreakdown);
 
         // Hitung PA, MA, UA, EU
         const pa =
@@ -1359,7 +1359,7 @@ export class ParentPlanWorkingHourService {
 
     // Hitung metrics
     const totalMohh = planWorkingHour.mohh_per_month || 0;
-    const ewh = Math.max(0, totalMohh - totalDelay - totalBreakdown);
+    const ewh = Math.max(0, totalMohh - totalDelay - totalIdle - totalBreakdown);
 
     // Hitung PA, MA, UA, EU
     const pa = totalMohh > 0 ? (ewh + totalDelay + totalIdle) / totalMohh : 0;

@@ -92,7 +92,7 @@ GET /api/parent-plan-working-hour/detail?start_date=2025-08-01&end_date=2025-08-
 - `total_breakdown`: Total jam breakdown dari activities dengan status 'breakdown'
 
 ### Calculated Metrics
-- `ewh` (Effective Working Hours): `total_mohh - total_delay - total_breakdown`
+- `ewh` (Effective Working Hours): `total_mohh - total_delay - total_idle - total_breakdown`
 - `pa` (Performance Availability): `(ewh + total_delay + total_idle) / total_mohh`
 - `ma` (Mechanical Availability): `ewh / (ewh + total_breakdown)`
 - `ua` (Utilization Availability): `ewh / (ewh + total_delay + total_idle)`

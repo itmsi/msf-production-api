@@ -40,7 +40,7 @@ Endpoint baru `/api/parent-plan-working-hour/detail` telah berhasil dibuat denga
 - `total_breakdown`: Total jam breakdown dari activities
 
 ### 4. Calculated Metrics
-- **EWH**: `total_mohh - total_delay - total_breakdown`
+- **EWH**: `total_mohh - total_delay - total_idle - total_breakdown`
 - **PA**: `(ewh + total_delay + total_idle) / total_mohh`
 - **MA**: `ewh / (ewh + total_breakdown)`
 - **UA**: `ewh / (ewh + total_delay + total_idle)`

@@ -286,7 +286,7 @@ export class ParentPlanWorkingHourSummaryResponseDto {
 
   @ApiProperty({
     example: 80,
-    description: 'Rumus: total_mohh - total_delay - total_breakdown',
+    description: 'Rumus: total_mohh - total_delay - total_idle - total_breakdown',
   })
   ewh: number;
 

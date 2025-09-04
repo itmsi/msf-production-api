@@ -121,7 +121,7 @@ m_activities.activities_group_id = m_activities_group.id (TODO)
 - Join dengan `m_activities` untuk informasi aktivitas
 
 ### 2. Metrics Calculation
-- **EWH**: `total_mohh - total_delay - total_breakdown`
+- **EWH**: `total_mohh - total_delay - total_idle - total_breakdown`
 - **PA**: `(ewh + total_delay + total_idle) / total_mohh`
 - **MA**: `ewh / (ewh + total_breakdown)`
 - **UA**: `ewh / (ewh + total_delay + total_idle)`
