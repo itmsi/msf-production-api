@@ -28,6 +28,7 @@ import {
   GetParentPlanProductionQueryDto,
   ParentPlanProductionSummaryResponseDto,
   UpdateParentPlanProductionDto,
+  GetRemainingStockQueryDto,
 } from './dto/parent-plan-production.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { NumberFormatInterceptor } from '../../common/interceptors/number-format.interceptor';
@@ -39,7 +40,7 @@ import { successResponse } from '../../common/helpers/response.helper';
 @Controller('parent-plan-production')
 @UseGuards(JwtAuthGuard)
 @UseInterceptors(NumberFormatInterceptor)
-@ApiExtraModels(CreateParentPlanProductionDto)
+@ApiExtraModels(CreateParentPlanProductionDto, GetRemainingStockQueryDto)
 export class ParentPlanProductionController {
   constructor(
     private readonly parentPlanProductionService: ParentPlanProductionService,
@@ -478,6 +479,81 @@ export class ParentPlanProductionController {
     return successResponse(
       result.data,
       'Daftar parent plan production berhasil diambil',
+      200,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('remaining-stock')
+  @ApiOperation({
+    summary: 'Mendapatkan remaining stock dari bulan sebelumnya',
+    description:
+      'Mengambil data remaining_stock dari tabel r_plan_production untuk tanggal terakhir bulan sebelumnya berdasarkan plan_date yang diberikan. Contoh: jika plan_date = 2025-09-06, maka akan mencari data untuk tanggal 2025-08-31.',
+  })
+  @ApiQuery({
+    type: GetRemainingStockQueryDto,
+    description: 'Query parameter untuk mendapatkan remaining stock',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Remaining stock berhasil ditemukan atau menggunakan default value 0',
+    schema: {
+      example: {
+        data: {
+          remaining_stock: 150000.0,
+          plan_date: '2025-08-31T00:00:00.000Z',
+          search_date: '2025-08-31',
+          input_date: '2025-09-06',
+        },
+        message: 'Remaining stock berhasil ditemukan',
+        statusCode: 200,
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Data tidak ditemukan, menggunakan default value 0',
+    schema: {
+      example: {
+        data: {
+          remaining_stock: 0,
+          plan_date: null,
+          search_date: '2025-11-30',
+          input_date: '2025-12-06',
+          message: 'Data remaining stock tidak ditemukan untuk tanggal 2025-11-30 (tanggal terakhir bulan sebelumnya), menggunakan default value 0',
+        },
+        message: 'Remaining stock berhasil ditemukan',
+        statusCode: 200,
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Format tanggal tidak valid',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'Format tanggal tidak valid. Gunakan format YYYY-MM-DD',
+        error: 'Bad Request',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - JWT token tidak valid atau tidak ada',
+    schema: {
+      example: {
+        statusCode: 401,
+        message: 'Unauthorized',
+        error: 'Unauthorized',
+      },
+    },
+  })
+  async getRemainingStock(@Query() query: GetRemainingStockQueryDto) {
+    const result = await this.parentPlanProductionService.getRemainingStockFromPreviousMonth(query.plan_date);
+    return successResponse(
+      result,
+      'Remaining stock berhasil ditemukan',
       200,
     );
   }

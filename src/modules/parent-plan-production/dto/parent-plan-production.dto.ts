@@ -7,6 +7,7 @@ import {
   IsNumberString,
   Min,
   Max,
+  IsString,
 } from 'class-validator';
 
 export class CreateParentPlanProductionDto {
@@ -521,4 +522,15 @@ export class ParentPlanProductionSummaryResponseDto {
     example: true,
   })
   is_available_to_delete: boolean;
+}
+
+export class GetRemainingStockQueryDto {
+  @ApiProperty({
+    description: 'Tanggal rencana produksi (format: YYYY-MM-DD). Sistem akan mencari remaining stock dari tanggal terakhir bulan sebelumnya.',
+    example: '2025-09-06',
+    required: true,
+  })
+  @IsNotEmpty()
+  @IsString()
+  plan_date: string;
 }

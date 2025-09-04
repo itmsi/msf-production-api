@@ -699,4 +699,65 @@ export class ParentPlanProductionService {
       deletedDailyRecords: existingParent.planProductions?.length || 0,
     };
   }
+
+  /**
+   * Mendapatkan remaining stock dari bulan sebelumnya
+   */
+  async getRemainingStockFromPreviousMonth(planDate: string) {
+    // Validasi input date
+    const inputDate = new Date(planDate);
+    if (isNaN(inputDate.getTime())) {
+      throw new BadRequestException('Format tanggal tidak valid. Gunakan format YYYY-MM-DD');
+    }
+    
+    // Hitung tanggal terakhir bulan sebelumnya
+    const year = inputDate.getFullYear();
+    const month = inputDate.getMonth(); // 0-based index
+    
+    // Jika bulan adalah Januari (0), maka bulan sebelumnya adalah Desember tahun sebelumnya
+    let previousYear = year;
+    let previousMonth = month - 1;
+    
+    if (previousMonth < 0) {
+      previousMonth = 11; // Desember
+      previousYear = year - 1;
+    }
+    
+    // Hitung tanggal terakhir bulan sebelumnya
+    const lastDayOfPreviousMonth = new Date(previousYear, previousMonth + 1, 0).getDate();
+    const previousMonthDate = new Date(previousYear, previousMonth, lastDayOfPreviousMonth);
+    
+    // Format tanggal untuk query
+    const formattedDate = previousMonthDate.toISOString().split('T')[0];
+    
+    console.log(`Input date: ${planDate}`);
+    console.log(`Previous month date: ${formattedDate}`);
+    console.log(`Searching for date: ${previousMonthDate}`);
+    
+    // Cari data di tabel r_plan_production untuk tanggal terakhir bulan sebelumnya
+    const planProduction = await this.planProductionRepository.findOne({
+      where: {
+        plan_date: previousMonthDate,
+      },
+      select: ['remaining_stock', 'plan_date'],
+    });
+
+    // Jika data tidak ditemukan, return default value 0
+    if (!planProduction) {
+      return {
+        remaining_stock: 0,
+        plan_date: null,
+        search_date: formattedDate,
+        input_date: planDate,
+        message: `Data remaining stock tidak ditemukan untuk tanggal ${formattedDate} (tanggal terakhir bulan sebelumnya), menggunakan default value 0`,
+      };
+    }
+
+    return {
+      remaining_stock: planProduction.remaining_stock,
+      plan_date: planProduction.plan_date,
+      search_date: formattedDate,
+      input_date: planDate,
+    };
+  }
 }
