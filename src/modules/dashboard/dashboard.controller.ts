@@ -14,7 +14,7 @@ import {
 
 @ApiTags('Dashboard')
 @ApiBearerAuth('jwt')
-@Controller('api/dashboard')
+@Controller('dashboard')
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
