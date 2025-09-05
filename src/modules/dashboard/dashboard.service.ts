@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class DashboardService {
+  constructor(private dataSource: DataSource) {}
   async getSpiderData() {
     return {
       statusCode: 200,
@@ -382,5 +384,29 @@ export class DashboardService {
         ],
       },
     };
+  }
+
+  async getSummaryProduction() {
+    try {
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      
+      const result = await queryRunner.query('SELECT * FROM get_summary_production()');
+      
+      await queryRunner.release();
+      
+      return {
+        statusCode: 200,
+        message: 'success',
+        data: result,
+      };
+    } catch (error) {
+      console.error('Error executing get_summary_production:', error);
+      return {
+        statusCode: 500,
+        message: 'Error executing stored procedure',
+        error: error.message,
+      };
+    }
   }
 }

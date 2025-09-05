@@ -125,4 +125,11 @@ export class DashboardController {
   async getTrendPerformanceUnit(@Query('month') month: string) {
     return this.dashboardService.getTrendPerformanceUnit(month);
   }
+
+  @Get('summary-production')
+  @ApiOperation({ summary: 'Get summary production data', description: 'Retrieve summary production data from stored procedure' })
+  @ApiResponse({ status: 200, description: 'Successfully retrieved summary production data' })
+  async getSummaryProduction() {
+    return this.dashboardService.getSummaryProduction();
+  }
 }
