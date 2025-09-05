@@ -14,7 +14,10 @@ Module ini menangani operasi CRUD untuk tabel `r_plan_production` dengan logika 
 - `shift_ore_target`: `ore_target / 2`
 - `shift_quarrt`: `quarry / 2`
 - `shift_sr_target`: `shift_ob_target / shift_ore_target`
-- `remaining_stock`: `old_stock_global - ore_shipment_target + ore_target`
+- `remaining_stock`: 
+  - Jika ada `sisa_stock` dalam payload: gunakan nilai `sisa_stock` langsung
+  - Jika tidak ada: `old_stock_global - ore_shipment_target + ore_target`
+  - **Cascade Update**: Data pada tanggal setelahnya akan diupdate otomatis dengan rumus `remaining_stock (data sebelumnya) - ore_shipment_target + ore_target`
 
 ### 3. Logika Boolean
 - `is_calender_day`: `true` jika `plan_date` terisi (bukan 0, null, atau string kosong)
@@ -59,6 +62,26 @@ Mengambil data berdasarkan ID.
 
 ### PATCH `/daily-plan-production/:id`
 Update data berdasarkan ID.
+
+**Body Request:**
+```json
+{
+  "plan_date": "2025-01-01",
+  "average_day_ewh": 1,
+  "average_month_ewh": 1,
+  "ob_target": 1,
+  "ore_target": 1,
+  "quarry": 1,
+  "ore_shipment_target": 1,
+  "sisa_stock": 100,
+  "total_fleet": 1
+}
+```
+
+**Fitur Cascade Update:**
+- Jika ada field `sisa_stock` dalam payload, nilai tersebut akan digunakan untuk `remaining_stock`
+- Data pada tanggal setelahnya akan diupdate otomatis dengan rumus cascade
+- Parent plan production akan diupdate dengan total dari semua data dalam bulan yang sama
 
 ### DELETE `/daily-plan-production/:id`
 Soft delete data berdasarkan ID.

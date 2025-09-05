@@ -11,6 +11,7 @@ import {
   Between,
   MoreThanOrEqual,
   LessThanOrEqual,
+  MoreThan,
 } from 'typeorm';
 import { PlanProduction } from '../plan-production/entities/plan-production.entity';
 import { ParentPlanProduction } from '../parent-plan-production/entities/parent-plan-production.entity';
@@ -332,7 +333,11 @@ export class DailyPlanProductionService {
       plan.shift_quarry = plan.quarry / 2;
     }
 
-    if (
+    // Handle sisa_stock dan remaining_stock update
+    if (updateDto.sisa_stock !== undefined) {
+      // Jika ada sisa_stock dalam payload, gunakan nilai tersebut untuk remaining_stock
+      plan.remaining_stock = updateDto.sisa_stock;
+    } else if (
       updateDto.ore_target !== undefined ||
       updateDto.ore_shipment_target !== undefined
     ) {
@@ -348,10 +353,17 @@ export class DailyPlanProductionService {
 
     const updatedPlan = await this.dailyPlanProductionRepository.save(plan);
     
-    // 4. Update parent plan production dengan total dari semua data dalam satu bulan
+    // 4. Update remaining_stock untuk data pada tanggal setelahnya
+    if (updateDto.sisa_stock !== undefined || 
+        updateDto.ore_target !== undefined || 
+        updateDto.ore_shipment_target !== undefined) {
+      await this.updateRemainingStockForFutureDates(updatedPlan.plan_date);
+    }
+    
+    // 5. Update parent plan production dengan total dari semua data dalam satu bulan
     await this.updateParentPlanProductionTotals(updatedPlan.plan_date);
     
-    // 5. Fallback: Update langsung parent plan production ID 20
+    // 6. Fallback: Update langsung parent plan production ID 20
     await this.updateParentPlanProductionById(20);
     
     return successResponse(
@@ -378,6 +390,130 @@ export class DailyPlanProductionService {
     await this.updateParentPlanProductionTotals(planDate);
     
     return successResponse(null, 'Daily plan production berhasil dihapus');
+  }
+
+  /**
+   * Update remaining_stock untuk data pada tanggal setelah tanggal yang diupdate
+   * Menggunakan rumus: remaining_stock = remaining_stock (data sebelumnya) - ore_shipment_target + ore_target
+   */
+  private async updateRemainingStockForFutureDates(updatedPlanDate: Date): Promise<void> {
+    try {
+      console.log(`Starting cascade update for dates after: ${updatedPlanDate.toLocaleDateString()}`);
+      
+      // Ambil semua data yang tanggalnya setelah tanggal yang diupdate, urutkan berdasarkan tanggal
+      const futurePlans = await this.dailyPlanProductionRepository.find({
+        where: {
+          plan_date: MoreThan(updatedPlanDate),
+        },
+        order: {
+          plan_date: 'ASC',
+        },
+      });
+
+      if (futurePlans.length === 0) {
+        console.log('No future plans found to update remaining_stock');
+        return;
+      }
+
+      console.log(`Found ${futurePlans.length} future plans to update remaining_stock`);
+
+      // Ambil data yang baru diupdate untuk mendapatkan remaining_stock awal
+      const updatedPlan = await this.dailyPlanProductionRepository.findOne({
+        where: { plan_date: updatedPlanDate },
+      });
+
+      if (!updatedPlan) {
+        console.log('Updated plan not found, skipping cascade update');
+        return;
+      }
+
+      let previousRemainingStock = updatedPlan.remaining_stock || 0;
+      console.log(`Starting cascade update with remaining_stock from updated plan: ${previousRemainingStock}`);
+
+      // Update setiap data secara berurutan dan simpan satu per satu
+      for (let i = 0; i < futurePlans.length; i++) {
+        const currentPlan = futurePlans[i];
+        
+        // Hitung remaining_stock baru sesuai rumus
+        // remaining_stock = remaining_stock (data sebelumnya) - ore_shipment_target + ore_target
+        const newRemainingStock = previousRemainingStock - currentPlan.ore_shipment_target + currentPlan.ore_target;
+        
+        console.log(`Processing plan ${currentPlan.id} (${currentPlan.plan_date.toLocaleDateString()})`);
+        console.log(`  Previous remaining_stock: ${previousRemainingStock}`);
+        console.log(`  Current ore_shipment_target: ${currentPlan.ore_shipment_target}`);
+        console.log(`  Current ore_target: ${currentPlan.ore_target}`);
+        console.log(`  New remaining_stock: ${newRemainingStock}`);
+        
+        // Update remaining_stock menggunakan QueryBuilder untuk memastikan update ke database
+        await this.dailyPlanProductionRepository
+          .createQueryBuilder()
+          .update(PlanProduction)
+          .set({ remaining_stock: newRemainingStock })
+          .where('id = :id', { id: currentPlan.id })
+          .execute();
+        
+        // Update previousRemainingStock untuk iterasi berikutnya
+        previousRemainingStock = newRemainingStock;
+        
+        console.log(`  Successfully updated plan ${currentPlan.id} with remaining_stock: ${newRemainingStock}`);
+      }
+
+      console.log(`Successfully updated remaining_stock for ${futurePlans.length} future plans`);
+      
+      // Verifikasi bahwa update benar-benar terjadi di database
+      await this.verifyRemainingStockUpdates(updatedPlanDate);
+    } catch (error) {
+      console.error('Error updating remaining_stock for future dates:', error);
+      // Jangan throw error agar tidak mengganggu proses utama
+    }
+  }
+
+  /**
+   * Verifikasi bahwa remaining_stock benar-benar terupdate di database
+   */
+  private async verifyRemainingStockUpdates(updatedPlanDate: Date): Promise<void> {
+    try {
+      console.log('Verifying remaining_stock updates in database...');
+      
+      // Ambil data yang baru diupdate
+      const updatedPlan = await this.dailyPlanProductionRepository.findOne({
+        where: { plan_date: updatedPlanDate },
+      });
+
+      if (!updatedPlan) {
+        console.log('Updated plan not found for verification');
+        return;
+      }
+
+      let previousRemainingStock = updatedPlan.remaining_stock || 0;
+      console.log(`Verification - Starting with remaining_stock: ${previousRemainingStock}`);
+
+      // Ambil semua data yang tanggalnya setelah tanggal yang diupdate, urutkan berdasarkan tanggal
+      const futurePlans = await this.dailyPlanProductionRepository.find({
+        where: {
+          plan_date: MoreThan(updatedPlanDate),
+        },
+        order: {
+          plan_date: 'ASC',
+        },
+      });
+
+      for (let i = 0; i < futurePlans.length; i++) {
+        const currentPlan = futurePlans[i];
+        const expectedRemainingStock = previousRemainingStock - currentPlan.ore_shipment_target + currentPlan.ore_target;
+        
+        console.log(`Verification - Plan ${currentPlan.id} (${currentPlan.plan_date.toLocaleDateString()}):`);
+        console.log(`  Expected remaining_stock: ${expectedRemainingStock}`);
+        console.log(`  Actual remaining_stock: ${currentPlan.remaining_stock}`);
+        console.log(`  Match: ${Math.abs(expectedRemainingStock - currentPlan.remaining_stock) < 0.01 ? '✅' : '❌'}`);
+        
+        previousRemainingStock = currentPlan.remaining_stock || 0;
+      }
+      
+      console.log('Verification completed');
+    } catch (error) {
+      console.error('Error during verification:', error);
+    }
   }
 
   private async getOldStockGlobal(): Promise<number> {
