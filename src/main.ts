@@ -8,10 +8,12 @@ import {
   ClassSerializerInterceptor,
   ValidationPipe,
 } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {});
   app.setGlobalPrefix('api');
+  console.log('Entities loaded:', app.get(DataSource).entityMetadatas.map(e => e.name));
   // Swagger config
   const config = new DocumentBuilder()
     .setTitle('MSF Production API')
@@ -34,6 +36,8 @@ async function bootstrap() {
     .addTag('Activities', 'Activities management endpoints')
     .addTag('Population', 'Population management endpoints')
     .addTag('Base Data Production', 'Base data production management endpoints')
+    .addTag('Dashboard', 'Dashboard Metrics')
+    .addTag('Settings', 'Settings for Application')
     .addBearerAuth(
       {
         type: 'http',
@@ -83,5 +87,7 @@ async function bootstrap() {
   );
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
   await app.listen(process.env.PORT ?? 3000);
+  
+
 }
 void bootstrap();

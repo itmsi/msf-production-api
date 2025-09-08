@@ -41,8 +41,8 @@ export class UpdateTableRPlanWorkingHour1700000000028
 
     // Hapus kolom activities_id dan activities_hour dari tabel utama
     // karena akan dipindah ke tabel detail
-    await queryRunner.dropColumn('r_plan_working_hour', 'activities_id');
-    await queryRunner.dropColumn('r_plan_working_hour', 'activities_hour');
+    // await queryRunner.dropColumn('r_plan_working_hour', 'activities_id');
+    // await queryRunner.dropColumn('r_plan_working_hour', 'activities_hour');
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

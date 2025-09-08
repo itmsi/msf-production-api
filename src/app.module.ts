@@ -28,6 +28,8 @@ import { HaulingListModule } from './modules/hauling-list/hauling-list.module';
 import { HaulingProblemModule } from './modules/hauling-problem/hauling-problem.module';
 import { BargingListModule } from './modules/barging-list/barging-list.module';
 import { BargingProblemModule } from './modules/barging-problem/barging-problem.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { SettingsSystemModule } from './modules/settings/settings-system.module';
 import { S3Module } from './integrations/s3/s3.module';
 
 @Module({
@@ -45,6 +47,8 @@ import { S3Module } from './integrations/s3/s3.module';
         database: process.env.POSTGRES_DB,
         entities: [__dirname + '/modules/**/entities/*.entity{.ts,.js}'],
         synchronize: false,
+        logging: true,
+        logger: 'advanced-console'
       }),
     }),
     AuthModule,
@@ -74,6 +78,8 @@ import { S3Module } from './integrations/s3/s3.module';
     HaulingProblemModule,
     BargingListModule,
     BargingProblemModule,
+    DashboardModule,
+    SettingsSystemModule,
     S3Module,
   ],
 })
