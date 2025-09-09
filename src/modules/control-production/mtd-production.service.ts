@@ -35,7 +35,6 @@ export class MtdProductionService {
                 .leftJoinAndSelect('bdp.parentBaseDataPro','ppp')
                 .leftJoinAndSelect('ppp.population','pop')
                 .where('pop.site_id = 1')
-                // .andWhere('ppp.activity_date BETWEEN :start AND :end', { start: startDate, end: endDate })
                 // .groupBy('pop.id')
 
             var duration = 0
@@ -44,6 +43,8 @@ export class MtdProductionService {
                 const endDate = new Date(filters.endDate || '');
 
                 duration = this.calculateDuration(startDate, endDate) || 0;
+
+                qb.andWhere('ppp.activityDate BETWEEN :start AND :end', { start: startDate, end: endDate });
             }
 
             const [result, total] = await qb.getManyAndCount();
