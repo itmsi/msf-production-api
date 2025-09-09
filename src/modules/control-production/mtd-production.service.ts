@@ -16,8 +16,6 @@ export class MtdProductionService {
         private readonly populationRepository: Repository<Population>,
         @InjectRepository(BaseDataPro)
         private readonly baseDataProductionRepository: Repository<BaseDataPro>,
-        @InjectRepository(EffectiveWorkingHours)
-        private readonly effectiveWorkingHourRepository: Repository<EffectiveWorkingHours>
     ) {}
 
     async getMtdProduction(filters: MtdProductionQueryDto) {
@@ -90,6 +88,7 @@ export class MtdProductionService {
                         ma: 0,
                         ua: 0,
                         eu: 0,
+                        hm: 0,
                         km: 0,
                         speed: 0,
                         ct: 0,
@@ -100,7 +99,12 @@ export class MtdProductionService {
                         ob: 0,
                         boulder: 0,
                         ore_barge: 0,
-                        hm: 0,
+                        ore_hauling_tonnage: 0,
+                        quarry_tonnage: 0,
+                        ore_barge_tonnage: 0,
+                        boulder_tonnage: 0,
+                        ob_tonnage: 0,
+                        sr: 0
                     };
                 }
 
@@ -128,6 +132,42 @@ export class MtdProductionService {
                 grouped[unit].activityDate = moment(activityDate).format('YYYY-MM-DD');
                     
                 grouped[unit].standby_time = 0
+
+                if (item.parentBaseDataPro.population.tyre_type == '6x4'){
+                    grouped[unit].ore_hauling_tonnage =  Number(grouped[unit].ore_hauling * 26.56)
+                } else {
+                    grouped[unit].ore_hauling_tonnage =  Number(grouped[unit].ore_hauling * 29.56)
+                }
+                
+                if (item.parentBaseDataPro.population.tyre_type == '6x4'){
+                    grouped[unit].quarry_tonnage =  Number(grouped[unit].quarry * 16.6)
+                } else {
+                    grouped[unit].quarry_tonnage =  Number(grouped[unit].quarry * 18.26)
+                }
+
+                if (item.parentBaseDataPro.population.tyre_type == '6x4'){
+                    grouped[unit].ore_barge_tonnage =  Number(grouped[unit].ore_barge * 26.56)
+                } else {
+                    grouped[unit].ore_barge_tonnage =  Number(grouped[unit].ore_barge * 29.56)
+                }
+
+                if (item.parentBaseDataPro.population.tyre_type == '6x4'){
+                    grouped[unit].ob_tonnage =  Number((grouped[unit].ob * 26.56) / 1.6)
+                } else {
+                    grouped[unit].ob_tonnage =  Number((grouped[unit].ob * 29.56) / 1.6)
+                }
+
+                if (item.parentBaseDataPro.population.tyre_type == '6x4'){
+                    grouped[unit].boulder_tonnage =  Number(grouped[unit].boulder * 26.56)
+                } else {
+                    grouped[unit].boulder_tonnage =  Number(grouped[unit].boulder * 29.56)
+                }
+
+                if (grouped[unit].ob_tonnage !== 0 && grouped[unit].ore_hauling_tonnage !== 0){
+                    grouped[unit].sr = grouped[unit].ob / grouped[unit].ore_hauling
+                } else {
+                    grouped[unit].sr = 0
+                }
 
                 const totalCt = grouped[unit].hm /
                     (
