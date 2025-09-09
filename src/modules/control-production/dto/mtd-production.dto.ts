@@ -10,7 +10,7 @@ export class MtdProductionQueryDto {
   })
   @IsOptional()
   @IsDateString()
-  startDate?: string;
+  start_date?: string;
 
   @ApiProperty({ 
     description: 'End date for filtering (YYYY-MM-DD format)', 
@@ -19,7 +19,7 @@ export class MtdProductionQueryDto {
   })
   @IsOptional()
   @IsDateString()
-  endDate?: string;
+  end_date?: string;
 
   @ApiProperty({ 
     description: 'Page number for pagination', 
@@ -47,6 +47,10 @@ export class MtdProductionQueryDto {
   @IsOptional()
   @IsString()
   unit?: string;
+
+  @IsOptional()
+  @IsString()
+  site_id: string;
 }
 
 export class DayProductionQueryDto {
@@ -57,7 +61,7 @@ export class DayProductionQueryDto {
   })
   @IsOptional()
   @IsDateString()
-  selectedDate?: string;
+  selected_date?: string;
 
   @ApiProperty({ 
     description: 'Shift Type (DS/NS)', 
@@ -94,6 +98,10 @@ export class DayProductionQueryDto {
   @IsOptional()
   @IsString()
   unit?: string;
+
+  @IsOptional()
+  @IsString()
+  site_id: string;
 }
 
 export class MtdProductionItemDto {

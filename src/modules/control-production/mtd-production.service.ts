@@ -5,6 +5,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { BaseDataPro } from "../base-data-production";
 import { paginateResponse } from "src/common";
 import moment from "moment";
+import { filter } from "rxjs";
 
 @Injectable()
 export class MtdProductionService {
@@ -17,18 +18,18 @@ export class MtdProductionService {
         try {
             const page = parseInt(filters.page ?? '1', 10);
             const limit = parseInt(filters.limit ?? '10', 10);
+            const site_id = parseInt(filters.site_id ?? '1');
 
             const qb =  this.baseDataProductionRepository
                 .createQueryBuilder('bdp')
                 .leftJoinAndSelect('bdp.parentBaseDataPro','ppp')
                 .leftJoinAndSelect('ppp.population','pop')
-                .where('pop.site_id = 1')
-                // .groupBy('pop.id')
+                .where('pop.site_id = :site_id', { site_id: site_id })
 
             var duration = 0
-            if (filters.startDate || filters.endDate){
-                const startDate = new Date(filters.startDate || '');
-                const endDate = new Date(filters.endDate || '');
+            if (filters.start_date || filters.end_date){
+                const startDate = new Date(filters.start_date || '');
+                const endDate = new Date(filters.end_date || '');
 
                 duration = this.calculateDuration(startDate, endDate) || 0;
 
@@ -76,6 +77,23 @@ export class MtdProductionService {
                     };
                 }
 
+                grouped[unit].speed = (grouped[unit].km / grouped[unit].hm || 0);
+                grouped[unit].ewh_time = grouped[unit].hm;
+                grouped[unit].activityDate = moment(activityDate).format('YYYY-MM-DD');     
+                grouped[unit].standby_time = 0
+
+                const totalCt = grouped[unit].hm /
+                    (
+                        grouped[unit].ore_hauling +    
+                        grouped[unit].ore_barge + 
+                        grouped[unit].ob + 
+                        grouped[unit].quarry + 
+                        grouped[unit].boulder
+                    )
+                grouped[unit].ct = totalCt
+
+                grouped[unit].mohh = `${duration * 24}`
+
                 grouped[unit].hm += Number(item.totalHm || 0);
                 grouped[unit].km += Number(item.totalKm || 0);
                 if (item.material === 'ore' && item.activity === 'hauling'){
@@ -93,13 +111,7 @@ export class MtdProductionService {
                 if (item.material === 'ob'){
                     grouped[unit].ob += Number(item.totalVessel || 0);
                 }
-                grouped[unit].speed = (grouped[unit].km / grouped[unit].hm || 0);
-
-                grouped[unit].ewh_time = grouped[unit].hm;
-
-                grouped[unit].activityDate = moment(activityDate).format('YYYY-MM-DD');
-                    
-                grouped[unit].standby_time = 0
+               
 
                 if (item.parentBaseDataPro.population.tyre_type == '6x4'){
                     grouped[unit].ore_hauling_tonnage =  Number(grouped[unit].ore_hauling * 26.56)
@@ -136,18 +148,6 @@ export class MtdProductionService {
                 } else {
                     grouped[unit].sr = 0
                 }
-
-                const totalCt = grouped[unit].hm /
-                    (
-                        grouped[unit].ore_hauling +    
-                        grouped[unit].ore_barge + 
-                        grouped[unit].ob + 
-                        grouped[unit].quarry + 
-                        grouped[unit].boulder
-                    )
-                grouped[unit].ct = totalCt
-
-                grouped[unit].mohh = `${duration * 24}`
             });
 
             const groupedResult = Object.values(grouped);
@@ -171,17 +171,18 @@ export class MtdProductionService {
             const page = parseInt(filters.page ?? '1', 10);
             const limit = parseInt(filters.limit ?? '10', 10);
 
+            const site_id = parseInt(filters.site_id ?? '1');
+
             let selectedDate: Date | undefined;
-            if (filters.selectedDate){
-                selectedDate = moment(filters.selectedDate, 'YYYY-MM-DD').toDate();
+            if (filters.selected_date){
+                selectedDate = moment(filters.selected_date, 'YYYY-MM-DD').toDate();
             }
 
             const qb =  this.baseDataProductionRepository
                 .createQueryBuilder('bdp')
                 .leftJoinAndSelect('bdp.parentBaseDataPro','ppp')
                 .leftJoinAndSelect('ppp.population','pop')
-                .where('pop.site_id = :site_id', { site_id: 1 })
-
+                .where('pop.site_id = :site_id', { site_id: site_id })
             
             if (selectedDate){
                 qb.andWhere('ppp.activityDate = :selectedDate', { selectedDate: selectedDate });
