@@ -1,14 +1,10 @@
 import { BadRequestException, Injectable, Query } from "@nestjs/common";
-import { DataSource, Repository } from "typeorm";
+import { Repository } from "typeorm";
 import { DayProductionItemDto, DayProductionQueryDto, DayProductionResponseDto, MtdProductionItemDto, MtdProductionQueryDto, MtdProductionResponseDto } from "./dto/mtd-production.dto";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Population } from "../population";
-import { BaseDataPro, ParentBaseDataPro } from "../base-data-production";
+import { BaseDataPro } from "../base-data-production";
 import { paginateResponse } from "src/common";
 import moment from "moment";
-import { EffectiveWorkingHours } from "../effective-working-hours";
-import { filter } from "rxjs";
-
 
 @Injectable()
 export class MtdProductionService {
@@ -16,14 +12,6 @@ export class MtdProductionService {
         @InjectRepository(BaseDataPro)
         private readonly baseDataProductionRepository: Repository<BaseDataPro>,
     ) {}
-
-    private filterData() {
-        try {
-
-        } catch (error){
-
-        }
-    }
 
     async getMtdProduction(filters: MtdProductionQueryDto) {
         try {
