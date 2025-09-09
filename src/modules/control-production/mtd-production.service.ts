@@ -1,22 +1,29 @@
 import { BadRequestException, Injectable, Query } from "@nestjs/common";
 import { DataSource, Repository } from "typeorm";
-import { MtdProductionItemDto, MtdProductionQueryDto, MtdProductionResponseDto } from "./dto/mtd-production.dto";
+import { DayProductionItemDto, DayProductionQueryDto, DayProductionResponseDto, MtdProductionItemDto, MtdProductionQueryDto, MtdProductionResponseDto } from "./dto/mtd-production.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Population } from "../population";
 import { BaseDataPro, ParentBaseDataPro } from "../base-data-production";
 import { paginateResponse } from "src/common";
 import moment from "moment";
 import { EffectiveWorkingHours } from "../effective-working-hours";
+import { filter } from "rxjs";
 
 
 @Injectable()
 export class MtdProductionService {
-    constructor(private readonly dataSource: DataSource, 
-        @InjectRepository(Population)
-        private readonly populationRepository: Repository<Population>,
+    constructor(
         @InjectRepository(BaseDataPro)
         private readonly baseDataProductionRepository: Repository<BaseDataPro>,
     ) {}
+
+    private filterData() {
+        try {
+
+        } catch (error){
+
+        }
+    }
 
     async getMtdProduction(filters: MtdProductionQueryDto) {
         try {
@@ -27,31 +34,6 @@ export class MtdProductionService {
                 .createQueryBuilder('bdp')
                 .leftJoinAndSelect('bdp.parentBaseDataPro','ppp')
                 .leftJoinAndSelect('ppp.population','pop')
-                .addSelect(subQuery => {
-                    return subQuery
-                        .select('json_agg(lt.*)', 'loss_times')
-                        .from('r_loss_time', 'lt')
-                        .where('lt.id = pop.id')
-                    }, 'loss_time')
-                .select([
-                    'bdp.id',
-                    'bdp.kmAwal',
-                    'bdp.kmAkhir',
-                    'bdp.totalKm',
-                    'bdp.hmAwal',
-                    'bdp.hmAkhir',
-                    'bdp.totalHm',
-                    'bdp.material',
-                    'bdp.activity',
-                    'bdp.totalVessel',
-                    'ppp.id',
-                    'ppp.shift',
-                    'ppp.activityDate',
-                    'ppp.population',
-                    'pop.id',
-                    'pop.no_unit',
-                    'pop.tyre_type'            
-                ])
                 .where('pop.site_id = 1')
                 // .andWhere('ppp.activity_date BETWEEN :start AND :end', { start: startDate, end: endDate })
                 // .groupBy('pop.id')
@@ -72,9 +54,6 @@ export class MtdProductionService {
                 const unit = item.parentBaseDataPro.population.no_unit;
                 const tyreType = item.parentBaseDataPro.population.tyre_type;
                 const activityDate = item.parentBaseDataPro.activityDate;
-                const lostTime = item['loss_time'];
-
-                console.log(lostTime);
                 if (!unit) return;
 
                 if (!grouped[unit]){
@@ -198,15 +177,103 @@ export class MtdProductionService {
         }
     }
 
-    async getDayProduction(filters: MtdProductionQueryDto){
+    async getDayProduction(filters: DayProductionQueryDto){
         try {
-            return {
-                statusCode: 200,
-                message: 'success',
-                data: [],
-            };
+            const page = parseInt(filters.page ?? '1', 10);
+            const limit = parseInt(filters.limit ?? '10', 10);
+
+            let selectedDate: Date | undefined;
+            if (filters.selectedDate){
+                selectedDate = moment(filters.selectedDate, 'YYYY-MM-DD').toDate();
+            }
+
+            const qb =  this.baseDataProductionRepository
+                .createQueryBuilder('bdp')
+                .leftJoinAndSelect('bdp.parentBaseDataPro','ppp')
+                .leftJoinAndSelect('ppp.population','pop')
+                .where('pop.site_id = :site_id', { site_id: 1 })
+
+            
+            if (selectedDate){
+                qb.andWhere('ppp.activityDate == :selectedDate', { selectedDate: selectedDate });
+            }
+
+            const [result, total] = await qb.getManyAndCount();
+
+            console.log(result);
+
+            const transformedResult: DayProductionItemDto[] = [];
+
+            result.forEach((item) => {
+                const mohh = 24;
+                const activityDate = moment(item.parentBaseDataPro.activityDate).format('YYYY-MM-DD');
+                const tyreType = item.parentBaseDataPro.population.tyre_type;
+                const pa = 0;
+                const ma = 0;
+                const ua = 0;
+                const eu = 0;
+                const shift = item.parentBaseDataPro.shift;
+                const sr = 0;
+
+                const totalVessel = Number(item.totalVessel) || 0;
+                transformedResult.push({
+                    id: item.parentBaseDataPro.id,
+                    no_unit: item.parentBaseDataPro.population.no_unit,
+                    activity_date: activityDate,
+                    standby_time: 0,
+                    breakdown_time: 0,
+                    shift: shift.toUpperCase(),
+                    tyre_type: tyreType,
+                    ewh_time: mohh,
+                    pa: pa,
+                    ma: ma,
+                    ua: ua,
+                    eu: eu,
+                    mohh: mohh,
+                    
+                    ore_hauling: item.material === 'ore' && item.activity === 'hauling' ? totalVessel : 0,
+                    ore_barge: item.material === 'ore-barge' && item.activity === 'barging' ? totalVessel : 0,
+                    quarry: item.material === 'quarry' ? totalVessel : 0,
+                    ob: item.material === 'ob' ? totalVessel : 0,
+                    boulder: item.material === 'boulder' ? totalVessel : 0,
+
+                    ore_hauling_tonnage: 
+                        item.material === 'ore' && 
+                        item.activity === 'hauling' ?
+                        item.parentBaseDataPro.population.tyre_type === '6x4' ?
+                        totalVessel * 26.56 : totalVessel * 29.56 : 0,
+                    ore_barge_tonnage: 
+                        item.material === 'ore-barge' &&
+                        item.activity === 'barging' ? 
+                        item.parentBaseDataPro.population.tyre_type === '6x4' ?
+                        totalVessel * 26.56 : totalVessel * 29.56 : 0,
+                    quarry_tonnage: 
+                        item.material === 'quarry' ?
+                        item.parentBaseDataPro.population.tyre_type === '6x4' ?
+                        totalVessel * 16.6 : totalVessel * 18.26 : 0,
+                    ob_tonnage: 
+                        item.material === 'ob' ?
+                        item.parentBaseDataPro.population.tyre_type === '6x4' ?
+                        totalVessel * 26.56 : totalVessel * 29.56 : 0,
+                    boulder_tonnage: 
+                        item.material === 'boulder' ?
+                        item.parentBaseDataPro.population.tyre_type === '6x4' ? 
+                        totalVessel * 29.56 : 
+                        totalVessel * 26.56 : 0,
+                    
+                    sr: sr
+                })
+             });
+
+            return paginateResponse(
+                    transformedResult,
+                    total,
+                    page,
+                    limit,
+                    'Data berhasil diambil',
+                  );
         } catch (error){
-            throw new BadRequestException(`Gagal mendapatkan data`); 
+            throw new BadRequestException(`Gagal mendapatkan data: ${error.message}`); 
         }
     }
 
@@ -235,8 +302,8 @@ export class MtdProductionService {
     }
 
     private calculateDuration(start: Date, finish: Date): number {
-            const diffMs = finish.getTime() - start.getTime();
-            const diffDays = diffMs / (1000 * 60 * 60 * 24);
-        return Math.round(diffDays * 100) / 100; // Round to 2 decimal places
-  }
+        const diffMs = finish.getTime() - start.getTime();
+        const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    return Math.round(diffDays * 100) / 100; // Round to 2 decimal places
+    }
 }
