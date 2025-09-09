@@ -34,6 +34,7 @@ async function bootstrap() {
     .addTag('Activities', 'Activities management endpoints')
     .addTag('Population', 'Population management endpoints')
     .addTag('Base Data Production', 'Base data production management endpoints')
+    .addTag('Control MTD Production', 'Controlling Month to Date Production')
     .addBearerAuth(
       {
         type: 'http',

@@ -6,12 +6,11 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   ManyToOne,
-  JoinColumn,
+  JoinColumn
 } from 'typeorm';
 import { UnitType } from '../../unit-type/entities/unit-type.entity';
 import { Activities } from '../../activities/entities/activities.entity';
 import { Sites } from '../../sites/entities/sites.entity';
-
 @Entity('m_population')
 export class Population {
   @PrimaryGeneratedColumn()
