@@ -104,6 +104,24 @@ export class MtdProductionItemDto {
 
   @ApiProperty({ description: 'Boulder', example: 1.2 })
   boulder: number;
+
+  @ApiProperty({ description: 'Material Ore acitivity Hauling Tonnage', example: 1.2 })
+  ore_hauling_tonnage: number;
+
+  @ApiProperty({ description: 'Material Ore acitivity Hauling Tonnage', example: 1.2 })
+  ore_barge_tonnage: number;
+
+  @ApiProperty({ description: 'Material Ore acitivity Hauling Tonnage', example: 1.2 })
+  ob_tonnage: number;
+
+  @ApiProperty({ description: 'Boulder', example: 1.2 })
+  boulder_tonnage: number;
+
+  @ApiProperty({ description: 'Boulder', example: 1.2 })
+  quarry_tonnage: number;
+
+  @ApiProperty({ description: 'Striping ratio', example: 1.2 })
+  sr: number;
 }
 
 //         unit: item.parentBaseDataPro.population.no_unit,
