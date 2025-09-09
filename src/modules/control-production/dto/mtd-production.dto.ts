@@ -22,20 +22,25 @@ export class MtdProductionQueryDto {
   endDate?: string;
 
   @ApiProperty({ 
-    description: 'DT-001', 
-    example: 'DT-001',
+    description: 'Page number for pagination', 
+    example: '1',
     required: false 
   })
   @IsOptional()
   @IsString()
   page?: string;
 
+  @ApiProperty({ 
+    description: 'Number of items per page', 
+    example: '10',
+    required: false 
+  })
   @IsOptional()
   @IsString()
   limit?: string;
 
-    @ApiProperty({ 
-    description: 'DT-001', 
+  @ApiProperty({ 
+    description: 'Unit number filter (e.g., DT-001)', 
     example: 'DT-001',
     required: false 
   })
@@ -55,7 +60,16 @@ export class DayProductionQueryDto {
   selectedDate?: string;
 
   @ApiProperty({ 
-    description: '1', 
+    description: 'Shift Type (DS/NS)', 
+    example: 'DS',
+    required: false 
+  })
+  @IsOptional()
+  @IsString()
+  shift?: string;
+
+  @ApiProperty({ 
+    description: 'Page number for pagination', 
     example: '1',
     required: false 
   })
@@ -64,20 +78,16 @@ export class DayProductionQueryDto {
   page?: string;
 
   @ApiProperty({ 
-    description: 'Shift Type', 
-    example: 'NS',
+    description: 'Number of items per page', 
+    example: '10',
     required: false 
   })
   @IsOptional()
   @IsString()
-  shift?: string;
-
-  @IsOptional()
-  @IsString()
   limit?: string;
 
-    @ApiProperty({ 
-    description: 'DT-001', 
+  @ApiProperty({ 
+    description: 'Unit number filter (e.g., DT-001)', 
     example: 'DT-001',
     required: false 
   })

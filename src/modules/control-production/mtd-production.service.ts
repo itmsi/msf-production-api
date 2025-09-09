@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable, Query } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { Repository } from "typeorm";
-import { DayProductionItemDto, DayProductionQueryDto, DayProductionResponseDto, MtdProductionItemDto, MtdProductionQueryDto, MtdProductionResponseDto } from "./dto/mtd-production.dto";
+import { DayProductionItemDto, DayProductionQueryDto, MtdProductionItemDto, MtdProductionQueryDto } from "./dto/mtd-production.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { BaseDataPro } from "../base-data-production";
 import { paginateResponse } from "src/common";
@@ -184,7 +184,7 @@ export class MtdProductionService {
 
             
             if (selectedDate){
-                qb.andWhere('ppp.activityDate == :selectedDate', { selectedDate: selectedDate });
+                qb.andWhere('ppp.activityDate = :selectedDate', { selectedDate: selectedDate });
             }
 
             const [result, total] = await qb.getManyAndCount();
