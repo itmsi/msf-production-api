@@ -33,6 +33,7 @@ import { SettingDashboardModule } from './modules/setting-dashboard/setting-dash
 import { SummaryProductionModule } from './modules/summary-production/summary-production.module';
 import { DailySummaryProductionModule } from './modules/daily-summary-production/daily-summary-production.module';
 import { MtdProductionModule } from './modules/control-production/mtd-production.module';
+import { AnalysisHaulingBargingModule } from './modules/analysis-hauling-barging/analysis-hauling-barging.module';
 import { S3Module } from './integrations/s3/s3.module';
 
 @Module({
@@ -84,6 +85,7 @@ import { S3Module } from './integrations/s3/s3.module';
     SummaryProductionModule,
     DailySummaryProductionModule,
     MtdProductionModule,
+    AnalysisHaulingBargingModule,
     S3Module,
   ],
 })
