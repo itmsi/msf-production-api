@@ -54,10 +54,10 @@ export class BaseDataPro {
   totalHm: number;
 
   @Column({ type: 'int', name: 'loading_point_id', nullable: true })
-  loadingPointId: number;
+  loadingPointId: number | null;
 
   @Column({ type: 'int', name: 'dumping_point_id', nullable: true })
-  dumpingPointId: number;
+  dumpingPointId: number | null;
 
   @Column({ type: 'int', name: 'dumping_point_op_id', nullable: true })
   dumpingPointOpId: number | null;
@@ -78,7 +78,7 @@ export class BaseDataPro {
   totalVessel: number;
 
   @Column({ type: 'enum', enum: MaterialType, nullable: true })
-  material: MaterialType;
+  material: MaterialType | null;
 
   @Column({ type: 'int', name: 'createdBy', nullable: true })
   createdBy: number;

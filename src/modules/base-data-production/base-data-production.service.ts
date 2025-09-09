@@ -184,14 +184,20 @@ export class BaseDataProductionService {
     // Validate Loading Point IDs if detail is provided
     if (updateDto.detail && updateDto.detail.length > 0) {
       for (const detail of updateDto.detail) {
-        const loadingPoint = await this.sitesRepository.findOne({ where: { id: detail.loadingPointId, deletedAt: IsNull() } });
-        if (!loadingPoint) {
-          throw new BadRequestException(`Loading Point dengan ID ${detail.loadingPointId} tidak ditemukan`);
+        // Validate Loading Point ID if provided
+        if (detail.loadingPointId) {
+          const loadingPoint = await this.sitesRepository.findOne({ where: { id: detail.loadingPointId, deletedAt: IsNull() } });
+          if (!loadingPoint) {
+            throw new BadRequestException(`Loading Point dengan ID ${detail.loadingPointId} tidak ditemukan`);
+          }
         }
 
-        const dumpingPoint = await this.sitesRepository.findOne({ where: { id: detail.dumpingPointId, deletedAt: IsNull() } });
-        if (!dumpingPoint) {
-          throw new BadRequestException(`Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan`);
+        // Validate Dumping Point ID if provided
+        if (detail.dumpingPointId) {
+          const dumpingPoint = await this.sitesRepository.findOne({ where: { id: detail.dumpingPointId, deletedAt: IsNull() } });
+          if (!dumpingPoint) {
+            throw new BadRequestException(`Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan`);
+          }
         }
 
         // Validate Dumping Point Operation ID if provided
@@ -231,14 +237,20 @@ export class BaseDataProductionService {
 
     // Validate Loading Point IDs
     for (const detail of createDto.detail) {
-      const loadingPoint = await this.sitesRepository.findOne({ where: { id: detail.loadingPointId, deletedAt: IsNull() } });
-      if (!loadingPoint) {
-        throw new BadRequestException(`Loading Point dengan ID ${detail.loadingPointId} tidak ditemukan`);
+      // Validate Loading Point ID if provided
+      if (detail.loadingPointId) {
+        const loadingPoint = await this.sitesRepository.findOne({ where: { id: detail.loadingPointId, deletedAt: IsNull() } });
+        if (!loadingPoint) {
+          throw new BadRequestException(`Loading Point dengan ID ${detail.loadingPointId} tidak ditemukan`);
+        }
       }
 
-      const dumpingPoint = await this.sitesRepository.findOne({ where: { id: detail.dumpingPointId, deletedAt: IsNull() } });
-      if (!dumpingPoint) {
-        throw new BadRequestException(`Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan`);
+      // Validate Dumping Point ID if provided
+      if (detail.dumpingPointId) {
+        const dumpingPoint = await this.sitesRepository.findOne({ where: { id: detail.dumpingPointId, deletedAt: IsNull() } });
+        if (!dumpingPoint) {
+          throw new BadRequestException(`Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan`);
+        }
       }
 
       // Validate Dumping Point Operation ID if provided
@@ -323,15 +335,15 @@ export class BaseDataProductionService {
           existingDetail.hmAwal = detailDto.hmAwal;
           existingDetail.hmAkhir = detailDto.hmAkhir;
           existingDetail.totalHm = detailDto.totalHm ?? (detailDto.hmAkhir - detailDto.hmAwal);
-          existingDetail.loadingPointId = detailDto.loadingPointId;
-          existingDetail.dumpingPointId = detailDto.dumpingPointId;
+          existingDetail.loadingPointId = detailDto.loadingPointId || null;
+          existingDetail.dumpingPointId = detailDto.dumpingPointId || null;
           existingDetail.dumpingPointOpId = detailDto.dumpingPointOpId || null;
           existingDetail.dumpingPointBargeId = detailDto.dumpingPointBargeId || null;
           existingDetail.activity = detailDto.activity || null;
           existingDetail.mroundDistance = detailDto.distance; // Store distance as is, no need to floor
           existingDetail.distance = detailDto.distance;
           existingDetail.totalVessel = detailDto.totalVessel;
-          existingDetail.material = detailDto.material;
+          existingDetail.material = detailDto.material || null;
           existingDetail.updatedBy = userId;
           
           await this.baseDataProRepository.save(existingDetail);
@@ -345,15 +357,15 @@ export class BaseDataProductionService {
             hmAwal: detailDto.hmAwal,
             hmAkhir: detailDto.hmAkhir,
             totalHm: detailDto.totalHm ?? (detailDto.hmAkhir - detailDto.hmAwal),
-            loadingPointId: detailDto.loadingPointId,
-            dumpingPointId: detailDto.dumpingPointId,
+            loadingPointId: detailDto.loadingPointId || null,
+            dumpingPointId: detailDto.dumpingPointId || null,
             dumpingPointOpId: detailDto.dumpingPointOpId || null,
             dumpingPointBargeId: detailDto.dumpingPointBargeId || null,
             activity: detailDto.activity || null,
             mroundDistance: detailDto.distance, // Store distance as is, no need to floor
             distance: detailDto.distance,
             totalVessel: detailDto.totalVessel,
-            material: detailDto.material,
+            material: detailDto.material || null,
             createdBy: userId,
             updatedBy: userId,
           });

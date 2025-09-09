@@ -82,15 +82,15 @@ export class BaseDataProDetailDto {
   @IsOptional()
   totalHm?: number;
 
-  @ApiProperty({ description: 'ID loading point', example: 1 })
+  @ApiProperty({ description: 'ID loading point', example: 1, required: false })
   @IsInt()
-  @IsNotEmpty()
-  loadingPointId: number;
+  @IsOptional()
+  loadingPointId?: number | null;
 
-  @ApiProperty({ description: 'ID dumping point', example: 1 })
+  @ApiProperty({ description: 'ID dumping point', example: 1, required: false })
   @IsInt()
-  @IsNotEmpty()
-  dumpingPointId: number;
+  @IsOptional()
+  dumpingPointId?: number | null;
 
   @ApiProperty({ description: 'ID dumping point operation', example: 1, required: false })
   @IsInt()
@@ -105,7 +105,7 @@ export class BaseDataProDetailDto {
   @ApiProperty({ description: 'Type of activity', enum: ActivityType, example: ActivityType.HAULING, required: false })
   @IsEnum(ActivityType)
   @IsOptional()
-  activity?: ActivityType;
+  activity?: ActivityType | null;
 
   @ApiProperty({ description: 'Distance', example: 15 })
   @IsNumber()
@@ -117,10 +117,10 @@ export class BaseDataProDetailDto {
   @IsNotEmpty()
   totalVessel: number;
 
-  @ApiProperty({ description: 'Material type', enum: MaterialType, example: MaterialType.BIOMAS })
+  @ApiProperty({ description: 'Material type', enum: MaterialType, example: MaterialType.BIOMAS, required: false })
   @IsEnum(MaterialType)
-  @IsNotEmpty()
-  material: MaterialType;
+  @IsOptional()
+  material?: MaterialType | null;
 }
 
 export class CreateBaseDataProductionDto {
