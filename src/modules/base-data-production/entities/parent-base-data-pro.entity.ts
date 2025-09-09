@@ -3,8 +3,13 @@ import {
   PrimaryGeneratedColumn,
   Column,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
+  OneToOne,
+  RelationId,
 } from 'typeorm';
 import { BaseDataPro } from './base-data-pro.entity';
+import { Population } from 'src/modules/population';
 
 export enum ShiftType {
   DS = 'ds',
@@ -36,4 +41,8 @@ export class ParentBaseDataPro {
 
   @OneToMany(() => BaseDataPro, (baseDataPro) => baseDataPro.parentBaseDataPro)
   baseDataPro: BaseDataPro[];
+
+  @ManyToOne(() => Population)
+  @JoinColumn({ name: 'population_id' })
+  population: Population;
 }
