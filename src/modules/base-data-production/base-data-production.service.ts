@@ -47,7 +47,7 @@ export class BaseDataProductionService {
       await this.validateForeignKeys(createDto);
 
       // Validate KM and HM values
-      this.validateKmAndHmValues(createDto);
+      // this.validateKmAndHmValues(createDto);
 
       // Create parent base data pro
       const parentBaseDataPro = this.parentBaseDataProRepository.create({
@@ -271,19 +271,20 @@ export class BaseDataProductionService {
     }
   }
 
-  private validateKmAndHmValues(createDto: CreateBaseDataProductionDto): void {
-    for (const detail of createDto.detail) {
-      // Validate KM values
-      if (detail.kmAkhir <= detail.kmAwal) {
-        throw new BadRequestException(`Kilometer akhir (${detail.kmAkhir}) harus lebih besar dari kilometer awal (${detail.kmAwal})`);
-      }
+  // private validateKmAndHmValues(createDto: CreateBaseDataProductionDto): void {
+  //   // Validation disabled - allow 0 and equal values
+  //   // for (const detail of createDto.detail) {
+  //   //   // Validate KM values - allow 0 or equal values
+  //   //   if (detail.kmAwal !== 0 && detail.kmAkhir !== 0 && detail.kmAkhir <= detail.kmAwal) {
+  //   //     throw new BadRequestException(`Kilometer akhir (${detail.kmAkhir}) harus lebih besar dari kilometer awal (${detail.kmAwal})`);
+  //   //   }
 
-      // Validate HM values
-      if (detail.hmAkhir <= detail.hmAwal) {
-        throw new BadRequestException(`Hour meter akhir (${detail.hmAkhir}) harus lebih besar dari hour meter awal (${detail.hmAwal})`);
-      }
-    }
-  }
+  //   //   // Validate HM values - allow 0 or equal values
+  //   //   if (detail.hmAwal !== 0 && detail.hmAkhir !== 0 && detail.hmAkhir <= detail.hmAwal) {
+  //   //     throw new BadRequestException(`Hour meter akhir (${detail.hmAkhir}) harus lebih besar dari hour meter awal (${detail.hmAwal})`);
+  //   //   }
+  //   // }
+  // }
 
   async update(id: number, updateDto: UpdateBaseDataProductionDto, userId: number) {
     const parentBaseDataPro = await this.parentBaseDataProRepository.findOne({
@@ -301,9 +302,9 @@ export class BaseDataProductionService {
     }
 
     // Validate KM and HM values if detail is provided
-    if (updateDto.detail && updateDto.detail.length > 0) {
-      this.validateKmAndHmValues(updateDto as CreateBaseDataProductionDto);
-    }
+    // if (updateDto.detail && updateDto.detail.length > 0) {
+    //   this.validateKmAndHmValues(updateDto as CreateBaseDataProductionDto);
+    // }
 
     // Update parent base data pro
           if (updateDto.population_id !== undefined) parentBaseDataPro.populationId = updateDto.population_id;

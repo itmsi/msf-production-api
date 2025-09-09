@@ -34,6 +34,7 @@ import { SummaryProductionModule } from './modules/summary-production/summary-pr
 import { DailySummaryProductionModule } from './modules/daily-summary-production/daily-summary-production.module';
 import { MtdProductionModule } from './modules/control-production/mtd-production.module';
 import { AnalysisHaulingBargingModule } from './modules/analysis-hauling-barging/analysis-hauling-barging.module';
+import { MtdWorkHourModule } from './modules/mtd-work-hour/mtd-work-hour.module';
 import { S3Module } from './integrations/s3/s3.module';
 
 @Module({
@@ -86,6 +87,7 @@ import { S3Module } from './integrations/s3/s3.module';
     DailySummaryProductionModule,
     MtdProductionModule,
     AnalysisHaulingBargingModule,
+    MtdWorkHourModule,
     S3Module,
   ],
 })

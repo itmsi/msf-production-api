@@ -22,24 +22,27 @@ export function IsValidDateFormat(validationOptions?: any) {
   };
 }
 
-// Custom validator untuk memastikan nilai akhir tidak kurang dari nilai awal
-export function IsEndValueGreaterThanStart(validationOptions?: any) {
-  return function (object: any, propertyName: string) {
-    const originalValidate = function(value: any) {
-      if (value === undefined || value === null) return true;
+// Custom validator untuk memastikan nilai akhir tidak kurang dari nilai awal (kecuali jika nilai 0 atau sama)
+// export function IsEndValueGreaterThanStart(validationOptions?: any) {
+//   return function (object: any, propertyName: string) {
+//     const originalValidate = function(value: any) {
+//       if (value === undefined || value === null) return true;
       
-      const startValue = object[propertyName.replace('Akhir', 'Awal')];
-      if (startValue === undefined || startValue === null) return true;
+//       const startValue = object[propertyName.replace('Akhir', 'Awal')];
+//       if (startValue === undefined || startValue === null) return true;
       
-      if (value <= startValue) {
-        return false;
-      }
-      return true;
-    };
+//       // Allow 0 values or equal values
+//       if (value === 0 || startValue === 0 || value === startValue) return true;
+      
+//       if (value <= startValue) {
+//         return false;
+//       }
+//       return true;
+//     };
     
-    Reflect.defineMetadata('validation:isEndValueGreaterThanStart', originalValidate, object, propertyName);
-  };
-}
+//     Reflect.defineMetadata('validation:isEndValueGreaterThanStart', originalValidate, object, propertyName);
+//   };
+// }
 
 export class BaseDataProDetailDto {
   @ApiProperty({ description: 'Kilometer awal', example: 10 })
@@ -50,7 +53,6 @@ export class BaseDataProDetailDto {
   @ApiProperty({ description: 'Kilometer akhir', example: 25.9 })
   @IsNumber()
   @IsNotEmpty()
-  @Validate(IsEndValueGreaterThanStart, { message: 'Kilometer akhir harus lebih besar dari kilometer awal' })
   kmAkhir: number;
 
   @ApiProperty({ 
@@ -70,7 +72,6 @@ export class BaseDataProDetailDto {
   @ApiProperty({ description: 'Hour meter akhir', example: 12 })
   @IsNumber()
   @IsNotEmpty()
-  @Validate(IsEndValueGreaterThanStart, { message: 'Hour meter akhir harus lebih besar dari hour meter awal' })
   hmAkhir: number;
 
   @ApiProperty({ 
