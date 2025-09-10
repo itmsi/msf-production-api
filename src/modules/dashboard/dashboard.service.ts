@@ -297,25 +297,67 @@ export class DashboardService {
       const targetResult = await queryRunner.query(targetQuery, [startDate, endDate]);
       const targets = targetResult[0] || {};
 
-      // Optimized achievement query with material filter first
+      // Achievement query dengan perhitungan tonnage berdasarkan tyre_type
       const achievementQuery = `
         SELECT 
-          material,
-          COALESCE(SUM(total_vessel), 0) as total_achievement
+          bdp.material,
+          bdp.activity,
+          mp.tyre_type,
+          COALESCE(SUM(bdp.total_vessel), 0) as total_vessel,
+          CASE 
+            WHEN mp.tyre_type = '6x4' THEN 
+              CASE 
+                WHEN bdp.material = 'ob' THEN (SUM(bdp.total_vessel) * 26.56) / 1.6
+                WHEN bdp.material = 'ore' AND bdp.activity = 'hauling' THEN SUM(bdp.total_vessel) * 26.56
+                WHEN bdp.material = 'ore' AND bdp.activity = 'barging' THEN SUM(bdp.total_vessel) * 16.6
+                WHEN bdp.material = 'quarry' THEN SUM(bdp.total_vessel) * 16.6
+                ELSE 0
+              END
+            WHEN mp.tyre_type = '8x4' THEN 
+              CASE 
+                WHEN bdp.material = 'ob' THEN (SUM(bdp.total_vessel) * 29.56) / 1.6
+                WHEN bdp.material = 'ore' AND bdp.activity = 'hauling' THEN SUM(bdp.total_vessel) * 29.56
+                WHEN bdp.material = 'ore' AND bdp.activity = 'barging' THEN SUM(bdp.total_vessel) * 18.26
+                WHEN bdp.material = 'quarry' THEN SUM(bdp.total_vessel) * 18.26
+                ELSE 0
+              END
+            ELSE 0
+          END as tonnage
         FROM r_base_data_pro bdp
         INNER JOIN r_parent_base_data_pro pbdp ON bdp.parent_base_data_pro_id = pbdp.id
+        INNER JOIN m_population mp ON pbdp.population_id = mp.id
         WHERE pbdp.activity_date >= $1 AND pbdp.activity_date <= $2
         AND bdp."deletedAt" IS NULL
-        AND bdp.material IN ('ob', 'ore', 'ore-barge', 'quarry')
-        GROUP BY material
+        AND (
+          (bdp.material = 'ob') OR
+          (bdp.material = 'ore' AND bdp.activity = 'hauling') OR
+          (bdp.material = 'ore' AND bdp.activity = 'barging') OR
+          (bdp.material = 'quarry')
+        )
+        GROUP BY bdp.material, bdp.activity, mp.tyre_type
       `;
 
       const achievementResult = await queryRunner.query(achievementQuery, [startDate, endDate]);
       
-      // Convert achievement result to object for easy lookup
-      const achievements = {};
+      // Convert achievement result to object for easy lookup dengan grouping yang benar
+      const achievements = {
+        'ob': 0,
+        'ore_hauling': 0,
+        'ore_barging': 0,
+        'quarry': 0
+      };
+      
       achievementResult.forEach(row => {
-        achievements[row.material] = parseFloat(row.total_achievement) || 0;
+        const tonnage = parseFloat(row.tonnage) || 0;
+        if (row.material === 'ob') {
+          achievements['ob'] += tonnage;
+        } else if (row.material === 'ore' && row.activity === 'hauling') {
+          achievements['ore_hauling'] += tonnage;
+        } else if (row.material === 'ore' && row.activity === 'barging') {
+          achievements['ore_barging'] += tonnage;
+        } else if (row.material === 'quarry') {
+          achievements['quarry'] += tonnage;
+        }
       });
 
       await queryRunner.release();
@@ -327,8 +369,8 @@ export class DashboardService {
       const quarryTarget = parseFloat(targets.quarry_target) || 0;
 
       const obAchievement = achievements['ob'] || 0;
-      const oreAchievement = achievements['ore'] || 0;
-      const oreBargeAchievement = achievements['ore-barge'] || 0;
+      const oreAchievement = achievements['ore_hauling'] || 0;
+      const oreBargeAchievement = achievements['ore_barging'] || 0;
       const quarryAchievement = achievements['quarry'] || 0;
 
       const activities = [
