@@ -1,7 +1,7 @@
 import { Controller, Get, Query } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiQuery } from "@nestjs/swagger";
 import { MtdProductionService } from "./mtd-production.service";
-import { MtdProductionQueryDto, DayProductionQueryDto } from "./dto/mtd-production.dto";
+import { MtdProductionQueryDto, DayProductionQueryDto, MtdProductionResponseDto } from "./dto/mtd-production.dto";
 
 @ApiTags('Control MTD Production')
 @ApiBearerAuth('jwt')
@@ -19,45 +19,47 @@ export class MtdProductionController {
     @ApiResponse({
         status: 200,
         description: 'Data MTD Production berhasil diambil',
+        type: MtdProductionResponseDto,
         schema: {
             example: {
                 statusCode: 200,
                 message: 'Data berhasil diambil',
                 data: [
                     {
-                        dt_type: '6x4',
-                        unit: 'DT-001',
-                        activityDate: '2025-01-15',
-                        mohh: '720',
-                        standby_time: 0,
-                        breakdown_time: 0,
-                        ewh_time: 120,
+                        activity_date: '2025-10-01',
+                        tyre_type: '6x4',
+                        no_unit: 'KFM-DT-001',
+                        shift: 'ds',
+                        mohh: 24,
+                        standby_time: 2,
+                        breakdown_time: 3.5,
+                        ewh_time: 35,
+                        km: 500,
+                        hm: 0,
+                        speed: 0,
+                        ct: 0,
                         pa: 0,
                         ua: 0,
                         ma: 0,
                         eu: 0,
-                        hm: 120,
-                        km: 500,
-                        speed: 4.17,
-                        ct: 24,
                         ore_hauling: 5,
                         quarry: 0,
-                        ore_barge: 0,
                         ob: 0,
-                        boulder: 0,
+                        boulder: 20,
+                        ore_barge: 8,
                         ore_hauling_tonnage: 132.8,
                         quarry_tonnage: 0,
-                        ore_barge_tonnage: 0,
+                        ore_barge_tonnage: 212.48,
                         boulder_tonnage: 0,
                         ob_tonnage: 0,
                         sr: 0
                     }
                 ],
-                meta: {
-                    total: 1,
+                pagination: {
+                    total: 7,
                     page: 1,
                     limit: 10,
-                    totalPages: 1
+                    lastPage: 1
                 }
             }
         }

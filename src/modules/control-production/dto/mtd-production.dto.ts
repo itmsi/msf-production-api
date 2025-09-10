@@ -97,94 +97,114 @@ export class DayProductionQueryDto {
 }
 
 export class MtdProductionItemDto {
-  @ApiProperty({ description: 'DT Type', example: '10' })
-  dt_type: string;
+  @ApiProperty({ description: 'Activity Date', example: '2025-10-01' })
+  activity_date: string;
 
-  @ApiProperty({ description: 'Unit number', example: 'DT-001' })
-  unit: string;
+  @ApiProperty({ description: 'Tyre Type', example: '6x4' })
+  tyre_type: string;
 
-  @ApiProperty({ description: 'Date', example: '2025-01-15' })
-  activityDate: string;
+  @ApiProperty({ description: 'Unit number', example: 'KFM-DT-001' })
+  no_unit: string;
 
-  @ApiProperty({ description: 'Material type', example: 'ore barge' })
-  mohh: string;
+  @ApiProperty({ description: 'Shift', example: 'ds' })
+  shift: string;
 
-  @ApiProperty({ description: 'Vessel count', example: 5 })
+  @ApiProperty({ description: 'Machine Operating Hours', example: 24 })
+  mohh: number;
+
+  @ApiProperty({ description: 'Standby Time', example: 2 })
   standby_time: number;
 
-  @ApiProperty({ description: 'Tonnage', example: 132.8 })
+  @ApiProperty({ description: 'Breakdown Time', example: 3.5 })
   breakdown_time: number;
 
-  @ApiProperty({ description: 'Effective working hours', example: 2.5 })
+  @ApiProperty({ description: 'Effective Working Hours', example: 35 })
   ewh_time: number;
 
-  @ApiProperty({ description: 'Phsyical Availablity', example: 1.2 })
-  pa: number;
-
-  @ApiProperty({ description: 'UA (Unit Availablity)', example: 1.2 })
-  ua: number;
-
-  @ApiProperty({ description: 'MA (Mechanical Availablity)', example: 1.2 })
-  ma: number;
-
-  @ApiProperty({ description: 'EU (Effectivity Utilization)', example: 1.2 })
-  eu: number;
-
-  @ApiProperty({ description: 'KM', example: 1.2 })
+  @ApiProperty({ description: 'Kilometers', example: 500 })
   km: number;
 
-  @ApiProperty({ description: 'HM', example: 1.2 })
+  @ApiProperty({ description: 'Hours Meter', example: 0 })
   hm: number;
 
-  @ApiProperty({ description: 'Speed', example: 1.2 })
+  @ApiProperty({ description: 'Speed (km/hm)', example: 0 })
   speed: number;
 
-  @ApiProperty({ description: 'Cycle Time', example: 1.2 })
+  @ApiProperty({ description: 'Cycle Time', example: 0 })
   ct: number;
 
-  @ApiProperty({ description: 'Material Ore acitivity Hauling', example: 1.2 })
+  @ApiProperty({ description: 'Physical Availability', example: 0 })
+  pa: number;
+
+  @ApiProperty({ description: 'Unit Availability', example: 0 })
+  ua: number;
+
+  @ApiProperty({ description: 'Mechanical Availability', example: 0 })
+  ma: number;
+
+  @ApiProperty({ description: 'Effectiveness Utilization', example: 0 })
+  eu: number;
+
+  @ApiProperty({ description: 'Ore Hauling Count', example: 5 })
   ore_hauling: number;
 
-  @ApiProperty({ description: 'quarry', example: 1.2 })
+  @ApiProperty({ description: 'Quarry Count', example: 0 })
   quarry: number;
 
-  @ApiProperty({ description: 'Material Ore activity barge', example: 1.2 })
-  ore_barge: number;
-
-  @ApiProperty({ description: 'OB', example: 1.2 })
+  @ApiProperty({ description: 'OB Count', example: 0 })
   ob: number;
 
-  @ApiProperty({ description: 'Boulder', example: 1.2 })
+  @ApiProperty({ description: 'Boulder Count', example: 20 })
   boulder: number;
 
-  @ApiProperty({ description: 'Material Ore acitivity Hauling Tonnage', example: 1.2 })
+  @ApiProperty({ description: 'Ore Barge Count', example: 8 })
+  ore_barge: number;
+
+  @ApiProperty({ description: 'Ore Hauling Tonnage', example: 132.8 })
   ore_hauling_tonnage: number;
 
-  @ApiProperty({ description: 'Material Ore acitivity Hauling Tonnage', example: 1.2 })
-  ore_barge_tonnage: number;
-
-  @ApiProperty({ description: 'Material Ore acitivity Hauling Tonnage', example: 1.2 })
-  ob_tonnage: number;
-
-  @ApiProperty({ description: 'Boulder', example: 1.2 })
-  boulder_tonnage: number;
-
-  @ApiProperty({ description: 'Boulder', example: 1.2 })
+  @ApiProperty({ description: 'Quarry Tonnage', example: 0 })
   quarry_tonnage: number;
 
-  @ApiProperty({ description: 'Striping ratio', example: 1.2 })
+  @ApiProperty({ description: 'Ore Barge Tonnage', example: 212.48 })
+  ore_barge_tonnage: number;
+
+  @ApiProperty({ description: 'Boulder Tonnage', example: 0 })
+  boulder_tonnage: number;
+
+  @ApiProperty({ description: 'OB Tonnage', example: 0 })
+  ob_tonnage: number;
+
+  @ApiProperty({ description: 'Stripping Ratio', example: 0 })
   sr: number;
+}
+
+export class PaginationDto {
+  @ApiProperty({ description: 'Total number of items', example: 7 })
+  total: number;
+
+  @ApiProperty({ description: 'Current page number', example: 1 })
+  page: number;
+
+  @ApiProperty({ description: 'Number of items per page', example: 10 })
+  limit: number;
+
+  @ApiProperty({ description: 'Last page number', example: 1 })
+  lastPage: number;
 }
 
 export class MtdProductionResponseDto {
   @ApiProperty({ description: 'HTTP status code', example: 200 })
   statusCode: number;
 
-  @ApiProperty({ description: 'Response message', example: 'success' })
+  @ApiProperty({ description: 'Response message', example: 'Data berhasil diambil' })
   message: string;
 
-  @ApiProperty({ description: 'Daily summary production data', type: [MtdProductionItemDto] })
+  @ApiProperty({ description: 'MTD Production data', type: [MtdProductionItemDto] })
   data: MtdProductionItemDto[];
+
+  @ApiProperty({ description: 'Pagination information', type: PaginationDto })
+  pagination: PaginationDto;
 }
 
 export class DayProductionItemDto {
