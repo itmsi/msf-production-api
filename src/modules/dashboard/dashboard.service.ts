@@ -462,30 +462,154 @@ export class DashboardService {
   }
 
   async getTrendHaulingBarging(month: string) {
-    return {
-      statusCode: 200,
-      message: 'success',
-      data: [
-        { date: '01/07', ore_barging: 2500, ore_hauling: 2000, slippery: 5, rain: 8 },
-        { date: '02/07', ore_barging: 2500, ore_hauling: 1800, slippery: 4, rain: 6 },
-        { date: '03/07', ore_barging: 2500, ore_hauling: 1700, slippery: 6, rain: 7 },
-        { date: '04/07', ore_barging: 2500, ore_hauling: 2200, slippery: 8, rain: 9 },
-        { date: '05/07', ore_barging: 2500, ore_hauling: 2100, slippery: 10, rain: 5 },
-        { date: '06/07', ore_barging: 2500, ore_hauling: 1900, slippery: 7, rain: 8 },
-        { date: '07/07', ore_barging: 2500, ore_hauling: 2300, slippery: 9, rain: 10 },
-        { date: '08/07', ore_barging: 2500, ore_hauling: 2100, slippery: 6, rain: 6 },
-        { date: '09/07', ore_barging: 2500, ore_hauling: 2000, slippery: 5, rain: 7 },
-        { date: '10/07', ore_barging: 2500, ore_hauling: 1800, slippery: 8, rain: 8 },
-        { date: '11/07', ore_barging: 2500, ore_hauling: 2100, slippery: 7, rain: 9 },
-        { date: '12/07', ore_barging: 2500, ore_hauling: 2000, slippery: 6, rain: 7 },
-        { date: '12/07', ore_barging: 2500, ore_hauling: 2000, slippery: 6, rain: 7 },
-        { date: '12/07', ore_barging: 2500, ore_hauling: 2000, slippery: 6, rain: 7 },
-        { date: '12/07', ore_barging: 2500, ore_hauling: 2000, slippery: 6, rain: 7 },
-        { date: '12/07', ore_barging: 2500, ore_hauling: 2000, slippery: 6, rain: 7 },
-        { date: '12/07', ore_barging: 2500, ore_hauling: 2000, slippery: 6, rain: 7 },
-        { date: '12/07', ore_barging: 2500, ore_hauling: 2000, slippery: 6, rain: 7 },
-      ],
-    };
+    try {
+      // Parse month parameter (format: YYYY-MM)
+      const [year, monthNum] = month.split('-').map(Number);
+      const startDate = new Date(year, monthNum - 1, 1);
+      const endDate = new Date(year, monthNum, 0); // Last day of the month
+      
+      // Get number of days in the month
+      const daysInMonth = endDate.getDate();
+      
+      // Initialize result array
+      const result: Array<{
+        date: string;
+        ore_barging: number;
+        ore_hauling: number;
+        slippery: number;
+        rain: number;
+      }> = [];
+      
+      // Get ore barging data from TB_R_Base_Data_Pro
+      const oreBargingQuery = `
+        SELECT 
+          DATE(rpbdp.activity_date) as activity_date,
+          SUM(rbdp.total_vessel * 
+            CASE 
+              WHEN mp.tyre_type = '6x4' THEN 16.6
+              WHEN mp.tyre_type = '8x4' THEN 18.26
+              ELSE 0
+            END
+          ) as ore_barging_tonnage
+        FROM r_parent_base_data_pro rpbdp
+        JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+        JOIN m_population mp ON rpbdp.population_id = mp.id
+        WHERE rbdp.material = 'ore-barge'
+          AND rbdp.activity = 'barging'
+          AND DATE(rpbdp.activity_date) BETWEEN $1 AND $2
+        GROUP BY DATE(rpbdp.activity_date)
+        ORDER BY DATE(rpbdp.activity_date)
+      `;
+      
+      // Get ore hauling data from TB_R_Base_Data_Pro
+      const oreHaulingQuery = `
+        SELECT 
+          DATE(rpbdp.activity_date) as activity_date,
+          SUM(rbdp.total_vessel * 
+            CASE 
+              WHEN mp.tyre_type = '6x4' THEN 26.56
+              WHEN mp.tyre_type = '8x4' THEN 29.56
+              ELSE 0
+            END
+          ) as ore_hauling_tonnage
+        FROM r_parent_base_data_pro rpbdp
+        JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+        JOIN m_population mp ON rpbdp.population_id = mp.id
+        WHERE rbdp.material = 'ore'
+          AND rbdp.activity = 'hauling'
+          AND DATE(rpbdp.activity_date) BETWEEN $1 AND $2
+        GROUP BY DATE(rpbdp.activity_date)
+        ORDER BY DATE(rpbdp.activity_date)
+      `;
+      
+      // Get slippery data from TB_R_Loss_Time
+      const slipperyQuery = `
+        SELECT 
+          DATE(rlt.date_activity) as activity_date,
+          SUM(rlt.duration) as slippery_duration
+        FROM r_loss_time rlt
+        JOIN m_activities ma ON rlt.activities_id = ma.id
+        WHERE rlt.loss_type = 'STB'
+          AND LOWER(ma.name) LIKE '%slippery%'
+          AND DATE(rlt.date_activity) BETWEEN $1 AND $2
+        GROUP BY DATE(rlt.date_activity)
+        ORDER BY DATE(rlt.date_activity)
+      `;
+      
+      // Get rain data from TB_R_Loss_Time
+      const rainQuery = `
+        SELECT 
+          DATE(rlt.date_activity) as activity_date,
+          SUM(rlt.duration) as rain_duration
+        FROM r_loss_time rlt
+        JOIN m_activities ma ON rlt.activities_id = ma.id
+        WHERE rlt.loss_type = 'STB'
+          AND LOWER(ma.name) LIKE '%rain%'
+          AND DATE(rlt.date_activity) BETWEEN $1 AND $2
+        GROUP BY DATE(rlt.date_activity)
+        ORDER BY DATE(rlt.date_activity)
+      `;
+      
+      // Execute queries
+      const [oreBargingData, oreHaulingData, slipperyData, rainData] = await Promise.all([
+        this.dataSource.query(oreBargingQuery, [startDate, endDate]),
+        this.dataSource.query(oreHaulingQuery, [startDate, endDate]),
+        this.dataSource.query(slipperyQuery, [startDate, endDate]),
+        this.dataSource.query(rainQuery, [startDate, endDate])
+      ]);
+      
+      // Create maps for quick lookup
+      const oreBargingMap = new Map();
+      const oreHaulingMap = new Map();
+      const slipperyMap = new Map();
+      const rainMap = new Map();
+      
+      oreBargingData.forEach(item => {
+        oreBargingMap.set(item.activity_date.toISOString().split('T')[0], item.ore_barging_tonnage);
+      });
+      
+      oreHaulingData.forEach(item => {
+        oreHaulingMap.set(item.activity_date.toISOString().split('T')[0], item.ore_hauling_tonnage);
+      });
+      
+      slipperyData.forEach(item => {
+        slipperyMap.set(item.activity_date.toISOString().split('T')[0], item.slippery_duration);
+      });
+      
+      rainData.forEach(item => {
+        rainMap.set(item.activity_date.toISOString().split('T')[0], item.rain_duration);
+      });
+      
+      // Generate data for each day of the month
+      for (let day = 1; day <= daysInMonth; day++) {
+        const currentDate = new Date(year, monthNum - 1, day);
+        const dateKey = currentDate.toISOString().split('T')[0];
+        const dayStr = day.toString().padStart(2, '0');
+        const monthStr = monthNum.toString().padStart(2, '0');
+        
+        result.push({
+          date: `${dayStr}/${monthStr}`,
+          ore_barging: oreBargingMap.get(dateKey) || 0,
+          ore_hauling: oreHaulingMap.get(dateKey) || 0,
+          slippery: slipperyMap.get(dateKey) || 0,
+          rain: rainMap.get(dateKey) || 0
+        });
+      }
+      
+      return {
+        statusCode: 200,
+        message: 'success',
+        data: result
+      };
+      
+    } catch (error) {
+      console.error('Error in getTrendHaulingBarging:', error);
+      return {
+        statusCode: 500,
+        message: 'Internal server error',
+        data: []
+      };
+    }
   }
 
   async getTrendFuelRatio(month: string) {
