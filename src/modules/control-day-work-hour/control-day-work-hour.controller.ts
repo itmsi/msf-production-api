@@ -17,7 +17,7 @@ import {
 @ApiTags('Control Day Work Hour')
 @Controller('control-day-work-hour')
 @UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
+@ApiBearerAuth('jwt')
 export class ControlDayWorkHourController {
   constructor(
     private readonly controlDayWorkHourService: ControlDayWorkHourService,
@@ -31,27 +31,29 @@ export class ControlDayWorkHourController {
       Mengambil data Control Day Work Hour berdasarkan spesifikasi:
       
       **Data Sources:**
-      - **Unit**: Dari data master population (m_population)
-      - **Shift**: Dari Production[Shift] (r_plan_production)
+      - **Unit**: Dari data master population (m_population) dengan status active
+      - **Shift**: Dari tabel r_loss_time berdasarkan data yang ada untuk unit dan tanggal tersebut
       
       **Problem Types dari Effective Working Hours (r_loss_time):**
-      - P5M
-      - Perg. Shift
-      - Rest Time
-      - GST
-      - Travelling
-      - Perbaikan Front Loading
-      - Cek Elevasi
-      - Refuelling
-      - Slippery
-      - Travelling Equipment
-      - Fogging
-      - Safety Talk
-      - P2H
+      - P5M: Ambil dari duration tabel r_loss_time where problem = "P5M" group by no_unit and selected date
+      - Pergantian Shift: Ambil dari duration tabel r_loss_time where problem = "Pergantian Shift" group by no_unit and selected date
+      - Rest Time: Ambil dari duration tabel r_loss_time where problem = "Rest Time" group by no_unit and selected date
+      - GST: Ambil dari duration tabel r_loss_time where problem = "GST" group by no_unit and selected date
+      - Travelling: Ambil dari duration tabel r_loss_time where problem = "Travelling" group by no_unit and selected date
+      - Perbaikan Front Loading: Ambil dari duration tabel r_loss_time where problem = "Perbaikan Front Loading" group by no_unit and selected date
+      - Cek Elevasi: Ambil dari duration tabel r_loss_time where problem = "Cek Elevasi" group by no_unit and selected date
+      - Refuelling: Ambil dari duration tabel r_loss_time where problem = "Refuelling" group by no_unit and selected date
+      - Slippery: Ambil dari duration tabel r_loss_time where problem = "Slippery" group by no_unit and selected date
+      - Travelling Equipment: Ambil dari duration tabel r_loss_time where problem = "Travelling Equipment" group by no_unit and selected date
+      - Fogging: Ambil dari duration tabel r_loss_time where problem = "Fogging" group by no_unit and selected date
+      - Safety Talk: Ambil dari duration tabel r_loss_time where problem = "Safety Talk" group by no_unit and selected date
+      - P2H: Ambil dari duration tabel r_loss_time where problem = "P2H" group by no_unit and selected date
       
       **Logic:**
-      - Control Day Work Hour[Unit] == Group By Effective Working Hour[Unit]
-      - Jika filter tanggal X sampai Y, tanggal yang diambil hanya Y
+      - Data diambil langsung dari tabel r_loss_time dan m_population tanpa menggunakan tabel control_day_work_hour
+      - Jika filter tanggal X sampai Y, tanggal yang diambil hanya Y (endDate)
+      - Jika tidak ada parameter tanggal yang disediakan, akan menggunakan tanggal hari ini sebagai default
+      - Data dikelompokkan berdasarkan unit dan shift
     `,
   })
   @ApiResponse({
@@ -73,39 +75,4 @@ export class ControlDayWorkHourController {
     return this.controlDayWorkHourService.getControlDayWorkHour(query);
   }
 
-  @Get('generate')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Generate Control Day Work Hour Data',
-    description: `
-      Generate data Control Day Work Hour berdasarkan data yang ada di database.
-      Endpoint ini akan mengambil data dari Population, Production, dan Effective Working Hours
-      kemudian mengolahnya sesuai dengan spesifikasi yang diberikan.
-      
-      **Parameter:**
-      - startDate: Tanggal mulai filter
-      - endDate: Tanggal akhir filter (yang akan digunakan sebagai filterDate)
-    `,
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Data Control Day Work Hour berhasil di-generate',
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Unauthorized - Token tidak valid',
-  })
-  async generateControlDayWorkHourData(
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
-  ): Promise<{ message: string }> {
-    await this.controlDayWorkHourService.generateControlDayWorkHourData(
-      startDate,
-      endDate,
-    );
-    
-    return {
-      message: 'Data Control Day Work Hour berhasil di-generate',
-    };
-  }
 }

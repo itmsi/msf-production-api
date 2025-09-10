@@ -59,13 +59,6 @@ export class GetControlDayWorkHourDto {
 
 export class ControlDayWorkHourResponseDto {
   @ApiProperty({
-    description: 'ID unik control day work hour',
-    example: 1,
-    type: 'number',
-  })
-  id: number;
-
-  @ApiProperty({
     description: 'Unit dari data master population',
     example: 'Unit-001',
     type: 'string',
@@ -73,14 +66,14 @@ export class ControlDayWorkHourResponseDto {
   unit: string;
 
   @ApiProperty({
-    description: 'Shift dari Production[Shift]',
+    description: 'Shift dari tabel r_loss_time',
     example: 'DS',
     type: 'string',
   })
   shift: string;
 
   @ApiProperty({
-    description: 'Tanggal filter',
+    description: 'Tanggal filter yang digunakan',
     example: '2024-01-15',
     type: 'string',
     format: 'date',
@@ -88,7 +81,7 @@ export class ControlDayWorkHourResponseDto {
   filterDate: string;
 
   @ApiProperty({
-    description: 'Data P5M dari Effective Working Hours',
+    description: 'Data P5M dari tabel r_loss_time (duration dalam menit)',
     example: 120.5,
     type: 'number',
     nullable: true,
@@ -96,7 +89,7 @@ export class ControlDayWorkHourResponseDto {
   p5m: number;
 
   @ApiProperty({
-    description: 'Data Perg. Shift dari Effective Working Hours',
+    description: 'Data Pergantian Shift dari tabel r_loss_time (duration dalam menit)',
     example: 45.0,
     type: 'number',
     nullable: true,
@@ -104,7 +97,7 @@ export class ControlDayWorkHourResponseDto {
   pergShift: number;
 
   @ApiProperty({
-    description: 'Data Rest Time dari Effective Working Hours',
+    description: 'Data Rest Time dari tabel r_loss_time (duration dalam menit)',
     example: 30.0,
     type: 'number',
     nullable: true,
@@ -112,7 +105,7 @@ export class ControlDayWorkHourResponseDto {
   restTime: number;
 
   @ApiProperty({
-    description: 'Data GST dari Effective Working Hours',
+    description: 'Data GST dari tabel r_loss_time (duration dalam menit)',
     example: 15.0,
     type: 'number',
     nullable: true,
@@ -120,7 +113,7 @@ export class ControlDayWorkHourResponseDto {
   gst: number;
 
   @ApiProperty({
-    description: 'Data Travelling dari Effective Working Hours',
+    description: 'Data Travelling dari tabel r_loss_time (duration dalam menit)',
     example: 60.0,
     type: 'number',
     nullable: true,
@@ -128,7 +121,7 @@ export class ControlDayWorkHourResponseDto {
   travelling: number;
 
   @ApiProperty({
-    description: 'Data Perbaikan Front Loading dari Effective Working Hours',
+    description: 'Data Perbaikan Front Loading dari tabel r_loss_time (duration dalam menit)',
     example: 90.0,
     type: 'number',
     nullable: true,
@@ -136,7 +129,7 @@ export class ControlDayWorkHourResponseDto {
   perbaikanFrontLoading: number;
 
   @ApiProperty({
-    description: 'Data Cek Elevasi dari Effective Working Hours',
+    description: 'Data Cek Elevasi dari tabel r_loss_time (duration dalam menit)',
     example: 20.0,
     type: 'number',
     nullable: true,
@@ -144,7 +137,7 @@ export class ControlDayWorkHourResponseDto {
   cekElevasi: number;
 
   @ApiProperty({
-    description: 'Data Refuelling dari Effective Working Hours',
+    description: 'Data Refuelling dari tabel r_loss_time (duration dalam menit)',
     example: 25.0,
     type: 'number',
     nullable: true,
@@ -152,7 +145,7 @@ export class ControlDayWorkHourResponseDto {
   refuelling: number;
 
   @ApiProperty({
-    description: 'Data Slippery dari Effective Working Hours',
+    description: 'Data Slippery dari tabel r_loss_time (duration dalam menit)',
     example: 40.0,
     type: 'number',
     nullable: true,
@@ -160,7 +153,7 @@ export class ControlDayWorkHourResponseDto {
   slippery: number;
 
   @ApiProperty({
-    description: 'Data Travelling Equipment dari Effective Working Hours',
+    description: 'Data Travelling Equipment dari tabel r_loss_time (duration dalam menit)',
     example: 35.0,
     type: 'number',
     nullable: true,
@@ -168,7 +161,7 @@ export class ControlDayWorkHourResponseDto {
   travellingEquipment: number;
 
   @ApiProperty({
-    description: 'Data Fogging dari Effective Working Hours',
+    description: 'Data Fogging dari tabel r_loss_time (duration dalam menit)',
     example: 10.0,
     type: 'number',
     nullable: true,
@@ -176,7 +169,7 @@ export class ControlDayWorkHourResponseDto {
   fogging: number;
 
   @ApiProperty({
-    description: 'Data Safety Talk dari Effective Working Hours',
+    description: 'Data Safety Talk dari tabel r_loss_time (duration dalam menit)',
     example: 15.0,
     type: 'number',
     nullable: true,
@@ -184,26 +177,12 @@ export class ControlDayWorkHourResponseDto {
   safetyTalk: number;
 
   @ApiProperty({
-    description: 'Data P2H dari Effective Working Hours',
+    description: 'Data P2H dari tabel r_loss_time (duration dalam menit)',
     example: 50.0,
     type: 'number',
     nullable: true,
   })
   p2h: number;
-
-  @ApiProperty({
-    description: 'Waktu pembuatan record',
-    type: 'string',
-    format: 'date-time',
-  })
-  createdAt: Date;
-
-  @ApiProperty({
-    description: 'Waktu terakhir update record',
-    type: 'string',
-    format: 'date-time',
-  })
-  updatedAt: Date;
 }
 
 export class ControlDayWorkHourListResponseDto {

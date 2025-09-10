@@ -1,14 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ControlDayWorkHour } from './entities/control-day-work-hour.entity';
+import { Population } from '../population/entities/population.entity';
+import { EffectiveWorkingHours } from '../effective-working-hours/entities/effective-working-hours.entity';
 import { GetControlDayWorkHourDto, ControlDayWorkHourListResponseDto } from './dto/control-day-work-hour.dto';
 
 @Injectable()
 export class ControlDayWorkHourService {
   constructor(
-    @InjectRepository(ControlDayWorkHour)
-    private readonly controlDayWorkHourRepository: Repository<ControlDayWorkHour>,
+    @InjectRepository(Population)
+    private readonly populationRepository: Repository<Population>,
+    @InjectRepository(EffectiveWorkingHours)
+    private readonly effectiveWorkingHoursRepository: Repository<EffectiveWorkingHours>,
   ) {}
 
   async getControlDayWorkHour(
@@ -16,43 +19,199 @@ export class ControlDayWorkHourService {
   ): Promise<ControlDayWorkHourListResponseDto> {
     const { startDate, endDate, unit, shift, page = 1, limit = 10 } = query;
 
-    // Query untuk mengambil data dari berbagai tabel sesuai spesifikasi
-    const queryBuilder = this.controlDayWorkHourRepository
-      .createQueryBuilder('cdwh')
-      .leftJoin('m_population', 'pop', 'cdwh.unit = pop.no_unit')
-      .leftJoin('r_plan_production', 'prod', 'cdwh.shift = prod.shift')
-      .leftJoin('r_loss_time', 'ewh', 'pop.id = ewh.population_id');
+    // Tentukan tanggal filter - jika ada startDate dan endDate, gunakan endDate saja
+    // Jika tidak ada tanggal yang disediakan, gunakan tanggal hari ini
+    let filterDate = endDate || startDate || new Date().toISOString().split('T')[0];
 
-    // Filter berdasarkan tanggal
-    if (startDate && endDate) {
-      // Jika filter tanggal X sampai Y, tanggal yang diambil hanya Y
-      queryBuilder.andWhere('cdwh.filterDate = :endDate', { endDate });
-    } else if (endDate) {
-      queryBuilder.andWhere('cdwh.filterDate = :endDate', { endDate });
-    }
+    console.log('=== DEBUG Control Day Work Hour ===');
+    console.log('Query params:', { startDate, endDate, unit, shift, page, limit });
+    console.log('Filter date:', filterDate);
 
-    // Filter berdasarkan unit
+    // Query untuk mengambil data unit dari m_population
+    let populationQuery = this.populationRepository
+      .createQueryBuilder('pop')
+      .where('pop.status = :status', { status: 'active' });
+
+    // Filter berdasarkan unit jika ada
     if (unit) {
-      queryBuilder.andWhere('cdwh.unit = :unit', { unit });
+      // Coba filter dengan exact match dulu
+      populationQuery.andWhere('pop.no_unit = :unit', { unit });
     }
 
-    // Filter berdasarkan shift
-    if (shift) {
-      queryBuilder.andWhere('cdwh.shift = :shift', { shift });
+    let populations = await populationQuery.getMany();
+    console.log('Found populations:', populations.length);
+    console.log('Population data:', populations.map(p => ({ id: p.id, no_unit: p.no_unit })));
+
+    // Jika tidak ada population yang ditemukan dengan exact match, coba dengan LIKE
+    if (populations.length === 0 && unit) {
+      console.log(`No exact match for unit "${unit}", trying LIKE search...`);
+      const likeQuery = this.populationRepository
+        .createQueryBuilder('pop')
+        .where('pop.status = :status', { status: 'active' })
+        .andWhere('pop.no_unit LIKE :unit', { unit: `%${unit}%` });
+      
+      populations = await likeQuery.getMany();
+      console.log('Found populations with LIKE:', populations.length);
+      console.log('Population data with LIKE:', populations.map(p => ({ id: p.id, no_unit: p.no_unit })));
     }
 
-    // Pagination
+    // Debug: Periksa apakah ada data di r_loss_time untuk tanggal ini
+    const totalLossTimeData = await this.effectiveWorkingHoursRepository
+      .createQueryBuilder('ewh')
+      .where('ewh.date_activity = :filterDate', { filterDate })
+      .getCount();
+    console.log(`Total r_loss_time data for date ${filterDate}:`, totalLossTimeData);
+
+    // Jika tidak ada data untuk tanggal ini, coba tanggal kemarin dan beberapa hari sebelumnya
+    if (totalLossTimeData === 0 && !startDate && !endDate) {
+      console.log(`No data for date ${filterDate}, trying previous dates...`);
+      
+      for (let i = 1; i <= 7; i++) {
+        const previousDate = new Date();
+        previousDate.setDate(previousDate.getDate() - i);
+        const previousDateStr = previousDate.toISOString().split('T')[0];
+        
+        const previousData = await this.effectiveWorkingHoursRepository
+          .createQueryBuilder('ewh')
+          .where('ewh.date_activity = :previousDate', { previousDate: previousDateStr })
+          .getCount();
+        console.log(`Total r_loss_time data for ${i} days ago ${previousDateStr}:`, previousData);
+        
+        if (previousData > 0) {
+          console.log(`Using date ${previousDateStr} instead of ${filterDate}`);
+          filterDate = previousDateStr;
+          break;
+        }
+      }
+    }
+
+    // Debug: Periksa data r_loss_time untuk unit yang dicari
+    if (unit) {
+      const unitLossTimeData = await this.effectiveWorkingHoursRepository
+        .createQueryBuilder('ewh')
+        .leftJoin('ewh.population', 'pop')
+        .where('pop.no_unit = :unit', { unit })
+        .andWhere('ewh.date_activity = :filterDate', { filterDate })
+        .getCount();
+      console.log(`Total r_loss_time data for unit ${unit} on date ${filterDate}:`, unitLossTimeData);
+    }
+
+    // Array untuk menyimpan hasil data
+    const resultData: any[] = [];
+
+    // Loop untuk setiap population/unit
+    for (const population of populations) {
+      console.log(`\nProcessing population ID: ${population.id}, no_unit: ${population.no_unit}`);
+      
+      // Query untuk mengambil data shift dari r_loss_time untuk unit ini
+      const shiftQuery = this.effectiveWorkingHoursRepository
+        .createQueryBuilder('ewh')
+        .select('DISTINCT ewh.shift', 'shift')
+        .where('ewh.population_id = :populationId', { populationId: population.id })
+        .andWhere('ewh.date_activity = :filterDate', { filterDate });
+
+      // Filter berdasarkan shift jika ada
+      if (shift) {
+        shiftQuery.andWhere('ewh.shift = :shift', { shift });
+      }
+
+      const shifts = await shiftQuery.getRawMany();
+      console.log(`Found shifts for population ${population.id}:`, shifts);
+
+      // Loop untuk setiap shift
+      for (const shiftData of shifts) {
+        const currentShift = shiftData.shift;
+
+        // Query untuk mengambil data duration berdasarkan problem type
+        const problemTypes = [
+          'P5M',
+          'Pergantian Shift', 
+          'Rest Time',
+          'GST',
+          'Travelling',
+          'Perbaikan Front Loading',
+          'Cek Elevasi',
+          'Refuelling',
+          'Slippery',
+          'Travelling Equipment',
+          'Fogging',
+          'Safety Talk',
+          'P2H'
+        ];
+
+        const problemData = {};
+        
+        console.log(`\nProcessing shift: ${currentShift} for population ${population.id}`);
+        
+        // Ambil data untuk setiap problem type
+        for (const problemType of problemTypes) {
+          const durationQuery = this.effectiveWorkingHoursRepository
+            .createQueryBuilder('ewh')
+            .select('SUM(ewh.duration)', 'totalDuration')
+            .where('ewh.population_id = :populationId', { populationId: population.id })
+            .andWhere('ewh.date_activity = :filterDate', { filterDate })
+            .andWhere('ewh.shift = :shift', { shift: currentShift })
+            .andWhere('ewh.description = :problemType', { problemType });
+
+          const durationResult = await durationQuery.getRawOne();
+          console.log(`Problem type "${problemType}":`, durationResult);
+          
+          // Jika tidak ada data dengan exact match, coba dengan LIKE
+          if (!durationResult?.totalDuration) {
+            const likeQuery = this.effectiveWorkingHoursRepository
+              .createQueryBuilder('ewh')
+              .select('SUM(ewh.duration)', 'totalDuration')
+              .where('ewh.population_id = :populationId', { populationId: population.id })
+              .andWhere('ewh.date_activity = :filterDate', { filterDate })
+              .andWhere('ewh.shift = :shift', { shift: currentShift })
+              .andWhere('ewh.description LIKE :problemType', { problemType: `%${problemType}%` });
+
+            const likeResult = await likeQuery.getRawOne();
+            console.log(`Problem type "${problemType}" with LIKE:`, likeResult);
+            
+            problemData[this.mapProblemTypeToField(problemType)] = 
+              likeResult?.totalDuration ? parseFloat(likeResult.totalDuration) : null;
+          } else {
+            problemData[this.mapProblemTypeToField(problemType)] = 
+              durationResult?.totalDuration ? parseFloat(durationResult.totalDuration) : null;
+          }
+        }
+
+        // Buat object data untuk unit dan shift ini
+        const controlData = {
+          unit: population.no_unit,
+          shift: currentShift,
+          filterDate: filterDate,
+          ...problemData
+        };
+
+        console.log(`Control data created:`, controlData);
+        resultData.push(controlData);
+      }
+    }
+
+    console.log(`\nTotal result data: ${resultData.length}`);
+    console.log('Final result data:', resultData);
+
+    // Implementasi pagination manual
+    const total = resultData.length;
     const skip = (page - 1) * limit;
-    queryBuilder.skip(skip).take(limit);
-
-    // Execute query
-    const [data, total] = await queryBuilder.getManyAndCount();
-
-    // Hitung total halaman
+    const paginatedData = resultData.slice(skip, skip + limit);
     const totalPages = Math.ceil(total / limit);
 
+    console.log('=== END DEBUG ===\n');
+
+    // Jika tidak ada data sama sekali, kembalikan pesan informatif
+    if (resultData.length === 0) {
+      console.log('No data found. Possible reasons:');
+      console.log('1. No data in r_loss_time table for the specified date range');
+      console.log('2. No matching unit in m_population table');
+      console.log('3. No data for the specified problem types');
+      console.log('4. Database connection issues');
+    }
+
     return {
-      data,
+      data: paginatedData,
       total,
       page,
       limit,
@@ -60,103 +219,24 @@ export class ControlDayWorkHourService {
     };
   }
 
-  async generateControlDayWorkHourData(
-    startDate: string,
-    endDate: string,
-  ): Promise<void> {
-    // Query untuk mengambil data dari Population, Production, dan Effective Working Hours
-    const populationQuery = `
-      SELECT DISTINCT 
-        mp.no_unit as unit,
-        rp.shift,
-        :endDate as filter_date
-      FROM m_population mp
-      LEFT JOIN r_parent_base_data_pro rpbdp ON mp.id = rpbdp.population_id
-      LEFT JOIN r_plan_production rp ON rpbdp.id = rp.parent_plan_production_id
-      WHERE mp.status = 'active'
-    `;
-
-    const populations = await this.controlDayWorkHourRepository.query(
-      populationQuery,
-      [endDate],
-    );
-
-    for (const pop of populations) {
-      if (!pop.unit || !pop.shift) continue;
-
-      // Query untuk mengambil data Effective Working Hours berdasarkan problem type
-      const ewhQuery = `
-        SELECT 
-          ewh.description as problem_type,
-          SUM(ewh.duration) as total_duration
-        FROM r_loss_time ewh
-        WHERE ewh.population_id = (
-          SELECT id FROM m_population WHERE no_unit = :unit LIMIT 1
-        )
-        AND ewh.date_activity = :filterDate
-        AND ewh.description IN (
-          'P5M', 'Perg. Shift', 'Rest Time', 'GST', 'Travelling',
-          'Perbaikan Front Loading', 'Cek Elevasi', 'Refuelling',
-          'Slippery', 'Travelling Equipment', 'Fogging', 'Safety Talk', 'P2H'
-        )
-        GROUP BY ewh.description
-      `;
-
-      const ewhData = await this.controlDayWorkHourRepository.query(ewhQuery, [
-        pop.unit,
-        pop.filter_date,
-      ]);
-
-      // Mapping data berdasarkan problem type
-      const controlData: Partial<ControlDayWorkHour> = {
-        unit: pop.unit,
-        shift: pop.shift,
-        filterDate: pop.filter_date,
-        p5m: this.getDurationByProblemType(ewhData, 'P5M') || undefined,
-        pergShift: this.getDurationByProblemType(ewhData, 'Perg. Shift') || undefined,
-        restTime: this.getDurationByProblemType(ewhData, 'Rest Time') || undefined,
-        gst: this.getDurationByProblemType(ewhData, 'GST') || undefined,
-        travelling: this.getDurationByProblemType(ewhData, 'Travelling') || undefined,
-        perbaikanFrontLoading: this.getDurationByProblemType(
-          ewhData,
-          'Perbaikan Front Loading',
-        ) || undefined,
-        cekElevasi: this.getDurationByProblemType(ewhData, 'Cek Elevasi') || undefined,
-        refuelling: this.getDurationByProblemType(ewhData, 'Refuelling') || undefined,
-        slippery: this.getDurationByProblemType(ewhData, 'Slippery') || undefined,
-        travellingEquipment: this.getDurationByProblemType(
-          ewhData,
-          'Travelling Equipment',
-        ) || undefined,
-        fogging: this.getDurationByProblemType(ewhData, 'Fogging') || undefined,
-        safetyTalk: this.getDurationByProblemType(ewhData, 'Safety Talk') || undefined,
-        p2h: this.getDurationByProblemType(ewhData, 'P2H') || undefined,
-      };
-
-      // Cek apakah data sudah ada
-      const existingData = await this.controlDayWorkHourRepository.findOne({
-        where: {
-          unit: controlData.unit,
-          shift: controlData.shift,
-          filterDate: controlData.filterDate,
-        },
-      });
-
-      if (existingData) {
-        // Update data yang sudah ada
-        await this.controlDayWorkHourRepository.update(existingData.id, controlData);
-      } else {
-        // Insert data baru
-        await this.controlDayWorkHourRepository.save(controlData);
-      }
-    }
+  private mapProblemTypeToField(problemType: string): string {
+    const mapping = {
+      'P5M': 'p5m',
+      'Pergantian Shift': 'pergShift',
+      'Rest Time': 'restTime',
+      'GST': 'gst',
+      'Travelling': 'travelling',
+      'Perbaikan Front Loading': 'perbaikanFrontLoading',
+      'Cek Elevasi': 'cekElevasi',
+      'Refuelling': 'refuelling',
+      'Slippery': 'slippery',
+      'Travelling Equipment': 'travellingEquipment',
+      'Fogging': 'fogging',
+      'Safety Talk': 'safetyTalk',
+      'P2H': 'p2h'
+    };
+    
+    return mapping[problemType] || problemType.toLowerCase().replace(/\s+/g, '');
   }
 
-  private getDurationByProblemType(
-    ewhData: any[],
-    problemType: string,
-  ): number | null {
-    const data = ewhData.find((item) => item.problem_type === problemType);
-    return data ? parseFloat(data.total_duration) : null;
-  }
 }
