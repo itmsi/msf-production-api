@@ -57,7 +57,16 @@ export class DayProductionQueryDto {
   })
   @IsOptional()
   @IsDateString()
-  selectedDate?: string;
+  startDate?: string;
+
+  @ApiProperty({ 
+    description: 'End date for filtering (YYYY-MM-DD format)', 
+    example: '2025-01-31',
+    required: false 
+  })
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
 
   @ApiProperty({ 
     description: 'Shift Type (DS/NS)', 

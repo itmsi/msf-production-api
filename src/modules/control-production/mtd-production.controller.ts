@@ -83,7 +83,7 @@ export class MtdProductionController {
     @Get('day-production')
     @ApiOperation({
         summary: 'Get Daily Production Data',
-        description: 'Mengambil data produksi harian dengan filter tanggal, shift, unit, dan pagination'
+        description: 'Mengambil data produksi harian dengan grouping berdasarkan NS/DS dan filter tanggal, shift, unit, dan pagination'
     })
     @ApiResponse({
         status: 200,
@@ -94,37 +94,36 @@ export class MtdProductionController {
                 message: 'Data berhasil diambil',
                 data: [
                     {
-                        id: 1,
-                        no_unit: 'DT-001',
-                        activity_date: '2025-01-15',
-                        shift: 'DS',
+                        activity_date: '2025-10-01',
                         tyre_type: '6x4',
+                        no_unit: 'KFM-DT-001',
+                        shift: 'ds',
                         mohh: 24,
-                        standby_time: 0,
-                        breakdown_time: 0,
-                        ewh_time: 24,
+                        standby_time: 2,
+                        breakdown_time: 3.5,
+                        ewh_time: 35,
                         pa: 0,
-                        ma: 0,
                         ua: 0,
+                        ma: 0,
                         eu: 0,
                         ore_hauling: 5,
                         quarry: 0,
-                        ore_barge: 0,
                         ob: 0,
-                        boulder: 0,
+                        boulder: 20,
+                        ore_barge: 8,
                         ore_hauling_tonnage: 132.8,
-                        ore_barge_tonnage: 0,
-                        ob_tonnage: 0,
-                        boulder_tonnage: 0,
                         quarry_tonnage: 0,
+                        ore_barge_tonnage: 212.48,
+                        boulder_tonnage: 0,
+                        ob_tonnage: 0,
                         sr: 0
                     }
                 ],
-                meta: {
-                    total: 1,
+                pagination: {
+                    total: 7,
                     page: 1,
                     limit: 10,
-                    totalPages: 1
+                    lastPage: 1
                 }
             }
         }
@@ -141,6 +140,12 @@ export class MtdProductionController {
             }
         }
     })
+    @ApiQuery({ name: 'startDate', required: false, description: 'Start date (YYYY-MM-DD)', example: '2025-01-01' })
+    @ApiQuery({ name: 'endDate', required: false, description: 'End date (YYYY-MM-DD)', example: '2025-01-31' })
+    @ApiQuery({ name: 'shift', required: false, description: 'Shift type (DS/NS)', example: 'DS' })
+    @ApiQuery({ name: 'unit', required: false, description: 'Unit number', example: 'DT-001' })
+    @ApiQuery({ name: 'page', required: false, description: 'Page number', example: '1' })
+    @ApiQuery({ name: 'limit', required: false, description: 'Items per page', example: '10' })
     async getControlDayProduction(@Query() query: DayProductionQueryDto) {
         return this.controlMtdProductionService.getDayProduction(query);
     }
