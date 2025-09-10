@@ -78,7 +78,7 @@ export class SitesService {
       if (Array.isArray(data.operator_point)) {
         data.operator_point.forEach((op, index) => {
           validations.push(
-            validateNotEmptyString(op.type, `operator_point[${index}].type`),
+            validateEnum(op.type, ['loading', 'dumping'], `operator_point[${index}].type`),
           );
           validations.push(
             validateNotEmptyString(op.name, `operator_point[${index}].name`),

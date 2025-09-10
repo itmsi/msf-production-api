@@ -16,6 +16,7 @@ export enum ProblemType {
   FOGGING = 'Fogging',
   SAFETY_TALK = 'Safety Talk',
   P2H = 'P2H',
+  SCHEDULE_MAINTENANCE = 'Schedule Maintenance',
 }
 
 export class MtdWorkHourQueryDto {

@@ -46,12 +46,13 @@ export class BaseDataProductionService {
       // Validate foreign key constraints
       await this.validateForeignKeys(createDto);
 
-      // Validate KM and HM values
-      // this.validateKmAndHmValues(createDto);
+      // Validate KM values based on type
+      this.validateKmBasedOnType(createDto);
 
       // Create parent base data pro
       const parentBaseDataPro = this.parentBaseDataProRepository.create({
         populationId: createDto.population_id,
+        type: createDto.type,
         activityDate: new Date(createDto.activityDate),
         shift: createDto.shift,
         driverId: createDto.driverId,
@@ -67,7 +68,7 @@ export class BaseDataProductionService {
           parentBaseDataProId: savedParent.id,
           kmAwal: detail.kmAwal,
           kmAkhir: detail.kmAkhir,
-          totalKm: detail.totalKm ?? (detail.kmAkhir - detail.kmAwal),
+          totalKm: detail.totalKm ?? (detail.kmAkhir && detail.kmAwal ? detail.kmAkhir - detail.kmAwal : 0),
           hmAwal: detail.hmAwal,
           hmAkhir: detail.hmAkhir,
           totalHm: detail.totalHm ?? (detail.hmAkhir - detail.hmAwal),
@@ -101,6 +102,7 @@ export class BaseDataProductionService {
       const transformedData = {
         id: createdData.id,
         population_id: createdData.populationId,
+        type: createdData.type,
         activityDate: createdData.activityDate,
         shift: createdData.shift,
         driverId: createdData.driverId,
@@ -286,6 +288,23 @@ export class BaseDataProductionService {
   //   // }
   // }
 
+  private validateKmBasedOnType(createDto: CreateBaseDataProductionDto): void {
+    // Validasi berdasarkan type
+    if (createDto.type === 'DT') {
+      // Untuk type DT, kmAwal dan kmAkhir wajib diisi
+      for (const detail of createDto.detail) {
+        if (detail.kmAwal === undefined || detail.kmAwal === null) {
+          throw new BadRequestException('kmAwal wajib diisi untuk type DT');
+        }
+        if (detail.kmAkhir === undefined || detail.kmAkhir === null) {
+          throw new BadRequestException('kmAkhir wajib diisi untuk type DT');
+        }
+      }
+    }
+    // Untuk type HE, kmAwal dan kmAkhir optional (nullable)
+    // Tidak perlu validasi khusus
+  }
+
   async update(id: number, updateDto: UpdateBaseDataProductionDto, userId: number) {
     const parentBaseDataPro = await this.parentBaseDataProRepository.findOne({
       where: { id },
@@ -301,13 +320,14 @@ export class BaseDataProductionService {
       await this.validateForeignKeysForUpdate(updateDto);
     }
 
-    // Validate KM and HM values if detail is provided
-    // if (updateDto.detail && updateDto.detail.length > 0) {
-    //   this.validateKmAndHmValues(updateDto as CreateBaseDataProductionDto);
-    // }
+    // Validate KM values based on type if detail is provided
+    if (updateDto.detail && updateDto.detail.length > 0 && updateDto.type) {
+      this.validateKmBasedOnType(updateDto as CreateBaseDataProductionDto);
+    }
 
     // Update parent base data pro
-          if (updateDto.population_id !== undefined) parentBaseDataPro.populationId = updateDto.population_id;
+    if (updateDto.population_id !== undefined) parentBaseDataPro.populationId = updateDto.population_id;
+    if (updateDto.type !== undefined) parentBaseDataPro.type = updateDto.type;
     if (updateDto.activityDate !== undefined) parentBaseDataPro.activityDate = new Date(updateDto.activityDate);
     if (updateDto.shift !== undefined) parentBaseDataPro.shift = updateDto.shift;
     if (updateDto.driverId !== undefined) parentBaseDataPro.driverId = updateDto.driverId;
@@ -330,9 +350,9 @@ export class BaseDataProductionService {
         if (i < existingDetails.length) {
           // Update existing detail
           const existingDetail = existingDetails[i];
-          existingDetail.kmAwal = detailDto.kmAwal;
-          existingDetail.kmAkhir = detailDto.kmAkhir;
-          existingDetail.totalKm = detailDto.totalKm ?? (detailDto.kmAkhir - detailDto.kmAwal);
+          existingDetail.kmAwal = detailDto.kmAwal ?? existingDetail.kmAwal;
+          existingDetail.kmAkhir = detailDto.kmAkhir ?? existingDetail.kmAkhir;
+          existingDetail.totalKm = detailDto.totalKm ?? (detailDto.kmAkhir && detailDto.kmAwal ? detailDto.kmAkhir - detailDto.kmAwal : existingDetail.totalKm);
           existingDetail.hmAwal = detailDto.hmAwal;
           existingDetail.hmAkhir = detailDto.hmAkhir;
           existingDetail.totalHm = detailDto.totalHm ?? (detailDto.hmAkhir - detailDto.hmAwal);
@@ -354,7 +374,7 @@ export class BaseDataProductionService {
             parentBaseDataProId: id,
             kmAwal: detailDto.kmAwal,
             kmAkhir: detailDto.kmAkhir,
-            totalKm: detailDto.totalKm ?? (detailDto.kmAkhir - detailDto.kmAwal),
+            totalKm: detailDto.totalKm ?? (detailDto.kmAkhir && detailDto.kmAwal ? detailDto.kmAkhir - detailDto.kmAwal : 0),
             hmAwal: detailDto.hmAwal,
             hmAkhir: detailDto.hmAkhir,
             totalHm: detailDto.totalHm ?? (detailDto.hmAkhir - detailDto.hmAwal),
@@ -397,7 +417,8 @@ export class BaseDataProductionService {
     // Transform data to response format
     const transformedData = {
       id: updatedData.id,
-              population_id: updatedData.populationId,
+      population_id: updatedData.populationId,
+      type: updatedData.type,
       activityDate: updatedData.activityDate,
       shift: updatedData.shift,
       driverId: updatedData.driverId,
@@ -575,6 +596,7 @@ export class BaseDataProductionService {
       const transformedData = {
         id: parentBaseDataPro.id,
         population_id: parentBaseDataPro.populationId,
+        type: parentBaseDataPro.type,
         activityDate: parentBaseDataPro.activityDate,
         shift: parentBaseDataPro.shift,
         driverId: parentBaseDataPro.driverId,

@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsPositive,
   IsOptional,
+  Min,
 } from 'class-validator';
 
 export class CreateParentPlanProductionDto {
@@ -67,7 +68,7 @@ export class CreateParentPlanProductionDto {
   })
   @IsNotEmpty({ message: 'total_quarry_target tidak boleh kosong' })
   @IsNumber({}, { message: 'total_quarry_target harus berupa angka' })
-  @IsPositive({ message: 'total_quarry_target harus lebih dari 0' })
+  @Min(0, { message: 'total_quarry_target tidak boleh kurang dari 0' })
   total_quarry_target: number;
 
   @ApiProperty({

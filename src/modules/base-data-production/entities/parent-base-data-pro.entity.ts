@@ -9,7 +9,7 @@ import {
   RelationId,
 } from 'typeorm';
 import { BaseDataPro } from './base-data-pro.entity';
-import { Population } from 'src/modules/population';
+import { Population } from '../../population/entities/population.entity';
 
 export enum ShiftType {
   DS = 'ds',
@@ -23,6 +23,9 @@ export class ParentBaseDataPro {
 
   @Column({ type: 'int', name: 'population_id' })
   populationId: number;
+
+  @Column({ type: 'varchar', length: 2, name: 'type' })
+  type: string;
 
   @Column({ type: 'timestamp', name: 'activity_date' })
   activityDate: Date;

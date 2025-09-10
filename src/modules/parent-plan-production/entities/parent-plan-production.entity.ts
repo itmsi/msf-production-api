@@ -63,7 +63,7 @@ export class ParentPlanProduction {
   total_remaining_stock: number;
 
   @Column({
-    type: 'int',
+    type: 'float',
     nullable: false,
     default: 0,
     comment: 'Total sisa stock yang tersedia',

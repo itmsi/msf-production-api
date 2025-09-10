@@ -109,6 +109,54 @@ export class MtdWorkHourController {
     return this.mtdWorkHourService.getMtdWorkHourByProblemType(query);
   }
 
+  @Get('all-problem-types')
+  @ApiOperation({
+    summary: 'Get MTD Work Hour by All Problem Types',
+    description: 'Mengambil data MTD Work Hour berdasarkan semua problem type yang spesifik sesuai requirement',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Data MTD Work Hour berdasarkan semua problem types berhasil diambil',
+    schema: {
+      example: {
+        statusCode: 200,
+        message: 'Data MTD Work Hour berdasarkan semua problem types berhasil diambil',
+        data: [
+          {
+            unit: 'DT-001',
+            p5m: 2.5,
+            pergShift: 1.0,
+            restTime: 0.5,
+            gst: 1.5,
+            travelling: 2.0,
+            perbaikanFrontLoading: 0.0,
+            cekElevasi: 0.5,
+            refuelling: 1.0,
+            slippery: 0.0,
+            travellingEquipment: 0.5,
+            fogging: 0.0,
+            safetyTalk: 0.5,
+            p2h: 1.0,
+            totalDuration: 11.0,
+          },
+        ],
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Parameter tidak valid',
+  })
+  async getMtdWorkHourByAllProblemTypes(@Query() query: MtdWorkHourQueryDto) {
+    return this.mtdWorkHourService.getMtdWorkHourByAllProblemTypes(query);
+  }
+
   @Get('summary')
   @ApiOperation({
     summary: 'Get MTD Work Hour Summary',

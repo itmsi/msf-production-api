@@ -27,16 +27,30 @@ export class ParentPlanProductionService {
    * Membuat parent plan production dan generate data plan production harian
    */
   async create(createDto: CreateParentPlanProductionDto) {
-    const planDate = new Date(createDto.plan_date);
+    try {
+      const planDate = new Date(createDto.plan_date);
 
-    // Validasi apakah plan_date sudah ada
-    const existingParent = await this.parentPlanProductionRepository.findOne({
-      where: { plan_date: planDate },
-    });
+      // Validasi apakah plan_date sudah ada
+      const existingParent = await this.parentPlanProductionRepository.findOne({
+        where: { plan_date: planDate },
+      });
 
-    if (existingParent) {
-      throw new ConflictException('Plan date sudah ada dalam sistem');
-    }
+      if (existingParent) {
+        throw new ConflictException('Plan date sudah ada dalam sistem');
+      }
+
+      // Validasi data untuk mencegah division by zero
+      if (createDto.total_ore_target <= 0) {
+        throw new BadRequestException('total_ore_target harus lebih dari 0');
+      }
+
+      if (createDto.total_ob_target <= 0) {
+        throw new BadRequestException('total_ob_target harus lebih dari 0');
+      }
+
+      if (createDto.total_quarry_target < 0) {
+        throw new BadRequestException('total_quarry_target tidak boleh kurang dari 0');
+      }
 
     // Hitung jumlah hari dalam bulan
     const totalCalendarDays = this.getDaysInMonth(planDate);
@@ -77,6 +91,10 @@ export class ParentPlanProductionService {
     );
 
     return savedParent;
+    } catch (error) {
+      console.error('Error creating parent plan production:', error);
+      throw error;
+    }
   }
 
   /**
@@ -86,6 +104,7 @@ export class ParentPlanProductionService {
     parentPlanProduction: ParentPlanProduction,
     createDto: CreateParentPlanProductionDto,
   ) {
+    try {
     const planDate = parentPlanProduction.plan_date;
     const totalDays = parentPlanProduction.total_calender_day;
 
@@ -116,7 +135,9 @@ export class ParentPlanProductionService {
       const shiftObTarget = obTarget / 2;
       const shiftOreTarget = oreTarget / 2;
       const shiftQuarry = quarry / 2;
-      const shiftSrTarget = shiftObTarget / shiftOreTarget;
+      
+      // Validasi untuk mencegah division by zero
+      const shiftSrTarget = shiftOreTarget > 0 ? shiftObTarget / shiftOreTarget : 0;
       const remainingStock = oldStockGlobal - oreShipmentTarget + oreTarget;
 
       const planProduction: Partial<PlanProduction> = {
@@ -129,7 +150,7 @@ export class ParentPlanProductionService {
         ob_target: obTarget,
         ore_target: oreTarget,
         quarry: quarry,
-        sr_target: obTarget / oreTarget, // Sesuai rumus yang diminta
+        sr_target: oreTarget > 0 ? obTarget / oreTarget : 0, // Sesuai rumus yang diminta
         ore_shipment_target: oreShipmentTarget,
         total_fleet: createDto.total_fleet,
         daily_old_stock: dailyOldStock,
@@ -161,6 +182,10 @@ export class ParentPlanProductionService {
     );
 
     return savedPlanProductions;
+    } catch (error) {
+      console.error('Error generating daily plan productions:', error);
+      throw error;
+    }
   }
 
   /**
@@ -598,7 +623,9 @@ export class ParentPlanProductionService {
       const shiftObTarget = obTarget / 2;
       const shiftOreTarget = oreTarget / 2;
       const shiftQuarry = quarry / 2;
-      const shiftSrTarget = shiftObTarget / shiftOreTarget;
+      
+      // Validasi untuk mencegah division by zero
+      const shiftSrTarget = shiftOreTarget > 0 ? shiftObTarget / shiftOreTarget : 0;
       const remainingStock = oldStockGlobal - oreShipmentTarget + oreTarget;
 
       // Update fields pada data yang sudah ada
@@ -611,7 +638,7 @@ export class ParentPlanProductionService {
       existingPlan.ob_target = obTarget;
       existingPlan.ore_target = oreTarget;
       existingPlan.quarry = quarry;
-      existingPlan.sr_target = obTarget / oreTarget; // Sesuai rumus yang diminta
+      existingPlan.sr_target = oreTarget > 0 ? obTarget / oreTarget : 0; // Sesuai rumus yang diminta
       existingPlan.ore_shipment_target = oreShipmentTarget;
       existingPlan.total_fleet =
         updateDto.total_fleet ?? parentPlanProduction.total_fleet;

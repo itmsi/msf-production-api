@@ -22,38 +22,39 @@ export function IsValidDateFormat(validationOptions?: any) {
   };
 }
 
-// Custom validator untuk memastikan nilai akhir tidak kurang dari nilai awal (kecuali jika nilai 0 atau sama)
-// export function IsEndValueGreaterThanStart(validationOptions?: any) {
-//   return function (object: any, propertyName: string) {
-//     const originalValidate = function(value: any) {
-//       if (value === undefined || value === null) return true;
+// Custom validator untuk validasi kondisional berdasarkan type
+export function IsKmRequiredBasedOnType(validationOptions?: any) {
+  return function (object: any, propertyName: string) {
+    const originalValidate = function(value: any) {
+      // Dapatkan nilai type dari parent object (CreateBaseDataProductionDto)
+      const parentType = object.type || object.parent?.type;
       
-//       const startValue = object[propertyName.replace('Akhir', 'Awal')];
-//       if (startValue === undefined || startValue === null) return true;
+      // Jika type adalah DT, maka kmAwal dan kmAkhir wajib diisi
+      if (parentType === 'DT') {
+        if (value === undefined || value === null || value === '') {
+          return false;
+        }
+      }
+      // Jika type adalah HE, maka kmAwal dan kmAkhir optional (nullable)
+      // Tidak perlu validasi khusus untuk HE
       
-//       // Allow 0 values or equal values
-//       if (value === 0 || startValue === 0 || value === startValue) return true;
-      
-//       if (value <= startValue) {
-//         return false;
-//       }
-//       return true;
-//     };
+      return true;
+    };
     
-//     Reflect.defineMetadata('validation:isEndValueGreaterThanStart', originalValidate, object, propertyName);
-//   };
-// }
+    Reflect.defineMetadata('validation:isKmRequiredBasedOnType', originalValidate, object, propertyName);
+  };
+}
 
 export class BaseDataProDetailDto {
-  @ApiProperty({ description: 'Kilometer awal', example: 10 })
+  @ApiProperty({ description: 'Kilometer awal', example: 10, required: false })
   @IsNumber()
-  @IsNotEmpty()
-  kmAwal: number;
+  @IsOptional()
+  kmAwal?: number;
 
-  @ApiProperty({ description: 'Kilometer akhir', example: 25.9 })
+  @ApiProperty({ description: 'Kilometer akhir', example: 25.9, required: false })
   @IsNumber()
-  @IsNotEmpty()
-  kmAkhir: number;
+  @IsOptional()
+  kmAkhir?: number;
 
   @ApiProperty({ 
     description: 'Total kilometer (calculated automatically as kmAkhir - kmAwal if not provided)', 
@@ -129,6 +130,11 @@ export class CreateBaseDataProductionDto {
   @IsInt()
   @IsNotEmpty()
   population_id: number;
+
+  @ApiProperty({ description: 'Type of operation (HE or DT)', example: 'DT' })
+  @IsString()
+  @IsNotEmpty()
+  type: string;
 
   @ApiProperty({ description: 'Activity date', example: '2025-08-21' })
   @IsString()

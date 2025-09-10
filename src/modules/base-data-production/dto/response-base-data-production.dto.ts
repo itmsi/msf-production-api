@@ -62,6 +62,9 @@ export class ParentBaseDataProResponseDto {
   @ApiProperty({ description: 'ID population/unit' })
   populationId: number;
 
+  @ApiProperty({ description: 'Type of operation (HE or DT)' })
+  type: string;
+
   @ApiProperty({ description: 'Activity date' })
   activityDate: Date;
 
