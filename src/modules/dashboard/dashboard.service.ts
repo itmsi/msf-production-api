@@ -253,64 +253,170 @@ export class DashboardService {
   }
 
   async getMonthlyStatus(month: string) {
-    return {
-      statusCode: 200,
-      message: 'success',
-      data: [
+    try {
+      // Input validation
+      if (!month || !/^\d{4}-\d{2}$/.test(month)) {
+        return {
+          statusCode: 400,
+          message: 'Invalid month format. Expected YYYY-MM format',
+          error: 'Invalid input parameter'
+        };
+      }
+
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+
+      // Parse month parameter (format: YYYY-MM) with validation
+      const [year, monthNum] = month.split('-').map(Number);
+      
+      // Validate year and month ranges
+      if (year < 2000 || year > 2100 || monthNum < 1 || monthNum > 12) {
+        await queryRunner.release();
+        return {
+          statusCode: 400,
+          message: 'Invalid year or month range',
+          error: 'Year must be between 2000-2100, month must be between 1-12'
+        };
+      }
+
+      const startDate = new Date(year, monthNum - 1, 1);
+      const endDate = new Date(year, monthNum, 0, 23, 59, 59);
+
+      // Optimized query with better indexing hints
+      const targetQuery = `
+        SELECT 
+          COALESCE(SUM(total_ob_target), 0) as ob_target,
+          COALESCE(SUM(total_ore_target), 0) as ore_target,
+          COALESCE(SUM(total_ore_shipment_target), 0) as ore_shipment_target,
+          COALESCE(SUM(total_quarry_target), 0) as quarry_target
+        FROM r_parent_plan_production 
+        WHERE plan_date >= $1 AND plan_date <= $2
+        AND deleted_at IS NULL
+      `;
+
+      const targetResult = await queryRunner.query(targetQuery, [startDate, endDate]);
+      const targets = targetResult[0] || {};
+
+      // Optimized achievement query with material filter first
+      const achievementQuery = `
+        SELECT 
+          material,
+          COALESCE(SUM(total_vessel), 0) as total_achievement
+        FROM r_base_data_pro bdp
+        INNER JOIN r_parent_base_data_pro pbdp ON bdp.parent_base_data_pro_id = pbdp.id
+        WHERE pbdp.activity_date >= $1 AND pbdp.activity_date <= $2
+        AND bdp."deletedAt" IS NULL
+        AND bdp.material IN ('ob', 'ore', 'ore-barge', 'quarry')
+        GROUP BY material
+      `;
+
+      const achievementResult = await queryRunner.query(achievementQuery, [startDate, endDate]);
+      
+      // Convert achievement result to object for easy lookup
+      const achievements = {};
+      achievementResult.forEach(row => {
+        achievements[row.material] = parseFloat(row.total_achievement) || 0;
+      });
+
+      await queryRunner.release();
+
+      // Calculate data for each activity
+      const obTarget = parseFloat(targets.ob_target) || 0;
+      const oreTarget = parseFloat(targets.ore_target) || 0;
+      const oreShipmentTarget = parseFloat(targets.ore_shipment_target) || 0;
+      const quarryTarget = parseFloat(targets.quarry_target) || 0;
+
+      const obAchievement = achievements['ob'] || 0;
+      const oreAchievement = achievements['ore'] || 0;
+      const oreBargeAchievement = achievements['ore-barge'] || 0;
+      const quarryAchievement = achievements['quarry'] || 0;
+
+      const activities = [
         {
           title: 'OB Removing',
-          target: 3000,
+          target: obTarget,
           chart_data: [
             {
               name: 'progress',
-              value: 10,
+              value: obTarget > 0 ? Math.round((obAchievement / obTarget) * 100 * 100) / 100 : 0,
               fill: '#3BAF9F',
             },
           ],
-          weekness: 123,
-          achievement: 123.123218,
+          weekness: obTarget - obAchievement,
+          achievement: obAchievement,
         },
         {
           title: 'Ore Hauling',
-          target: 2950,
+          target: oreTarget,
           chart_data: [
             {
               name: 'progress',
-              value: 40,
+              value: oreTarget > 0 ? Math.round((oreAchievement / oreTarget) * 100 * 100) / 100 : 0,
               fill: '#3BAF9F',
             },
           ],
-          weekness: 123,
-          achievement: 2700,
+          weekness: oreTarget - oreAchievement,
+          achievement: oreAchievement,
         },
         {
           title: 'Ore Barging',
-          target: 2980,
+          target: oreShipmentTarget,
           chart_data: [
             {
               name: 'progress',
-              value: 62.88,
+              value: oreShipmentTarget > 0 ? Math.round((oreBargeAchievement / oreShipmentTarget) * 100 * 100) / 100 : 0,
               fill: '#3BAF9F',
             },
           ],
-          weekness: 123,
-          achievement: 2750,
+          weekness: oreShipmentTarget - oreBargeAchievement,
+          achievement: oreBargeAchievement,
         },
         {
           title: 'Quarry',
-          target: 2950,
+          target: quarryTarget,
           chart_data: [
             {
               name: 'progress',
-              value: 23,
+              value: quarryTarget > 0 ? Math.round((quarryAchievement / quarryTarget) * 100 * 100) / 100 : 0,
               fill: '#3BAF9F',
             },
           ],
-          weekness: 123,
-          achievement: 2800,
+          weekness: quarryTarget - quarryAchievement,
+          achievement: quarryAchievement,
         },
-      ],
-    };
+      ];
+
+      return {
+        statusCode: 200,
+        message: 'success',
+        data: activities,
+      };
+    } catch (error) {
+      console.error('Error in getMonthlyStatus:', error);
+      
+      // More specific error handling
+      if (error.code === 'ECONNREFUSED') {
+        return {
+          statusCode: 503,
+          message: 'Database connection failed',
+          error: 'Service temporarily unavailable'
+        };
+      }
+      
+      if (error.code === '42P01') {
+        return {
+          statusCode: 500,
+          message: 'Database table not found',
+          error: 'Internal server configuration error'
+        };
+      }
+      
+      return {
+        statusCode: 500,
+        message: 'Error retrieving monthly status data',
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      };
+    }
   }
 
   async getTrendHaulingBarging(month: string) {
