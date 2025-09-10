@@ -187,17 +187,17 @@ export class BaseDataProductionService {
       for (const detail of updateDto.detail) {
         // Validate Loading Point ID if provided
         if (detail.loadingPointId) {
-          const loadingPoint = await this.sitesRepository.findOne({ where: { id: detail.loadingPointId, deletedAt: IsNull() } });
+          const loadingPoint = await this.operationPointsRepository.findOne({ where: { id: detail.loadingPointId, deletedAt: IsNull() } });
           if (!loadingPoint) {
-            throw new BadRequestException(`Loading Point dengan ID ${detail.loadingPointId} tidak ditemukan`);
+            throw new BadRequestException(`Loading Point dengan ID ${detail.loadingPointId} tidak ditemukan di tabel m_operation_points`);
           }
         }
 
         // Validate Dumping Point ID if provided
         if (detail.dumpingPointId) {
-          const dumpingPoint = await this.sitesRepository.findOne({ where: { id: detail.dumpingPointId, deletedAt: IsNull() } });
+          const dumpingPoint = await this.operationPointsRepository.findOne({ where: { id: detail.dumpingPointId, deletedAt: IsNull() } });
           if (!dumpingPoint) {
-            throw new BadRequestException(`Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan`);
+            throw new BadRequestException(`Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan di tabel m_operation_points`);
           }
         }
 
@@ -240,17 +240,17 @@ export class BaseDataProductionService {
     for (const detail of createDto.detail) {
       // Validate Loading Point ID if provided
       if (detail.loadingPointId) {
-        const loadingPoint = await this.sitesRepository.findOne({ where: { id: detail.loadingPointId, deletedAt: IsNull() } });
+        const loadingPoint = await this.operationPointsRepository.findOne({ where: { id: detail.loadingPointId, deletedAt: IsNull() } });
         if (!loadingPoint) {
-          throw new BadRequestException(`Loading Point dengan ID ${detail.loadingPointId} tidak ditemukan`);
+          throw new BadRequestException(`Loading Point dengan ID ${detail.loadingPointId} tidak ditemukan di tabel m_operation_points`);
         }
       }
 
       // Validate Dumping Point ID if provided
       if (detail.dumpingPointId) {
-        const dumpingPoint = await this.sitesRepository.findOne({ where: { id: detail.dumpingPointId, deletedAt: IsNull() } });
+        const dumpingPoint = await this.operationPointsRepository.findOne({ where: { id: detail.dumpingPointId, deletedAt: IsNull() } });
         if (!dumpingPoint) {
-          throw new BadRequestException(`Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan`);
+          throw new BadRequestException(`Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan di tabel m_operation_points`);
         }
       }
 

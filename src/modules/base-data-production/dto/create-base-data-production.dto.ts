@@ -84,22 +84,22 @@ export class BaseDataProDetailDto {
   @IsOptional()
   totalHm?: number;
 
-  @ApiProperty({ description: 'ID loading point', example: 1, required: false })
+  @ApiProperty({ description: 'ID loading point (references m_operation_points)', example: 1, required: false })
   @IsInt()
   @IsOptional()
   loadingPointId?: number | null;
 
-  @ApiProperty({ description: 'ID dumping point', example: 1, required: false })
+  @ApiProperty({ description: 'ID dumping point (references m_operation_points)', example: 1, required: false })
   @IsInt()
   @IsOptional()
   dumpingPointId?: number | null;
 
-  @ApiProperty({ description: 'ID dumping point operation', example: 1, required: false })
+  @ApiProperty({ description: 'ID dumping point operation (references m_operation_points)', example: 1, required: false })
   @IsInt()
   @IsOptional()
   dumpingPointOpId?: number;
 
-  @ApiProperty({ description: 'ID dumping point barge', example: 1, required: false })
+  @ApiProperty({ description: 'ID dumping point barge (references m_barge)', example: 1, required: false })
   @IsInt()
   @IsOptional()
   dumpingPointBargeId?: number;

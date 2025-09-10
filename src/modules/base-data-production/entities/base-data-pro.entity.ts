@@ -10,6 +10,8 @@ import {
 } from 'typeorm';
 import { ParentBaseDataPro } from './parent-base-data-pro.entity';
 import { Population } from '../../population/entities/population.entity';
+import { OperationPoints } from '../../operation-points/entities/operation-points.entity';
+import { Barge } from '../../barge/entities/barge.entity';
 
 export enum MaterialType {
   BIOMAS = 'biomas',
@@ -101,4 +103,20 @@ export class BaseDataPro {
   @ManyToOne(() => ParentBaseDataPro, (parentBaseDataPro) => parentBaseDataPro.baseDataPro)
   @JoinColumn({ name: 'parent_base_data_pro_id' })
   parentBaseDataPro: ParentBaseDataPro;
+
+  @ManyToOne(() => OperationPoints, { nullable: true })
+  @JoinColumn({ name: 'loading_point_id' })
+  loadingPoint: OperationPoints;
+
+  @ManyToOne(() => OperationPoints, { nullable: true })
+  @JoinColumn({ name: 'dumping_point_id' })
+  dumpingPoint: OperationPoints;
+
+  @ManyToOne(() => OperationPoints, { nullable: true })
+  @JoinColumn({ name: 'dumping_point_op_id' })
+  dumpingPointOp: OperationPoints;
+
+  @ManyToOne(() => Barge, { nullable: true })
+  @JoinColumn({ name: 'dumping_point_barge_id' })
+  dumpingPointBarge: Barge;
 }
