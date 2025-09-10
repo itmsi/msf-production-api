@@ -613,30 +613,126 @@ export class DashboardService {
   }
 
   async getTrendFuelRatio(month: string) {
-    return {
-      statusCode: 200,
-      message: 'success',
-      data: {
-        chart: [
-          { date: '01/07', fr: 2500, sr: 2000 },
-          { date: '02/07', fr: 2500, sr: 1800 },
-          { date: '03/07', fr: 2500, sr: 1700 },
-          { date: '04/07', fr: 2500, sr: 2200 },
-          { date: '05/07', fr: 2500, sr: 2100 },
-          { date: '06/07', fr: 2500, sr: 1900 },
-          { date: '07/07', fr: 2500, sr: 2300 },
-          { date: '08/07', fr: 2500, sr: 2100 },
-          { date: '09/07', fr: 2500, sr: 2000 },
-          { date: '10/07', fr: 2500, sr: 1800 },
-          { date: '11/07', fr: 2500, sr: 2100 },
-          { date: '12/07', fr: 2500, sr: 2000 },
-        ],
-        meta: [
-          { key: 'fr', label: 'FR', color: '#D96C06', yAxis: 'left' },
-          { key: 'sr', label: 'SR', color: '#3E7D70', yAxis: 'left' },
-        ],
-      },
-    };
+    try {
+      // Parse month parameter (format: YYYY-MM)
+      const [year, monthNum] = month.split('-').map(Number);
+      const startDate = new Date(year, monthNum - 1, 1);
+      const endDate = new Date(year, monthNum, 0); // Last day of the month
+
+      // Query untuk mendapatkan total qty_supply dari tabel r_fuel per bulan
+      const fuelConsumptionQuery = `
+        SELECT 
+          SUM(COALESCE(rf.qty_supply, 0)) as total_qty_supply
+        FROM r_fuel rf
+        WHERE DATE(rf.activity_date) BETWEEN $1 AND $2
+          AND rf.qty_supply IS NOT NULL
+      `;
+
+      // Query untuk mendapatkan total Ore Barging per bulan
+      const oreBargingQuery = `
+        SELECT 
+          SUM(rbdp.total_vessel * 
+            CASE 
+              WHEN mp.tyre_type = '6x4' THEN 16.6
+              WHEN mp.tyre_type = '8x4' THEN 18.26
+              ELSE 0
+            END
+          ) as total_ore_barging
+        FROM r_parent_base_data_pro rpbdp
+        JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+        JOIN m_population mp ON rpbdp.population_id = mp.id
+        WHERE rbdp.material = 'ore-barge'
+          AND rbdp.activity = 'barging'
+          AND DATE(rpbdp.activity_date) BETWEEN $1 AND $2
+      `;
+
+      // Query untuk mendapatkan total OB Removing per bulan
+      const obRemovingQuery = `
+        SELECT 
+          SUM(rbdp.total_vessel * 
+            CASE 
+              WHEN mp.tyre_type = '6x4' THEN 26.56
+              WHEN mp.tyre_type = '8x4' THEN 29.56
+              ELSE 0
+            END
+          ) as total_ob_removing
+        FROM r_parent_base_data_pro rpbdp
+        JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+        JOIN m_population mp ON rpbdp.population_id = mp.id
+        WHERE rbdp.material = 'ob'
+          AND DATE(rpbdp.activity_date) BETWEEN $1 AND $2
+      `;
+
+      // Query untuk mendapatkan total Ore Hauling per bulan
+      const oreHaulingQuery = `
+        SELECT 
+          SUM(rbdp.total_vessel * 
+            CASE 
+              WHEN mp.tyre_type = '6x4' THEN 26.56
+              WHEN mp.tyre_type = '8x4' THEN 29.56
+              ELSE 0
+            END
+          ) as total_ore_hauling
+        FROM r_parent_base_data_pro rpbdp
+        JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+        JOIN m_population mp ON rpbdp.population_id = mp.id
+        WHERE rbdp.material = 'ore'
+          AND rbdp.activity = 'hauling'
+          AND DATE(rpbdp.activity_date) BETWEEN $1 AND $2
+      `;
+
+      // Execute queries
+      const [fuelData, oreBargingData, obRemovingData, oreHaulingData] = await Promise.all([
+        this.dataSource.query(fuelConsumptionQuery, [startDate, endDate]),
+        this.dataSource.query(oreBargingQuery, [startDate, endDate]),
+        this.dataSource.query(obRemovingQuery, [startDate, endDate]),
+        this.dataSource.query(oreHaulingQuery, [startDate, endDate])
+      ]);
+
+      // Extract values
+      const totalQtySupply = parseFloat(fuelData[0]?.total_qty_supply || 0);
+      const totalOreBarging = parseFloat(oreBargingData[0]?.total_ore_barging || 0);
+      const totalObRemoving = parseFloat(obRemovingData[0]?.total_ob_removing || 0);
+      const totalOreHauling = parseFloat(oreHaulingData[0]?.total_ore_hauling || 0);
+
+      // Calculate ratios
+      const fr = totalOreBarging > 0 ? totalQtySupply / totalOreBarging : 0;
+      const sr = totalOreHauling > 0 ? totalObRemoving / totalOreHauling : 0;
+
+      // Format month for display (MM/YY)
+      const monthDisplay = `${monthNum.toString().padStart(2, '0')}/${year.toString().slice(-2)}`;
+
+      return {
+        statusCode: 200,
+        message: 'success',
+        data: {
+          chart: [
+            { 
+              date: monthDisplay, 
+              fr: Math.round(fr * 100) / 100, // Round to 2 decimal places
+              sr: Math.round(sr * 100) / 100  // Round to 2 decimal places
+            }
+          ],
+          meta: [
+            { key: 'fr', label: 'FR', color: '#D96C06', yAxis: 'left' },
+            { key: 'sr', label: 'SR', color: '#3E7D70', yAxis: 'left' },
+          ],
+        },
+      };
+    } catch (error) {
+      console.error('Error in getTrendFuelRatio:', error);
+      return {
+        statusCode: 500,
+        message: 'Internal server error',
+        data: {
+          chart: [],
+          meta: [
+            { key: 'fr', label: 'FR', color: '#D96C06', yAxis: 'left' },
+            { key: 'sr', label: 'SR', color: '#3E7D70', yAxis: 'left' },
+          ],
+        },
+      };
+    }
   }
 
   async getTrendPerformanceUnit(month: string) {
