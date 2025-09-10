@@ -52,7 +52,6 @@ export class BaseDataProductionService {
       // Create parent base data pro
       const parentBaseDataPro = this.parentBaseDataProRepository.create({
         populationId: createDto.population_id,
-        type: createDto.type,
         activityDate: new Date(createDto.activityDate),
         shift: createDto.shift,
         driverId: createDto.driverId,
@@ -102,7 +101,7 @@ export class BaseDataProductionService {
       const transformedData = {
         id: createdData.id,
         population_id: createdData.populationId,
-        type: createdData.type,
+        type: createDto.type, // Use type from DTO, not from database
         activityDate: createdData.activityDate,
         shift: createdData.shift,
         driverId: createdData.driverId,
@@ -327,7 +326,6 @@ export class BaseDataProductionService {
 
     // Update parent base data pro
     if (updateDto.population_id !== undefined) parentBaseDataPro.populationId = updateDto.population_id;
-    if (updateDto.type !== undefined) parentBaseDataPro.type = updateDto.type;
     if (updateDto.activityDate !== undefined) parentBaseDataPro.activityDate = new Date(updateDto.activityDate);
     if (updateDto.shift !== undefined) parentBaseDataPro.shift = updateDto.shift;
     if (updateDto.driverId !== undefined) parentBaseDataPro.driverId = updateDto.driverId;
@@ -418,7 +416,7 @@ export class BaseDataProductionService {
     const transformedData = {
       id: updatedData.id,
       population_id: updatedData.populationId,
-      type: updatedData.type,
+      type: updateDto.type || 'DT', // Use type from DTO or default
       activityDate: updatedData.activityDate,
       shift: updatedData.shift,
       driverId: updatedData.driverId,
@@ -596,7 +594,7 @@ export class BaseDataProductionService {
       const transformedData = {
         id: parentBaseDataPro.id,
         population_id: parentBaseDataPro.populationId,
-        type: parentBaseDataPro.type,
+        type: 'DT', // Default type since it's not stored in database
         activityDate: parentBaseDataPro.activityDate,
         shift: parentBaseDataPro.shift,
         driverId: parentBaseDataPro.driverId,

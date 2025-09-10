@@ -24,8 +24,6 @@ export class ParentBaseDataPro {
   @Column({ type: 'int', name: 'population_id' })
   populationId: number;
 
-  @Column({ type: 'varchar', length: 2, name: 'type' })
-  type: string;
 
   @Column({ type: 'timestamp', name: 'activity_date' })
   activityDate: Date;
