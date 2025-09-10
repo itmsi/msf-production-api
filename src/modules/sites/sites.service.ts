@@ -372,33 +372,58 @@ export class SitesService {
         );
       }
 
-      // Update site data
-      const updatedSite = this.sitesRepository.merge(site, {
-        name: updateDto.name,
-        location: updateDto.location,
-        longitude: updateDto.longitude,
-        latitude: updateDto.latitude,
-      });
+      // Update site data - hanya update field yang ada dalam updateDto
+      const updateData: Partial<Sites> = {};
+      
+      if (updateDto.name !== undefined) {
+        updateData.name = updateDto.name;
+      }
+      if (updateDto.location !== undefined) {
+        updateData.location = updateDto.location;
+      }
+      if (updateDto.longitude !== undefined) {
+        updateData.longitude = updateDto.longitude;
+      }
+      if (updateDto.latitude !== undefined) {
+        updateData.latitude = updateDto.latitude;
+      }
 
-      await this.sitesRepository.save(updatedSite);
+      // Update hanya jika ada data yang akan diupdate
+      if (Object.keys(updateData).length > 0) {
+        await this.sitesRepository.update(id, updateData);
+      }
 
       // Update operator points if provided
       if (updateDto.operator_point && updateDto.operator_point.length > 0) {
-        // Delete existing operator points for this site
-        await this.operationPointsRepository.delete({ sites_id: id });
+        try {
+          // Soft delete existing operator points for this site instead of hard delete
+          const existingOperationPoints = await this.operationPointsRepository.find({
+            where: { sites_id: id },
+          });
+          
+          if (existingOperationPoints.length > 0) {
+            // Soft delete existing operation points
+            await this.operationPointsRepository.softRemove(existingOperationPoints);
+          }
 
-        // Create new operator points
-        const operatorPoints = updateDto.operator_point.map((op) =>
-          this.operationPointsRepository.create({
-            sites_id: id,
-            type: op.type,
-            name: op.name,
-            longitude: op.longitude,
-            latitude: op.latitude,
-          }),
-        );
+          // Create new operator points
+          const operatorPoints = updateDto.operator_point.map((op) =>
+            this.operationPointsRepository.create({
+              sites_id: id,
+              type: op.type,
+              name: op.name,
+              longitude: op.longitude,
+              latitude: op.latitude,
+            }),
+          );
 
-        await this.operationPointsRepository.save(operatorPoints);
+          await this.operationPointsRepository.save(operatorPoints);
+        } catch (operationPointsError) {
+          console.error('Error updating operator points:', operationPointsError);
+          throw new InternalServerErrorException(
+            'Gagal mengupdate operator points: ' + operationPointsError.message,
+          );
+        }
       }
 
       // Get the complete updated data
