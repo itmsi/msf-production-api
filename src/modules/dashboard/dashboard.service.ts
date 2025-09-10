@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { Population } from '../population/entities/population.entity';
 
 @Injectable()
 export class DashboardService {
@@ -736,13 +737,17 @@ export class DashboardService {
   }
 
   async getTrendPerformanceUnit(month: string) {
+    // TEMPORARY: Return dummy data with actual values for testing
     return {
       statusCode: 200,
       message: 'success',
       data: {
         chart: [
-          { date: '01/07', pa: 2500, ma: 200, ua: 2000, eu: 2000 },
-          { date: '02/07', pa: 2500, ma: 18200, ua: 1800, eu: 1800 },
+          { date: '01/08', pa: 0.85, ma: 0.92, ua: 0.78, eu: 0.65 },
+          { date: '02/08', pa: 0.88, ma: 0.89, ua: 0.82, eu: 0.68 },
+          { date: '03/08', pa: 0.82, ma: 0.94, ua: 0.75, eu: 0.62 },
+          { date: '04/08', pa: 0.90, ma: 0.87, ua: 0.85, eu: 0.72 },
+          { date: '05/08', pa: 0.86, ma: 0.91, ua: 0.80, eu: 0.66 },
         ],
         meta: [
           { key: 'pa', label: 'PA', color: '#D96C06', yAxis: 'left' },
@@ -752,6 +757,146 @@ export class DashboardService {
         ],
       },
     };
+  }
+
+  private generateDummyPerformanceData(startDate: Date, endDate: Date) {
+    const chartData: Array<{date: string, pa: number, ma: number, ua: number, eu: number}> = [];
+    const daysInMonth = endDate.getDate();
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const formattedDate = `${day.toString().padStart(2, '0')}/${(startDate.getMonth() + 1).toString().padStart(2, '0')}`;
+
+      // Generate realistic dummy data based on the formulas:
+      // PA: (EWH + STANDBY) / MOHH
+      // MA: EWH / (EWH + BREAKDOWN)
+      // UA: EWH / (EWH + STANDBY)
+      // EU: EWH / MOHH
+
+      const ewh = 15 + Math.random() * 5; // 15-20 hours
+      const standby = 3 + Math.random() * 2; // 3-5 hours
+      const breakdown = 1 + Math.random() * 2; // 1-3 hours
+      const mohh = 24; // 24 hours per day
+
+      const pa = (ewh + standby) / mohh;
+      const ma = ewh / (ewh + breakdown);
+      const ua = ewh / (ewh + standby);
+      const eu = ewh / mohh;
+
+      chartData.push({
+        date: formattedDate,
+        pa: Math.round(pa * 100) / 100,
+        ma: Math.round(ma * 100) / 100,
+        ua: Math.round(ua * 100) / 100,
+        eu: Math.round(eu * 100) / 100,
+      });
+    }
+
+    return chartData;
+  }
+
+  private async getControlMtdDataForMonth(startDate: Date, endDate: Date) {
+    // First, let's check if there's any data in the tables
+    const checkQuery = `
+      SELECT COUNT(*) as count FROM r_parent_base_data_pro 
+      WHERE activity_date BETWEEN $1 AND $2
+    `;
+    
+    const countResult = await this.dataSource.query(checkQuery, [startDate, endDate]);
+    console.log('Parent data count:', countResult);
+
+    const checkQuery2 = `
+      SELECT COUNT(*) as count FROM r_base_data_pro rbdp
+      JOIN r_parent_base_data_pro rpbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+      WHERE rpbdp.activity_date BETWEEN $1 AND $2
+    `;
+    
+    const countResult2 = await this.dataSource.query(checkQuery2, [startDate, endDate]);
+    console.log('Base data count:', countResult2);
+
+    const query = `
+      SELECT 
+        DATE(rpbdp.activity_date) as activity_date,
+        mp.tyre_type,
+        mp.no_unit,
+        rpbdp.shift,
+        SUM(rbdp.total_hm) as total_hm,
+        SUM(rbdp.total_km) as total_km,
+        COUNT(DISTINCT mp.id) as unit_count
+      FROM r_parent_base_data_pro rpbdp
+      JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+      JOIN m_population mp ON rpbdp.population_id = mp.id
+      WHERE rpbdp.activity_date BETWEEN $1 AND $2
+        AND mp.site_id = 1
+      GROUP BY DATE(rpbdp.activity_date), mp.tyre_type, mp.no_unit, rpbdp.shift
+      ORDER BY DATE(rpbdp.activity_date)
+    `;
+
+    console.log('Query parameters:', { startDate, endDate });
+    const result = await this.dataSource.query(query, [startDate, endDate]);
+    console.log('Query result:', result);
+    return result;
+  }
+
+  private async getBreakdownTimeForDate(noUnit: string, activityDate: string, shift: string) {
+    const query = `
+      SELECT COALESCE(SUM(duration), 0) as breakdown_time
+      FROM r_loss_time
+      WHERE no_unit = $1
+        AND DATE(activity_date) = $2
+        AND shift = $3
+        AND loss_type = 'BD'
+    `;
+
+    const result = await this.dataSource.query(query, [noUnit, activityDate, shift]);
+    return parseFloat(result[0]?.breakdown_time || '0');
+  }
+
+  private async calculateDailyPerformanceMetrics(controlMtdData: any[], startDate: Date, endDate: Date) {
+    const chartData: Array<{date: string, pa: number, ma: number, ua: number, eu: number}> = [];
+    const daysInMonth = endDate.getDate();
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), day);
+      const dateStr = currentDate.toISOString().split('T')[0];
+      const formattedDate = `${day.toString().padStart(2, '0')}/${(startDate.getMonth() + 1).toString().padStart(2, '0')}`;
+
+      // Get data for this specific date
+      const dayData = controlMtdData.filter(item => item.activity_date === dateStr);
+
+      let totalEwh = 0;
+      let totalStandby = 0;
+      let totalBreakdown = 0;
+      let totalMohh = 0;
+
+      // Calculate totals for all units on this date
+      for (const item of dayData) {
+        const ewh = parseFloat(item.total_hm || '0');
+        const mohh = 24; // 24 hours per day per unit
+        const breakdownTime = await this.getBreakdownTimeForDate(item.no_unit, dateStr, item.shift);
+        const standbyTime = mohh - breakdownTime - ewh;
+
+        totalEwh += ewh;
+        totalStandby += Math.max(0, standbyTime); // Ensure non-negative
+        totalBreakdown += breakdownTime;
+        totalMohh += mohh;
+      }
+
+      // Calculate PA, MA, UA, EU according to the specified formulas
+      const pa = totalMohh > 0 ? (totalEwh + totalStandby) / totalMohh : 0;
+      const ma = (totalEwh + totalBreakdown) > 0 ? totalEwh / (totalEwh + totalBreakdown) : 0;
+      const ua = (totalEwh + totalStandby) > 0 ? totalEwh / (totalEwh + totalStandby) : 0;
+      const eu = totalMohh > 0 ? totalEwh / totalMohh : 0;
+
+      chartData.push({
+        date: formattedDate,
+        pa: Math.round(pa * 100) / 100, // Round to 2 decimal places
+        ma: Math.round(ma * 100) / 100,
+        ua: Math.round(ua * 100) / 100,
+        eu: Math.round(eu * 100) / 100,
+      });
+    }
+
+    return chartData;
   }
 
   async getSummaryProduction() {
