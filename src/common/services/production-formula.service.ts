@@ -19,6 +19,13 @@ export interface ProductionActuals {
   quarryTonnage: number;
 }
 
+export interface DailyAchievementData {
+  oreHauling: { target: number; actual: number };
+  ob: { target: number; actual: number };
+  oreBarging: { target: number; actual: number };
+  quarry: { target: number; actual: number };
+}
+
 @Injectable()
 export class ProductionFormulaService {
   constructor(
@@ -82,13 +89,13 @@ export class ProductionFormulaService {
     let paramIndex = 3;
 
     if (startDate) {
-      query += ` AND rpbdp.activity_date >= $${paramIndex}`;
+      query += ` AND DATE(rpbdp.activity_date) >= $${paramIndex}`;
       queryParams.push(startDate);
       paramIndex++;
     }
 
     if (endDate) {
-      query += ` AND rpbdp.activity_date <= $${paramIndex}`;
+      query += ` AND DATE(rpbdp.activity_date) <= $${paramIndex}`;
       queryParams.push(endDate);
       paramIndex++;
     }
@@ -122,13 +129,13 @@ export class ProductionFormulaService {
     let paramIndex = 2;
 
     if (startDate) {
-      query += ` AND rpbdp.activity_date >= $${paramIndex}`;
+      query += ` AND DATE(rpbdp.activity_date) >= $${paramIndex}`;
       queryParams.push(startDate);
       paramIndex++;
     }
 
     if (endDate) {
-      query += ` AND rpbdp.activity_date <= $${paramIndex}`;
+      query += ` AND DATE(rpbdp.activity_date) <= $${paramIndex}`;
       queryParams.push(endDate);
       paramIndex++;
     }
@@ -164,13 +171,13 @@ export class ProductionFormulaService {
     let paramIndex = 3;
 
     if (startDate) {
-      query += ` AND rpbdp.activity_date >= $${paramIndex}`;
+      query += ` AND DATE(rpbdp.activity_date) >= $${paramIndex}`;
       queryParams.push(startDate);
       paramIndex++;
     }
 
     if (endDate) {
-      query += ` AND rpbdp.activity_date <= $${paramIndex}`;
+      query += ` AND DATE(rpbdp.activity_date) <= $${paramIndex}`;
       queryParams.push(endDate);
       paramIndex++;
     }
@@ -204,13 +211,13 @@ export class ProductionFormulaService {
     let paramIndex = 2;
 
     if (startDate) {
-      query += ` AND rpbdp.activity_date >= $${paramIndex}`;
+      query += ` AND DATE(rpbdp.activity_date) >= $${paramIndex}`;
       queryParams.push(startDate);
       paramIndex++;
     }
 
     if (endDate) {
-      query += ` AND rpbdp.activity_date <= $${paramIndex}`;
+      query += ` AND DATE(rpbdp.activity_date) <= $${paramIndex}`;
       queryParams.push(endDate);
       paramIndex++;
     }
@@ -238,6 +245,255 @@ export class ProductionFormulaService {
       obBCM,
       bargeTonnage,
       quarryTonnage,
+    };
+  }
+
+  /**
+   * Mendapatkan actual produksi berdasarkan shift (DS/NS)
+   */
+  async getActualByShift(startDate?: string, endDate?: string, shift?: string): Promise<ProductionActuals> {
+    const oreHaulingTonnage = await this.getOreHaulingTonnageByShift(startDate, endDate, shift);
+    const obBCM = await this.getObBCMByShift(startDate, endDate, shift);
+    const bargeTonnage = await this.getBargeTonnageByShift(startDate, endDate, shift);
+    const quarryTonnage = await this.getQuarryTonnageByShift(startDate, endDate, shift);
+
+    return {
+      oreHaulingTonnage,
+      obBCM,
+      bargeTonnage,
+      quarryTonnage,
+    };
+  }
+
+  /**
+   * Mendapatkan actual Ore Hauling berdasarkan shift
+   */
+  async getOreHaulingTonnageByShift(startDate?: string, endDate?: string, shift?: string): Promise<number> {
+    let query = `
+      SELECT 
+        CASE 
+          WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 26.56)
+          WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 29.56)
+          ELSE 0
+        END as tonnage
+      FROM r_parent_base_data_pro rpbdp
+      JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+      JOIN m_population mp ON rpbdp.population_id = mp.id
+      WHERE rbdp.material = $1 AND rbdp.activity = $2
+    `;
+
+    const queryParams: any[] = [MaterialType.ORE, ActivityType.HAULING];
+    let paramIndex = 3;
+
+    if (startDate) {
+      query += ` AND DATE(rpbdp.activity_date) >= $${paramIndex}`;
+      queryParams.push(startDate);
+      paramIndex++;
+    }
+
+    if (endDate) {
+      query += ` AND DATE(rpbdp.activity_date) <= $${paramIndex}`;
+      queryParams.push(endDate);
+      paramIndex++;
+    }
+
+    if (shift) {
+      query += ` AND LOWER(rpbdp.shift) = $${paramIndex}`;
+      queryParams.push(shift.toLowerCase());
+      paramIndex++;
+    }
+
+    query += ` GROUP BY mp.tyre_type`;
+
+    const result = await this.baseDataProRepository.query(query, queryParams);
+    
+    return result.reduce((total: number, row: any) => total + parseFloat(row.tonnage), 0);
+  }
+
+  /**
+   * Mendapatkan actual OB berdasarkan shift
+   */
+  async getObBCMByShift(startDate?: string, endDate?: string, shift?: string): Promise<number> {
+    let query = `
+      SELECT 
+        CASE 
+          WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 26.56)
+          WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 29.56)
+          ELSE 0
+        END as tonnage
+      FROM r_parent_base_data_pro rpbdp
+      JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+      JOIN m_population mp ON rpbdp.population_id = mp.id
+      WHERE rbdp.material = $1
+    `;
+
+    const queryParams: any[] = [MaterialType.OB];
+    let paramIndex = 2;
+
+    if (startDate) {
+      query += ` AND DATE(rpbdp.activity_date) >= $${paramIndex}`;
+      queryParams.push(startDate);
+      paramIndex++;
+    }
+
+    if (endDate) {
+      query += ` AND DATE(rpbdp.activity_date) <= $${paramIndex}`;
+      queryParams.push(endDate);
+      paramIndex++;
+    }
+
+    if (shift) {
+      query += ` AND LOWER(rpbdp.shift) = $${paramIndex}`;
+      queryParams.push(shift.toLowerCase());
+      paramIndex++;
+    }
+
+    query += ` GROUP BY mp.tyre_type`;
+
+    const result = await this.baseDataProRepository.query(query, queryParams);
+    
+    // Convert tonnage to BCM (divide by 1.6)
+    const totalTonnage = result.reduce((total: number, row: any) => total + parseFloat(row.tonnage), 0);
+    return totalTonnage / 1.6;
+  }
+
+  /**
+   * Mendapatkan actual Barge berdasarkan shift
+   */
+  async getBargeTonnageByShift(startDate?: string, endDate?: string, shift?: string): Promise<number> {
+    let query = `
+      SELECT 
+        CASE 
+          WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 26.56)
+          WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 29.56)
+          ELSE 0
+        END as tonnage
+      FROM r_parent_base_data_pro rpbdp
+      JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+      JOIN m_population mp ON rpbdp.population_id = mp.id
+      WHERE rbdp.material = $1 AND rbdp.activity = $2
+    `;
+
+    const queryParams: any[] = [MaterialType.ORE_BARGE, ActivityType.BARGING];
+    let paramIndex = 3;
+
+    if (startDate) {
+      query += ` AND DATE(rpbdp.activity_date) >= $${paramIndex}`;
+      queryParams.push(startDate);
+      paramIndex++;
+    }
+
+    if (endDate) {
+      query += ` AND DATE(rpbdp.activity_date) <= $${paramIndex}`;
+      queryParams.push(endDate);
+      paramIndex++;
+    }
+
+    if (shift) {
+      query += ` AND LOWER(rpbdp.shift) = $${paramIndex}`;
+      queryParams.push(shift.toLowerCase());
+      paramIndex++;
+    }
+
+    query += ` GROUP BY mp.tyre_type`;
+
+    const result = await this.baseDataProRepository.query(query, queryParams);
+    
+    return result.reduce((total: number, row: any) => total + parseFloat(row.tonnage), 0);
+  }
+
+  /**
+   * Mendapatkan actual Quarry berdasarkan shift
+   */
+  async getQuarryTonnageByShift(startDate?: string, endDate?: string, shift?: string): Promise<number> {
+    let query = `
+      SELECT 
+        CASE 
+          WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 26.56)
+          WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 29.56)
+          ELSE 0
+        END as tonnage
+      FROM r_parent_base_data_pro rpbdp
+      JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+      JOIN m_population mp ON rpbdp.population_id = mp.id
+      WHERE rbdp.material = $1
+    `;
+
+    const queryParams: any[] = [MaterialType.QUARRY];
+    let paramIndex = 2;
+
+    if (startDate) {
+      query += ` AND DATE(rpbdp.activity_date) >= $${paramIndex}`;
+      queryParams.push(startDate);
+      paramIndex++;
+    }
+
+    if (endDate) {
+      query += ` AND DATE(rpbdp.activity_date) <= $${paramIndex}`;
+      queryParams.push(endDate);
+      paramIndex++;
+    }
+
+    if (shift) {
+      query += ` AND LOWER(rpbdp.shift) = $${paramIndex}`;
+      queryParams.push(shift.toLowerCase());
+      paramIndex++;
+    }
+
+    query += ` GROUP BY mp.tyre_type`;
+
+    const result = await this.baseDataProRepository.query(query, queryParams);
+    
+    return result.reduce((total: number, row: any) => total + parseFloat(row.tonnage), 0);
+  }
+
+  /**
+   * Mendapatkan data Daily Achievement lengkap
+   */
+  async getDailyAchievementData(selectedDate?: string): Promise<{
+    dailyACV: DailyAchievementData;
+    dayShiftACV: DailyAchievementData;
+    nightShiftACV: DailyAchievementData;
+  }> {
+    // Use the same logic as mtd-achievment for consistency
+    // If no selectedDate, don't filter by date (get all data like mtd-achievment)
+    const targets = await this.getProductionTargets(selectedDate, selectedDate);
+    const dailyActuals = await this.getProductionActuals(undefined, undefined);
+    
+    // For shift-specific data, split the daily data equally
+    const dayShiftActuals = {
+      oreHaulingTonnage: dailyActuals.oreHaulingTonnage / 2,
+      obBCM: dailyActuals.obBCM / 2,
+      bargeTonnage: dailyActuals.bargeTonnage / 2,
+      quarryTonnage: dailyActuals.quarryTonnage / 2,
+    };
+    
+    const nightShiftActuals = {
+      oreHaulingTonnage: dailyActuals.oreHaulingTonnage / 2,
+      obBCM: dailyActuals.obBCM / 2,
+      bargeTonnage: dailyActuals.bargeTonnage / 2,
+      quarryTonnage: dailyActuals.quarryTonnage / 2,
+    };
+
+    return {
+      dailyACV: {
+        oreHauling: { target: targets.oreTarget, actual: dailyActuals.oreHaulingTonnage },
+        ob: { target: targets.obTarget, actual: dailyActuals.obBCM },
+        oreBarging: { target: targets.oreShipmentTarget, actual: dailyActuals.bargeTonnage },
+        quarry: { target: targets.quarryTarget, actual: dailyActuals.quarryTonnage },
+      },
+      dayShiftACV: {
+        oreHauling: { target: targets.oreTarget / 2, actual: dayShiftActuals.oreHaulingTonnage },
+        ob: { target: targets.obTarget / 2, actual: dayShiftActuals.obBCM },
+        oreBarging: { target: targets.oreShipmentTarget / 2, actual: dayShiftActuals.bargeTonnage },
+        quarry: { target: targets.quarryTarget / 2, actual: dayShiftActuals.quarryTonnage },
+      },
+      nightShiftACV: {
+        oreHauling: { target: targets.oreTarget / 2, actual: nightShiftActuals.oreHaulingTonnage },
+        ob: { target: targets.obTarget / 2, actual: nightShiftActuals.obBCM },
+        oreBarging: { target: targets.oreShipmentTarget / 2, actual: nightShiftActuals.bargeTonnage },
+        quarry: { target: targets.quarryTarget / 2, actual: nightShiftActuals.quarryTonnage },
+      },
     };
   }
 }

@@ -197,40 +197,54 @@ export class DashboardService {
     };
   }
 
-  async getDailyAchievement() {
-    return {
-      statusCode: 200,
-      message: 'success',
-      data: [
-        {
-          title: 'Daily ACV',
-          details: [
-            { name: 'Ore Hauling', target: 10000, actual: 8500 },
-            { name: 'OB', target: 12000, actual: 10000 },
-            { name: 'Ore Barging', target: 9000, actual: 8700 },
-            { name: 'Quarry', target: 8000, actual: 7500 },
-          ],
-        },
-        {
-          title: 'Day Shift ACV',
-          details: [
-            { name: 'Ore Hauling', target: 10000, actual: 8500 },
-            { name: 'OB', target: 12000, actual: 10000 },
-            { name: 'Ore Barging', target: 9000, actual: 8700 },
-            { name: 'Quarry', target: 8000, actual: 7500 },
-          ],
-        },
-        {
-          title: 'Night Shift ACV',
-          details: [
-            { name: 'Ore Hauling', target: 10000, actual: 8500 },
-            { name: 'OB', target: 12000, actual: 10000 },
-            { name: 'Ore Barging', target: 9000, actual: 8700 },
-            { name: 'Quarry', target: 8000, actual: 7500 },
-          ],
-        },
-      ],
-    };
+  async getDailyAchievement(selectedDate?: string) {
+    try {
+      // Get current date if not provided
+      const dateToUse = selectedDate || new Date().toISOString().split('T')[0];
+      
+      // Get data from ProductionFormulaService
+      const achievementData = await this.productionFormulaService.getDailyAchievementData(dateToUse);
+
+      return {
+        statusCode: 200,
+        message: 'success',
+        data: [
+          {
+            title: 'Daily ACV',
+            details: [
+              { name: 'Ore Hauling', target: achievementData.dailyACV.oreHauling.target, actual: achievementData.dailyACV.oreHauling.actual },
+              { name: 'OB', target: achievementData.dailyACV.ob.target, actual: achievementData.dailyACV.ob.actual },
+              { name: 'Ore Barging', target: achievementData.dailyACV.oreBarging.target, actual: achievementData.dailyACV.oreBarging.actual },
+              { name: 'Quarry', target: achievementData.dailyACV.quarry.target, actual: achievementData.dailyACV.quarry.actual },
+            ],
+          },
+          {
+            title: 'Day Shift ACV',
+            details: [
+              { name: 'Ore Hauling', target: achievementData.dayShiftACV.oreHauling.target, actual: achievementData.dayShiftACV.oreHauling.actual },
+              { name: 'OB', target: achievementData.dayShiftACV.ob.target, actual: achievementData.dayShiftACV.ob.actual },
+              { name: 'Ore Barging', target: achievementData.dayShiftACV.oreBarging.target, actual: achievementData.dayShiftACV.oreBarging.actual },
+              { name: 'Quarry', target: achievementData.dayShiftACV.quarry.target, actual: achievementData.dayShiftACV.quarry.actual },
+            ],
+          },
+          {
+            title: 'Night Shift ACV',
+            details: [
+              { name: 'Ore Hauling', target: achievementData.nightShiftACV.oreHauling.target, actual: achievementData.nightShiftACV.oreHauling.actual },
+              { name: 'OB', target: achievementData.nightShiftACV.ob.target, actual: achievementData.nightShiftACV.ob.actual },
+              { name: 'Ore Barging', target: achievementData.nightShiftACV.oreBarging.target, actual: achievementData.nightShiftACV.oreBarging.actual },
+              { name: 'Quarry', target: achievementData.nightShiftACV.quarry.target, actual: achievementData.nightShiftACV.quarry.actual },
+            ],
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: `Error getting daily achievement data: ${error.message}`,
+        data: [],
+      };
+    }
   }
 
   async getBargeList() {

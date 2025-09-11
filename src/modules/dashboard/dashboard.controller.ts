@@ -71,8 +71,9 @@ export class DashboardController {
   @Get('daily-achievment')
   @ApiOperation({ summary: 'Get daily achievement data', description: 'Retrieve daily achievement data for various shifts' })
   @ApiResponse({ status: 200, description: 'Successfully retrieved daily achievement data', type: DailyAchievementResponseDto })
-  async getDailyAchievement() {
-    return this.dashboardService.getDailyAchievement();
+  @ApiQuery({ name: 'selectedDate', required: false, description: 'Selected date (YYYY-MM-DD)', example: '2025-01-15' })
+  async getDailyAchievement(@Query('selectedDate') selectedDate?: string) {
+    return this.dashboardService.getDailyAchievement(selectedDate);
   }
 
   @Get('barge-list')
