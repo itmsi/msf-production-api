@@ -1,22 +1,92 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Population } from '../population/entities/population.entity';
+import { FormulaService } from '../../common/services/formula.service';
 
 @Injectable()
 export class DashboardService {
-  constructor(private dataSource: DataSource) {}
+  constructor(
+    private dataSource: DataSource,
+    private formulaService: FormulaService
+  ) {}
   async getSpiderData() {
-    return {
-      statusCode: 200,
-      message: 'success',
-      data: [
-        { metric: 'CT', target: 100, actual: 80, percent: 80 },
-        { metric: 'Prod', target: 120, actual: 90, percent: 75 },
-        { metric: 'EWH', target: 90, actual: 70, percent: 78 },
-        { metric: 'FR', target: 95, actual: 95, percent: 100 },
-        { metric: 'Speed', target: 110, actual: 100, percent: 91 },
-      ],
-    };
+    try {
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+
+      // Get current date range (last 30 days)
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 30);
+
+      // 1. CT (Cycle Time) - Static metric
+      const ctTarget = await this.formulaService.getSettingValue(queryRunner, 'cycle_time', 100);
+      const ctActual = await this.formulaService.calculateCycleTime(queryRunner, startDate, endDate);
+
+      // 2. Prod (Production) - Static metric  
+      const prodTarget = await this.formulaService.calculateProductionTarget(queryRunner, startDate, endDate);
+      const prodActual = await this.formulaService.calculateProductionActual(queryRunner, startDate, endDate);
+
+      // 3. EWH (Effective Working Hours) - Static metric
+      const ewhTarget = await this.formulaService.calculateEWHTarget(queryRunner, startDate, endDate);
+      const ewhActual = await this.formulaService.calculateEWHActual(queryRunner, startDate, endDate);
+
+      // 4. FR (Fuel Ratio) - Static metric
+      const frTarget = await this.formulaService.getSettingValue(queryRunner, 'fuel_ratio', 95);
+      const frActual = await this.formulaService.calculateFuelRatioActual(queryRunner, startDate, endDate);
+
+      // 5. Speed - Static metric
+      const speedTarget = await this.formulaService.getSettingValue(queryRunner, 'speed', 110);
+      const speedActual = await this.formulaService.calculateSpeedActual(queryRunner, startDate, endDate);
+
+      await queryRunner.release();
+
+      const data = [
+        {
+          metric: 'CT',
+          target: ctTarget,
+          actual: ctActual,
+          percent: this.formulaService.calculatePercentage(ctActual, ctTarget)
+        },
+        {
+          metric: 'Prod',
+          target: prodTarget,
+          actual: prodActual,
+          percent: this.formulaService.calculatePercentage(prodActual, prodTarget)
+        },
+        {
+          metric: 'EWH',
+          target: ewhTarget,
+          actual: ewhActual,
+          percent: this.formulaService.calculatePercentage(ewhActual, ewhTarget)
+        },
+        {
+          metric: 'FR',
+          target: frTarget,
+          actual: frActual,
+          percent: this.formulaService.calculatePercentage(frActual, frTarget)
+        },
+        {
+          metric: 'Speed',
+          target: speedTarget,
+          actual: speedActual,
+          percent: this.formulaService.calculatePercentage(speedActual, speedTarget)
+        }
+      ];
+
+      return {
+        statusCode: 200,
+        message: 'success',
+        data: data
+      };
+    } catch (error) {
+      console.error('Error in getSpiderData:', error);
+      return {
+        statusCode: 500,
+        message: 'Error retrieving spider data',
+        error: error.message
+      };
+    }
   }
 
   async getMtdAchievement() {
@@ -922,4 +992,5 @@ export class DashboardService {
       };
     }
   }
+
 }
