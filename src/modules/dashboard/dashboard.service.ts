@@ -135,20 +135,88 @@ export class DashboardService {
     }
   }
 
-  async getHaulingData() {
-    return {
-      statusCode: 200,
-      message: 'success',
-      data: [
-        { date: '01/07', target: 2500, actual: 2000, slippery: 5, rain: 8 },
-        { date: '02/07', target: 2500, actual: 1800, slippery: 4, rain: 6 },
-        { date: '03/07', target: 2500, actual: 1700, slippery: 6, rain: 7 },
-        { date: '04/07', target: 2500, actual: 2200, slippery: 8, rain: 9 },
-        { date: '05/07', target: 2500, actual: 2100, slippery: 10, rain: 5 },
-        { date: '06/07', target: 2500, actual: 1900, slippery: 7, rain: 8 },
-        { date: '07/07', target: 2500, actual: 2300, slippery: 9, rain: 10 },
-      ],
-    };
+  async getHaulingData(startDate?: string, endDate?: string) {
+    try {
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+
+      // Set default date range if not provided (last 7 days)
+      const defaultEndDate = new Date();
+      const defaultStartDate = new Date();
+      defaultStartDate.setDate(defaultEndDate.getDate() - 7);
+
+      const start = startDate || defaultStartDate.toISOString().split('T')[0];
+      const end = endDate || defaultEndDate.toISOString().split('T')[0];
+
+      // Get target data from r_plan_production
+      const targetQuery = `
+        SELECT 
+          plan_date,
+          ore_target
+        FROM r_plan_production 
+        WHERE plan_date BETWEEN $1 AND $2
+        ORDER BY plan_date ASC
+      `;
+
+      const targetData = await queryRunner.query(targetQuery, [start, end]);
+
+      // Get actual, slippery, and rain data from get_summary_production_with_loss_time
+      const actualQuery = `
+        SELECT 
+          date,
+          SUM(tonnage) as total_tonnage,
+          SUM(slippery) as total_slippery,
+          SUM(hujan) as total_rain
+        FROM get_summary_production_with_loss_time()
+        WHERE date BETWEEN $1 AND $2
+          AND material_type = 'ore hauling'
+        GROUP BY date
+        ORDER BY date ASC
+      `;
+
+      const actualData = await queryRunner.query(actualQuery, [start, end]);
+
+      await queryRunner.release();
+
+      // Create a map of actual data by date
+      const actualMap = new Map();
+      actualData.forEach(item => {
+        actualMap.set(item.date, {
+          tonnage: parseFloat(item.total_tonnage) || 0,
+          slippery: parseFloat(item.total_slippery) || 0,
+          rain: parseFloat(item.total_rain) || 0
+        });
+      });
+
+      // Combine target and actual data
+      const result = targetData.map(item => {
+        const date = new Date(item.plan_date);
+        const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
+        
+        const actualInfo = actualMap.get(item.plan_date) || { tonnage: 0, slippery: 0, rain: 0 };
+
+        return {
+          date: formattedDate,
+          target: parseFloat(item.ore_target) || 0,
+          actual: actualInfo.tonnage,
+          slippery: actualInfo.slippery,
+          rain: actualInfo.rain
+        };
+      });
+
+      return {
+        statusCode: 200,
+        message: 'success',
+        data: result,
+      };
+    } catch (error) {
+      console.error('Error retrieving hauling data:', error);
+      return {
+        statusCode: 500,
+        message: 'Error retrieving hauling data',
+        error: error.message
+      };
+    }
   }
 
   async getBargeData() {

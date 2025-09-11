@@ -43,8 +43,10 @@ export class DashboardController {
   @Get('hauling')
   @ApiOperation({ summary: 'Get hauling data', description: 'Retrieve daily hauling data with target, actual, and weather conditions' })
   @ApiResponse({ status: 200, description: 'Successfully retrieved hauling data', type: HaulingResponseDto })
-  async getHaulingData() {
-    return this.dashboardService.getHaulingData();
+  @ApiQuery({ name: 'startDate', required: false, description: 'Start date in YYYY-MM-DD format' })
+  @ApiQuery({ name: 'endDate', required: false, description: 'End date in YYYY-MM-DD format' })
+  async getHaulingData(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
+    return this.dashboardService.getHaulingData(startDate, endDate);
   }
 
   @Get('barge')
