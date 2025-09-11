@@ -20,6 +20,7 @@ import { PlanWorkingHourModule } from './modules/plan-working-hour/plan-working-
 import { BargeModule } from './modules/barge/barge.module';
 import { DailyPlanProductionModule } from './modules/daily-plan-production/daily-plan-production.module';
 import { ParentPlanProductionModule } from './modules/parent-plan-production/parent-plan-production.module';
+import { PlanProductionModule } from './modules/plan-production/plan-production.module';
 import { BaseDataProductionModule } from './modules/base-data-production/base-data-production.module';
 import { EffectiveWorkingHoursModule } from './modules/effective-working-hours/effective-working-hours.module';
 import { BargeFormModule } from './modules/barge-form/barge-form.module';
@@ -99,6 +100,7 @@ import { SshTunnelService } from './common/services/ssh-tunnel.service';
     BargeModule,
     DailyPlanProductionModule,
     ParentPlanProductionModule,
+    PlanProductionModule,
     BaseDataProductionModule,
     EffectiveWorkingHoursModule,
     BargeFormModule,

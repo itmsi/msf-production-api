@@ -2,12 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Population } from '../population/entities/population.entity';
 import { FormulaService } from '../../common/services/formula.service';
+import { ProductionFormulaService } from '../../common/services/production-formula.service';
 
 @Injectable()
 export class DashboardService {
   constructor(
     private dataSource: DataSource,
-    private formulaService: FormulaService
+    private formulaService: FormulaService,
+    private productionFormulaService: ProductionFormulaService
   ) {}
   async getSpiderData() {
     try {
@@ -89,17 +91,48 @@ export class DashboardService {
     }
   }
 
-  async getMtdAchievement() {
-    return {
-      statusCode: 200,
-      message: 'success',
-      data: [
-        { name: 'Ore Hauling', target: 10000, actual: 8500 },
-        { name: 'OB', target: 12000, actual: 10000 },
-        { name: 'Ore Barging', target: 9000, actual: 8700 },
-        { name: 'Quarry', target: 8000, actual: 7500 },
-      ],
-    };
+  async getMtdAchievement(startDate?: string, endDate?: string) {
+    try {
+      // Mendapatkan target dan actual menggunakan shared formula service
+      const [targets, actuals] = await Promise.all([
+        this.productionFormulaService.getProductionTargets(startDate, endDate),
+        this.productionFormulaService.getProductionActuals(startDate, endDate)
+      ]);
+
+      return {
+        statusCode: 200,
+        message: 'success',
+        data: [
+          {
+            name: 'Ore Hauling',
+            target: targets.oreTarget,
+            actual: actuals.oreHaulingTonnage
+          },
+          {
+            name: 'OB',
+            target: targets.obTarget,
+            actual: actuals.obBCM
+          },
+          {
+            name: 'Ore Barging',
+            target: targets.oreShipmentTarget,
+            actual: actuals.bargeTonnage
+          },
+          {
+            name: 'Quarry',
+            target: targets.quarryTarget,
+            actual: actuals.quarryTonnage
+          }
+        ]
+      };
+    } catch (error) {
+      console.error('Error in getMtdAchievement:', error);
+      return {
+        statusCode: 500,
+        message: 'Error retrieving MTD achievement data',
+        error: error.message
+      };
+    }
   }
 
   async getHaulingData() {

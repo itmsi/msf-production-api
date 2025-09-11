@@ -34,8 +34,10 @@ export class DashboardController {
   @Get('mtd-achievment')
   @ApiOperation({ summary: 'Get MTD achievement data', description: 'Retrieve Month-to-Date achievement data for various activities' })
   @ApiResponse({ status: 200, description: 'Successfully retrieved MTD achievement data', type: AchievementResponseDto })
-  async getMtdAchievement() {
-    return this.dashboardService.getMtdAchievement();
+  @ApiQuery({ name: 'startDate', required: false, description: 'Start date for filtering (YYYY-MM-DD format)', example: '2025-01-01' })
+  @ApiQuery({ name: 'endDate', required: false, description: 'End date for filtering (YYYY-MM-DD format)', example: '2025-01-31' })
+  async getMtdAchievement(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
+    return this.dashboardService.getMtdAchievement(startDate, endDate);
   }
 
   @Get('hauling')
