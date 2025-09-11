@@ -27,8 +27,10 @@ export class DashboardController {
   @Get('spider')
   @ApiOperation({ summary: 'Get spider chart data', description: 'Retrieve data for spider chart with metrics CT, Prod, EWH, FR, and Speed' })
   @ApiResponse({ status: 200, description: 'Successfully retrieved spider chart data', type: SpiderResponseDto })
-  async getSpiderData() {
-    return this.dashboardService.getSpiderData();
+  @ApiQuery({ name: 'startDate', required: false, description: 'Start date filter (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'endDate', required: false, description: 'End date filter (YYYY-MM-DD)' })
+  async getSpiderData(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
+    return this.dashboardService.getSpiderData(startDate, endDate);
   }
 
   @Get('mtd-achievment')

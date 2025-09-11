@@ -13,13 +13,13 @@ export class FormulaService {
     try {
       const result = await queryRunner.query(`
         SELECT 
-          COALESCE(AVG(
+          COALESCE(SUM(
             CASE 
               WHEN rbdp.total_hm > 0 AND rbdp.total_vessel > 0 
               THEN rbdp.total_hm / rbdp.total_vessel 
               ELSE 0 
             END
-          ), 0) as avg_cycle_time
+          ), 0) as total_cycle_time
         FROM r_parent_base_data_pro rpbdp
         JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
         JOIN m_population mp ON rpbdp.population_id = mp.id
@@ -29,7 +29,7 @@ export class FormulaService {
           AND rbdp."deletedAt" IS NULL
       `, [startDate, endDate]);
       
-      return parseFloat(result[0]?.avg_cycle_time || '0');
+      return parseFloat(result[0]?.total_cycle_time || '0');
     } catch (error) {
       console.error('Error calculating cycle time:', error);
       return 0;
@@ -116,7 +116,7 @@ export class FormulaService {
         FROM r_parent_base_data_pro rpbdp
         JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
         JOIN m_population mp ON rpbdp.population_id = mp.id
-        WHERE rbdp.material = 'ore-barge'
+        WHERE rbdp.material = 'ore'
           AND rbdp.activity = 'barging'
           AND rpbdp.activity_date BETWEEN $1 AND $2
           AND rbdp."deletedAt" IS NULL
@@ -170,8 +170,8 @@ export class FormulaService {
   async calculateProductionTarget(queryRunner: any, startDate: Date, endDate: Date): Promise<number> {
     try {
       const result = await queryRunner.query(`
-        SELECT COALESCE(SUM(total_ore_target), 0) as total_ore_target
-        FROM r_parent_plan_production 
+        SELECT COALESCE(SUM(ore_target), 0) as total_ore_target
+        FROM r_plan_production 
         WHERE plan_date BETWEEN $1 AND $2
           AND deleted_at IS NULL
       `, [startDate, endDate]);

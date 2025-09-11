@@ -11,35 +11,38 @@ export class DashboardService {
     private formulaService: FormulaService,
     private productionFormulaService: ProductionFormulaService
   ) {}
-  async getSpiderData() {
+  async getSpiderData(startDate?: string, endDate?: string) {
     try {
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
 
-      // Get current date range (last 30 days)
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 30);
+      // Set default date range if not provided (last 30 days)
+      const defaultEndDate = new Date();
+      const defaultStartDate = new Date();
+      defaultStartDate.setDate(defaultStartDate.getDate() - 30);
+
+      const start = startDate ? new Date(startDate) : defaultStartDate;
+      const end = endDate ? new Date(endDate) : defaultEndDate;
 
       // 1. CT (Cycle Time) - Static metric
       const ctTarget = await this.formulaService.getSettingValue(queryRunner, 'cycle_time', 100);
-      const ctActual = await this.formulaService.calculateCycleTime(queryRunner, startDate, endDate);
+      const ctActual = await this.formulaService.calculateCycleTime(queryRunner, start, end);
 
       // 2. Prod (Production) - Static metric  
-      const prodTarget = await this.formulaService.calculateProductionTarget(queryRunner, startDate, endDate);
-      const prodActual = await this.formulaService.calculateProductionActual(queryRunner, startDate, endDate);
+      const prodTarget = await this.formulaService.calculateProductionTarget(queryRunner, start, end);
+      const prodActual = await this.formulaService.calculateProductionActual(queryRunner, start, end);
 
       // 3. EWH (Effective Working Hours) - Static metric
-      const ewhTarget = await this.formulaService.calculateEWHTarget(queryRunner, startDate, endDate);
-      const ewhActual = await this.formulaService.calculateEWHActual(queryRunner, startDate, endDate);
+      const ewhTarget = await this.formulaService.calculateEWHTarget(queryRunner, start, end);
+      const ewhActual = await this.formulaService.calculateEWHActual(queryRunner, start, end);
 
       // 4. FR (Fuel Ratio) - Static metric
       const frTarget = await this.formulaService.getSettingValue(queryRunner, 'fuel_ratio', 95);
-      const frActual = await this.formulaService.calculateFuelRatioActual(queryRunner, startDate, endDate);
+      const frActual = await this.formulaService.calculateFuelRatioActual(queryRunner, start, end);
 
       // 5. Speed - Static metric
       const speedTarget = await this.formulaService.getSettingValue(queryRunner, 'speed', 110);
-      const speedActual = await this.formulaService.calculateSpeedActual(queryRunner, startDate, endDate);
+      const speedActual = await this.formulaService.calculateSpeedActual(queryRunner, start, end);
 
       await queryRunner.release();
 
