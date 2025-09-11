@@ -47,36 +47,20 @@ import { SshTunnelService } from './common/services/ssh-tunnel.service';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
-        const dbHitServer = configService.get<string>('DB_HIT_SERVER', 'OFF').toUpperCase();
+        // Wait for SSH tunnel to be ready
+        const sshTunnelService = new SshTunnelService(configService);
+        await sshTunnelService.onModuleInit();
         
-        if (dbHitServer === 'ON') {
-          // Wait for SSH tunnel to be ready for server database
-          const sshTunnelService = new SshTunnelService(configService);
-          await sshTunnelService.onModuleInit();
-          
-          return {
-            type: 'postgres',
-            host: process.env.POSTGRES_HOST || '127.0.0.1',
-            port: parseInt(process.env.POSTGRES_PORT || '6543'),
-            username: process.env.POSTGRES_USER,
-            password: process.env.POSTGRES_PASSWORD,
-            database: process.env.POSTGRES_DB,
-            entities: [__dirname + '/modules/**/entities/*.entity{.ts,.js}'],
-            synchronize: false,
-          };
-        } else {
-          // Use local database configuration
-          return {
-            type: 'postgres',
-            host: process.env.POSTGRES_HOST || 'localhost',
-            port: parseInt(process.env.POSTGRES_PORT || '5432'),
-            username: process.env.POSTGRES_USER || 'falaqmsi',
-            password: process.env.POSTGRES_PASSWORD || '',
-            database: process.env.POSTGRES_DB || 'msf_production',
-            entities: [__dirname + '/modules/**/entities/*.entity{.ts,.js}'],
-            synchronize: false,
-          };
-        }
+        return {
+          type: 'postgres',
+          host: process.env.POSTGRES_HOST || '127.0.0.1',
+          port: parseInt(process.env.POSTGRES_PORT || '6543'),
+          username: process.env.POSTGRES_USER,
+          password: process.env.POSTGRES_PASSWORD,
+          database: process.env.POSTGRES_DB,
+          entities: [__dirname + '/modules/**/entities/*.entity{.ts,.js}'],
+          synchronize: false,
+        };
       },
       inject: [ConfigService],
     }),
@@ -117,6 +101,6 @@ import { SshTunnelService } from './common/services/ssh-tunnel.service';
     ControlDayWorkHourModule,
     S3Module,
   ],
-  providers: [],
+  providers: [SshTunnelService],
 })
 export class AppModule {}
