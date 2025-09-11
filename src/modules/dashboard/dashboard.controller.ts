@@ -52,8 +52,10 @@ export class DashboardController {
   @Get('barge')
   @ApiOperation({ summary: 'Get barge data', description: 'Retrieve daily barge and hauling data' })
   @ApiResponse({ status: 200, description: 'Successfully retrieved barge data', type: BargeResponseDto })
-  async getBargeData() {
-    return this.dashboardService.getBargeData();
+  @ApiQuery({ name: 'startDate', required: false, description: 'Start date (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'endDate', required: false, description: 'End date (YYYY-MM-DD)' })
+  async getBargeData(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
+    return this.dashboardService.getBargeData(startDate, endDate);
   }
 
   @Get('tmm')

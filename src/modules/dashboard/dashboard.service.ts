@@ -219,20 +219,24 @@ export class DashboardService {
     }
   }
 
-  async getBargeData() {
-    return {
-      statusCode: 200,
-      message: 'success',
-      data: [
-        { date: '01/07', barge: 3000, hauling: 2800 },
-        { date: '02/07', barge: 2950, hauling: 2700 },
-        { date: '03/07', barge: 2980, hauling: 2750 },
-        { date: '04/07', barge: 2900, hauling: 2600 },
-        { date: '05/07', barge: 3000, hauling: 2700 },
-        { date: '06/07', barge: 2800, hauling: 2500 },
-        { date: '07/07', barge: 2900, hauling: 2650 },
-      ],
-    };
+  async getBargeData(startDate?: string, endDate?: string) {
+    try {
+      // Menggunakan formula terpusat dari ProductionFormulaService
+      const data = await this.productionFormulaService.getDailyBargeHaulingData(startDate, endDate);
+      
+      return {
+        statusCode: 200,
+        message: 'success',
+        data: data,
+      };
+    } catch (error) {
+      console.error('Error in getBargeData:', error);
+      return {
+        statusCode: 500,
+        message: 'Error retrieving barge data',
+        error: error.message
+      };
+    }
   }
 
   async getTmmData() {

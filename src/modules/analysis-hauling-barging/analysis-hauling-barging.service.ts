@@ -6,6 +6,7 @@ import { paginateResponse } from '../../common/helpers/public.helper';
 import { BaseDataPro } from '../base-data-production/entities/base-data-pro.entity';
 import { ParentBaseDataPro } from '../base-data-production/entities/parent-base-data-pro.entity';
 import { Population } from '../population/entities/population.entity';
+import { ProductionFormulaService } from '../../common/services/production-formula.service';
 
 @Injectable()
 export class AnalysisHaulingBargingService {
@@ -16,6 +17,7 @@ export class AnalysisHaulingBargingService {
     private readonly parentBaseDataProRepository: Repository<ParentBaseDataPro>,
     @InjectRepository(Population)
     private readonly populationRepository: Repository<Population>,
+    private readonly productionFormulaService: ProductionFormulaService,
   ) {}
 
   async getAnalysisData(filterDto: AnalysisHaulingBargingFilterDto) {

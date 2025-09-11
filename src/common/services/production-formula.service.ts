@@ -190,6 +190,115 @@ export class ProductionFormulaService {
   }
 
   /**
+   * Mendapatkan data barge dan hauling harian untuk dashboard
+   * Formula terpusat yang sama dengan analysis-hauling-barging
+   */
+  async getDailyBargeHaulingData(startDate?: string, endDate?: string): Promise<any[]> {
+    let query = `
+      SELECT 
+        rpbdp.activity_date as date,
+        rbdp.material,
+        rbdp.activity,
+        mp.no_unit,
+        SUM(rbdp.total_vessel) as total_vessel,
+        CASE 
+          WHEN rbdp.material = 'ore-barge' AND rbdp.activity = 'barging' THEN 'ore-barge'
+          WHEN rbdp.material = 'ore' AND rbdp.activity = 'hauling' THEN 'ore'
+          WHEN rbdp.material = 'ob' THEN 'ob'
+          ELSE rbdp.material
+        END as material_type,
+        CASE 
+          WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 26.56)
+          WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 29.56)
+          ELSE 0
+        END as tonnage
+      FROM r_parent_base_data_pro rpbdp
+      JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+      JOIN m_population mp ON rpbdp.population_id = mp.id
+      WHERE (
+        (rbdp.material = 'ore-barge' AND rbdp.activity = 'barging') OR
+        (rbdp.material = 'ore' AND rbdp.activity = 'hauling')
+      )
+    `;
+
+    const queryParams: any[] = [];
+    let paramIndex = 1;
+
+    if (startDate) {
+      query += ` AND rpbdp.activity_date >= $${paramIndex}`;
+      queryParams.push(startDate);
+      paramIndex++;
+    }
+
+    if (endDate) {
+      query += ` AND rpbdp.activity_date <= $${paramIndex}`;
+      queryParams.push(endDate);
+      paramIndex++;
+    }
+
+    query += `
+      GROUP BY rpbdp.activity_date, rbdp.material, rbdp.activity, mp.no_unit, mp.tyre_type
+      ORDER BY rpbdp.activity_date ASC
+    `;
+
+    // Execute query
+    const rawData = await this.baseDataProRepository.query(query, queryParams);
+
+    // Process data sesuai spesifikasi dashboard
+    const processedData = this.processDashboardBargeData(rawData);
+
+    return processedData;
+  }
+
+  /**
+   * Memproses data barge dan hauling untuk dashboard
+   */
+  private processDashboardBargeData(rawData: any[]): any[] {
+    // Group data by date
+    const groupedByDate = rawData.reduce((acc, row) => {
+      const date = row.date;
+      if (!acc[date]) {
+        acc[date] = {
+          date: this.formatDateForDashboard(date),
+          barge: 0,
+          hauling: 0,
+        };
+      }
+
+      const materialType = row.material_type;
+      const tonnage = parseFloat(row.tonnage) || 0;
+
+      switch (materialType) {
+        case 'ore-barge':
+          acc[date].barge += tonnage;
+          break;
+        case 'ore':
+          acc[date].hauling += tonnage;
+          break;
+      }
+
+      return acc;
+    }, {});
+
+    // Convert to array and round values
+    return Object.values(groupedByDate).map((data: any) => ({
+      date: data.date,
+      barge: Math.round(data.barge),
+      hauling: Math.round(data.hauling),
+    }));
+  }
+
+  /**
+   * Format tanggal untuk dashboard (DD/MM)
+   */
+  private formatDateForDashboard(dateString: string): string {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `${day}/${month}`;
+  }
+
+  /**
    * Mendapatkan actual Quarry Tonnage dari Control MTD Production
    * Formula: SUM[QUARRY Tonnage] sesuai rentang tanggal
    */

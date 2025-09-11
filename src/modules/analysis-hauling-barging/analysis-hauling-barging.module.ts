@@ -6,6 +6,9 @@ import { AnalysisHaulingBarging } from './entities/analysis-hauling-barging.enti
 import { BaseDataPro } from '../base-data-production/entities/base-data-pro.entity';
 import { ParentBaseDataPro } from '../base-data-production/entities/parent-base-data-pro.entity';
 import { Population } from '../population/entities/population.entity';
+import { ProductionFormulaService } from '../../common/services/production-formula.service';
+import { PlanProduction } from '../plan-production/entities/plan-production.entity';
+import { ParentPlanProduction } from '../parent-plan-production/entities/parent-plan-production.entity';
 
 @Module({
   imports: [
@@ -14,10 +17,12 @@ import { Population } from '../population/entities/population.entity';
       BaseDataPro,
       ParentBaseDataPro,
       Population,
+      PlanProduction,
+      ParentPlanProduction,
     ]),
   ],
   controllers: [AnalysisHaulingBargingController],
-  providers: [AnalysisHaulingBargingService],
+  providers: [AnalysisHaulingBargingService, ProductionFormulaService],
   exports: [AnalysisHaulingBargingService],
 })
 export class AnalysisHaulingBargingModule {}
