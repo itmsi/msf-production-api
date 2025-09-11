@@ -301,13 +301,14 @@ export class ProductionFormulaService {
   /**
    * Mendapatkan actual Quarry Tonnage dari Control MTD Production
    * Formula: SUM[QUARRY Tonnage] sesuai rentang tanggal
+   * Menggunakan faktor yang sama dengan Control MTD Production: 6x4=16.6, 8x4=18.26
    */
   async getQuarryTonnage(startDate?: string, endDate?: string): Promise<number> {
     let query = `
       SELECT 
         CASE 
-          WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 26.56)
-          WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 29.56)
+          WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 16.6)
+          WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 18.26)
           ELSE 0
         END as tonnage
       FROM r_parent_base_data_pro rpbdp
@@ -513,13 +514,14 @@ export class ProductionFormulaService {
 
   /**
    * Mendapatkan actual Quarry berdasarkan shift
+   * Menggunakan faktor yang sama dengan Control MTD Production: 6x4=16.6, 8x4=18.26
    */
   async getQuarryTonnageByShift(startDate?: string, endDate?: string, shift?: string): Promise<number> {
     let query = `
       SELECT 
         CASE 
-          WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 26.56)
-          WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 29.56)
+          WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 16.6)
+          WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 18.26)
           ELSE 0
         END as tonnage
       FROM r_parent_base_data_pro rpbdp
@@ -557,32 +559,129 @@ export class ProductionFormulaService {
   }
 
   /**
-   * Mendapatkan data Daily Achievement lengkap
+   * Mendapatkan actual produksi dari Control Day Production API
+   * Berdasarkan formula yang diminta: menggunakan data dari /api/control/day-production
+   */
+  async getActualFromControlDayProduction(selectedDate?: string, shift?: string): Promise<ProductionActuals> {
+    // Query untuk mendapatkan data actual dari control day production
+    let query = `
+      SELECT 
+        SUM(ore_hauling_tonnage) as ore_hauling_tonnage,
+        SUM(ob_tonnage) as ob_tonnage,
+        SUM(ore_barge_tonnage) as ore_barge_tonnage,
+        SUM(quarry_tonnage) as quarry_tonnage
+      FROM (
+        SELECT DISTINCT
+          activity_date,
+          tyre_type,
+          no_unit,
+          shift,
+          ore_hauling_tonnage,
+          ob_tonnage,
+          ore_barge_tonnage,
+          quarry_tonnage
+        FROM (
+          SELECT 
+            DATE(pbdp.activity_date) as activity_date,
+            mp.tyre_type,
+            mp.no_unit,
+            pbdp.shift,
+            CASE 
+              WHEN rbdp.material = 'ore' AND rbdp.activity = 'hauling' THEN
+                CASE 
+                  WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 26.56)
+                  WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 29.56)
+                  ELSE 0
+                END
+              ELSE 0
+            END as ore_hauling_tonnage,
+            CASE 
+              WHEN rbdp.material = 'ob' THEN
+                CASE 
+                  WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 26.56) / 1.6
+                  WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 29.56) / 1.6
+                  ELSE 0
+                END
+              ELSE 0
+            END as ob_tonnage,
+            CASE 
+              WHEN rbdp.material = 'ore-barge' AND rbdp.activity = 'barging' THEN
+                CASE 
+                  WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 26.56)
+                  WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 29.56)
+                  ELSE 0
+                END
+              ELSE 0
+            END as ore_barge_tonnage,
+            CASE 
+              WHEN rbdp.material = 'quarry' THEN
+                CASE 
+                  WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 16.6)
+                  WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 18.26)
+                  ELSE 0
+                END
+              ELSE 0
+            END as quarry_tonnage
+          FROM r_parent_base_data_pro pbdp
+          JOIN r_base_data_pro rbdp ON pbdp.id = rbdp.parent_base_data_pro_id
+          JOIN m_population mp ON pbdp.population_id = mp.id
+          WHERE mp.site_id = 1
+    `;
+
+    const queryParams: any[] = [];
+    let paramIndex = 1;
+
+    if (selectedDate) {
+      query += ` AND DATE(pbdp.activity_date) = $${paramIndex}`;
+      queryParams.push(selectedDate);
+      paramIndex++;
+    }
+
+    if (shift) {
+      query += ` AND LOWER(pbdp.shift) = $${paramIndex}`;
+      queryParams.push(shift.toLowerCase());
+      paramIndex++;
+    }
+
+    query += `
+          GROUP BY DATE(pbdp.activity_date), mp.tyre_type, mp.no_unit, pbdp.shift, rbdp.material, rbdp.activity
+        ) grouped_data
+      ) final_data
+    `;
+
+    const result = await this.baseDataProRepository.query(query, queryParams);
+    const data = result[0] || {};
+
+    return {
+      oreHaulingTonnage: parseFloat(data.ore_hauling_tonnage) || 0,
+      obBCM: parseFloat(data.ob_tonnage) || 0,
+      bargeTonnage: parseFloat(data.ore_barge_tonnage) || 0,
+      quarryTonnage: parseFloat(data.quarry_tonnage) || 0,
+    };
+  }
+
+  /**
+   * Mendapatkan data Daily Achievement lengkap sesuai formula yang diminta
    */
   async getDailyAchievementData(selectedDate?: string): Promise<{
     dailyACV: DailyAchievementData;
     dayShiftACV: DailyAchievementData;
     nightShiftACV: DailyAchievementData;
   }> {
-    // Use the same logic as mtd-achievment for consistency
-    // If no selectedDate, don't filter by date (get all data like mtd-achievment)
-    const targets = await this.getProductionTargets(selectedDate, selectedDate);
-    const dailyActuals = await this.getProductionActuals(undefined, undefined);
+    // Gunakan tanggal yang dipilih atau hari ini sebagai default
+    const dateToUse = selectedDate || new Date().toISOString().split('T')[0];
     
-    // For shift-specific data, split the daily data equally
-    const dayShiftActuals = {
-      oreHaulingTonnage: dailyActuals.oreHaulingTonnage / 2,
-      obBCM: dailyActuals.obBCM / 2,
-      bargeTonnage: dailyActuals.bargeTonnage / 2,
-      quarryTonnage: dailyActuals.quarryTonnage / 2,
-    };
+    // Ambil target dari r_plan_production berdasarkan tanggal yang dipilih
+    const targets = await this.getProductionTargets(dateToUse, dateToUse);
     
-    const nightShiftActuals = {
-      oreHaulingTonnage: dailyActuals.oreHaulingTonnage / 2,
-      obBCM: dailyActuals.obBCM / 2,
-      bargeTonnage: dailyActuals.bargeTonnage / 2,
-      quarryTonnage: dailyActuals.quarryTonnage / 2,
-    };
+    // Ambil actual dari control day production untuk semua shift (daily)
+    const dailyActuals = await this.getActualFromControlDayProduction(dateToUse);
+    
+    // Ambil actual untuk Day Shift (DS)
+    const dayShiftActuals = await this.getActualFromControlDayProduction(dateToUse, 'DS');
+    
+    // Ambil actual untuk Night Shift (NS)
+    const nightShiftActuals = await this.getActualFromControlDayProduction(dateToUse, 'NS');
 
     return {
       dailyACV: {
