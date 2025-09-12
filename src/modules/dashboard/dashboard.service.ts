@@ -272,13 +272,13 @@ export class DashboardService {
     };
   }
 
-  async getDailyAchievement(selectedDate?: string) {
+  async getDailyAchievement(selectedDate?: string, shift?: string) {
     try {
       // Get current date if not provided
       const dateToUse = selectedDate || new Date().toISOString().split('T')[0];
       
       // Get data from ProductionFormulaService
-      const achievementData = await this.productionFormulaService.getDailyAchievementData(dateToUse);
+      const achievementData = await this.productionFormulaService.getDailyAchievementData(dateToUse, shift);
 
       return {
         statusCode: 200,

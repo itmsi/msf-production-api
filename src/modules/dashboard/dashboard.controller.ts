@@ -75,11 +75,25 @@ export class DashboardController {
   }
 
   @Get('daily-achievment')
-  @ApiOperation({ summary: 'Get daily achievement data', description: 'Retrieve daily achievement data for various shifts' })
+  @ApiOperation({ 
+    summary: 'Get daily achievement data', 
+    description: 'Retrieve daily achievement data for Daily ACV, Day Shift ACV, and Night Shift ACV. Data is filtered by activity_date (defaults to today) and shift (DS/NS). Returns target and actual values for Ore Hauling, OB, Ore Barging, and Quarry activities.' 
+  })
   @ApiResponse({ status: 200, description: 'Successfully retrieved daily achievement data', type: DailyAchievementResponseDto })
-  @ApiQuery({ name: 'selectedDate', required: false, description: 'Selected date (YYYY-MM-DD)', example: '2025-01-15' })
-  async getDailyAchievement(@Query('selectedDate') selectedDate?: string) {
-    return this.dashboardService.getDailyAchievement(selectedDate);
+  @ApiQuery({ 
+    name: 'selectedDate', 
+    required: false, 
+    description: 'Selected date for filtering (YYYY-MM-DD format). Defaults to today if not provided.', 
+    example: '2025-09-15' 
+  })
+  @ApiQuery({ 
+    name: 'shift', 
+    required: false, 
+    description: 'Shift filter (DS for Day Shift, NS for Night Shift). If not provided, returns data for both shifts.', 
+    example: 'DS' 
+  })
+  async getDailyAchievement(@Query('selectedDate') selectedDate?: string, @Query('shift') shift?: string) {
+    return this.dashboardService.getDailyAchievement(selectedDate, shift);
   }
 
   @Get('barge-list')

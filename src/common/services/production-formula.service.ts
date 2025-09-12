@@ -68,6 +68,31 @@ export class ProductionFormulaService {
   }
 
   /**
+   * Mendapatkan target produksi untuk tanggal tertentu (bukan SUM)
+   */
+  async getProductionTargetsForDate(selectedDate: string): Promise<ProductionTargets> {
+    const query = `
+      SELECT 
+        ore_target as "oreTarget",
+        ob_target as "obTarget", 
+        ore_shipment_target as "oreShipmentTarget",
+        quarry as "quarryTarget"
+      FROM r_plan_production 
+      WHERE plan_date = $1
+      LIMIT 1
+    `;
+    
+    const result = await this.planProductionRepository.query(query, [selectedDate]);
+
+    return {
+      oreTarget: parseFloat(result[0]?.oreTarget) || 0,
+      obTarget: parseFloat(result[0]?.obTarget) || 0,
+      oreShipmentTarget: parseFloat(result[0]?.oreShipmentTarget) || 0,
+      quarryTarget: parseFloat(result[0]?.quarryTarget) || 0,
+    };
+  }
+
+  /**
    * Mendapatkan actual produksi dari Analysis Hauling and Barging
    * Formula: SUM [Ore Hauling Tonnage] sesuai rentang tanggal
    */
@@ -631,16 +656,27 @@ export class ProductionFormulaService {
     const queryParams: any[] = [];
     let paramIndex = 1;
 
-    if (selectedDate) {
-      query += ` AND DATE(pbdp.activity_date) = $${paramIndex}`;
-      queryParams.push(selectedDate);
-      paramIndex++;
-    }
+    // Filter by activity_date (default to Today if not provided)
+    const dateToUse = selectedDate || new Date().toISOString().split('T')[0];
+    query += ` AND DATE(pbdp.activity_date) = $${paramIndex}`;
+    queryParams.push(dateToUse);
+    paramIndex++;
 
+    // Filter by shift (ds or ns) - menggunakan nilai lowercase yang sesuai dengan database
     if (shift) {
-      query += ` AND LOWER(pbdp.shift) = $${paramIndex}`;
-      queryParams.push(shift.toLowerCase());
-      paramIndex++;
+      // Konversi input ke lowercase untuk mencocokkan dengan nilai di database
+      const shiftValue = shift.toLowerCase();
+      if (shiftValue === 'ds' || shiftValue === 'ns') {
+        query += ` AND pbdp.shift = $${paramIndex}`;
+        queryParams.push(shiftValue);
+        paramIndex++;
+      } else {
+        // Jika nilai shift tidak valid, tidak menambahkan filter
+        console.warn(`Invalid shift value: ${shift}. Valid values are 'ds' or 'ns'`);
+      }
+    } else {
+      // Default filter for both ds and ns shifts
+      query += ` AND pbdp.shift IN ('ds', 'ns')`;
     }
 
     query += `
@@ -663,7 +699,7 @@ export class ProductionFormulaService {
   /**
    * Mendapatkan data Daily Achievement lengkap sesuai formula yang diminta
    */
-  async getDailyAchievementData(selectedDate?: string): Promise<{
+  async getDailyAchievementData(selectedDate?: string, shift?: string): Promise<{
     dailyACV: DailyAchievementData;
     dayShiftACV: DailyAchievementData;
     nightShiftACV: DailyAchievementData;
@@ -671,37 +707,85 @@ export class ProductionFormulaService {
     // Gunakan tanggal yang dipilih atau hari ini sebagai default
     const dateToUse = selectedDate || new Date().toISOString().split('T')[0];
     
-    // Ambil target dari r_plan_production berdasarkan tanggal yang dipilih
-    const targets = await this.getProductionTargets(dateToUse, dateToUse);
+    // Ambil target dari r_plan_production berdasarkan tanggal yang dipilih (bukan SUM)
+    const targets = await this.getProductionTargetsForDate(dateToUse);
     
-    // Ambil actual dari control day production untuk semua shift (daily)
+    // Jika shift tidak ditentukan, ambil data untuk semua shift (daily)
     const dailyActuals = await this.getActualFromControlDayProduction(dateToUse);
     
-    // Ambil actual untuk Day Shift (DS)
-    const dayShiftActuals = await this.getActualFromControlDayProduction(dateToUse, 'DS');
+    // Ambil actual untuk Day Shift (ds)
+    const dayShiftActuals = await this.getActualFromControlDayProduction(dateToUse, 'ds');
     
-    // Ambil actual untuk Night Shift (NS)
-    const nightShiftActuals = await this.getActualFromControlDayProduction(dateToUse, 'NS');
+    // Ambil actual untuk Night Shift (ns)
+    const nightShiftActuals = await this.getActualFromControlDayProduction(dateToUse, 'ns');
 
-    return {
-      dailyACV: {
-        oreHauling: { target: targets.oreTarget, actual: dailyActuals.oreHaulingTonnage },
-        ob: { target: targets.obTarget, actual: dailyActuals.obBCM },
-        oreBarging: { target: targets.oreShipmentTarget, actual: dailyActuals.bargeTonnage },
-        quarry: { target: targets.quarryTarget, actual: dailyActuals.quarryTonnage },
-      },
-      dayShiftACV: {
-        oreHauling: { target: targets.oreTarget / 2, actual: dayShiftActuals.oreHaulingTonnage },
-        ob: { target: targets.obTarget / 2, actual: dayShiftActuals.obBCM },
-        oreBarging: { target: targets.oreShipmentTarget / 2, actual: dayShiftActuals.bargeTonnage },
-        quarry: { target: targets.quarryTarget / 2, actual: dayShiftActuals.quarryTonnage },
-      },
-      nightShiftACV: {
-        oreHauling: { target: targets.oreTarget / 2, actual: nightShiftActuals.oreHaulingTonnage },
-        ob: { target: targets.obTarget / 2, actual: nightShiftActuals.obBCM },
-        oreBarging: { target: targets.oreShipmentTarget / 2, actual: nightShiftActuals.bargeTonnage },
-        quarry: { target: targets.quarryTarget / 2, actual: nightShiftActuals.quarryTonnage },
-      },
-    };
+    // Jika shift ditentukan, sesuaikan data yang dikembalikan
+    if (shift && shift.toLowerCase() === 'ds') {
+      // Jika filter Day Shift, kembalikan data Day Shift saja
+      return {
+        dailyACV: {
+          oreHauling: { target: targets.oreTarget / 2, actual: dayShiftActuals.oreHaulingTonnage },
+          ob: { target: targets.obTarget / 2, actual: dayShiftActuals.obBCM },
+          oreBarging: { target: targets.oreShipmentTarget / 2, actual: dayShiftActuals.bargeTonnage },
+          quarry: { target: targets.quarryTarget / 2, actual: dayShiftActuals.quarryTonnage },
+        },
+        dayShiftACV: {
+          oreHauling: { target: targets.oreTarget / 2, actual: dayShiftActuals.oreHaulingTonnage },
+          ob: { target: targets.obTarget / 2, actual: dayShiftActuals.obBCM },
+          oreBarging: { target: targets.oreShipmentTarget / 2, actual: dayShiftActuals.bargeTonnage },
+          quarry: { target: targets.quarryTarget / 2, actual: dayShiftActuals.quarryTonnage },
+        },
+        nightShiftACV: {
+          oreHauling: { target: 0, actual: 0 },
+          ob: { target: 0, actual: 0 },
+          oreBarging: { target: 0, actual: 0 },
+          quarry: { target: 0, actual: 0 },
+        },
+      };
+    } else if (shift && shift.toLowerCase() === 'ns') {
+      // Jika filter Night Shift, kembalikan data Night Shift saja
+      return {
+        dailyACV: {
+          oreHauling: { target: targets.oreTarget / 2, actual: nightShiftActuals.oreHaulingTonnage },
+          ob: { target: targets.obTarget / 2, actual: nightShiftActuals.obBCM },
+          oreBarging: { target: targets.oreShipmentTarget / 2, actual: nightShiftActuals.bargeTonnage },
+          quarry: { target: targets.quarryTarget / 2, actual: nightShiftActuals.quarryTonnage },
+        },
+        dayShiftACV: {
+          oreHauling: { target: 0, actual: 0 },
+          ob: { target: 0, actual: 0 },
+          oreBarging: { target: 0, actual: 0 },
+          quarry: { target: 0, actual: 0 },
+        },
+        nightShiftACV: {
+          oreHauling: { target: targets.oreTarget / 2, actual: nightShiftActuals.oreHaulingTonnage },
+          ob: { target: targets.obTarget / 2, actual: nightShiftActuals.obBCM },
+          oreBarging: { target: targets.oreShipmentTarget / 2, actual: nightShiftActuals.bargeTonnage },
+          quarry: { target: targets.quarryTarget / 2, actual: nightShiftActuals.quarryTonnage },
+        },
+      };
+    } else {
+      // Jika tidak ada filter shift atau shift tidak valid, kembalikan data lengkap
+      return {
+        dailyACV: {
+          oreHauling: { target: targets.oreTarget, actual: dailyActuals.oreHaulingTonnage },
+          ob: { target: targets.obTarget, actual: dailyActuals.obBCM },
+          oreBarging: { target: targets.oreShipmentTarget, actual: dailyActuals.bargeTonnage },
+          quarry: { target: targets.quarryTarget, actual: dailyActuals.quarryTonnage },
+        },
+        dayShiftACV: {
+          oreHauling: { target: targets.oreTarget / 2, actual: dayShiftActuals.oreHaulingTonnage },
+          ob: { target: targets.obTarget / 2, actual: dayShiftActuals.obBCM },
+          oreBarging: { target: targets.oreShipmentTarget / 2, actual: dayShiftActuals.bargeTonnage },
+          quarry: { target: targets.quarryTarget / 2, actual: dayShiftActuals.quarryTonnage },
+        },
+        nightShiftACV: {
+          oreHauling: { target: targets.oreTarget / 2, actual: nightShiftActuals.oreHaulingTonnage },
+          ob: { target: targets.obTarget / 2, actual: nightShiftActuals.obBCM },
+          oreBarging: { target: targets.oreShipmentTarget / 2, actual: nightShiftActuals.bargeTonnage },
+          quarry: { target: targets.quarryTarget / 2, actual: nightShiftActuals.quarryTonnage },
+        },
+      };
+    }
   }
 }
