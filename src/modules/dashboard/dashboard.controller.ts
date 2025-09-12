@@ -141,7 +141,8 @@ export class DashboardController {
   @Get('tmm')
   @ApiOperation({
     summary: 'Get TMM data',
-    description: 'Retrieve Total Material Movement (TMM) daily data based on analysis hauling barging table',
+    description:
+      'Retrieve Total Material Movement (TMM) daily data based on analysis hauling barging table',
   })
   @ApiQuery({
     name: 'startDate',
@@ -381,7 +382,8 @@ export class DashboardController {
   @Get('hauling-summary')
   @ApiOperation({
     summary: 'Get hauling summary data',
-    description: 'Retrieve hauling summary data with attendance, chart summary, and working hours',
+    description:
+      'Retrieve hauling summary data with attendance, chart summary, and working hours',
   })
   @ApiResponse({
     status: 200,
@@ -392,10 +394,11 @@ export class DashboardController {
     return await this.dashboardService.getHaulingSummary();
   }
 
-  @Get('/ccr/fleet-status')
+  @Get('ccr/fleet-status')
   @ApiOperation({
     summary: 'Get CCR fleet status data',
-    description: 'Retrieve CCR fleet status data with fleet information, loading points, and tonnage details',
+    description:
+      'Retrieve CCR fleet status data with fleet information, loading points, and tonnage details',
   })
   @ApiResponse({
     status: 200,
@@ -406,10 +409,11 @@ export class DashboardController {
     return await this.dashboardService.getMockFleetStatus();
   }
 
-  @Get('/ccr/tonnage')
+  @Get('ccr/tonnage')
   @ApiOperation({
     summary: 'Get CCR tonnage data',
-    description: 'Retrieve CCR tonnage data with hourly chart and unit metadata',
+    description:
+      'Retrieve CCR tonnage data with hourly chart and unit metadata',
   })
   @ApiResponse({
     status: 200,
@@ -420,10 +424,11 @@ export class DashboardController {
     return await this.dashboardService.getMockTonnage();
   }
 
-  @Get('/ccr/barging-summary')
+  @Get('ccr/barging-summary')
   @ApiOperation({
     summary: 'Get CCR barging summary data',
-    description: 'Retrieve CCR barging summary data with unit running, tonnage, and vessel metrics',
+    description:
+      'Retrieve CCR barging summary data with unit running, tonnage, and vessel metrics',
   })
   @ApiResponse({
     status: 200,
@@ -434,7 +439,7 @@ export class DashboardController {
     return await this.dashboardService.getMockBargingSummary();
   }
 
-  @Get('/ccr/activities')
+  @Get('ccr/activities')
   @ApiOperation({
     summary: 'Get CCR activities data',
     description: 'Retrieve CCR activities data with target and actual values',
