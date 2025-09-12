@@ -4,9 +4,12 @@ import { Population } from '../population/entities/population.entity';
 import { FormulaService } from '../../common/services/formula.service';
 import { ProductionFormulaService } from '../../common/services/production-formula.service';
 import { BargingSummaryResponseDto, CcrActivitesResponseDto, FleetStatusResponseDto, HaulingSummaryResponseDto, TonnageResponseDto } from './dto/ccr-dashboard.dto';
-import { HaulingResponseDto } from './dto/dashboard.dto';
+import { HaulingResponseDto, LostTimeSummaryResponseDto } from './dto/dashboard.dto';
 import { BargeForm } from '../barge-form/entities/barge-form.entity';
 import { Barge } from '../barge/entities/barge.entity';
+import { EffectiveWorkingHours } from '../effective-working-hours/entities/effective-working-hours.entity';
+import { Activities } from '../activities/entities/activities.entity';
+import { ParentPlanWorkingHour } from '../plan-working-hour/entities/parent-plan-working-hour.entity';
 
 @Injectable()
 export class DashboardService {
@@ -780,68 +783,6 @@ export class DashboardService {
     };
   }
 
-  async getLostTimeSummary() {
-    return {
-      statusCode: 200,
-      message: 'success',
-      data: {
-        mohh: [
-          { name: 'STB', value: 2224.3, color: '#34d399' },
-          { name: 'BD', value: 1.1, color: '#d1d5db' },
-          { name: 'EWH', value: 270.6, color: '#10b981' },
-        ],
-        lost_time: [
-          { name: 'Rain', value: 0.3, color: '#1e3a8a' },
-          { name: 'Slippery', value: 0.1, color: '#d1d5db' },
-          { name: 'MHR', value: 0.25, color: '#34d399' },
-          { name: 'Internal', value: 0.2, color: '#fbbf24' },
-          { name: 'External', value: 0.35, color: '#60a5fa' },
-        ],
-        tables: [
-          {
-            title: 'PA',
-            data: [
-              {
-                target: 1000,
-                actual: 1000,
-                percent: 10,
-              },
-            ],
-          },
-          {
-            title: 'MA',
-            data: [
-              {
-                target: 1000,
-                actual: 1000,
-                percent: 10,
-              },
-            ],
-          },
-          {
-            title: 'UA',
-            data: [
-              {
-                target: 1000,
-                actual: 1000,
-                percent: 10,
-              },
-            ],
-          },
-          {
-            title: 'EU',
-            data: [
-              {
-                target: 1000,
-                actual: 1000,
-                percent: 10,
-              },
-            ],
-          },
-        ],
-      },
-    };
-  }
 
   async getMonthlyStatus(month: string) {
     try {
@@ -1730,5 +1671,317 @@ export class DashboardService {
               throw new BadRequestException(`Gagal mendapatkan data`); 
           }
       }
+
+  async getLostTimeSummary(startDate?: string, endDate?: string): Promise<LostTimeSummaryResponseDto> {
+    try {
+      // Set default date range jika tidak ada parameter
+      const defaultStartDate = startDate || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+      const defaultEndDate = endDate || new Date().toISOString().split('T')[0];
+
+      // 1. Hitung MOHH data (STB, BD, EWH)
+      const mohhData = await this.calculateMohhData(defaultStartDate, defaultEndDate);
+
+      // 2. Hitung Lost Time data berdasarkan activities dengan status idle dan delay
+      const lostTimeData = await this.calculateLostTimeData(defaultStartDate, defaultEndDate);
+
+      // 3. Hitung Tables data (PA, MA, UA, EU)
+      const tablesData = await this.calculateTablesData(defaultStartDate, defaultEndDate);
+
+      return {
+        statusCode: 200,
+        message: 'success',
+        data: {
+          mohh: mohhData,
+          lost_time: lostTimeData,
+          tables: tablesData,
+        },
+      };
+    } catch (error) {
+      console.error('Error in getLostTimeSummary:', error);
+      throw new BadRequestException('Gagal mendapatkan data lost time summary');
+    }
+  }
+
+  private async calculateMohhData(startDate: string, endDate: string) {
+    try {
+      // Ambil data dari control_mtd_production sesuai spesifikasi
+      // MOHH = duration dari ${start_date} and ${end_date} (dari start_shift dan end_shift)
+      // EWH = sum(control.mtdtotal_hm) from r_base_data_pro all unit
+      // Breakdown = SUM(r_loss_time.duration) WHERE (r_loss_time.lossType = 'BD')
+      // STB = MOHH - EWH - Breakdown Time
+      
+      // Hitung MOHH = duration dari start_date and end_date
+      // Menggunakan data dari r_parent_base_data_pro dengan durasi yang lebih akurat
+      const mohhQuery = await this.dataSource.query(`
+        SELECT 
+          COALESCE(SUM(
+            CASE 
+              WHEN rpbdp.activity_date BETWEEN $1 AND $2 
+                AND rpbdp.start_shift IS NOT NULL 
+                AND rpbdp.end_shift IS NOT NULL
+              THEN EXTRACT(EPOCH FROM (rpbdp.end_shift - rpbdp.start_shift)) / 3600
+              ELSE 0 
+            END
+          ), 0) as total_mohh
+        FROM r_parent_base_data_pro rpbdp
+        WHERE rpbdp.activity_date BETWEEN $1 AND $2
+      `, [startDate, endDate]);
+
+      // Hitung EWH = SUM(r_base_data_pro.totalHM) all unit
+      const ewhQuery = await this.dataSource.query(`
+        SELECT COALESCE(SUM(rbdp.totalHM), 0) as total_ewh
+        FROM r_parent_base_data_pro rpbdp
+        LEFT JOIN r_base_data_pro rbdp ON rbdp.parent_base_data_pro_id = rpbdp.id
+        WHERE rpbdp.activity_date BETWEEN $1 AND $2
+      `, [startDate, endDate]);
+
+      // Hitung BD = SUM(r_loss_time.duration) WHERE loss_type = 'BD'
+      const breakdownQuery = await this.dataSource.query(`
+        SELECT COALESCE(SUM(duration), 0) as total_breakdown
+        FROM r_loss_time 
+        WHERE loss_type = 'BD' 
+          AND date_activity BETWEEN $1 AND $2
+      `, [startDate, endDate]);
+
+      const totalMohh = parseFloat(mohhQuery[0]?.total_mohh || '0');
+      const totalEwh = parseFloat(ewhQuery[0]?.total_ewh || '0');
+      const totalBreakdown = parseFloat(breakdownQuery[0]?.total_breakdown || '0');
+      
+      // Hitung STB = MOHH - EWH - Breakdown Time
+      const standbyTime = Math.max(0, totalMohh - totalEwh - totalBreakdown);
+
+      return [
+        {
+          name: 'STB',
+          value: Math.round(standbyTime * 10) / 10,
+          color: '#34d399'
+        },
+        {
+          name: 'BD',
+          value: Math.round(totalBreakdown * 10) / 10,
+          color: '#d1d5db'
+        },
+        {
+          name: 'EWH',
+          value: Math.round(totalEwh * 10) / 10,
+          color: '#10b981'
+        }
+      ];
+    } catch (error) {
+      console.error('Error calculating MOHH data:', error);
+      return [
+        { name: 'STB', value: 0, color: '#34d399' },
+        { name: 'BD', value: 0, color: '#d1d5db' },
+        { name: 'EWH', value: 0, color: '#10b981' }
+      ];
+    }
+  }
+
+  private async calculateLostTimeData(startDate: string, endDate: string) {
+    try {
+      // Ambil data berdasarkan activities dengan status 'idle' dan 'delay'
+      // dan r_loss_time dengan loss_type = 'STB'
+      const lostTimeQuery = await this.dataSource.query(`
+        SELECT 
+          TRIM(a.name) as activity_name,
+          COALESCE(SUM(lt.duration), 0) as total_duration
+        FROM m_activities a
+        LEFT JOIN r_loss_time lt ON lt.activities_id = a.id
+        WHERE a.status IN ('idle', 'delay')
+          AND lt.loss_type = 'STB'
+          AND lt.date_activity BETWEEN $1 AND $2
+        GROUP BY a.id, TRIM(a.name)
+        ORDER BY total_duration DESC
+      `, [startDate, endDate]);
+
+      // Mapping nama aktivitas ke warna yang sesuai
+      const activityColors: { [key: string]: string } = {
+        'Rain': '#1e3a8a',
+        'Slippery': '#d1d5db',
+        'MHR': '#34d399',
+        'Internal': '#fbbf24',
+        'External': '#60a5fa'
+      };
+
+      const result = lostTimeQuery.map((item: any) => ({
+        name: item.activity_name,
+        value: Math.round(parseFloat(item.total_duration) * 10) / 10,
+        color: activityColors[item.activity_name] || '#6b7280'
+      }));
+
+      // Pastikan semua aktivitas yang diharapkan ada dalam response
+      const expectedActivities = ['Rain', 'Slippery', 'MHR', 'Internal', 'External'];
+      const existingNames = result.map(item => item.name);
+      
+      expectedActivities.forEach(activityName => {
+        if (!existingNames.includes(activityName)) {
+          result.push({
+            name: activityName,
+            value: 0,
+            color: activityColors[activityName] || '#6b7280'
+          });
+        }
+      });
+
+      return result;
+    } catch (error) {
+      console.error('Error calculating lost time data:', error);
+      return [
+        { name: 'Rain', value: 0, color: '#1e3a8a' },
+        { name: 'Slippery', value: 0, color: '#d1d5db' },
+        { name: 'MHR', value: 0, color: '#34d399' },
+        { name: 'Internal', value: 0, color: '#fbbf24' },
+        { name: 'External', value: 0, color: '#60a5fa' }
+      ];
+    }
+  }
+
+  private async calculateTablesData(startDate: string, endDate: string) {
+    try {
+      // Hitung target dari r_parent_plan_working_hour berdasarkan formula yang sama dengan actual
+      // Target dihitung dari data plan working hour yang sudah ada
+      
+      const targetDataQuery = await this.dataSource.query(`
+        SELECT 
+          COALESCE(SUM(pwh.mohh_per_month), 0) as target_mohh,
+          COALESCE(SUM(
+            CASE 
+              WHEN a.status = 'delay' THEN COALESCE(pwhd.activities_hour, 0)
+              ELSE 0 
+            END
+          ), 0) as target_delay,
+          COALESCE(SUM(
+            CASE 
+              WHEN a.status = 'idle' THEN COALESCE(pwhd.activities_hour, 0)
+              ELSE 0 
+            END
+          ), 0) as target_idle,
+          COALESCE(SUM(
+            CASE 
+              WHEN a.status = 'breakdown' THEN COALESCE(pwhd.activities_hour, 0)
+              ELSE 0 
+            END
+          ), 0) as target_breakdown
+        FROM r_parent_plan_working_hour ppwh
+        LEFT JOIN r_plan_working_hour pwh ON pwh.parent_plan_working_hour_id = ppwh.id
+        LEFT JOIN r_plan_working_hour_detail pwhd ON pwhd.plant_working_hour_id = pwh.id
+        LEFT JOIN m_activities a ON a.id = pwhd.activities_id
+        WHERE ppwh.plan_date BETWEEN $1 AND $2
+      `, [startDate, endDate]);
+
+      // Hitung actual data sesuai spesifikasi:
+      // PA actual = (SUM(all Unit control_mtd_production.ewh) + SUM(all unit control_mtd_production.standby_time)) / SUM(control_mtd_production.MOHH)
+      // MA actual = (SUM(all Unit control_mtd_production.ewh) / (SUM(all unit control_mtd_production.ewh) + SUM(control_mtd_production.breakdown_time))
+      // UA actual = (SUM(all Unit control_mtd_production.ewh) / (SUM(all unit control_mtd_production.ewh) + SUM(control_mtd_production.standby_time))
+      // EU actual = SUM(all Unit control_mtd_production.ewh) / SUM(all unit control_mtd_production.mohh)
+      
+      const actualDataQuery = await this.dataSource.query(`
+        SELECT 
+          COALESCE(SUM(rbdp.totalHM), 0) as total_ewh,
+          COALESCE(SUM(lt.duration), 0) as total_breakdown,
+          COALESCE(SUM(
+            CASE 
+              WHEN rpbdp.activity_date BETWEEN $1 AND $2 
+                AND rpbdp.start_shift IS NOT NULL 
+                AND rpbdp.end_shift IS NOT NULL
+              THEN EXTRACT(EPOCH FROM (rpbdp.end_shift - rpbdp.start_shift)) / 3600
+              ELSE 0 
+            END
+          ), 0) as total_mohh
+        FROM r_parent_base_data_pro rpbdp
+        LEFT JOIN r_base_data_pro rbdp ON rbdp.parent_base_data_pro_id = rpbdp.id
+        LEFT JOIN r_loss_time lt ON lt.population_id = rpbdp.population_id 
+          AND lt.date_activity = rpbdp.activity_date
+          AND lt.loss_type = 'BD'
+        WHERE rpbdp.activity_date BETWEEN $1 AND $2
+      `, [startDate, endDate]);
+
+      const targetData = targetDataQuery[0] || { target_mohh: 0, target_delay: 0, target_idle: 0, target_breakdown: 0 };
+      const actualData = actualDataQuery[0] || { total_ewh: 0, total_breakdown: 0, total_mohh: 0 };
+
+      // Hitung target values menggunakan formula yang sama
+      const targetMohh = parseFloat(targetData.target_mohh);
+      const targetDelay = parseFloat(targetData.target_delay);
+      const targetIdle = parseFloat(targetData.target_idle);
+      const targetBreakdown = parseFloat(targetData.target_breakdown);
+      
+      // Hitung target EWH = MOHH - Delay - Idle - Breakdown
+      const targetEwh = Math.max(0, targetMohh - targetDelay - targetIdle - targetBreakdown);
+      
+      // Hitung target standby time = MOHH - EWH - Breakdown Time
+      const targetStandby = Math.max(0, targetMohh - targetEwh - targetBreakdown);
+
+      // Hitung actual values
+      const actualEwh = parseFloat(actualData.total_ewh);
+      const actualBreakdown = parseFloat(actualData.total_breakdown);
+      const actualMohh = parseFloat(actualData.total_mohh);
+      
+      // Hitung actual standby time = MOHH - EWH - Breakdown Time
+      const actualStandby = Math.max(0, actualMohh - actualEwh - actualBreakdown);
+
+      // Hitung PA: (EWH + Standby Time) / MOHH
+      const paActual = actualMohh > 0 ? (actualEwh + actualStandby) / actualMohh : 0;
+      const paTarget = targetMohh > 0 ? (targetEwh + targetStandby) / targetMohh : 0;
+      const paPercent = paTarget > 0 ? (paActual / paTarget) * 100 : 0;
+
+      // Hitung MA: EWH / (EWH + Breakdown Time)
+      const maActual = (actualEwh + actualBreakdown) > 0 ? actualEwh / (actualEwh + actualBreakdown) : 0;
+      const maTarget = (targetEwh + targetBreakdown) > 0 ? targetEwh / (targetEwh + targetBreakdown) : 0;
+      const maPercent = maTarget > 0 ? (maActual / maTarget) * 100 : 0;
+
+      // Hitung UA: EWH / (EWH + Standby Time)
+      const uaActual = (actualEwh + actualStandby) > 0 ? actualEwh / (actualEwh + actualStandby) : 0;
+      const uaTarget = (targetEwh + targetStandby) > 0 ? targetEwh / (targetEwh + targetStandby) : 0;
+      const uaPercent = uaTarget > 0 ? (uaActual / uaTarget) * 100 : 0;
+
+      // Hitung EU: EWH / MOHH
+      const euActual = actualMohh > 0 ? actualEwh / actualMohh : 0;
+      const euTarget = targetMohh > 0 ? targetEwh / targetMohh : 0;
+      const euPercent = euTarget > 0 ? (euActual / euTarget) * 100 : 0;
+
+      return [
+        {
+          title: 'PA',
+          data: [{
+            target: Math.round(paTarget * 100) / 100,
+            actual: Math.round(paActual * 100) / 100,
+            percent: Math.round(paPercent * 100) / 100
+          }]
+        },
+        {
+          title: 'MA',
+          data: [{
+            target: Math.round(maTarget * 100) / 100,
+            actual: Math.round(maActual * 100) / 100,
+            percent: Math.round(maPercent * 100) / 100
+          }]
+        },
+        {
+          title: 'UA',
+          data: [{
+            target: Math.round(uaTarget * 100) / 100,
+            actual: Math.round(uaActual * 100) / 100,
+            percent: Math.round(uaPercent * 100) / 100
+          }]
+        },
+        {
+          title: 'EU',
+          data: [{
+            target: Math.round(euTarget * 100) / 100,
+            actual: Math.round(euActual * 100) / 100,
+            percent: Math.round(euPercent * 100) / 100
+          }]
+        }
+      ];
+    } catch (error) {
+      console.error('Error calculating tables data:', error);
+      return [
+        { title: 'PA', data: [{ target: 0, actual: 0, percent: 0 }] },
+        { title: 'MA', data: [{ target: 0, actual: 0, percent: 0 }] },
+        { title: 'UA', data: [{ target: 0, actual: 0, percent: 0 }] },
+        { title: 'EU', data: [{ target: 0, actual: 0, percent: 0 }] }
+      ];
+    }
+  }
 
 }

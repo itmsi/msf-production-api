@@ -270,20 +270,6 @@ export class DashboardController {
     return await this.dashboardService.getBargeStatus();
   }
 
-  @Get('lost-time-summary')
-  @ApiOperation({
-    summary: 'Get lost time summary data',
-    description:
-      'Retrieve lost time summary with MOHH, lost time, and tables data',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Successfully retrieved lost time summary data',
-    type: LostTimeSummaryResponseDto,
-  })
-  async getLostTimeSummary() {
-    return await this.dashboardService.getLostTimeSummary();
-  }
 
   @Get('monthly/status')
   @ApiOperation({
@@ -446,5 +432,36 @@ export class DashboardController {
   })
   async getActivities(): Promise<CcrActivitesResponseDto> {
     return await this.dashboardService.getMockActivities();
+  }
+
+  @Get('lost-time-summary')
+  @ApiOperation({
+    summary: 'Get lost time summary data',
+    description: 'Retrieve lost time summary data with MOHH, lost time activities, and performance tables (PA, MA, UA, EU)',
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+    description: 'Start date in YYYY-MM-DD format',
+    example: '2025-01-01',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    type: String,
+    description: 'End date in YYYY-MM-DD format',
+    example: '2025-01-31',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved lost time summary data',
+    type: LostTimeSummaryResponseDto,
+  })
+  async getLostTimeSummary(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ): Promise<LostTimeSummaryResponseDto> {
+    return await this.dashboardService.getLostTimeSummary(startDate, endDate);
   }
 }
