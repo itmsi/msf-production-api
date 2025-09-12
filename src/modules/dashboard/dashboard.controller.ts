@@ -1,5 +1,11 @@
-import { Controller, Get, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Post, Query } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
 import {
   SpiderResponseDto,
@@ -17,7 +23,13 @@ import {
   TrendFuelRatioResponseDto,
   TrendPerformanceUnitResponseDto,
 } from './dto/dashboard.dto';
-import { BargingSummaryResponseDto, CcrActivitesResponseDto, FleetStatusResponseDto, HaulingSummaryResponseDto, TonnageResponseDto } from './dto/ccr-dashboard.dto';
+import {
+  BargingSummaryResponseDto,
+  CcrActivitesResponseDto,
+  FleetStatusResponseDto,
+  HaulingSummaryResponseDto,
+  TonnageResponseDto,
+} from './dto/ccr-dashboard.dto';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth('jwt')
@@ -395,7 +407,7 @@ export class DashboardController {
     return await this.dashboardService.getMockFleetStatus();
   }
 
-  @Get('ccr/tonnage')
+  @Post('ccr/tonnage')
   @ApiOperation({
     summary: 'Get CCR tonnage data',
     description:
@@ -425,7 +437,7 @@ export class DashboardController {
     return await this.dashboardService.getMockBargingSummary();
   }
 
-  @Get('ccr/activities')
+  @Get('ccr/activiies')
   @ApiOperation({
     summary: 'Get CCR activities data',
     description: 'Retrieve CCR activities data with target and actual values',
