@@ -477,19 +477,150 @@ export class DashboardService {
     }
   }
 
-  async getLostTimeData() {
+  async getLostTimeData(startDate?: string, endDate?: string) {
+    try {
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+
+      // Set default date range if not provided (last 30 days)
+      const defaultEndDate = new Date();
+      const defaultStartDate = new Date();
+      defaultStartDate.setDate(defaultStartDate.getDate() - 30);
+
+      const start = startDate ? new Date(startDate) : defaultStartDate;
+      const end = endDate ? new Date(endDate) : defaultEndDate;
+
+      // Query untuk mengambil data lost time berdasarkan problem type
+      const lostTimeQuery = `
+        SELECT 
+          CASE 
+            WHEN LOWER(ma.name) LIKE '%slippery%' THEN 'Slippery'
+            WHEN LOWER(ma.name) LIKE '%rain%' OR LOWER(ma.name) LIKE '%hujan%' THEN 'Rain'
+            WHEN LOWER(ma.name) LIKE '%waiting hauler%' OR LOWER(ma.name) LIKE '%menunggu hauler%' THEN 'Waiting Hauler'
+            WHEN LOWER(ma.name) LIKE '%rest%' OR LOWER(ma.name) LIKE '%meal%' OR LOWER(ma.name) LIKE '%istirahat%' THEN 'Rest & Meals'
+            WHEN LOWER(ma.name) LIKE '%daily shift%' OR LOWER(ma.name) LIKE '%shift harian%' THEN 'Daily shift'
+            WHEN LOWER(ma.name) LIKE '%friday pray%' OR LOWER(ma.name) LIKE '%jumat%' OR LOWER(ma.name) LIKE '%shalat%' THEN 'Friday pray'
+            WHEN LOWER(lt.description) LIKE '%slippery%' THEN 'Slippery'
+            WHEN LOWER(lt.description) LIKE '%rain%' OR LOWER(lt.description) LIKE '%hujan%' THEN 'Rain'
+            WHEN LOWER(lt.description) LIKE '%waiting hauler%' OR LOWER(lt.description) LIKE '%menunggu hauler%' THEN 'Waiting Hauler'
+            WHEN LOWER(lt.description) LIKE '%rest%' OR LOWER(lt.description) LIKE '%meal%' OR LOWER(lt.description) LIKE '%istirahat%' THEN 'Rest & Meals'
+            WHEN LOWER(lt.description) LIKE '%daily shift%' OR LOWER(lt.description) LIKE '%shift harian%' THEN 'Daily shift'
+            WHEN LOWER(lt.description) LIKE '%friday pray%' OR LOWER(lt.description) LIKE '%jumat%' OR LOWER(lt.description) LIKE '%shalat%' THEN 'Friday pray'
+            ELSE 'Other'
+          END as problem_type,
+          COALESCE(SUM(lt.duration), 0) as total_duration
+        FROM r_loss_time lt
+        INNER JOIN m_activities ma ON lt.activities_id = ma.id
+        WHERE lt.date_activity BETWEEN $1 AND $2
+          AND ma.status IN ('idle', 'delay', 'breakdown')
+          AND lt."deletedAt" IS NULL
+          AND ma."deletedAt" IS NULL
+        GROUP BY 
+          CASE 
+            WHEN LOWER(ma.name) LIKE '%slippery%' THEN 'Slippery'
+            WHEN LOWER(ma.name) LIKE '%rain%' OR LOWER(ma.name) LIKE '%hujan%' THEN 'Rain'
+            WHEN LOWER(ma.name) LIKE '%waiting hauler%' OR LOWER(ma.name) LIKE '%menunggu hauler%' THEN 'Waiting Hauler'
+            WHEN LOWER(ma.name) LIKE '%rest%' OR LOWER(ma.name) LIKE '%meal%' OR LOWER(ma.name) LIKE '%istirahat%' THEN 'Rest & Meals'
+            WHEN LOWER(ma.name) LIKE '%daily shift%' OR LOWER(ma.name) LIKE '%shift harian%' THEN 'Daily shift'
+            WHEN LOWER(ma.name) LIKE '%friday pray%' OR LOWER(ma.name) LIKE '%jumat%' OR LOWER(ma.name) LIKE '%shalat%' THEN 'Friday pray'
+            WHEN LOWER(lt.description) LIKE '%slippery%' THEN 'Slippery'
+            WHEN LOWER(lt.description) LIKE '%rain%' OR LOWER(lt.description) LIKE '%hujan%' THEN 'Rain'
+            WHEN LOWER(lt.description) LIKE '%waiting hauler%' OR LOWER(lt.description) LIKE '%menunggu hauler%' THEN 'Waiting Hauler'
+            WHEN LOWER(lt.description) LIKE '%rest%' OR LOWER(lt.description) LIKE '%meal%' OR LOWER(lt.description) LIKE '%istirahat%' THEN 'Rest & Meals'
+            WHEN LOWER(lt.description) LIKE '%daily shift%' OR LOWER(lt.description) LIKE '%shift harian%' THEN 'Daily shift'
+            WHEN LOWER(lt.description) LIKE '%friday pray%' OR LOWER(lt.description) LIKE '%jumat%' OR LOWER(lt.description) LIKE '%shalat%' THEN 'Friday pray'
+            ELSE 'Other'
+          END
+        ORDER BY total_duration DESC
+      `;
+
+      const result = await queryRunner.query(lostTimeQuery, [
+        start.toISOString().split('T')[0],
+        end.toISOString().split('T')[0]
+      ]);
+
+      // Ambil semua aktivitas yang ada di database untuk memastikan semua muncul
+      const activitiesQuery = `
+        SELECT DISTINCT name
+        FROM m_activities
+        WHERE "deletedAt" IS NULL
+        ORDER BY name
+      `;
+      
+      const activitiesResult = await queryRunner.query(activitiesQuery);
+      const definedCategories = activitiesResult.map(row => row.name);
+
+      await queryRunner.release();
+
+      // Format data sesuai spesifikasi
+      const data = result.map(row => ({
+        name: row.problem_type,
+        value: Math.round(row.total_duration * 100) / 100 // Round to 2 decimal places
+      }));
+
+      const finalData: { name: string; value: number }[] = [];
+      
+      // Tambahkan kategori yang sudah ada data
+      definedCategories.forEach(category => {
+        const existingData = data.find(item => item.name === category);
+        if (existingData) {
+          finalData.push(existingData);
+        } else {
+          finalData.push({ name: category, value: 0 });
+        }
+      });
+
+      // Tambahkan kategori "Other" jika ada data
+      const otherData = data.find(item => item.name === 'Other');
+      if (otherData) {
+        finalData.push(otherData);
+      }
+
     return {
       statusCode: 200,
       message: 'success',
-      data: [
-        { name: 'Slippery', value: 30 },
-        { name: 'Rain', value: 7 },
-        { name: 'Waiting Hauler', value: 1 },
-        { name: 'Rest & Meals', value: 1 },
-        { name: 'Daily shift', value: 1 },
-        { name: 'Friday pray', value: 1 },
-      ],
-    };
+        data: finalData
+      };
+
+    } catch (error) {
+      console.error('Error retrieving lost time data:', error);
+      return {
+        statusCode: 500,
+        message: 'Error retrieving lost time data',
+        error: error.message
+      };
+    }
+  }
+
+  async getActivitiesList() {
+    try {
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+
+      const activitiesQuery = `
+        SELECT DISTINCT name, status
+        FROM m_activities
+        WHERE "deletedAt" IS NULL
+        ORDER BY name
+      `;
+
+      const result = await queryRunner.query(activitiesQuery);
+      await queryRunner.release();
+
+      return {
+        statusCode: 200,
+        message: 'success',
+        data: result
+      };
+
+    } catch (error) {
+      console.error('Error retrieving activities list:', error);
+      return {
+        statusCode: 500,
+        message: 'Error retrieving activities list',
+        error: error.message
+      };
+    }
   }
 
   async getDailyAchievement(selectedDate?: string, shift?: string) {

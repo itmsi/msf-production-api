@@ -179,15 +179,34 @@ export class DashboardController {
   @Get('lost-time')
   @ApiOperation({
     summary: 'Get lost time data',
-    description: 'Retrieve lost time data by category',
+    description: 'Retrieve lost time data by category with date range filter',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Successfully retrieved lost time data',
-    type: LostTimeResponseDto,
+  @ApiQuery({
+    name: 'start_date',
+    required: false,
+    description: 'Start date in YYYY-MM-DD format',
+    example: '2024-01-01',
   })
-  async getLostTimeData() {
-    return await this.dashboardService.getLostTimeData();
+  @ApiQuery({
+    name: 'end_date',
+    required: false,
+    description: 'End date in YYYY-MM-DD format',
+    example: '2024-01-31',
+  })
+  async getLostTimeData(
+    @Query('start_date') startDate?: string,
+    @Query('end_date') endDate?: string,
+  ) {
+    return await this.dashboardService.getLostTimeData(startDate, endDate);
+  }
+
+  @Get('activities-list')
+  @ApiOperation({
+    summary: 'Get all activities from M_Activities table',
+    description: 'Debug endpoint to see all activities available',
+  })
+  async getActivitiesList() {
+    return await this.dashboardService.getActivitiesList();
   }
 
   @Get('daily-achievment')
