@@ -3,20 +3,31 @@ import { DataSource } from 'typeorm';
 import { Population } from '../population/entities/population.entity';
 import { FormulaService } from '../../common/services/formula.service';
 import { ProductionFormulaService } from '../../common/services/production-formula.service';
-import { BargingSummaryResponseDto, CcrActivitesResponseDto, FleetStatusResponseDto, HaulingSummaryResponseDto, TonnageResponseDto } from './dto/ccr-dashboard.dto';
-import { HaulingResponseDto, LostTimeSummaryResponseDto } from './dto/dashboard.dto';
+import {
+  BargingSummaryItemDto,
+  BargingSummaryResponseDto,
+  CcrActivitesResponseDto,
+  FleetStatusResponseDto,
+  HaulingSummaryResponseDto,
+  TonnageResponseDto,
+} from './dto/ccr-dashboard.dto';
+import {
+  HaulingResponseDto,
+  LostTimeSummaryResponseDto,
+} from './dto/dashboard.dto';
 import { BargeForm } from '../barge-form/entities/barge-form.entity';
 import { Barge } from '../barge/entities/barge.entity';
 import { EffectiveWorkingHours } from '../effective-working-hours/entities/effective-working-hours.entity';
 import { Activities } from '../activities/entities/activities.entity';
 import { ParentPlanWorkingHour } from '../plan-working-hour/entities/parent-plan-working-hour.entity';
+import { successResponse } from 'src/common';
 
 @Injectable()
 export class DashboardService {
   constructor(
     private dataSource: DataSource,
     private formulaService: FormulaService,
-    private productionFormulaService: ProductionFormulaService
+    private productionFormulaService: ProductionFormulaService,
   ) {}
   async getSpiderData(startDate?: string, endDate?: string) {
     try {
@@ -32,24 +43,64 @@ export class DashboardService {
       const end = endDate ? new Date(endDate) : defaultEndDate;
 
       // 1. CT (Cycle Time) - Static metric
-      const ctTarget = await this.formulaService.getSettingValue(queryRunner, 'cycle_time', 100);
-      const ctActual = await this.formulaService.calculateCycleTime(queryRunner, start, end);
+      const ctTarget = await this.formulaService.getSettingValue(
+        queryRunner,
+        'cycle_time',
+        100,
+      );
+      const ctActual = await this.formulaService.calculateCycleTime(
+        queryRunner,
+        start,
+        end,
+      );
 
-      // 2. Prod (Production) - Static metric  
-      const prodTarget = await this.formulaService.calculateProductionTarget(queryRunner, start, end);
-      const prodActual = await this.formulaService.calculateProductionActual(queryRunner, start, end);
+      // 2. Prod (Production) - Static metric
+      const prodTarget = await this.formulaService.calculateProductionTarget(
+        queryRunner,
+        start,
+        end,
+      );
+      const prodActual = await this.formulaService.calculateProductionActual(
+        queryRunner,
+        start,
+        end,
+      );
 
       // 3. EWH (Effective Working Hours) - Static metric
-      const ewhTarget = await this.formulaService.calculateEWHTarget(queryRunner, start, end);
-      const ewhActual = await this.formulaService.calculateEWHActual(queryRunner, start, end);
+      const ewhTarget = await this.formulaService.calculateEWHTarget(
+        queryRunner,
+        start,
+        end,
+      );
+      const ewhActual = await this.formulaService.calculateEWHActual(
+        queryRunner,
+        start,
+        end,
+      );
 
       // 4. FR (Fuel Ratio) - Static metric
-      const frTarget = await this.formulaService.getSettingValue(queryRunner, 'fuel_ratio', 95);
-      const frActual = await this.formulaService.calculateFuelRatioActual(queryRunner, start, end);
+      const frTarget = await this.formulaService.getSettingValue(
+        queryRunner,
+        'fuel_ratio',
+        95,
+      );
+      const frActual = await this.formulaService.calculateFuelRatioActual(
+        queryRunner,
+        start,
+        end,
+      );
 
       // 5. Speed - Static metric
-      const speedTarget = await this.formulaService.getSettingValue(queryRunner, 'speed', 110);
-      const speedActual = await this.formulaService.calculateSpeedActual(queryRunner, start, end);
+      const speedTarget = await this.formulaService.getSettingValue(
+        queryRunner,
+        'speed',
+        110,
+      );
+      const speedActual = await this.formulaService.calculateSpeedActual(
+        queryRunner,
+        start,
+        end,
+      );
 
       await queryRunner.release();
 
@@ -58,45 +109,54 @@ export class DashboardService {
           metric: 'CT',
           target: ctTarget,
           actual: ctActual,
-          percent: this.formulaService.calculatePercentage(ctActual, ctTarget)
+          percent: this.formulaService.calculatePercentage(ctActual, ctTarget),
         },
         {
           metric: 'Prod',
           target: prodTarget,
           actual: prodActual,
-          percent: this.formulaService.calculatePercentage(prodActual, prodTarget)
+          percent: this.formulaService.calculatePercentage(
+            prodActual,
+            prodTarget,
+          ),
         },
         {
           metric: 'EWH',
           target: ewhTarget,
           actual: ewhActual,
-          percent: this.formulaService.calculatePercentage(ewhActual, ewhTarget)
+          percent: this.formulaService.calculatePercentage(
+            ewhActual,
+            ewhTarget,
+          ),
         },
         {
           metric: 'FR',
           target: frTarget,
           actual: frActual,
-          percent: this.formulaService.calculatePercentage(frActual, frTarget)
+          percent: this.formulaService.calculatePercentage(frActual, frTarget),
         },
         {
           metric: 'Speed',
           target: speedTarget,
           actual: speedActual,
-          percent: this.formulaService.calculatePercentage(speedActual, speedTarget)
-        }
+          percent: this.formulaService.calculatePercentage(
+            speedActual,
+            speedTarget,
+          ),
+        },
       ];
 
       return {
         statusCode: 200,
         message: 'success',
-        data: data
+        data: data,
       };
     } catch (error) {
       console.error('Error in getSpiderData:', error);
       return {
         statusCode: 500,
         message: 'Error retrieving spider data',
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -106,7 +166,7 @@ export class DashboardService {
       // Mendapatkan target dan actual menggunakan shared formula service
       const [targets, actuals] = await Promise.all([
         this.productionFormulaService.getProductionTargets(startDate, endDate),
-        this.productionFormulaService.getProductionActuals(startDate, endDate)
+        this.productionFormulaService.getProductionActuals(startDate, endDate),
       ]);
 
       return {
@@ -116,31 +176,31 @@ export class DashboardService {
           {
             name: 'Ore Hauling',
             target: targets.oreTarget,
-            actual: actuals.oreHaulingTonnage
+            actual: actuals.oreHaulingTonnage,
           },
           {
             name: 'OB',
             target: targets.obTarget,
-            actual: actuals.obBCM
+            actual: actuals.obBCM,
           },
           {
             name: 'Ore Barging',
             target: targets.oreShipmentTarget,
-            actual: actuals.bargeTonnage
+            actual: actuals.bargeTonnage,
           },
           {
             name: 'Quarry',
             target: targets.quarryTarget,
-            actual: actuals.quarryTonnage
-          }
-        ]
+            actual: actuals.quarryTonnage,
+          },
+        ],
       };
     } catch (error) {
       console.error('Error in getMtdAchievement:', error);
       return {
         statusCode: 500,
         message: 'Error retrieving MTD achievement data',
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -190,27 +250,31 @@ export class DashboardService {
 
       // Create a map of actual data by date
       const actualMap = new Map();
-      actualData.forEach(item => {
+      actualData.forEach((item) => {
         actualMap.set(item.date, {
           tonnage: parseFloat(item.total_tonnage) || 0,
           slippery: parseFloat(item.total_slippery) || 0,
-          rain: parseFloat(item.total_rain) || 0
+          rain: parseFloat(item.total_rain) || 0,
         });
       });
 
       // Combine target and actual data
-      const result = targetData.map(item => {
+      const result = targetData.map((item) => {
         const date = new Date(item.plan_date);
         const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
-        
-        const actualInfo = actualMap.get(item.plan_date) || { tonnage: 0, slippery: 0, rain: 0 };
+
+        const actualInfo = actualMap.get(item.plan_date) || {
+          tonnage: 0,
+          slippery: 0,
+          rain: 0,
+        };
 
         return {
           date: formattedDate,
           target: parseFloat(item.ore_target) || 0,
           actual: actualInfo.tonnage,
           slippery: actualInfo.slippery,
-          rain: actualInfo.rain
+          rain: actualInfo.rain,
         };
       });
 
@@ -224,7 +288,7 @@ export class DashboardService {
       return {
         statusCode: 500,
         message: 'Error retrieving hauling data',
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -297,15 +361,15 @@ export class DashboardService {
             last30Days: recentData[0]?.count || 0,
             withFilters: filterData[0]?.count || 0,
           },
-          sampleData: sampleData
-        }
+          sampleData: sampleData,
+        },
       };
     } catch (error) {
       console.error('Error in debug:', error);
       return {
         statusCode: 500,
         message: 'Debug error',
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -431,10 +495,10 @@ export class DashboardService {
       await queryRunner.release();
 
       // Format data sesuai dengan spesifikasi yang diminta
-      const formattedData = tmmData.map(item => {
+      const formattedData = tmmData.map((item) => {
         const date = new Date(item.activity_date);
         const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
-        
+
         const ore = Math.round(parseFloat(item.ore_hauling_bcm) || 0);
         const over = Math.round(parseFloat(item.ob_bcm) || 0);
         const tmm = Math.round(parseFloat(item.tmm_bcm) || 0);
@@ -443,7 +507,7 @@ export class DashboardService {
           date: formattedDate,
           ore: ore,
           over: over,
-          tmm: tmm
+          tmm: tmm,
         };
       });
 
@@ -457,7 +521,7 @@ export class DashboardService {
       return {
         statusCode: 500,
         message: 'Error retrieving TMM data',
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -521,7 +585,7 @@ export class DashboardService {
 
       const result = await queryRunner.query(lostTimeQuery, [
         start.toISOString().split('T')[0],
-        end.toISOString().split('T')[0]
+        end.toISOString().split('T')[0],
       ]);
 
       // Ambil semua aktivitas yang ada di database untuk memastikan semua muncul
@@ -531,23 +595,23 @@ export class DashboardService {
         WHERE "deletedAt" IS NULL
         ORDER BY name
       `;
-      
+
       const activitiesResult = await queryRunner.query(activitiesQuery);
-      const definedCategories = activitiesResult.map(row => row.name);
+      const definedCategories = activitiesResult.map((row) => row.name);
 
       await queryRunner.release();
 
       // Format data sesuai spesifikasi
-      const data = result.map(row => ({
+      const data = result.map((row) => ({
         name: row.problem_type,
-        value: Math.round(row.total_duration * 100) / 100 // Round to 2 decimal places
+        value: Math.round(row.total_duration * 100) / 100, // Round to 2 decimal places
       }));
 
       const finalData: { name: string; value: number }[] = [];
-      
+
       // Tambahkan kategori yang sudah ada data
-      definedCategories.forEach(category => {
-        const existingData = data.find(item => item.name === category);
+      definedCategories.forEach((category) => {
+        const existingData = data.find((item) => item.name === category);
         if (existingData) {
           finalData.push(existingData);
         } else {
@@ -556,23 +620,22 @@ export class DashboardService {
       });
 
       // Tambahkan kategori "Other" jika ada data
-      const otherData = data.find(item => item.name === 'Other');
+      const otherData = data.find((item) => item.name === 'Other');
       if (otherData) {
         finalData.push(otherData);
       }
 
-    return {
-      statusCode: 200,
-      message: 'success',
-        data: finalData
+      return {
+        statusCode: 200,
+        message: 'success',
+        data: finalData,
       };
-
     } catch (error) {
       console.error('Error retrieving lost time data:', error);
       return {
         statusCode: 500,
         message: 'Error retrieving lost time data',
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -595,15 +658,14 @@ export class DashboardService {
       return {
         statusCode: 200,
         message: 'success',
-        data: result
+        data: result,
       };
-
     } catch (error) {
       console.error('Error retrieving activities list:', error);
       return {
         statusCode: 500,
         message: 'Error retrieving activities list',
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -612,9 +674,13 @@ export class DashboardService {
     try {
       // Get current date if not provided
       const dateToUse = selectedDate || new Date().toISOString().split('T')[0];
-      
+
       // Get data from ProductionFormulaService
-      const achievementData = await this.productionFormulaService.getDailyAchievementData(dateToUse, shift);
+      const achievementData =
+        await this.productionFormulaService.getDailyAchievementData(
+          dateToUse,
+          shift,
+        );
 
       return {
         statusCode: 200,
@@ -623,28 +689,76 @@ export class DashboardService {
           {
             title: 'Daily ACV',
             details: [
-              { name: 'Ore Hauling', target: achievementData.dailyACV.oreHauling.target, actual: achievementData.dailyACV.oreHauling.actual },
-              { name: 'OB', target: achievementData.dailyACV.ob.target, actual: achievementData.dailyACV.ob.actual },
-              { name: 'Ore Barging', target: achievementData.dailyACV.oreBarging.target, actual: achievementData.dailyACV.oreBarging.actual },
-              { name: 'Quarry', target: achievementData.dailyACV.quarry.target, actual: achievementData.dailyACV.quarry.actual },
+              {
+                name: 'Ore Hauling',
+                target: achievementData.dailyACV.oreHauling.target,
+                actual: achievementData.dailyACV.oreHauling.actual,
+              },
+              {
+                name: 'OB',
+                target: achievementData.dailyACV.ob.target,
+                actual: achievementData.dailyACV.ob.actual,
+              },
+              {
+                name: 'Ore Barging',
+                target: achievementData.dailyACV.oreBarging.target,
+                actual: achievementData.dailyACV.oreBarging.actual,
+              },
+              {
+                name: 'Quarry',
+                target: achievementData.dailyACV.quarry.target,
+                actual: achievementData.dailyACV.quarry.actual,
+              },
             ],
           },
           {
             title: 'Day Shift ACV',
             details: [
-              { name: 'Ore Hauling', target: achievementData.dayShiftACV.oreHauling.target, actual: achievementData.dayShiftACV.oreHauling.actual },
-              { name: 'OB', target: achievementData.dayShiftACV.ob.target, actual: achievementData.dayShiftACV.ob.actual },
-              { name: 'Ore Barging', target: achievementData.dayShiftACV.oreBarging.target, actual: achievementData.dayShiftACV.oreBarging.actual },
-              { name: 'Quarry', target: achievementData.dayShiftACV.quarry.target, actual: achievementData.dayShiftACV.quarry.actual },
+              {
+                name: 'Ore Hauling',
+                target: achievementData.dayShiftACV.oreHauling.target,
+                actual: achievementData.dayShiftACV.oreHauling.actual,
+              },
+              {
+                name: 'OB',
+                target: achievementData.dayShiftACV.ob.target,
+                actual: achievementData.dayShiftACV.ob.actual,
+              },
+              {
+                name: 'Ore Barging',
+                target: achievementData.dayShiftACV.oreBarging.target,
+                actual: achievementData.dayShiftACV.oreBarging.actual,
+              },
+              {
+                name: 'Quarry',
+                target: achievementData.dayShiftACV.quarry.target,
+                actual: achievementData.dayShiftACV.quarry.actual,
+              },
             ],
           },
           {
             title: 'Night Shift ACV',
             details: [
-              { name: 'Ore Hauling', target: achievementData.nightShiftACV.oreHauling.target, actual: achievementData.nightShiftACV.oreHauling.actual },
-              { name: 'OB', target: achievementData.nightShiftACV.ob.target, actual: achievementData.nightShiftACV.ob.actual },
-              { name: 'Ore Barging', target: achievementData.nightShiftACV.oreBarging.target, actual: achievementData.nightShiftACV.oreBarging.actual },
-              { name: 'Quarry', target: achievementData.nightShiftACV.quarry.target, actual: achievementData.nightShiftACV.quarry.actual },
+              {
+                name: 'Ore Hauling',
+                target: achievementData.nightShiftACV.oreHauling.target,
+                actual: achievementData.nightShiftACV.oreHauling.actual,
+              },
+              {
+                name: 'OB',
+                target: achievementData.nightShiftACV.ob.target,
+                actual: achievementData.nightShiftACV.ob.actual,
+              },
+              {
+                name: 'Ore Barging',
+                target: achievementData.nightShiftACV.oreBarging.target,
+                actual: achievementData.nightShiftACV.oreBarging.actual,
+              },
+              {
+                name: 'Quarry',
+                target: achievementData.nightShiftACV.quarry.target,
+                actual: achievementData.nightShiftACV.quarry.actual,
+              },
             ],
           },
         ],
@@ -664,7 +778,8 @@ export class DashboardService {
       await queryRunner.connect();
 
       // Build WHERE clause untuk filter bulan
-      let whereClause = 'WHERE rib."deletedAt" IS NULL AND mb."deletedAt" IS NULL';
+      let whereClause =
+        'WHERE rib."deletedAt" IS NULL AND mb."deletedAt" IS NULL';
       if (month) {
         // Format month: YYYY-MM, kita perlu filter berdasarkan bulan dan tahun
         const year = month.split('-')[0];
@@ -711,10 +826,20 @@ export class DashboardService {
       await queryRunner.release();
 
       // Format response data sesuai spesifikasi
-      const formattedList = listData.map(item => ({
+      const formattedList = listData.map((item) => ({
         barge_name: item.barge_name || '',
-        start_loading: item.start_loading ? new Date(item.start_loading).toISOString().slice(0, 16).replace('T', ' ') : '',
-        finish_load: item.finish_load ? new Date(item.finish_load).toISOString().slice(0, 16).replace('T', ' ') : '',
+        start_loading: item.start_loading
+          ? new Date(item.start_loading)
+              .toISOString()
+              .slice(0, 16)
+              .replace('T', ' ')
+          : '',
+        finish_load: item.finish_load
+          ? new Date(item.finish_load)
+              .toISOString()
+              .slice(0, 16)
+              .replace('T', ' ')
+          : '',
         capacity: item.capacity || 0,
         total_vessel: item.total_vessel || 0,
         vol_by_draft: item.vol_by_draft || 0,
@@ -758,25 +883,31 @@ export class DashboardService {
     try {
       // Default to current month if not provided
       const targetMonth = month || new Date().toISOString().slice(0, 7); // YYYY-MM format
-      
+
       // Parse month to get start and end date
       const [year, monthNum] = targetMonth.split('-').map(Number);
       const startDate = new Date(year, monthNum - 1, 1);
       const endDate = new Date(year, monthNum, 0);
-      
+
       const startDateStr = startDate.toISOString().split('T')[0];
       const endDateStr = endDate.toISOString().split('T')[0];
 
       // Get barge data from r_input_barge and m_barge
       const bargeData = await this.getBargeData(startDateStr, endDateStr);
-      
+
       // Get tonnage data
       const tonnageData = await this.getTonnageData(startDateStr, endDateStr);
-      
+
       // Calculate barging ore progress (actual tonnage / plan tonnage)
-      const bargingOreProgress = tonnageData.actualTonnage > 0 && tonnageData.targetTonnage > 0 
-        ? Math.min(Math.round((tonnageData.actualTonnage / tonnageData.targetTonnage) * 100), 100)
-        : 0;
+      const bargingOreProgress =
+        tonnageData.actualTonnage > 0 && tonnageData.targetTonnage > 0
+          ? Math.min(
+              Math.round(
+                (tonnageData.actualTonnage / tonnageData.targetTonnage) * 100,
+              ),
+              100,
+            )
+          : 0;
 
       // Get gain/lost data
       const gainLostData = await this.getGainLostData(startDateStr, endDateStr);
@@ -798,18 +929,29 @@ export class DashboardService {
               target: bargeData.targetBarge,
               actual: bargeData.actualBarge,
               dev: bargeData.targetBarge - bargeData.actualBarge,
-              percent: bargeData.actualBarge > 0 && bargeData.targetBarge > 0 
-                ? Math.round((bargeData.actualBarge / bargeData.targetBarge) * 100)
-                : 0,
+              percent:
+                bargeData.actualBarge > 0 && bargeData.targetBarge > 0
+                  ? Math.round(
+                      (bargeData.actualBarge / bargeData.targetBarge) * 100,
+                    )
+                  : 0,
             },
             {
               variable: 'Tonnage',
               target: tonnageData.targetTonnage,
               actual: tonnageData.actualTonnage,
               dev: tonnageData.targetTonnage - tonnageData.actualTonnage,
-              percent: tonnageData.actualTonnage > 0 && tonnageData.targetTonnage > 0 
-                ? Math.min(Math.round((tonnageData.actualTonnage / tonnageData.targetTonnage) * 100), 100)
-                : 0,
+              percent:
+                tonnageData.actualTonnage > 0 && tonnageData.targetTonnage > 0
+                  ? Math.min(
+                      Math.round(
+                        (tonnageData.actualTonnage /
+                          tonnageData.targetTonnage) *
+                          100,
+                      ),
+                      100,
+                    )
+                  : 0,
             },
           ],
           gain_lost: gainLostData,
@@ -825,7 +967,6 @@ export class DashboardService {
     }
   }
 
-
   async getMonthlyStatus(month: string) {
     try {
       // Input validation
@@ -833,7 +974,7 @@ export class DashboardService {
         return {
           statusCode: 400,
           message: 'Invalid month format. Expected YYYY-MM format',
-          error: 'Invalid input parameter'
+          error: 'Invalid input parameter',
         };
       }
 
@@ -842,14 +983,14 @@ export class DashboardService {
 
       // Parse month parameter (format: YYYY-MM) with validation
       const [year, monthNum] = month.split('-').map(Number);
-      
+
       // Validate year and month ranges
       if (year < 2000 || year > 2100 || monthNum < 1 || monthNum > 12) {
         await queryRunner.release();
         return {
           statusCode: 400,
           message: 'Invalid year or month range',
-          error: 'Year must be between 2000-2100, month must be between 1-12'
+          error: 'Year must be between 2000-2100, month must be between 1-12',
         };
       }
 
@@ -868,7 +1009,10 @@ export class DashboardService {
         AND deleted_at IS NULL
       `;
 
-      const targetResult = await queryRunner.query(targetQuery, [startDate, endDate]);
+      const targetResult = await queryRunner.query(targetQuery, [
+        startDate,
+        endDate,
+      ]);
       const targets = targetResult[0] || {};
 
       // Achievement query dengan perhitungan tonnage berdasarkan tyre_type
@@ -911,17 +1055,20 @@ export class DashboardService {
         GROUP BY bdp.material, bdp.activity, mp.tyre_type
       `;
 
-      const achievementResult = await queryRunner.query(achievementQuery, [startDate, endDate]);
-      
+      const achievementResult = await queryRunner.query(achievementQuery, [
+        startDate,
+        endDate,
+      ]);
+
       // Convert achievement result to object for easy lookup dengan grouping yang benar
       const achievements = {
-        'ob': 0,
-        'ore_hauling': 0,
-        'ore_barging': 0,
-        'quarry': 0
+        ob: 0,
+        ore_hauling: 0,
+        ore_barging: 0,
+        quarry: 0,
       };
-      
-      achievementResult.forEach(row => {
+
+      achievementResult.forEach((row) => {
         const tonnage = parseFloat(row.tonnage) || 0;
         if (row.material === 'ob') {
           achievements['ob'] += tonnage;
@@ -954,7 +1101,10 @@ export class DashboardService {
           chart_data: [
             {
               name: 'progress',
-              value: obTarget > 0 ? Math.round((obAchievement / obTarget) * 100 * 100) / 100 : 0,
+              value:
+                obTarget > 0
+                  ? Math.round((obAchievement / obTarget) * 100 * 100) / 100
+                  : 0,
               fill: '#3BAF9F',
             },
           ],
@@ -967,7 +1117,10 @@ export class DashboardService {
           chart_data: [
             {
               name: 'progress',
-              value: oreTarget > 0 ? Math.round((oreAchievement / oreTarget) * 100 * 100) / 100 : 0,
+              value:
+                oreTarget > 0
+                  ? Math.round((oreAchievement / oreTarget) * 100 * 100) / 100
+                  : 0,
               fill: '#3BAF9F',
             },
           ],
@@ -980,7 +1133,12 @@ export class DashboardService {
           chart_data: [
             {
               name: 'progress',
-              value: oreShipmentTarget > 0 ? Math.round((oreBargeAchievement / oreShipmentTarget) * 100 * 100) / 100 : 0,
+              value:
+                oreShipmentTarget > 0
+                  ? Math.round(
+                      (oreBargeAchievement / oreShipmentTarget) * 100 * 100,
+                    ) / 100
+                  : 0,
               fill: '#3BAF9F',
             },
           ],
@@ -993,7 +1151,11 @@ export class DashboardService {
           chart_data: [
             {
               name: 'progress',
-              value: quarryTarget > 0 ? Math.round((quarryAchievement / quarryTarget) * 100 * 100) / 100 : 0,
+              value:
+                quarryTarget > 0
+                  ? Math.round((quarryAchievement / quarryTarget) * 100 * 100) /
+                    100
+                  : 0,
               fill: '#3BAF9F',
             },
           ],
@@ -1009,28 +1171,31 @@ export class DashboardService {
       };
     } catch (error) {
       console.error('Error in getMonthlyStatus:', error);
-      
+
       // More specific error handling
       if (error.code === 'ECONNREFUSED') {
         return {
           statusCode: 503,
           message: 'Database connection failed',
-          error: 'Service temporarily unavailable'
+          error: 'Service temporarily unavailable',
         };
       }
-      
+
       if (error.code === '42P01') {
         return {
           statusCode: 500,
           message: 'Database table not found',
-          error: 'Internal server configuration error'
+          error: 'Internal server configuration error',
         };
       }
-      
+
       return {
         statusCode: 500,
         message: 'Error retrieving monthly status data',
-        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+        error:
+          process.env.NODE_ENV === 'development'
+            ? error.message
+            : 'Internal server error',
       };
     }
   }
@@ -1041,10 +1206,10 @@ export class DashboardService {
       const [year, monthNum] = month.split('-').map(Number);
       const startDate = new Date(year, monthNum - 1, 1);
       const endDate = new Date(year, monthNum, 0); // Last day of the month
-      
+
       // Get number of days in the month
       const daysInMonth = endDate.getDate();
-      
+
       // Initialize result array
       const result: Array<{
         date: string;
@@ -1053,7 +1218,7 @@ export class DashboardService {
         slippery: number;
         rain: number;
       }> = [];
-      
+
       // Get ore barging data from TB_R_Base_Data_Pro
       const oreBargingQuery = `
         SELECT 
@@ -1074,7 +1239,7 @@ export class DashboardService {
         GROUP BY DATE(rpbdp.activity_date)
         ORDER BY DATE(rpbdp.activity_date)
       `;
-      
+
       // Get ore hauling data from TB_R_Base_Data_Pro
       const oreHaulingQuery = `
         SELECT 
@@ -1095,7 +1260,7 @@ export class DashboardService {
         GROUP BY DATE(rpbdp.activity_date)
         ORDER BY DATE(rpbdp.activity_date)
       `;
-      
+
       // Get slippery data from TB_R_Loss_Time
       const slipperyQuery = `
         SELECT 
@@ -1109,7 +1274,7 @@ export class DashboardService {
         GROUP BY DATE(rlt.date_activity)
         ORDER BY DATE(rlt.date_activity)
       `;
-      
+
       // Get rain data from TB_R_Loss_Time
       const rainQuery = `
         SELECT 
@@ -1123,65 +1288,77 @@ export class DashboardService {
         GROUP BY DATE(rlt.date_activity)
         ORDER BY DATE(rlt.date_activity)
       `;
-      
+
       // Execute queries
-      const [oreBargingData, oreHaulingData, slipperyData, rainData] = await Promise.all([
-        this.dataSource.query(oreBargingQuery, [startDate, endDate]),
-        this.dataSource.query(oreHaulingQuery, [startDate, endDate]),
-        this.dataSource.query(slipperyQuery, [startDate, endDate]),
-        this.dataSource.query(rainQuery, [startDate, endDate])
-      ]);
-      
+      const [oreBargingData, oreHaulingData, slipperyData, rainData] =
+        await Promise.all([
+          this.dataSource.query(oreBargingQuery, [startDate, endDate]),
+          this.dataSource.query(oreHaulingQuery, [startDate, endDate]),
+          this.dataSource.query(slipperyQuery, [startDate, endDate]),
+          this.dataSource.query(rainQuery, [startDate, endDate]),
+        ]);
+
       // Create maps for quick lookup
       const oreBargingMap = new Map();
       const oreHaulingMap = new Map();
       const slipperyMap = new Map();
       const rainMap = new Map();
-      
-      oreBargingData.forEach(item => {
-        oreBargingMap.set(item.activity_date.toISOString().split('T')[0], item.ore_barging_tonnage);
+
+      oreBargingData.forEach((item) => {
+        oreBargingMap.set(
+          item.activity_date.toISOString().split('T')[0],
+          item.ore_barging_tonnage,
+        );
       });
-      
-      oreHaulingData.forEach(item => {
-        oreHaulingMap.set(item.activity_date.toISOString().split('T')[0], item.ore_hauling_tonnage);
+
+      oreHaulingData.forEach((item) => {
+        oreHaulingMap.set(
+          item.activity_date.toISOString().split('T')[0],
+          item.ore_hauling_tonnage,
+        );
       });
-      
-      slipperyData.forEach(item => {
-        slipperyMap.set(item.activity_date.toISOString().split('T')[0], item.slippery_duration);
+
+      slipperyData.forEach((item) => {
+        slipperyMap.set(
+          item.activity_date.toISOString().split('T')[0],
+          item.slippery_duration,
+        );
       });
-      
-      rainData.forEach(item => {
-        rainMap.set(item.activity_date.toISOString().split('T')[0], item.rain_duration);
+
+      rainData.forEach((item) => {
+        rainMap.set(
+          item.activity_date.toISOString().split('T')[0],
+          item.rain_duration,
+        );
       });
-      
+
       // Generate data for each day of the month
       for (let day = 1; day <= daysInMonth; day++) {
         const currentDate = new Date(year, monthNum - 1, day);
         const dateKey = currentDate.toISOString().split('T')[0];
         const dayStr = day.toString().padStart(2, '0');
         const monthStr = monthNum.toString().padStart(2, '0');
-        
+
         result.push({
           date: `${dayStr}/${monthStr}`,
           ore_barging: oreBargingMap.get(dateKey) || 0,
           ore_hauling: oreHaulingMap.get(dateKey) || 0,
           slippery: slipperyMap.get(dateKey) || 0,
-          rain: rainMap.get(dateKey) || 0
+          rain: rainMap.get(dateKey) || 0,
         });
       }
-      
+
       return {
         statusCode: 200,
         message: 'success',
-        data: result
+        data: result,
       };
-      
     } catch (error) {
       console.error('Error in getTrendHaulingBarging:', error);
       return {
         statusCode: 500,
         message: 'Internal server error',
-        data: []
+        data: [],
       };
     }
   }
@@ -1256,18 +1433,25 @@ export class DashboardService {
       `;
 
       // Execute queries
-      const [fuelData, oreBargingData, obRemovingData, oreHaulingData] = await Promise.all([
-        this.dataSource.query(fuelConsumptionQuery, [startDate, endDate]),
-        this.dataSource.query(oreBargingQuery, [startDate, endDate]),
-        this.dataSource.query(obRemovingQuery, [startDate, endDate]),
-        this.dataSource.query(oreHaulingQuery, [startDate, endDate])
-      ]);
+      const [fuelData, oreBargingData, obRemovingData, oreHaulingData] =
+        await Promise.all([
+          this.dataSource.query(fuelConsumptionQuery, [startDate, endDate]),
+          this.dataSource.query(oreBargingQuery, [startDate, endDate]),
+          this.dataSource.query(obRemovingQuery, [startDate, endDate]),
+          this.dataSource.query(oreHaulingQuery, [startDate, endDate]),
+        ]);
 
       // Extract values
       const totalQtySupply = parseFloat(fuelData[0]?.total_qty_supply || 0);
-      const totalOreBarging = parseFloat(oreBargingData[0]?.total_ore_barging || 0);
-      const totalObRemoving = parseFloat(obRemovingData[0]?.total_ob_removing || 0);
-      const totalOreHauling = parseFloat(oreHaulingData[0]?.total_ore_hauling || 0);
+      const totalOreBarging = parseFloat(
+        oreBargingData[0]?.total_ore_barging || 0,
+      );
+      const totalObRemoving = parseFloat(
+        obRemovingData[0]?.total_ob_removing || 0,
+      );
+      const totalOreHauling = parseFloat(
+        oreHaulingData[0]?.total_ore_hauling || 0,
+      );
 
       // Calculate ratios
       const fr = totalOreBarging > 0 ? totalQtySupply / totalOreBarging : 0;
@@ -1281,11 +1465,11 @@ export class DashboardService {
         message: 'success',
         data: {
           chart: [
-            { 
-              date: monthDisplay, 
+            {
+              date: monthDisplay,
               fr: Math.round(fr * 100) / 100, // Round to 2 decimal places
-              sr: Math.round(sr * 100) / 100  // Round to 2 decimal places
-            }
+              sr: Math.round(sr * 100) / 100, // Round to 2 decimal places
+            },
           ],
           meta: [
             { key: 'fr', label: 'FR', color: '#D96C06', yAxis: 'left' },
@@ -1319,8 +1503,8 @@ export class DashboardService {
           { date: '01/08', pa: 0.85, ma: 0.92, ua: 0.78, eu: 0.65 },
           { date: '02/08', pa: 0.88, ma: 0.89, ua: 0.82, eu: 0.68 },
           { date: '03/08', pa: 0.82, ma: 0.94, ua: 0.75, eu: 0.62 },
-          { date: '04/08', pa: 0.90, ma: 0.87, ua: 0.85, eu: 0.72 },
-          { date: '05/08', pa: 0.86, ma: 0.91, ua: 0.80, eu: 0.66 },
+          { date: '04/08', pa: 0.9, ma: 0.87, ua: 0.85, eu: 0.72 },
+          { date: '05/08', pa: 0.86, ma: 0.91, ua: 0.8, eu: 0.66 },
         ],
         meta: [
           { key: 'pa', label: 'PA', color: '#D96C06', yAxis: 'left' },
@@ -1333,7 +1517,13 @@ export class DashboardService {
   }
 
   private generateDummyPerformanceData(startDate: Date, endDate: Date) {
-    const chartData: Array<{date: string, pa: number, ma: number, ua: number, eu: number}> = [];
+    const chartData: Array<{
+      date: string;
+      pa: number;
+      ma: number;
+      ua: number;
+      eu: number;
+    }> = [];
     const daysInMonth = endDate.getDate();
 
     for (let day = 1; day <= daysInMonth; day++) {
@@ -1373,8 +1563,11 @@ export class DashboardService {
       SELECT COUNT(*) as count FROM r_parent_base_data_pro 
       WHERE activity_date BETWEEN $1 AND $2
     `;
-    
-    const countResult = await this.dataSource.query(checkQuery, [startDate, endDate]);
+
+    const countResult = await this.dataSource.query(checkQuery, [
+      startDate,
+      endDate,
+    ]);
     console.log('Parent data count:', countResult);
 
     const checkQuery2 = `
@@ -1382,8 +1575,11 @@ export class DashboardService {
       JOIN r_parent_base_data_pro rpbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
       WHERE rpbdp.activity_date BETWEEN $1 AND $2
     `;
-    
-    const countResult2 = await this.dataSource.query(checkQuery2, [startDate, endDate]);
+
+    const countResult2 = await this.dataSource.query(checkQuery2, [
+      startDate,
+      endDate,
+    ]);
     console.log('Base data count:', countResult2);
 
     const query = `
@@ -1410,7 +1606,11 @@ export class DashboardService {
     return result;
   }
 
-  private async getBreakdownTimeForDate(noUnit: string, activityDate: string, shift: string) {
+  private async getBreakdownTimeForDate(
+    noUnit: string,
+    activityDate: string,
+    shift: string,
+  ) {
     const query = `
       SELECT COALESCE(SUM(duration), 0) as breakdown_time
       FROM r_loss_time
@@ -1420,21 +1620,41 @@ export class DashboardService {
         AND loss_type = 'BD'
     `;
 
-    const result = await this.dataSource.query(query, [noUnit, activityDate, shift]);
+    const result = await this.dataSource.query(query, [
+      noUnit,
+      activityDate,
+      shift,
+    ]);
     return parseFloat(result[0]?.breakdown_time || '0');
   }
 
-  private async calculateDailyPerformanceMetrics(controlMtdData: any[], startDate: Date, endDate: Date) {
-    const chartData: Array<{date: string, pa: number, ma: number, ua: number, eu: number}> = [];
+  private async calculateDailyPerformanceMetrics(
+    controlMtdData: any[],
+    startDate: Date,
+    endDate: Date,
+  ) {
+    const chartData: Array<{
+      date: string;
+      pa: number;
+      ma: number;
+      ua: number;
+      eu: number;
+    }> = [];
     const daysInMonth = endDate.getDate();
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), day);
+      const currentDate = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        day,
+      );
       const dateStr = currentDate.toISOString().split('T')[0];
       const formattedDate = `${day.toString().padStart(2, '0')}/${(startDate.getMonth() + 1).toString().padStart(2, '0')}`;
 
       // Get data for this specific date
-      const dayData = controlMtdData.filter(item => item.activity_date === dateStr);
+      const dayData = controlMtdData.filter(
+        (item) => item.activity_date === dateStr,
+      );
 
       let totalEwh = 0;
       let totalStandby = 0;
@@ -1445,7 +1665,11 @@ export class DashboardService {
       for (const item of dayData) {
         const ewh = parseFloat(item.total_hm || '0');
         const mohh = 24; // 24 hours per day per unit
-        const breakdownTime = await this.getBreakdownTimeForDate(item.no_unit, dateStr, item.shift);
+        const breakdownTime = await this.getBreakdownTimeForDate(
+          item.no_unit,
+          dateStr,
+          item.shift,
+        );
         const standbyTime = mohh - breakdownTime - ewh;
 
         totalEwh += ewh;
@@ -1456,8 +1680,12 @@ export class DashboardService {
 
       // Calculate PA, MA, UA, EU according to the specified formulas
       const pa = totalMohh > 0 ? (totalEwh + totalStandby) / totalMohh : 0;
-      const ma = (totalEwh + totalBreakdown) > 0 ? totalEwh / (totalEwh + totalBreakdown) : 0;
-      const ua = (totalEwh + totalStandby) > 0 ? totalEwh / (totalEwh + totalStandby) : 0;
+      const ma =
+        totalEwh + totalBreakdown > 0
+          ? totalEwh / (totalEwh + totalBreakdown)
+          : 0;
+      const ua =
+        totalEwh + totalStandby > 0 ? totalEwh / (totalEwh + totalStandby) : 0;
       const eu = totalMohh > 0 ? totalEwh / totalMohh : 0;
 
       chartData.push({
@@ -1476,11 +1704,13 @@ export class DashboardService {
     try {
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
-      
-      const result = await queryRunner.query('SELECT * FROM get_summary_production()');
-      
+
+      const result = await queryRunner.query(
+        'SELECT * FROM get_summary_production()',
+      );
+
       await queryRunner.release();
-      
+
       return {
         statusCode: 200,
         message: 'success',
@@ -1496,238 +1726,314 @@ export class DashboardService {
     }
   }
 
-    async getHaulingSummary() : Promise<HaulingSummaryResponseDto> {
-          try {
-              return {
-                  statusCode: 200,
-                  message: 'success',
-                  data: {
-                    total_mp: 24,
-                    attendance: [
-                            { name: 'Hadir', value: 16, color: '#54AD9B' },
-                            { name: 'Sakit', value: 2, color: '#54AD9B' },
-                            { name: 'Izin', value: 1, color: '#54AD9B' },
-                            { name: 'Alpa', value: 1, color: '#FF0000' },
-                            { name: 'Cuti', value: 1, color: '#F1C40F' },
-                            { name: 'Punishment', value: 1, color: '#F1C40F' },
-                            { name: 'Standby', value: 1, color: '#F1C40F' },
-                        ],
-                        chart_summary: [
-                            {
-                                title: 'Tonnage',
-                                meta: {
-                                    actual: 4000,
-                                    target: 8000,
-                                    percent: 50,
-                                },
-                            },
-                            {
-                                title: 'Vessel',
-                                meta: {
-                                    actual: 5000,
-                                    target: 13000,
-                                    percent: 38,
-                                },
-                            },
-                            {
-                                title: 'Ore',
-                                meta: {
-                                    actual: 2000,
-                                    target: 10000,
-                                    percent: 20,
-                                },
-                            },
-                            {
-                                title: 'Quarry',
-                                meta: {
-                                    actual: 2000,
-                                    target: 10000,
-                                    percent: 20,
-                                },
-                            },
-                            {
-                                title: 'OB',
-                                meta: {
-                                    actual: 2000,
-                                    target: 10000,
-                                    percent: 20,
-                                },
-                            },
-                ],
-                working_hour: [
-                    { title: 'EWH', value: 10 },
-                    { title: 'STB', value: 50 },
-                ]
-                }    
-              };
-          } catch (error){
-              throw new BadRequestException(`Gagal mendapatkan data`); 
-          }
-      }
+  async getHaulingSummary(): Promise<HaulingSummaryResponseDto> {
+    try {
+      return {
+        statusCode: 200,
+        message: 'success',
+        data: {
+          total_mp: 24,
+          attendance: [
+            { name: 'Hadir', value: 16, color: '#54AD9B' },
+            { name: 'Sakit', value: 2, color: '#54AD9B' },
+            { name: 'Izin', value: 1, color: '#54AD9B' },
+            { name: 'Alpa', value: 1, color: '#FF0000' },
+            { name: 'Cuti', value: 1, color: '#F1C40F' },
+            { name: 'Punishment', value: 1, color: '#F1C40F' },
+            { name: 'Standby', value: 1, color: '#F1C40F' },
+          ],
+          chart_summary: [
+            {
+              title: 'Tonnage',
+              meta: {
+                actual: 4000,
+                target: 8000,
+                percent: 50,
+              },
+            },
+            {
+              title: 'Vessel',
+              meta: {
+                actual: 5000,
+                target: 13000,
+                percent: 38,
+              },
+            },
+            {
+              title: 'Ore',
+              meta: {
+                actual: 2000,
+                target: 10000,
+                percent: 20,
+              },
+            },
+            {
+              title: 'Quarry',
+              meta: {
+                actual: 2000,
+                target: 10000,
+                percent: 20,
+              },
+            },
+            {
+              title: 'OB',
+              meta: {
+                actual: 2000,
+                target: 10000,
+                percent: 20,
+              },
+            },
+          ],
+          working_hour: [
+            { title: 'EWH', value: 10 },
+            { title: 'STB', value: 50 },
+          ],
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException(`Gagal mendapatkan data`);
+    }
+  }
 
-      async getMockFleetStatus() : Promise<FleetStatusResponseDto> {
-          try {
-              return {
-                  statusCode: 200,
-                  message: 'success',
-                  data: [
-                    {
-                        fleet: 'TID-DT-001',
-                        start_loading: 'ETO 1',
-                        loading_point: 'EFO 1',
-                        dumping_point: 'string',
-                        target_hauler: 123,
-                        actual_hauler: 123,
-                        mf: 123,
-                        total_vessel: 123,
-                        total_tonnage: 123,
-                        ore: 123,
-                        quarry: 123,
-                        ob: 123,
-                    },
-                    {
-                        fleet: 'TID-DT-002',
-                        start_loading: 'ETO 1',
-                        loading_point: 'EFO 1',
-                        dumping_point: 'string',
-                        target_hauler: 123,
-                        actual_hauler: 123,
-                        mf: 123,
-                        total_vessel: 123,
-                        total_tonnage: 123,
-                        ore: 123,
-                        quarry: 123,
-                        ob: 123,
-                    },
-                    {
-                        fleet: 'TID-DT-003',
-                        start_loading: 'ETO 1',
-                        loading_point: 'EFO 1',
-                        dumping_point: 'string',
-                        target_hauler: 123,
-                        actual_hauler: 123,
-                        mf: 123,
-                        total_vessel: 123,
-                        total_tonnage: 123,
-                        ore: 123,
-                        quarry: 123,
-                        ob: 123,
-                    },
-                  ] 
-              };
-          } catch (error){
-              throw new BadRequestException(`Gagal mendapatkan data`); 
-          }
-      }
+  async getMockFleetStatus(): Promise<FleetStatusResponseDto> {
+    try {
+      return {
+        statusCode: 200,
+        message: 'success',
+        data: [
+          {
+            fleet: 'TID-DT-001',
+            start_loading: 'ETO 1',
+            loading_point: 'EFO 1',
+            dumping_point: 'string',
+            target_hauler: 123,
+            actual_hauler: 123,
+            mf: 123,
+            total_vessel: 123,
+            total_tonnage: 123,
+            ore: 123,
+            quarry: 123,
+            ob: 123,
+          },
+          {
+            fleet: 'TID-DT-002',
+            start_loading: 'ETO 1',
+            loading_point: 'EFO 1',
+            dumping_point: 'string',
+            target_hauler: 123,
+            actual_hauler: 123,
+            mf: 123,
+            total_vessel: 123,
+            total_tonnage: 123,
+            ore: 123,
+            quarry: 123,
+            ob: 123,
+          },
+          {
+            fleet: 'TID-DT-003',
+            start_loading: 'ETO 1',
+            loading_point: 'EFO 1',
+            dumping_point: 'string',
+            target_hauler: 123,
+            actual_hauler: 123,
+            mf: 123,
+            total_vessel: 123,
+            total_tonnage: 123,
+            ore: 123,
+            quarry: 123,
+            ob: 123,
+          },
+        ],
+      };
+    } catch (error) {
+      throw new BadRequestException(`Gagal mendapatkan data`);
+    }
+  }
 
-      async getMockTonnage() : Promise<TonnageResponseDto> {
-          try {
-              return {
-                  statusCode: 200,
-                  message: 'success',
-                  data: {
-                    chart: [
-                        {
-                            hour: '18-19',
-                            'TID-EX-013': 1,
-                            'DT-TR-001': 3,
-                            'HD-EX-777': 5,
-                            total: 8,
-                        },
-                        {
-                            hour: '19-20',
-                            'TID-EX-013': 2,
-                            'DT-TR-001': 4,
-                            'HD-EX-777': 6,
-                            total: 12,
-                        },
-                    ],
-                    meta: {
-                        'TID-EX-013': '#F6C89F',
-                        'DT-TR-001': '#94D1B2',
-                        'HD-EX-777': '#54AD9B',
-                        total: '#D96C06',
-                    },
-                  }
-              };
-          } catch (error){
-              throw new BadRequestException(`Gagal mendapatkan data`); 
-          }
-      }
+  async getMockTonnage(): Promise<TonnageResponseDto> {
+    try {
+      return {
+        statusCode: 200,
+        message: 'success',
+        data: {
+          chart: [
+            {
+              hour: '18-19',
+              'TID-EX-013': 1,
+              'DT-TR-001': 3,
+              'HD-EX-777': 5,
+              total: 8,
+            },
+            {
+              hour: '19-20',
+              'TID-EX-013': 2,
+              'DT-TR-001': 4,
+              'HD-EX-777': 6,
+              total: 12,
+            },
+          ],
+          meta: {
+            'TID-EX-013': '#F6C89F',
+            'DT-TR-001': '#94D1B2',
+            'HD-EX-777': '#54AD9B',
+            total: '#D96C06',
+          },
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException(`Gagal mendapatkan data`);
+    }
+  }
 
-      async getMockBargingSummary() : Promise<BargingSummaryResponseDto> {
-          try {
-              return {
-                  statusCode: 200,
-                  message: 'success',
-                  data: [
-                    {
-                        title: 'Unit Running',
-                        meta: {
-                            actual: 4000,
-                            target: 8000,
-                            percent: 50,
-                        },
-                    },
-                    {
-                        title: 'Tonnage',
-                        meta: {
-                            actual: 5000,
-                            target: 13000,
-                            percent: 38,
-                        },
-                    },
-                    {
-                        title: 'Vessel',
-                        meta: {
-                            actual: 2000,
-                            target: 10000,
-                            percent: 20,
-                        },
-                    },
-                ]
-              };
-          } catch (error){
-              throw new BadRequestException(`Gagal mendapatkan data`); 
-          }
-      }
+  async getMockBargingSummary(date?: string): Promise<any> {
+    try {
+      const dateParam = date || new Date().toISOString().split('T')[0];
 
-      async getMockActivities() : Promise<CcrActivitesResponseDto> {
-          try {
-              return {
-                statusCode: 200,
-                message: 'success',
-                data: [
-                    { label: 'No Operator', target: 3000, actual: 2800 },
-                    { label: 'Fogging', target: 2950, actual: 2700 },
-                    { label: 'Friday Pray', target: 2980, actual: 2750 },
-                    { label: 'Hujan', target: 2900, actual: 2600 },
-                    { label: 'P2H', target: 3000, actual: 2700 },
-                    { label: 'Perbaikan Front Loading', target: 2800, actual: 2500 },
-                    { label: 'Refueling', target: 2900, actual: 2650 },
-                    { label: 'Rest Time', target: 3000, actual: 2700 },
-                    { label: 'Safety Talk', target: 2950, actual: 2800 },
-                ]
-            };
-          } catch (error){
-              throw new BadRequestException(`Gagal mendapatkan data`); 
-          }
-      }
+      // Query untuk tonnage
+      const qb = this.dataSource
+        .createQueryBuilder()
+        .select('t.actual', 'actual')
+        .addSelect('t.target', 'target')
+        .addSelect(
+          'ROUND(CASE WHEN t.target > 0 THEN (t.actual::numeric / t.target::numeric) ELSE 0 END, 2)',
+          'percent',
+        )
+        .from((subQb) => {
+          return subQb
+            .from('r_ccr_barging', 'dummy')
+            .select(
+              `(SELECT COALESCE(SUM(b.total_tonnage)::numeric, 0) 
+              FROM r_ccr_barging b 
+              WHERE b.activity_date = :dateParam)`,
+              'actual',
+            )
+            .addSelect(
+              `(SELECT COALESCE(ROUND(p.ore_shipment_target::numeric, 2), 0) 
+              FROM r_plan_production p 
+              WHERE p.plan_date = :dateParam)`,
+              'target',
+            );
+        }, 't')
+        .setParameter('dateParam', dateParam);
 
-  async getLostTimeSummary(startDate?: string, endDate?: string): Promise<LostTimeSummaryResponseDto> {
+      // Query untuk vessel
+      const qb2 = this.dataSource
+        .createQueryBuilder()
+        .select('t.actual', 'actual')
+        .addSelect('t.target', 'target')
+        .addSelect(
+          'ROUND((t.actual / NULLIF(t.target, 0))::numeric, 2)',
+          'percent',
+        )
+        .from((subQb) => {
+          return subQb
+            .from('r_ccr_barging', 'dummy')
+            .select(
+              `(SELECT COALESCE(SUM(b.vessel)::numeric, 0) 
+              FROM r_ccr_barging b 
+              WHERE b.activity_date = :dateParam)`,
+              'actual',
+            )
+            .addSelect(
+              `(SELECT COALESCE(ROUND(((p.ore_shipment_target / p.total_fleet) / 40 / 2)::numeric, 2), 0) 
+              FROM r_plan_production p 
+              WHERE p.plan_date = :dateParam)`,
+              'target',
+            );
+        }, 't')
+        .setParameter('dateParam', dateParam);
+
+      const tonnageRaw = await qb.getRawOne();
+      const vesselRaw = await qb2.getRawOne();
+
+      const tonnage = {
+        actual: Number(tonnageRaw.actual),
+        target: Number(tonnageRaw.target),
+        percent: Number(tonnageRaw.percent),
+      };
+
+      const vessel = {
+        actual: Number(vesselRaw.actual),
+        target: Number(vesselRaw.target),
+        percent: Number(vesselRaw.percent),
+      };
+      const construct = [
+        {
+          title: 'Tonnage',
+          meta: {
+            actual: 4000,
+            target: 8000,
+            percent: 50,
+          },
+        },
+        {
+          title: 'Tonnage',
+          meta: tonnage,
+        },
+        {
+          title: 'Vessel',
+          meta: vessel,
+        },
+      ];
+
+      return successResponse(construct, 'success', 200);
+    } catch (error) {
+      throw new BadRequestException(`Gagal mendapatkan data: ${error.message}`);
+    }
+  }
+
+  async getMockActivities(): Promise<CcrActivitesResponseDto> {
+    try {
+      return {
+        statusCode: 200,
+        message: 'success',
+        data: [
+          { label: 'No Operator', target: 3000, actual: 2800 },
+          { label: 'Fogging', target: 2950, actual: 2700 },
+          { label: 'Friday Pray', target: 2980, actual: 2750 },
+          { label: 'Hujan', target: 2900, actual: 2600 },
+          { label: 'P2H', target: 3000, actual: 2700 },
+          { label: 'Perbaikan Front Loading', target: 2800, actual: 2500 },
+          { label: 'Refueling', target: 2900, actual: 2650 },
+          { label: 'Rest Time', target: 3000, actual: 2700 },
+          { label: 'Safety Talk', target: 2950, actual: 2800 },
+        ],
+      };
+    } catch (error) {
+      throw new BadRequestException(`Gagal mendapatkan data`);
+    }
+  }
+
+  async getLostTimeSummary(
+    startDate?: string,
+    endDate?: string,
+  ): Promise<LostTimeSummaryResponseDto> {
     try {
       // Set default date range jika tidak ada parameter
-      const defaultStartDate = startDate || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+      const defaultStartDate =
+        startDate ||
+        new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+          .toISOString()
+          .split('T')[0];
       const defaultEndDate = endDate || new Date().toISOString().split('T')[0];
 
       // 1. Hitung MOHH data (STB, BD, EWH)
-      const mohhData = await this.calculateMohhData(defaultStartDate, defaultEndDate);
+      const mohhData = await this.calculateMohhData(
+        defaultStartDate,
+        defaultEndDate,
+      );
 
       // 2. Hitung Lost Time data berdasarkan activities dengan status idle dan delay
-      const lostTimeData = await this.calculateLostTimeData(defaultStartDate, defaultEndDate);
+      const lostTimeData = await this.calculateLostTimeData(
+        defaultStartDate,
+        defaultEndDate,
+      );
 
       // 3. Hitung Tables data (PA, MA, UA, EU)
-      const tablesData = await this.calculateTablesData(defaultStartDate, defaultEndDate);
+      const tablesData = await this.calculateTablesData(
+        defaultStartDate,
+        defaultEndDate,
+      );
 
       return {
         statusCode: 200,
@@ -1751,10 +2057,11 @@ export class DashboardService {
       // EWH = sum(control.mtdtotal_hm) from r_base_data_pro all unit
       // Breakdown = SUM(r_loss_time.duration) WHERE (r_loss_time.lossType = 'BD')
       // STB = MOHH - EWH - Breakdown Time
-      
+
       // Hitung MOHH = duration dari start_date and end_date
       // Menggunakan data dari r_parent_base_data_pro dengan durasi yang lebih akurat
-      const mohhQuery = await this.dataSource.query(`
+      const mohhQuery = await this.dataSource.query(
+        `
         SELECT 
           COALESCE(SUM(
             CASE 
@@ -1767,28 +2074,38 @@ export class DashboardService {
           ), 0) as total_mohh
         FROM r_parent_base_data_pro rpbdp
         WHERE rpbdp.activity_date BETWEEN $1 AND $2
-      `, [startDate, endDate]);
+      `,
+        [startDate, endDate],
+      );
 
       // Hitung EWH = SUM(r_base_data_pro.totalHM) all unit
-      const ewhQuery = await this.dataSource.query(`
+      const ewhQuery = await this.dataSource.query(
+        `
         SELECT COALESCE(SUM(rbdp.totalHM), 0) as total_ewh
         FROM r_parent_base_data_pro rpbdp
         LEFT JOIN r_base_data_pro rbdp ON rbdp.parent_base_data_pro_id = rpbdp.id
         WHERE rpbdp.activity_date BETWEEN $1 AND $2
-      `, [startDate, endDate]);
+      `,
+        [startDate, endDate],
+      );
 
       // Hitung BD = SUM(r_loss_time.duration) WHERE loss_type = 'BD'
-      const breakdownQuery = await this.dataSource.query(`
+      const breakdownQuery = await this.dataSource.query(
+        `
         SELECT COALESCE(SUM(duration), 0) as total_breakdown
         FROM r_loss_time 
         WHERE loss_type = 'BD' 
           AND date_activity BETWEEN $1 AND $2
-      `, [startDate, endDate]);
+      `,
+        [startDate, endDate],
+      );
 
       const totalMohh = parseFloat(mohhQuery[0]?.total_mohh || '0');
       const totalEwh = parseFloat(ewhQuery[0]?.total_ewh || '0');
-      const totalBreakdown = parseFloat(breakdownQuery[0]?.total_breakdown || '0');
-      
+      const totalBreakdown = parseFloat(
+        breakdownQuery[0]?.total_breakdown || '0',
+      );
+
       // Hitung STB = MOHH - EWH - Breakdown Time
       const standbyTime = Math.max(0, totalMohh - totalEwh - totalBreakdown);
 
@@ -1796,25 +2113,25 @@ export class DashboardService {
         {
           name: 'STB',
           value: Math.round(standbyTime * 10) / 10,
-          color: '#34d399'
+          color: '#34d399',
         },
         {
           name: 'BD',
           value: Math.round(totalBreakdown * 10) / 10,
-          color: '#d1d5db'
+          color: '#d1d5db',
         },
         {
           name: 'EWH',
           value: Math.round(totalEwh * 10) / 10,
-          color: '#10b981'
-        }
+          color: '#10b981',
+        },
       ];
     } catch (error) {
       console.error('Error calculating MOHH data:', error);
       return [
         { name: 'STB', value: 0, color: '#34d399' },
         { name: 'BD', value: 0, color: '#d1d5db' },
-        { name: 'EWH', value: 0, color: '#10b981' }
+        { name: 'EWH', value: 0, color: '#10b981' },
       ];
     }
   }
@@ -1823,7 +2140,8 @@ export class DashboardService {
     try {
       // Ambil data berdasarkan activities dengan status 'idle' dan 'delay'
       // dan r_loss_time dengan loss_type = 'STB'
-      const lostTimeQuery = await this.dataSource.query(`
+      const lostTimeQuery = await this.dataSource.query(
+        `
         SELECT 
           TRIM(a.name) as activity_name,
           COALESCE(SUM(lt.duration), 0) as total_duration
@@ -1834,33 +2152,41 @@ export class DashboardService {
           AND lt.date_activity BETWEEN $1 AND $2
         GROUP BY a.id, TRIM(a.name)
         ORDER BY total_duration DESC
-      `, [startDate, endDate]);
+      `,
+        [startDate, endDate],
+      );
 
       // Mapping nama aktivitas ke warna yang sesuai
       const activityColors: { [key: string]: string } = {
-        'Rain': '#1e3a8a',
-        'Slippery': '#d1d5db',
-        'MHR': '#34d399',
-        'Internal': '#fbbf24',
-        'External': '#60a5fa'
+        Rain: '#1e3a8a',
+        Slippery: '#d1d5db',
+        MHR: '#34d399',
+        Internal: '#fbbf24',
+        External: '#60a5fa',
       };
 
       const result = lostTimeQuery.map((item: any) => ({
         name: item.activity_name,
         value: Math.round(parseFloat(item.total_duration) * 10) / 10,
-        color: activityColors[item.activity_name] || '#6b7280'
+        color: activityColors[item.activity_name] || '#6b7280',
       }));
 
       // Pastikan semua aktivitas yang diharapkan ada dalam response
-      const expectedActivities = ['Rain', 'Slippery', 'MHR', 'Internal', 'External'];
-      const existingNames = result.map(item => item.name);
-      
-      expectedActivities.forEach(activityName => {
+      const expectedActivities = [
+        'Rain',
+        'Slippery',
+        'MHR',
+        'Internal',
+        'External',
+      ];
+      const existingNames = result.map((item) => item.name);
+
+      expectedActivities.forEach((activityName) => {
         if (!existingNames.includes(activityName)) {
           result.push({
             name: activityName,
             value: 0,
-            color: activityColors[activityName] || '#6b7280'
+            color: activityColors[activityName] || '#6b7280',
           });
         }
       });
@@ -1873,7 +2199,7 @@ export class DashboardService {
         { name: 'Slippery', value: 0, color: '#d1d5db' },
         { name: 'MHR', value: 0, color: '#34d399' },
         { name: 'Internal', value: 0, color: '#fbbf24' },
-        { name: 'External', value: 0, color: '#60a5fa' }
+        { name: 'External', value: 0, color: '#60a5fa' },
       ];
     }
   }
@@ -1882,8 +2208,9 @@ export class DashboardService {
     try {
       // Hitung target dari r_parent_plan_working_hour berdasarkan formula yang sama dengan actual
       // Target dihitung dari data plan working hour yang sudah ada
-      
-      const targetDataQuery = await this.dataSource.query(`
+
+      const targetDataQuery = await this.dataSource.query(
+        `
         SELECT 
           COALESCE(SUM(pwh.mohh_per_month), 0) as target_mohh,
           COALESCE(SUM(
@@ -1909,15 +2236,18 @@ export class DashboardService {
         LEFT JOIN r_plan_working_hour_detail pwhd ON pwhd.plant_working_hour_id = pwh.id
         LEFT JOIN m_activities a ON a.id = pwhd.activities_id
         WHERE ppwh.plan_date BETWEEN $1 AND $2
-      `, [startDate, endDate]);
+      `,
+        [startDate, endDate],
+      );
 
       // Hitung actual data sesuai spesifikasi:
       // PA actual = (SUM(all Unit control_mtd_production.ewh) + SUM(all unit control_mtd_production.standby_time)) / SUM(control_mtd_production.MOHH)
       // MA actual = (SUM(all Unit control_mtd_production.ewh) / (SUM(all unit control_mtd_production.ewh) + SUM(control_mtd_production.breakdown_time))
       // UA actual = (SUM(all Unit control_mtd_production.ewh) / (SUM(all unit control_mtd_production.ewh) + SUM(control_mtd_production.standby_time))
       // EU actual = SUM(all Unit control_mtd_production.ewh) / SUM(all unit control_mtd_production.mohh)
-      
-      const actualDataQuery = await this.dataSource.query(`
+
+      const actualDataQuery = await this.dataSource.query(
+        `
         SELECT 
           COALESCE(SUM(rbdp.totalHM), 0) as total_ewh,
           COALESCE(SUM(lt.duration), 0) as total_breakdown,
@@ -1936,44 +2266,78 @@ export class DashboardService {
           AND lt.date_activity = rpbdp.activity_date
           AND lt.loss_type = 'BD'
         WHERE rpbdp.activity_date BETWEEN $1 AND $2
-      `, [startDate, endDate]);
+      `,
+        [startDate, endDate],
+      );
 
-      const targetData = targetDataQuery[0] || { target_mohh: 0, target_delay: 0, target_idle: 0, target_breakdown: 0 };
-      const actualData = actualDataQuery[0] || { total_ewh: 0, total_breakdown: 0, total_mohh: 0 };
+      const targetData = targetDataQuery[0] || {
+        target_mohh: 0,
+        target_delay: 0,
+        target_idle: 0,
+        target_breakdown: 0,
+      };
+      const actualData = actualDataQuery[0] || {
+        total_ewh: 0,
+        total_breakdown: 0,
+        total_mohh: 0,
+      };
 
       // Hitung target values menggunakan formula yang sama
       const targetMohh = parseFloat(targetData.target_mohh);
       const targetDelay = parseFloat(targetData.target_delay);
       const targetIdle = parseFloat(targetData.target_idle);
       const targetBreakdown = parseFloat(targetData.target_breakdown);
-      
+
       // Hitung target EWH = MOHH - Delay - Idle - Breakdown
-      const targetEwh = Math.max(0, targetMohh - targetDelay - targetIdle - targetBreakdown);
-      
+      const targetEwh = Math.max(
+        0,
+        targetMohh - targetDelay - targetIdle - targetBreakdown,
+      );
+
       // Hitung target standby time = MOHH - EWH - Breakdown Time
-      const targetStandby = Math.max(0, targetMohh - targetEwh - targetBreakdown);
+      const targetStandby = Math.max(
+        0,
+        targetMohh - targetEwh - targetBreakdown,
+      );
 
       // Hitung actual values
       const actualEwh = parseFloat(actualData.total_ewh);
       const actualBreakdown = parseFloat(actualData.total_breakdown);
       const actualMohh = parseFloat(actualData.total_mohh);
-      
+
       // Hitung actual standby time = MOHH - EWH - Breakdown Time
-      const actualStandby = Math.max(0, actualMohh - actualEwh - actualBreakdown);
+      const actualStandby = Math.max(
+        0,
+        actualMohh - actualEwh - actualBreakdown,
+      );
 
       // Hitung PA: (EWH + Standby Time) / MOHH
-      const paActual = actualMohh > 0 ? (actualEwh + actualStandby) / actualMohh : 0;
-      const paTarget = targetMohh > 0 ? (targetEwh + targetStandby) / targetMohh : 0;
+      const paActual =
+        actualMohh > 0 ? (actualEwh + actualStandby) / actualMohh : 0;
+      const paTarget =
+        targetMohh > 0 ? (targetEwh + targetStandby) / targetMohh : 0;
       const paPercent = paTarget > 0 ? (paActual / paTarget) * 100 : 0;
 
       // Hitung MA: EWH / (EWH + Breakdown Time)
-      const maActual = (actualEwh + actualBreakdown) > 0 ? actualEwh / (actualEwh + actualBreakdown) : 0;
-      const maTarget = (targetEwh + targetBreakdown) > 0 ? targetEwh / (targetEwh + targetBreakdown) : 0;
+      const maActual =
+        actualEwh + actualBreakdown > 0
+          ? actualEwh / (actualEwh + actualBreakdown)
+          : 0;
+      const maTarget =
+        targetEwh + targetBreakdown > 0
+          ? targetEwh / (targetEwh + targetBreakdown)
+          : 0;
       const maPercent = maTarget > 0 ? (maActual / maTarget) * 100 : 0;
 
       // Hitung UA: EWH / (EWH + Standby Time)
-      const uaActual = (actualEwh + actualStandby) > 0 ? actualEwh / (actualEwh + actualStandby) : 0;
-      const uaTarget = (targetEwh + targetStandby) > 0 ? targetEwh / (targetEwh + targetStandby) : 0;
+      const uaActual =
+        actualEwh + actualStandby > 0
+          ? actualEwh / (actualEwh + actualStandby)
+          : 0;
+      const uaTarget =
+        targetEwh + targetStandby > 0
+          ? targetEwh / (targetEwh + targetStandby)
+          : 0;
       const uaPercent = uaTarget > 0 ? (uaActual / uaTarget) * 100 : 0;
 
       // Hitung EU: EWH / MOHH
@@ -1984,36 +2348,44 @@ export class DashboardService {
       return [
         {
           title: 'PA',
-          data: [{
-            target: Math.round(paTarget * 100) / 100,
-            actual: Math.round(paActual * 100) / 100,
-            percent: Math.round(paPercent * 100) / 100
-          }]
+          data: [
+            {
+              target: Math.round(paTarget * 100) / 100,
+              actual: Math.round(paActual * 100) / 100,
+              percent: Math.round(paPercent * 100) / 100,
+            },
+          ],
         },
         {
           title: 'MA',
-          data: [{
-            target: Math.round(maTarget * 100) / 100,
-            actual: Math.round(maActual * 100) / 100,
-            percent: Math.round(maPercent * 100) / 100
-          }]
+          data: [
+            {
+              target: Math.round(maTarget * 100) / 100,
+              actual: Math.round(maActual * 100) / 100,
+              percent: Math.round(maPercent * 100) / 100,
+            },
+          ],
         },
         {
           title: 'UA',
-          data: [{
-            target: Math.round(uaTarget * 100) / 100,
-            actual: Math.round(uaActual * 100) / 100,
-            percent: Math.round(uaPercent * 100) / 100
-          }]
+          data: [
+            {
+              target: Math.round(uaTarget * 100) / 100,
+              actual: Math.round(uaActual * 100) / 100,
+              percent: Math.round(uaPercent * 100) / 100,
+            },
+          ],
         },
         {
           title: 'EU',
-          data: [{
-            target: Math.round(euTarget * 100) / 100,
-            actual: Math.round(euActual * 100) / 100,
-            percent: Math.round(euPercent * 100) / 100
-          }]
-        }
+          data: [
+            {
+              target: Math.round(euTarget * 100) / 100,
+              actual: Math.round(euActual * 100) / 100,
+              percent: Math.round(euPercent * 100) / 100,
+            },
+          ],
+        },
       ];
     } catch (error) {
       console.error('Error calculating tables data:', error);
@@ -2021,7 +2393,7 @@ export class DashboardService {
         { title: 'PA', data: [{ target: 0, actual: 0, percent: 0 }] },
         { title: 'MA', data: [{ target: 0, actual: 0, percent: 0 }] },
         { title: 'UA', data: [{ target: 0, actual: 0, percent: 0 }] },
-        { title: 'EU', data: [{ target: 0, actual: 0, percent: 0 }] }
+        { title: 'EU', data: [{ target: 0, actual: 0, percent: 0 }] },
       ];
     }
   }
@@ -2041,20 +2413,26 @@ export class DashboardService {
       }
 
       // Get target barge (count of shipment from r_input_barge)
-      const targetBargeQuery = await this.dataSource.query(`
+      const targetBargeQuery = await this.dataSource.query(
+        `
         SELECT COUNT(DISTINCT rib.shipment) as target_barge
         FROM r_input_barge rib
         WHERE rib.start_loading BETWEEN $1 AND $2
           AND rib."deletedAt" IS NULL
-      `, [startDate, endDate]);
+      `,
+        [startDate, endDate],
+      );
 
       // Get actual barge (count of barge from r_input_barge)
-      const actualBargeQuery = await this.dataSource.query(`
+      const actualBargeQuery = await this.dataSource.query(
+        `
         SELECT COUNT(DISTINCT rib.barge_id) as actual_barge
         FROM r_input_barge rib
         WHERE rib.start_loading BETWEEN $1 AND $2
           AND rib."deletedAt" IS NULL
-      `, [startDate, endDate]);
+      `,
+        [startDate, endDate],
+      );
 
       return {
         targetBarge: parseInt(targetBargeQuery[0]?.target_barge || '0'),
@@ -2072,22 +2450,28 @@ export class DashboardService {
   private async getTonnageData(startDate: string, endDate: string) {
     try {
       // Get target tonnage (sum of capacity from m_barge joined with r_input_barge)
-      const targetTonnageQuery = await this.dataSource.query(`
+      const targetTonnageQuery = await this.dataSource.query(
+        `
         SELECT COALESCE(SUM(mb.capacity), 0) as target_tonnage
         FROM r_input_barge rib
         JOIN m_barge mb ON rib.barge_id = mb.id
         WHERE rib.start_loading BETWEEN $1 AND $2
           AND rib."deletedAt" IS NULL
           AND mb."deletedAt" IS NULL
-      `, [startDate, endDate]);
+      `,
+        [startDate, endDate],
+      );
 
       // Get actual tonnage (sum of vol_by_survey from r_input_barge)
-      const actualTonnageQuery = await this.dataSource.query(`
+      const actualTonnageQuery = await this.dataSource.query(
+        `
         SELECT COALESCE(SUM(rib.vol_by_survey), 0) as actual_tonnage
         FROM r_input_barge rib
         WHERE rib.start_loading BETWEEN $1 AND $2
           AND rib."deletedAt" IS NULL
-      `, [startDate, endDate]);
+      `,
+        [startDate, endDate],
+      );
 
       return {
         targetTonnage: parseFloat(targetTonnageQuery[0]?.target_tonnage || '0'),
@@ -2105,17 +2489,21 @@ export class DashboardService {
   private async getGainLostData(startDate: string, endDate: string) {
     try {
       // Get Target from r_plan_production (ore_target)
-      const targetQuery = await this.dataSource.query(`
+      const targetQuery = await this.dataSource.query(
+        `
         SELECT COALESCE(SUM(pp.ore_target), 0) as target_value
         FROM r_plan_production pp
         WHERE pp.plan_date BETWEEN $1 AND $2
           AND pp."deletedAt" IS NULL
-      `, [startDate, endDate]);
+      `,
+        [startDate, endDate],
+      );
 
       const target = parseFloat(targetQuery[0]?.target_value || '0');
 
       // Get Actual from Summary Production (ore hauling tonnage)
-      const actualQuery = await this.dataSource.query(`
+      const actualQuery = await this.dataSource.query(
+        `
         SELECT COALESCE(SUM(
           CASE 
             WHEN mp.tyre_type = '6x4' THEN rbdp.total_vessel * 26.56
@@ -2130,54 +2518,63 @@ export class DashboardService {
           AND rbdp.activity = 'hauling'
           AND rpbdp.activity_date BETWEEN $1 AND $2
           AND rbdp."deletedAt" IS NULL
-      `, [startDate, endDate]);
+      `,
+        [startDate, endDate],
+      );
 
       const actual = parseFloat(actualQuery[0]?.actual_value || '0');
 
       // Calculate PDTY
-      const pdtyData = await this.calculatePDTY(startDate, endDate, target, actual);
-      
+      const pdtyData = await this.calculatePDTY(
+        startDate,
+        endDate,
+        target,
+        actual,
+      );
+
       // Calculate PA
       const paData = await this.calculatePA(startDate, endDate);
-      
+
       // Calculate UA
-      const uaValue = -Math.abs((target + paData.value + pdtyData.value) - actual);
+      const uaValue = -Math.abs(
+        target + paData.value + pdtyData.value - actual,
+      );
 
       return [
-        { 
-          name: 'Target', 
-          value: Math.round(target), 
-          type: 'increase', 
-          base: 0, 
-          height: Math.round(target) 
+        {
+          name: 'Target',
+          value: Math.round(target),
+          type: 'increase',
+          base: 0,
+          height: Math.round(target),
         },
-        { 
-          name: 'PDTY', 
-          value: Math.round(pdtyData.value), 
-          type: 'increase', 
-          base: Math.round(target), 
-          height: Math.round(pdtyData.value) 
+        {
+          name: 'PDTY',
+          value: Math.round(pdtyData.value),
+          type: 'increase',
+          base: Math.round(target),
+          height: Math.round(pdtyData.value),
         },
-        { 
-          name: 'PA', 
-          value: Math.round(paData.value), 
-          type: 'increase', 
-          base: Math.round(target + pdtyData.value), 
-          height: Math.round(paData.value) 
+        {
+          name: 'PA',
+          value: Math.round(paData.value),
+          type: 'increase',
+          base: Math.round(target + pdtyData.value),
+          height: Math.round(paData.value),
         },
-        { 
-          name: 'UA', 
-          value: Math.round(uaValue), 
-          type: 'decrease', 
-          base: Math.round(target + pdtyData.value + paData.value), 
-          height: Math.abs(Math.round(uaValue)) 
+        {
+          name: 'UA',
+          value: Math.round(uaValue),
+          type: 'decrease',
+          base: Math.round(target + pdtyData.value + paData.value),
+          height: Math.abs(Math.round(uaValue)),
         },
-        { 
-          name: 'Actual', 
-          value: Math.round(actual), 
-          type: 'total', 
-          base: 0, 
-          height: Math.round(actual) 
+        {
+          name: 'Actual',
+          value: Math.round(actual),
+          type: 'total',
+          base: 0,
+          height: Math.round(actual),
         },
       ];
     } catch (error) {
@@ -2199,10 +2596,16 @@ export class DashboardService {
    * PDTYplan = (Planplan)/(EWHplan)
    * PDTYactual = (Planactual)/(EWHactual)
    */
-  private async calculatePDTY(startDate: string, endDate: string, planPlan: number, planActual: number) {
+  private async calculatePDTY(
+    startDate: string,
+    endDate: string,
+    planPlan: number,
+    planActual: number,
+  ) {
     try {
       // Get EWHplan from r_plan_working_hours
-      const ewhPlanQuery = await this.dataSource.query(`
+      const ewhPlanQuery = await this.dataSource.query(
+        `
         SELECT COALESCE(SUM(
           pwh.mohh_per_month - COALESCE(SUM(
             CASE 
@@ -2219,19 +2622,24 @@ export class DashboardService {
         LEFT JOIN m_activities a ON a.id = pwhd.activities_id
         WHERE ppwh.plan_date BETWEEN $1 AND $2
         GROUP BY pwh.mohh_per_month
-      `, [startDate, endDate]);
+      `,
+        [startDate, endDate],
+      );
 
       const ewhPlan = parseFloat(ewhPlanQuery[0]?.ewh_plan || '0');
 
       // Get EWHactual from Control Day Production
-      const ewhActualQuery = await this.dataSource.query(`
+      const ewhActualQuery = await this.dataSource.query(
+        `
         SELECT COALESCE(AVG(rbdp.totalHM), 0) as ewh_actual
         FROM r_parent_base_data_pro rpbdp
         JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
         WHERE rpbdp.activity_date BETWEEN $1 AND $2
           AND rbdp.totalHM > 0
           AND rbdp.deletedAt IS NULL
-      `, [startDate, endDate]);
+      `,
+        [startDate, endDate],
+      );
 
       const ewhActual = parseFloat(ewhActualQuery[0]?.ewh_actual || '0');
 
@@ -2258,7 +2666,8 @@ export class DashboardService {
   private async calculatePA(startDate: string, endDate: string) {
     try {
       // Get PAplan (Total Repair from plan working hours)
-      const paPlanQuery = await this.dataSource.query(`
+      const paPlanQuery = await this.dataSource.query(
+        `
         SELECT COALESCE(SUM(pwhd.activities_hour), 0) as pa_plan
         FROM r_parent_plan_working_hour ppwh
         LEFT JOIN r_plan_working_hour pwh ON pwh.parent_plan_working_hour_id = ppwh.id
@@ -2266,12 +2675,15 @@ export class DashboardService {
         LEFT JOIN m_activities a ON a.id = pwhd.activities_id
         WHERE ppwh.plan_date BETWEEN $1 AND $2
           AND a.status = 'breakdown'
-      `, [startDate, endDate]);
+      `,
+        [startDate, endDate],
+      );
 
       const paPlan = parseFloat(paPlanQuery[0]?.pa_plan || '0');
 
       // Get PAactual (Average EWH duration by unit)
-      const paActualQuery = await this.dataSource.query(`
+      const paActualQuery = await this.dataSource.query(
+        `
         SELECT COALESCE(AVG(unit_ewh.total_ewh), 0) as pa_actual
         FROM (
           SELECT SUM(rbdp.totalHM) as total_ewh
@@ -2282,33 +2694,41 @@ export class DashboardService {
             AND rbdp.deletedAt IS NULL
           GROUP BY rpbdp.population_id
         ) as unit_ewh
-      `, [startDate, endDate]);
+      `,
+        [startDate, endDate],
+      );
 
       const paActual = parseFloat(paActualQuery[0]?.pa_actual || '0');
 
       // Calculate PA values
       const paGainLoss = Math.abs(paPlan - paActual);
-      
+
       // Get PDTYplan for calculation
-      const pdtyPlanQuery = await this.dataSource.query(`
+      const pdtyPlanQuery = await this.dataSource.query(
+        `
         SELECT COALESCE(SUM(pp.ore_target), 0) as plan_plan
         FROM r_plan_production pp
         WHERE pp.plan_date BETWEEN $1 AND $2
           AND pp."deletedAt" IS NULL
-      `, [startDate, endDate]);
+      `,
+        [startDate, endDate],
+      );
 
       const planPlan = parseFloat(pdtyPlanQuery[0]?.plan_plan || '0');
 
-      const ewhPlanQuery = await this.dataSource.query(`
+      const ewhPlanQuery = await this.dataSource.query(
+        `
         SELECT COALESCE(SUM(pwh.mohh_per_month), 0) as ewh_plan
         FROM r_parent_plan_working_hour ppwh
         LEFT JOIN r_plan_working_hour pwh ON pwh.parent_plan_working_hour_id = ppwh.id
         WHERE ppwh.plan_date BETWEEN $1 AND $2
-      `, [startDate, endDate]);
+      `,
+        [startDate, endDate],
+      );
 
       const ewhPlan = parseFloat(ewhPlanQuery[0]?.ewh_plan || '0');
       const pdtyPlan = ewhPlan > 0 ? planPlan / ewhPlan : 0;
-      
+
       const paValue = pdtyPlan * paGainLoss;
 
       return { value: paValue };
@@ -2317,5 +2737,4 @@ export class DashboardService {
       return { value: 0 };
     }
   }
-
 }

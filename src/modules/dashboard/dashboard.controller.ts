@@ -270,9 +270,7 @@ export class DashboardController {
     description: 'Successfully retrieved barge list data',
     type: BargeListResponseDto,
   })
-  async getBargeList(
-    @Query('month') month?: string,
-  ) {
+  async getBargeList(@Query('month') month?: string) {
     return await this.dashboardService.getBargeList(month);
   }
 
@@ -296,7 +294,6 @@ export class DashboardController {
   async getBargeStatus(@Query('month') month?: string) {
     return await this.dashboardService.getBargeStatus(month);
   }
-
 
   @Get('monthly/status')
   @ApiOperation({
@@ -447,8 +444,11 @@ export class DashboardController {
     description: 'Successfully retrieved CCR barging summary data',
     type: BargingSummaryResponseDto,
   })
-  async getBargingSummary(): Promise<BargingSummaryResponseDto> {
-    return await this.dashboardService.getMockBargingSummary();
+  @ApiQuery({ name: 'date', type: String, example: '2025-09-01' })
+  async getBargingSummary(
+    @Query('date') date: string,
+  ): Promise<BargingSummaryResponseDto> {
+    return await this.dashboardService.getMockBargingSummary(date);
   }
 
   @Get('ccr/activiies')
@@ -468,7 +468,8 @@ export class DashboardController {
   @Get('lost-time-summary')
   @ApiOperation({
     summary: 'Get lost time summary data',
-    description: 'Retrieve lost time summary data with MOHH, lost time activities, and performance tables (PA, MA, UA, EU)',
+    description:
+      'Retrieve lost time summary data with MOHH, lost time activities, and performance tables (PA, MA, UA, EU)',
   })
   @ApiQuery({
     name: 'startDate',

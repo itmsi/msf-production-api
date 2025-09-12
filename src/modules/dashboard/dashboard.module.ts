@@ -19,8 +19,8 @@ import { ParentPlanWorkingHour } from '../plan-working-hour/entities/parent-plan
       BaseDataPro,
       EffectiveWorkingHours,
       Activities,
-      ParentPlanWorkingHour
-    ])
+      ParentPlanWorkingHour,
+    ]),
   ],
   controllers: [DashboardController],
   providers: [DashboardService, FormulaService, ProductionFormulaService],
