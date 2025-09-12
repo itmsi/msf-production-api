@@ -46,8 +46,10 @@ Dashboard module menyediakan berbagai endpoint untuk menampilkan data dashboard 
 
 ### 8. Barge List
 - **GET** `/api/dashboard/barge-list`
-- **Description**: Mengambil daftar barge dan detail kapasitas
-- **Response**: Object dengan list barge dan detail kapasitas
+- **Description**: Mengambil daftar barge dan detail kapasitas dengan filter bulan
+- **Query Parameters**: 
+  - `month` (string, optional): Filter berdasarkan bulan dalam format YYYY-MM (contoh: 2025-09)
+- **Response**: Object dengan list barge dan detail kapasitas, diurutkan berdasarkan start_loading DESC (terbaru)
 
 ### 9. Barge Status
 - **GET** `/api/dashboard/barge-status`

@@ -678,12 +678,22 @@ export class DashboardService {
     }
   }
 
-  async getBargeList() {
+  async getBargeList(month?: string) {
     try {
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
 
+      // Build WHERE clause untuk filter bulan
+      let whereClause = 'WHERE rib."deletedAt" IS NULL AND mb."deletedAt" IS NULL';
+      if (month) {
+        // Format month: YYYY-MM, kita perlu filter berdasarkan bulan dan tahun
+        const year = month.split('-')[0];
+        const monthNum = month.split('-')[1];
+        whereClause += ` AND EXTRACT(YEAR FROM rib.start_loading) = ${year} AND EXTRACT(MONTH FROM rib.start_loading) = ${monthNum}`;
+      }
+
       // Query untuk mendapatkan list barge dengan join r_input_barge dan m_barge
+      // Order by start_loading DESC untuk mendapatkan data terbaru
       const listQuery = `
         SELECT 
           mb.name as barge_name,
@@ -697,13 +707,13 @@ export class DashboardService {
           rib.remarks
         FROM r_input_barge rib
         JOIN m_barge mb ON rib.barge_id = mb.id
-        WHERE rib."deletedAt" IS NULL AND mb."deletedAt" IS NULL
-        ORDER BY rib.start_loading ASC
+        ${whereClause}
+        ORDER BY rib.start_loading DESC
       `;
 
       const listData = await queryRunner.query(listQuery);
 
-      // Query untuk mendapatkan summary details
+      // Query untuk mendapatkan summary details dengan filter yang sama
       const summaryQuery = `
         SELECT 
           SUM(mb.capacity) as total_capacity,
@@ -712,7 +722,7 @@ export class DashboardService {
           SUM(rib.achievment) as total_acv
         FROM r_input_barge rib
         JOIN m_barge mb ON rib.barge_id = mb.id
-        WHERE rib."deletedAt" IS NULL AND mb."deletedAt" IS NULL
+        ${whereClause}
       `;
 
       const summaryData = await queryRunner.query(summaryQuery);
@@ -720,7 +730,7 @@ export class DashboardService {
 
       await queryRunner.release();
 
-      // Format response data
+      // Format response data sesuai spesifikasi
       const formattedList = listData.map(item => ({
         barge_name: item.barge_name || '',
         start_loading: item.start_loading ? new Date(item.start_loading).toISOString().slice(0, 16).replace('T', ' ') : '',
@@ -739,15 +749,28 @@ export class DashboardService {
         data: {
           list: formattedList,
           details: [
-            { title: 'Capacity', value: summary.total_capacity || 0 },
-            { title: 'Vessel', value: summary.total_vessel || 0 },
-            { title: 'Vol By Draft', value: summary.total_vol_by_draft || 0 },
-            { title: 'ACV', value: summary.total_acv || 0 },
+            {
+              title: 'Capacity',
+              value: summary.total_capacity || 0,
+            },
+            {
+              title: 'Vessel',
+              value: summary.total_vessel || 0,
+            },
+            {
+              title: 'Vol By Draft',
+              value: summary.total_vol_by_draft || 0,
+            },
+            {
+              title: 'ACV',
+              value: summary.total_acv || 0,
+            },
           ],
         },
       };
     } catch (error) {
-      throw new BadRequestException(`Error getting barge list data: ${error.message}`);
+      console.error('Error in getBargeList:', error);
+      throw error;
     }
   }
 

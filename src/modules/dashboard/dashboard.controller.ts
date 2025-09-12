@@ -245,15 +245,23 @@ export class DashboardController {
   @Get('barge-list')
   @ApiOperation({
     summary: 'Get barge list',
-    description: 'Retrieve barge list and capacity details',
+    description: 'Retrieve barge list and capacity details with month filter',
+  })
+  @ApiQuery({
+    name: 'month',
+    required: false,
+    description: 'Filter by month in YYYY-MM format (e.g., 2025-09)',
+    example: '2025-09',
   })
   @ApiResponse({
     status: 200,
     description: 'Successfully retrieved barge list data',
     type: BargeListResponseDto,
   })
-  async getBargeList() {
-    return await this.dashboardService.getBargeList();
+  async getBargeList(
+    @Query('month') month?: string,
+  ) {
+    return await this.dashboardService.getBargeList(month);
   }
 
   @Get('barge-status')
