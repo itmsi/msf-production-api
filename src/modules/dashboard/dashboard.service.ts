@@ -5,6 +5,8 @@ import { FormulaService } from '../../common/services/formula.service';
 import { ProductionFormulaService } from '../../common/services/production-formula.service';
 import { BargingSummaryResponseDto, CcrActivitesResponseDto, FleetStatusResponseDto, HaulingSummaryResponseDto, TonnageResponseDto } from './dto/ccr-dashboard.dto';
 import { HaulingResponseDto } from './dto/dashboard.dto';
+import { BargeForm } from '../barge-form/entities/barge-form.entity';
+import { Barge } from '../barge/entities/barge.entity';
 
 @Injectable()
 export class DashboardService {
@@ -674,31 +676,76 @@ export class DashboardService {
   }
 
   async getBargeList() {
-    return {
-      statusCode: 200,
-      message: 'success',
-      data: {
-        list: [
-          {
-            barge_name: 'Barge Alpha',
-            start_loading: '2025-09-01 08:00',
-            finish_load: '2025-09-01 14:30',
-            capacity: 12000,
-            total_vessel: 1,
-            vol_by_draft: 11800,
-            capacity_per_dt: 95,
-            acv: 92,
-            remarks: 'Smooth operation',
-          },
-        ],
-        details: [
-          { title: 'Capacity', value: 130000 },
-          { title: 'Vessel', value: 3100 },
-          { title: 'Vol By Draft', value: 123123 },
-          { title: 'ACV', value: 500 },
-        ],
-      },
-    };
+    try {
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+
+      // Query untuk mendapatkan list barge dengan join r_input_barge dan m_barge
+      const listQuery = `
+        SELECT 
+          mb.name as barge_name,
+          rib.start_loading,
+          rib.end_loading as finish_load,
+          mb.capacity,
+          rib.total_vessel,
+          rib.vol_by_survey as vol_by_draft,
+          rib.capacity_per_dt,
+          rib.achievment as acv,
+          rib.remarks
+        FROM r_input_barge rib
+        JOIN m_barge mb ON rib.barge_id = mb.id
+        WHERE rib."deletedAt" IS NULL AND mb."deletedAt" IS NULL
+        ORDER BY rib.start_loading ASC
+      `;
+
+      const listData = await queryRunner.query(listQuery);
+
+      // Query untuk mendapatkan summary details
+      const summaryQuery = `
+        SELECT 
+          SUM(mb.capacity) as total_capacity,
+          SUM(rib.total_vessel) as total_vessel,
+          SUM(rib.vol_by_survey) as total_vol_by_draft,
+          SUM(rib.achievment) as total_acv
+        FROM r_input_barge rib
+        JOIN m_barge mb ON rib.barge_id = mb.id
+        WHERE rib."deletedAt" IS NULL AND mb."deletedAt" IS NULL
+      `;
+
+      const summaryData = await queryRunner.query(summaryQuery);
+      const summary = summaryData[0];
+
+      await queryRunner.release();
+
+      // Format response data
+      const formattedList = listData.map(item => ({
+        barge_name: item.barge_name || '',
+        start_loading: item.start_loading ? new Date(item.start_loading).toISOString().slice(0, 16).replace('T', ' ') : '',
+        finish_load: item.finish_load ? new Date(item.finish_load).toISOString().slice(0, 16).replace('T', ' ') : '',
+        capacity: item.capacity || 0,
+        total_vessel: item.total_vessel || 0,
+        vol_by_draft: item.vol_by_draft || 0,
+        capacity_per_dt: item.capacity_per_dt || 0,
+        acv: item.acv || 0,
+        remarks: item.remarks || '',
+      }));
+
+      return {
+        statusCode: 200,
+        message: 'success',
+        data: {
+          list: formattedList,
+          details: [
+            { title: 'Capacity', value: summary.total_capacity || 0 },
+            { title: 'Vessel', value: summary.total_vessel || 0 },
+            { title: 'Vol By Draft', value: summary.total_vol_by_draft || 0 },
+            { title: 'ACV', value: summary.total_acv || 0 },
+          ],
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException(`Error getting barge list data: ${error.message}`);
+    }
   }
 
   async getBargeStatus() {
