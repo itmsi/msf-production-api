@@ -35,7 +35,6 @@ async function bootstrap() {
     .addTag('Population', 'Population management endpoints')
     .addTag('Base Data Production', 'Base data production management endpoints')
     .addTag('Control MTD Production', 'Controlling Month to Date Production')
-    .addTag('CCR Dashboard','Dashboard for CCR')
     .addBearerAuth(
       {
         type: 'http',

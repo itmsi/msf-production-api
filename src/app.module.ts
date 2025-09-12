@@ -37,7 +37,6 @@ import { MtdProductionModule } from './modules/control-production/mtd-production
 import { AnalysisHaulingBargingModule } from './modules/analysis-hauling-barging/analysis-hauling-barging.module';
 import { MtdWorkHourModule } from './modules/mtd-work-hour/mtd-work-hour.module';
 import { ControlDayWorkHourModule } from './modules/control-day-work-hour/control-day-work-hour.module';
-import { CcrDashboardModule } from './modules/ccr/ccr-dashboard.module';
 import { S3Module } from './integrations/s3/s3.module';
 import { SshTunnelService } from './common/services/ssh-tunnel.service';
 
@@ -118,7 +117,6 @@ import { SshTunnelService } from './common/services/ssh-tunnel.service';
     AnalysisHaulingBargingModule,
     MtdWorkHourModule,
     ControlDayWorkHourModule,
-    CcrDashboardModule,
     S3Module,
   ],
   providers: [],

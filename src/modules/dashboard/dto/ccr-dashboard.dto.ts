@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 
+
 class AttendanceItem {
   @ApiProperty()
   name: string;
@@ -52,7 +53,7 @@ export class AttendanceSummaryDto {
   working_hour: WorkingHourItem[];
 }
 
-export class ResponseDto {
+export class HaulingSummaryResponseDto {
   @ApiProperty()
   statusCode: number;
 

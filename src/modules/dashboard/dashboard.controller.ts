@@ -17,6 +17,7 @@ import {
   TrendFuelRatioResponseDto,
   TrendPerformanceUnitResponseDto,
 } from './dto/dashboard.dto';
+import { BargingSummaryResponseDto, CcrActivitesResponseDto, FleetStatusResponseDto, HaulingSummaryResponseDto, TonnageResponseDto } from './dto/ccr-dashboard.dto';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth('jwt')
@@ -140,5 +141,30 @@ export class DashboardController {
   @ApiResponse({ status: 200, description: 'Successfully retrieved summary production data' })
   async getSummaryProduction() {
     return this.dashboardService.getSummaryProduction();
+  }
+
+  @Get('hauling-summary')
+  async getHaulingSummary(): Promise<HaulingSummaryResponseDto> {
+    return this.dashboardService.getHMockaulingSummary();
+  }
+
+  @Get('/ccr/fleet-status')
+  async getFleetStatus(): Promise<FleetStatusResponseDto>{ 
+    return this.dashboardService.getMockFleetStatus();
+  }
+
+  @Get('/ccr/tonnage')
+  async getTonnage(): Promise<TonnageResponseDto>{ 
+    return this.dashboardService.getMockTonnage();
+  }
+
+  @Get('/ccr/barging-summary')
+  async getBargingSumary(): Promise<BargingSummaryResponseDto> {
+    return this.dashboardService.getMockBargingSummary();
+  }
+
+  @Get('/ccr/activitiies')
+  async getAcitivites(): Promise<CcrActivitesResponseDto> {
+    return this.dashboardService.getMockActivities();
   }
 }
