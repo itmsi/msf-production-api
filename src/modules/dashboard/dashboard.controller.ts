@@ -282,13 +282,19 @@ export class DashboardController {
     description:
       'Retrieve barge status with barging ore, list, and gain lost data',
   })
+  @ApiQuery({
+    name: 'month',
+    required: false,
+    description: 'Month in YYYY-MM format (e.g., 2025-01)',
+    example: '2025-01',
+  })
   @ApiResponse({
     status: 200,
     description: 'Successfully retrieved barge status data',
     type: BargeStatusResponseDto,
   })
-  async getBargeStatus() {
-    return await this.dashboardService.getBargeStatus();
+  async getBargeStatus(@Query('month') month?: string) {
+    return await this.dashboardService.getBargeStatus(month);
   }
 
 

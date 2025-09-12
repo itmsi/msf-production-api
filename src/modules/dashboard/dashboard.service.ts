@@ -229,26 +229,6 @@ export class DashboardService {
     }
   }
 
-  async getBargeData(startDate?: string, endDate?: string) {
-    try {
-      // Menggunakan formula terpusat dari ProductionFormulaService
-      const data = await this.productionFormulaService.getDailyBargeHaulingData(startDate, endDate);
-      
-      return {
-        statusCode: 200,
-        message: 'success',
-        data: data,
-      };
-    } catch (error) {
-      console.error('Error in getBargeData:', error);
-      return {
-        statusCode: 500,
-        message: 'Error retrieving barge data',
-        error: error.message
-      };
-    }
-  }
-
   async getTmmDebug() {
     try {
       const queryRunner = this.dataSource.createQueryRunner();
@@ -774,36 +754,75 @@ export class DashboardService {
     }
   }
 
-  async getBargeStatus() {
-    return {
-      statusCode: 200,
-      message: 'success',
-      data: {
-        barging_ore: [
-          {
-            name: 'progress',
-            value: 10,
-            fill: '#3BAF9F',
-          },
-        ],
-        list: [
-          {
-            variable: 'Barge',
-            target: 100,
-            actual: 90,
-            dev: 6,
-            percent: 12,
-          },
-        ],
-        gain_lost: [
-          { name: 'Target', value: 9000, type: 'increase', base: 0, height: 9000 },
-          { name: 'PDTY', value: 1000, type: 'increase', base: 9000, height: 1000 },
-          { name: 'PA', value: 1500, type: 'increase', base: 10000, height: 1500 },
-          { name: 'UA', value: -2000, type: 'decrease', base: 11500, height: 2000 },
-          { name: 'Actual', value: 9500, type: 'total', base: 0, height: 9500 },
-        ],
-      },
-    };
+  async getBargeStatus(month?: string) {
+    try {
+      // Default to current month if not provided
+      const targetMonth = month || new Date().toISOString().slice(0, 7); // YYYY-MM format
+      
+      // Parse month to get start and end date
+      const [year, monthNum] = targetMonth.split('-').map(Number);
+      const startDate = new Date(year, monthNum - 1, 1);
+      const endDate = new Date(year, monthNum, 0);
+      
+      const startDateStr = startDate.toISOString().split('T')[0];
+      const endDateStr = endDate.toISOString().split('T')[0];
+
+      // Get barge data from r_input_barge and m_barge
+      const bargeData = await this.getBargeData(startDateStr, endDateStr);
+      
+      // Get tonnage data
+      const tonnageData = await this.getTonnageData(startDateStr, endDateStr);
+      
+      // Calculate barging ore progress (actual tonnage / plan tonnage)
+      const bargingOreProgress = tonnageData.actualTonnage > 0 && tonnageData.targetTonnage > 0 
+        ? Math.min(Math.round((tonnageData.actualTonnage / tonnageData.targetTonnage) * 100), 100)
+        : 0;
+
+      // Get gain/lost data
+      const gainLostData = await this.getGainLostData(startDateStr, endDateStr);
+
+      return {
+        statusCode: 200,
+        message: 'success',
+        data: {
+          barging_ore: [
+            {
+              name: 'progress',
+              value: bargingOreProgress,
+              fill: '#3BAF9F',
+            },
+          ],
+          list: [
+            {
+              variable: 'Barge',
+              target: bargeData.targetBarge,
+              actual: bargeData.actualBarge,
+              dev: bargeData.targetBarge - bargeData.actualBarge,
+              percent: bargeData.actualBarge > 0 && bargeData.targetBarge > 0 
+                ? Math.round((bargeData.actualBarge / bargeData.targetBarge) * 100)
+                : 0,
+            },
+            {
+              variable: 'Tonnage',
+              target: tonnageData.targetTonnage,
+              actual: tonnageData.actualTonnage,
+              dev: tonnageData.targetTonnage - tonnageData.actualTonnage,
+              percent: tonnageData.actualTonnage > 0 && tonnageData.targetTonnage > 0 
+                ? Math.min(Math.round((tonnageData.actualTonnage / tonnageData.targetTonnage) * 100), 100)
+                : 0,
+            },
+          ],
+          gain_lost: gainLostData,
+        },
+      };
+    } catch (error) {
+      console.error('Error in getBargeStatus:', error);
+      return {
+        statusCode: 500,
+        message: 'Internal server error',
+        error: error.message,
+      };
+    }
   }
 
 
@@ -2004,6 +2023,298 @@ export class DashboardService {
         { title: 'UA', data: [{ target: 0, actual: 0, percent: 0 }] },
         { title: 'EU', data: [{ target: 0, actual: 0, percent: 0 }] }
       ];
+    }
+  }
+
+  /**
+   * Get barge data from r_input_barge and m_barge tables
+   */
+  async getBargeData(startDate?: string, endDate?: string) {
+    try {
+      // Default to current month if dates not provided
+      if (!startDate || !endDate) {
+        const now = new Date();
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        startDate = firstDay.toISOString().split('T')[0];
+        endDate = lastDay.toISOString().split('T')[0];
+      }
+
+      // Get target barge (count of shipment from r_input_barge)
+      const targetBargeQuery = await this.dataSource.query(`
+        SELECT COUNT(DISTINCT rib.shipment) as target_barge
+        FROM r_input_barge rib
+        WHERE rib.start_loading BETWEEN $1 AND $2
+          AND rib."deletedAt" IS NULL
+      `, [startDate, endDate]);
+
+      // Get actual barge (count of barge from r_input_barge)
+      const actualBargeQuery = await this.dataSource.query(`
+        SELECT COUNT(DISTINCT rib.barge_id) as actual_barge
+        FROM r_input_barge rib
+        WHERE rib.start_loading BETWEEN $1 AND $2
+          AND rib."deletedAt" IS NULL
+      `, [startDate, endDate]);
+
+      return {
+        targetBarge: parseInt(targetBargeQuery[0]?.target_barge || '0'),
+        actualBarge: parseInt(actualBargeQuery[0]?.actual_barge || '0'),
+      };
+    } catch (error) {
+      console.error('Error getting barge data:', error);
+      return { targetBarge: 0, actualBarge: 0 };
+    }
+  }
+
+  /**
+   * Get tonnage data from r_input_barge and m_barge tables
+   */
+  private async getTonnageData(startDate: string, endDate: string) {
+    try {
+      // Get target tonnage (sum of capacity from m_barge joined with r_input_barge)
+      const targetTonnageQuery = await this.dataSource.query(`
+        SELECT COALESCE(SUM(mb.capacity), 0) as target_tonnage
+        FROM r_input_barge rib
+        JOIN m_barge mb ON rib.barge_id = mb.id
+        WHERE rib.start_loading BETWEEN $1 AND $2
+          AND rib."deletedAt" IS NULL
+          AND mb."deletedAt" IS NULL
+      `, [startDate, endDate]);
+
+      // Get actual tonnage (sum of vol_by_survey from r_input_barge)
+      const actualTonnageQuery = await this.dataSource.query(`
+        SELECT COALESCE(SUM(rib.vol_by_survey), 0) as actual_tonnage
+        FROM r_input_barge rib
+        WHERE rib.start_loading BETWEEN $1 AND $2
+          AND rib."deletedAt" IS NULL
+      `, [startDate, endDate]);
+
+      return {
+        targetTonnage: parseFloat(targetTonnageQuery[0]?.target_tonnage || '0'),
+        actualTonnage: parseFloat(actualTonnageQuery[0]?.actual_tonnage || '0'),
+      };
+    } catch (error) {
+      console.error('Error getting tonnage data:', error);
+      return { targetTonnage: 0, actualTonnage: 0 };
+    }
+  }
+
+  /**
+   * Get gain/lost data with PDTY, PA, and UA calculations
+   */
+  private async getGainLostData(startDate: string, endDate: string) {
+    try {
+      // Get Target from r_plan_production (ore_target)
+      const targetQuery = await this.dataSource.query(`
+        SELECT COALESCE(SUM(pp.ore_target), 0) as target_value
+        FROM r_plan_production pp
+        WHERE pp.plan_date BETWEEN $1 AND $2
+          AND pp."deletedAt" IS NULL
+      `, [startDate, endDate]);
+
+      const target = parseFloat(targetQuery[0]?.target_value || '0');
+
+      // Get Actual from Summary Production (ore hauling tonnage)
+      const actualQuery = await this.dataSource.query(`
+        SELECT COALESCE(SUM(
+          CASE 
+            WHEN mp.tyre_type = '6x4' THEN rbdp.total_vessel * 26.56
+            WHEN mp.tyre_type = '8x4' THEN rbdp.total_vessel * 29.56
+            ELSE 0
+          END
+        ), 0) as actual_value
+        FROM r_parent_base_data_pro rpbdp
+        JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+        JOIN m_population mp ON rpbdp.population_id = mp.id
+        WHERE rbdp.material = 'ore'
+          AND rbdp.activity = 'hauling'
+          AND rpbdp.activity_date BETWEEN $1 AND $2
+          AND rbdp."deletedAt" IS NULL
+      `, [startDate, endDate]);
+
+      const actual = parseFloat(actualQuery[0]?.actual_value || '0');
+
+      // Calculate PDTY
+      const pdtyData = await this.calculatePDTY(startDate, endDate, target, actual);
+      
+      // Calculate PA
+      const paData = await this.calculatePA(startDate, endDate);
+      
+      // Calculate UA
+      const uaValue = -Math.abs((target + paData.value + pdtyData.value) - actual);
+
+      return [
+        { 
+          name: 'Target', 
+          value: Math.round(target), 
+          type: 'increase', 
+          base: 0, 
+          height: Math.round(target) 
+        },
+        { 
+          name: 'PDTY', 
+          value: Math.round(pdtyData.value), 
+          type: 'increase', 
+          base: Math.round(target), 
+          height: Math.round(pdtyData.value) 
+        },
+        { 
+          name: 'PA', 
+          value: Math.round(paData.value), 
+          type: 'increase', 
+          base: Math.round(target + pdtyData.value), 
+          height: Math.round(paData.value) 
+        },
+        { 
+          name: 'UA', 
+          value: Math.round(uaValue), 
+          type: 'decrease', 
+          base: Math.round(target + pdtyData.value + paData.value), 
+          height: Math.abs(Math.round(uaValue)) 
+        },
+        { 
+          name: 'Actual', 
+          value: Math.round(actual), 
+          type: 'total', 
+          base: 0, 
+          height: Math.round(actual) 
+        },
+      ];
+    } catch (error) {
+      console.error('Error getting gain/lost data:', error);
+      return [
+        { name: 'Target', value: 0, type: 'increase', base: 0, height: 0 },
+        { name: 'PDTY', value: 0, type: 'increase', base: 0, height: 0 },
+        { name: 'PA', value: 0, type: 'increase', base: 0, height: 0 },
+        { name: 'UA', value: 0, type: 'decrease', base: 0, height: 0 },
+        { name: 'Actual', value: 0, type: 'total', base: 0, height: 0 },
+      ];
+    }
+  }
+
+  /**
+   * Calculate PDTY (Production Efficiency)
+   * Formula: EWHplan x PDTYgain/loss
+   * PDTYgain/loss = ABS(PDTYplan - PDTYactual)
+   * PDTYplan = (Planplan)/(EWHplan)
+   * PDTYactual = (Planactual)/(EWHactual)
+   */
+  private async calculatePDTY(startDate: string, endDate: string, planPlan: number, planActual: number) {
+    try {
+      // Get EWHplan from r_plan_working_hours
+      const ewhPlanQuery = await this.dataSource.query(`
+        SELECT COALESCE(SUM(
+          pwh.mohh_per_month - COALESCE(SUM(
+            CASE 
+              WHEN a.status = 'delay' THEN pwhd.activities_hour
+              WHEN a.status = 'idle' THEN pwhd.activities_hour
+              WHEN a.status = 'breakdown' THEN pwhd.activities_hour
+              ELSE 0
+            END
+          ), 0)
+        ), 0) as ewh_plan
+        FROM r_parent_plan_working_hour ppwh
+        LEFT JOIN r_plan_working_hour pwh ON pwh.parent_plan_working_hour_id = ppwh.id
+        LEFT JOIN r_plan_working_hour_detail pwhd ON pwhd.plant_working_hour_id = pwh.id
+        LEFT JOIN m_activities a ON a.id = pwhd.activities_id
+        WHERE ppwh.plan_date BETWEEN $1 AND $2
+        GROUP BY pwh.mohh_per_month
+      `, [startDate, endDate]);
+
+      const ewhPlan = parseFloat(ewhPlanQuery[0]?.ewh_plan || '0');
+
+      // Get EWHactual from Control Day Production
+      const ewhActualQuery = await this.dataSource.query(`
+        SELECT COALESCE(AVG(rbdp.totalHM), 0) as ewh_actual
+        FROM r_parent_base_data_pro rpbdp
+        JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+        WHERE rpbdp.activity_date BETWEEN $1 AND $2
+          AND rbdp.totalHM > 0
+          AND rbdp.deletedAt IS NULL
+      `, [startDate, endDate]);
+
+      const ewhActual = parseFloat(ewhActualQuery[0]?.ewh_actual || '0');
+
+      // Calculate PDTY values
+      const pdtyPlan = ewhPlan > 0 ? planPlan / ewhPlan : 0;
+      const pdtyActual = ewhActual > 0 ? planActual / ewhActual : 0;
+      const pdtyGainLoss = Math.abs(pdtyPlan - pdtyActual);
+      const pdtyValue = ewhPlan * pdtyGainLoss;
+
+      return { value: pdtyValue };
+    } catch (error) {
+      console.error('Error calculating PDTY:', error);
+      return { value: 0 };
+    }
+  }
+
+  /**
+   * Calculate PA (Production Availability)
+   * Formula: PDTYplan x PAgain/loss
+   * PAgain/loss = ABS(PAplan - PAactual)
+   * PAplan = SUM(Daily Working Hour Plan["Total Repair"] by Filtered Range Date)
+   * PAactual = AVG((SUM(Effective Working Hour["Duration"] by Filtered Range Date))) / SUM(*) GROUP BY(Production["Unit"])
+   */
+  private async calculatePA(startDate: string, endDate: string) {
+    try {
+      // Get PAplan (Total Repair from plan working hours)
+      const paPlanQuery = await this.dataSource.query(`
+        SELECT COALESCE(SUM(pwhd.activities_hour), 0) as pa_plan
+        FROM r_parent_plan_working_hour ppwh
+        LEFT JOIN r_plan_working_hour pwh ON pwh.parent_plan_working_hour_id = ppwh.id
+        LEFT JOIN r_plan_working_hour_detail pwhd ON pwhd.plant_working_hour_id = pwh.id
+        LEFT JOIN m_activities a ON a.id = pwhd.activities_id
+        WHERE ppwh.plan_date BETWEEN $1 AND $2
+          AND a.status = 'breakdown'
+      `, [startDate, endDate]);
+
+      const paPlan = parseFloat(paPlanQuery[0]?.pa_plan || '0');
+
+      // Get PAactual (Average EWH duration by unit)
+      const paActualQuery = await this.dataSource.query(`
+        SELECT COALESCE(AVG(unit_ewh.total_ewh), 0) as pa_actual
+        FROM (
+          SELECT SUM(rbdp.totalHM) as total_ewh
+          FROM r_parent_base_data_pro rpbdp
+          JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+          WHERE rpbdp.activity_date BETWEEN $1 AND $2
+            AND rbdp.totalHM > 0
+            AND rbdp.deletedAt IS NULL
+          GROUP BY rpbdp.population_id
+        ) as unit_ewh
+      `, [startDate, endDate]);
+
+      const paActual = parseFloat(paActualQuery[0]?.pa_actual || '0');
+
+      // Calculate PA values
+      const paGainLoss = Math.abs(paPlan - paActual);
+      
+      // Get PDTYplan for calculation
+      const pdtyPlanQuery = await this.dataSource.query(`
+        SELECT COALESCE(SUM(pp.ore_target), 0) as plan_plan
+        FROM r_plan_production pp
+        WHERE pp.plan_date BETWEEN $1 AND $2
+          AND pp."deletedAt" IS NULL
+      `, [startDate, endDate]);
+
+      const planPlan = parseFloat(pdtyPlanQuery[0]?.plan_plan || '0');
+
+      const ewhPlanQuery = await this.dataSource.query(`
+        SELECT COALESCE(SUM(pwh.mohh_per_month), 0) as ewh_plan
+        FROM r_parent_plan_working_hour ppwh
+        LEFT JOIN r_plan_working_hour pwh ON pwh.parent_plan_working_hour_id = ppwh.id
+        WHERE ppwh.plan_date BETWEEN $1 AND $2
+      `, [startDate, endDate]);
+
+      const ewhPlan = parseFloat(ewhPlanQuery[0]?.ewh_plan || '0');
+      const pdtyPlan = ewhPlan > 0 ? planPlan / ewhPlan : 0;
+      
+      const paValue = pdtyPlan * paGainLoss;
+
+      return { value: paValue };
+    } catch (error) {
+      console.error('Error calculating PA:', error);
+      return { value: 0 };
     }
   }
 
