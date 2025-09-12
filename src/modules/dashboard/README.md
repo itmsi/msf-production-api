@@ -27,8 +27,12 @@ Dashboard module menyediakan berbagai endpoint untuk menampilkan data dashboard 
 
 ### 5. TMM Data
 - **GET** `/api/dashboard/tmm`
-- **Description**: Mengambil data Total Material Movement (TMM) harian
+- **Description**: Mengambil data Total Material Movement (TMM) harian berdasarkan tabel analysis hauling barging
+- **Parameters**: 
+  - `startDate` (optional): Start date dalam format YYYY-MM-DD
+  - `endDate` (optional): End date dalam format YYYY-MM-DD
 - **Response**: Array of daily TMM data dengan ore, overburden, dan total
+- **Data Source**: Menggunakan data dari `r_parent_base_data_pro`, `r_base_data_pro`, dan `m_population`
 
 ### 6. Lost Time Data
 - **GET** `/api/dashboard/lost-time`

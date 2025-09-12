@@ -2,6 +2,15 @@
 
 Aplikasi ini mendukung dua mode koneksi database berdasarkan variabel `DB_HIT_SERVER` di file `.env`.
 
+## untuk dev 
+jika ingin konek ke db server
+setup .env dulu
+jalankan command ini:
+ssh -f -N -L 6543:127.0.0.1:5432 msiserver@162.11.0.232 &
+TUNNEL_PID=$!
+
+jalankan command npm run dev
+
 ## Mode Koneksi Database
 
 ### 1. Local Database (DB_HIT_SERVER=OFF)

@@ -25,7 +25,7 @@ fi
 
 # Backup existing .env file
 if [ -f .env ]; then
-    cp .env .env.backup.$(date +%Y%m%d_%H%M%S)
+    # cp .env .env.backup.$(date +%Y%m%d_%H%M%S)
     echo "✅ Existing .env file backed up"
 fi
 
@@ -61,6 +61,18 @@ EOF
 elif [ "$MODE" = "server" ]; then
     echo "🌐 Setting up SERVER database configuration..."
     cat > .env << 'EOF'
+
+# Server Configuration
+PORT=9539
+NODE_ENV=development
+DEBUG=yes
+SHOW_ERROR_STACK_ON_LOG=true # error.stack di log | pastikan di production tidak distate true
+SHOW_ERROR_STACK_ON_BODY=false # error.stack di body | pastikan di production tidak distate true
+STRICT_VALIDATION=yes
+
+# Database Connection Mode
+# Set to 'ON' to use server database via SSH tunnel
+# Set to 'OFF' to use local database
 # Database Connection Mode
 DB_HIT_SERVER=ON
 
@@ -70,7 +82,7 @@ SERVER_USERNAME=msiserver
 SERVER_PASSWORD=m0t0r519ht5!@#
 
 # SSH Tunnel Configuration
-SSH_HOST=162.11.0.232
+SSH_HOST=103.169.73.226
 SSH_PORT=22
 SSH_USERNAME=msiserver
 SSH_PASSWORD=m0t0r519ht5!@#
@@ -79,22 +91,49 @@ DB_PORT=5432
 LOCAL_TUNNEL_PORT=6543
 
 # Database Configuration (Server via SSH tunnel)
-POSTGRES_HOST=127.0.0.1
+POSTGRES_HOST=162.11.0.232
 POSTGRES_PORT=6543
 POSTGRES_USER=sharedpg
 POSTGRES_PASSWORD=pgpass
 POSTGRES_DB=tid-project
 
-# Application Configuration
-NODE_ENV=production
-PORT=3000
+# SSH Tunnel Local Configuration
+LOCAL_TUNNEL_PORT=6543
+
+# Database Configuration Local
+# POSTGRES_HOST=localhost
+# POSTGRES_PORT=5432
+# POSTGRES_USER=falaqmsi
+# POSTGRES_PASSWORD=Rubysa179596
+# POSTGRES_DB=tid-project-dev
 
 # JWT Configuration
-JWT_SECRET=your-jwt-secret-key-here
-JWT_EXPIRES_IN=24h
+JWT_SECRET=FF5A95F77E878FAC9C3FD6B58F8FD
+JWT_EXPIRES_IN=1d
 
-# Other configurations
-CORS_ORIGIN=*
+# RMQ config
+RABBITMQ_URI=amqp://guest:guest@localhost:5672
+
+# S3
+AWS_REGION=us-east-1
+AWS_BUCKET=msf
+AWS_ACCESS_KEY_ID=admin
+AWS_SECRET_ACCESS_KEY=supersecurepass123
+AWS_ENDPOINT=http://iti.ddns.net:9508
+
+# MinIO Configuration
+MINIO_ENDPOINT=http://iti.ddns.net:9508
+MINIO_BUCKET_NAME=msf
+MINIO_REGION=us-east-1
+MINIO_ACCESS_KEY_ID=admin
+MINIO_SECRET_ACCESS_KEY=supersecurepass123
+
+# Mail Configuration
+EMAIL=test@databasesih.com          # Your email address (username)
+EMAIL_PASSWORD=Jakarta21;    # Your email password (or App Password if using 2FA)
+SMTP_HOST=mail.databasesih.com      # SMTP server (for outgoing emails)
+SMTP_PORT=465  
+FRONTEND_URL=dev-msf-part.motorsights.com
 EOF
     echo "✅ Server database configuration created"
     echo ""

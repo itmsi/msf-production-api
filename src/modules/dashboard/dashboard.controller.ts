@@ -50,7 +50,7 @@ export class DashboardController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    return this.dashboardService.getSpiderData(startDate, endDate);
+    return await this.dashboardService.getSpiderData(startDate, endDate);
   }
 
   @Get('mtd-achievment')
@@ -80,7 +80,7 @@ export class DashboardController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    return this.dashboardService.getMtdAchievement(startDate, endDate);
+    return await this.dashboardService.getMtdAchievement(startDate, endDate);
   }
 
   @Get('hauling')
@@ -108,7 +108,7 @@ export class DashboardController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    return this.dashboardService.getHaulingData(startDate, endDate);
+    return await this.dashboardService.getHaulingData(startDate, endDate);
   }
 
   @Get('barge')
@@ -135,21 +135,45 @@ export class DashboardController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    return this.dashboardService.getBargeData(startDate, endDate);
+    return await this.dashboardService.getBargeData(startDate, endDate);
   }
 
   @Get('tmm')
   @ApiOperation({
     summary: 'Get TMM data',
-    description: 'Retrieve Total Material Movement (TMM) daily data',
+    description: 'Retrieve Total Material Movement (TMM) daily data based on analysis hauling barging table',
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'Start date for filtering (YYYY-MM-DD format)',
+    example: '2024-01-01',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    description: 'End date for filtering (YYYY-MM-DD format)',
+    example: '2024-01-31',
   })
   @ApiResponse({
     status: 200,
     description: 'Successfully retrieved TMM data',
     type: TmmResponseDto,
   })
-  async getTmmData() {
-    return this.dashboardService.getTmmData();
+  async getTmmData(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return await this.dashboardService.getTmmData(startDate, endDate);
+  }
+
+  @Get('tmm-debug')
+  @ApiOperation({
+    summary: 'Debug TMM data',
+    description: 'Debug endpoint to check TMM data availability',
+  })
+  async getTmmDebug() {
+    return await this.dashboardService.getTmmDebug();
   }
 
   @Get('lost-time')
@@ -163,7 +187,7 @@ export class DashboardController {
     type: LostTimeResponseDto,
   })
   async getLostTimeData() {
-    return this.dashboardService.getLostTimeData();
+    return await this.dashboardService.getLostTimeData();
   }
 
   @Get('daily-achievment')
@@ -195,7 +219,7 @@ export class DashboardController {
     @Query('selectedDate') selectedDate?: string,
     @Query('shift') shift?: string,
   ) {
-    return this.dashboardService.getDailyAchievement(selectedDate, shift);
+    return await this.dashboardService.getDailyAchievement(selectedDate, shift);
   }
 
   @Get('barge-list')
@@ -209,7 +233,7 @@ export class DashboardController {
     type: BargeListResponseDto,
   })
   async getBargeList() {
-    return this.dashboardService.getBargeList();
+    return await this.dashboardService.getBargeList();
   }
 
   @Get('barge-status')
@@ -224,7 +248,7 @@ export class DashboardController {
     type: BargeStatusResponseDto,
   })
   async getBargeStatus() {
-    return this.dashboardService.getBargeStatus();
+    return await this.dashboardService.getBargeStatus();
   }
 
   @Get('lost-time-summary')
@@ -239,7 +263,7 @@ export class DashboardController {
     type: LostTimeSummaryResponseDto,
   })
   async getLostTimeSummary() {
-    return this.dashboardService.getLostTimeSummary();
+    return await this.dashboardService.getLostTimeSummary();
   }
 
   @Get('monthly/status')
@@ -259,7 +283,7 @@ export class DashboardController {
     type: MonthlyStatusResponseDto,
   })
   async getMonthlyStatus(@Query('month') month: string) {
-    return this.dashboardService.getMonthlyStatus(month);
+    return await this.dashboardService.getMonthlyStatus(month);
   }
 
   @Get('monthly/trend-hauling-barging')
@@ -279,7 +303,7 @@ export class DashboardController {
     type: TrendHaulingBargingResponseDto,
   })
   async getTrendHaulingBarging(@Query('month') month: string) {
-    return this.dashboardService.getTrendHaulingBarging(month);
+    return await this.dashboardService.getTrendHaulingBarging(month);
   }
 
   @Get('monthly/trend-fuel-ratio')
@@ -299,7 +323,7 @@ export class DashboardController {
     type: TrendFuelRatioResponseDto,
   })
   async getTrendFuelRatio(@Query('month') month: string) {
-    return this.dashboardService.getTrendFuelRatio(month);
+    return await this.dashboardService.getTrendFuelRatio(month);
   }
 
   @Get('monthly/trend-performance-unit')
@@ -319,7 +343,7 @@ export class DashboardController {
     type: TrendPerformanceUnitResponseDto,
   })
   async getTrendPerformanceUnit(@Query('month') month: string) {
-    return this.dashboardService.getTrendPerformanceUnit(month);
+    return await this.dashboardService.getTrendPerformanceUnit(month);
   }
 
   @Get('summary-production')
@@ -336,27 +360,72 @@ export class DashboardController {
   }
 
   @Get('hauling-summary')
+  @ApiOperation({
+    summary: 'Get hauling summary data',
+    description: 'Retrieve hauling summary data with attendance, chart summary, and working hours',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved hauling summary data',
+    type: HaulingSummaryResponseDto,
+  })
   async getHaulingSummary(): Promise<HaulingSummaryResponseDto> {
-    return await this.dashboardService.getHMockaulingSummary();
+    return await this.dashboardService.getHaulingSummary();
   }
 
   @Get('/ccr/fleet-status')
+  @ApiOperation({
+    summary: 'Get CCR fleet status data',
+    description: 'Retrieve CCR fleet status data with fleet information, loading points, and tonnage details',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved CCR fleet status data',
+    type: FleetStatusResponseDto,
+  })
   async getFleetStatus(): Promise<FleetStatusResponseDto> {
     return await this.dashboardService.getMockFleetStatus();
   }
 
   @Get('/ccr/tonnage')
+  @ApiOperation({
+    summary: 'Get CCR tonnage data',
+    description: 'Retrieve CCR tonnage data with hourly chart and unit metadata',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved CCR tonnage data',
+    type: TonnageResponseDto,
+  })
   async getTonnage(): Promise<TonnageResponseDto> {
     return await this.dashboardService.getMockTonnage();
   }
 
   @Get('/ccr/barging-summary')
-  async getBargingSumary(): Promise<BargingSummaryResponseDto> {
+  @ApiOperation({
+    summary: 'Get CCR barging summary data',
+    description: 'Retrieve CCR barging summary data with unit running, tonnage, and vessel metrics',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved CCR barging summary data',
+    type: BargingSummaryResponseDto,
+  })
+  async getBargingSummary(): Promise<BargingSummaryResponseDto> {
     return await this.dashboardService.getMockBargingSummary();
   }
 
-  @Get('/ccr/activitiies')
-  async getAcitivites(): Promise<CcrActivitesResponseDto> {
+  @Get('/ccr/activities')
+  @ApiOperation({
+    summary: 'Get CCR activities data',
+    description: 'Retrieve CCR activities data with target and actual values',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved CCR activities data',
+    type: CcrActivitesResponseDto,
+  })
+  async getActivities(): Promise<CcrActivitesResponseDto> {
     return await this.dashboardService.getMockActivities();
   }
 }

@@ -8,15 +8,6 @@ import { HaulingResponseDto } from './dto/dashboard.dto';
 
 @Injectable()
 export class DashboardService {
-  getTonnage(): import("./dto/ccr-dashboard.dto").TonnageResponseDto | PromiseLike<import("./dto/ccr-dashboard.dto").TonnageResponseDto> {
-    throw new Error('Method not implemented.');
-  }
-  getFleetStatus(): import("./dto/ccr-dashboard.dto").FleetStatusResponseDto | PromiseLike<import("./dto/ccr-dashboard.dto").FleetStatusResponseDto> {
-    throw new Error('Method not implemented.');
-  }
-  getHaulingSummary(): import("./dto/ccr-dashboard.dto").HaulingSummaryResponseDto | PromiseLike<import("./dto/ccr-dashboard.dto").HaulingSummaryResponseDto> {
-    throw new Error('Method not implemented.');
-  }
   constructor(
     private dataSource: DataSource,
     private formulaService: FormulaService,
@@ -253,19 +244,237 @@ export class DashboardService {
     }
   }
 
-  async getTmmData() {
-    return {
-      statusCode: 200,
-      message: 'success',
-      data: [
-        { date: '01/07', ore: 500, over: 1400, tmm: 2000 },
-        { date: '02/07', ore: 700, over: 1600, tmm: 2400 },
-        { date: '03/07', ore: 800, over: 1000, tmm: 1800 },
-        { date: '04/07', ore: 900, over: 1500, tmm: 2500 },
-        { date: '05/07', ore: 600, over: 1700, tmm: 3000 },
-        { date: '06/07', ore: 700, over: 1200, tmm: 2100 },
-      ],
-    };
+  async getTmmDebug() {
+    try {
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+
+      // Check total records in parent table
+      const totalParentQuery = `SELECT COUNT(*) as count FROM r_parent_base_data_pro`;
+      const totalParent = await queryRunner.query(totalParentQuery);
+
+      // Check total records in base data table
+      const totalBaseQuery = `SELECT COUNT(*) as count FROM r_base_data_pro`;
+      const totalBase = await queryRunner.query(totalBaseQuery);
+
+      // Check total records in population table
+      const totalPopQuery = `SELECT COUNT(*) as count FROM m_population`;
+      const totalPop = await queryRunner.query(totalPopQuery);
+
+      // Check recent data (last 30 days)
+      const recentQuery = `
+        SELECT COUNT(*) as count FROM r_parent_base_data_pro 
+        WHERE activity_date >= CURRENT_DATE - INTERVAL '30 days'
+      `;
+      const recentData = await queryRunner.query(recentQuery);
+
+      // Check data with our specific filters
+      const filterQuery = `
+        SELECT COUNT(*) as count FROM r_base_data_pro rbdp
+        JOIN r_parent_base_data_pro rpbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+        WHERE (
+          (rbdp.material = 'ore' AND rbdp.activity = 'hauling') OR
+          (rbdp.material = 'ob')
+        )
+        AND rbdp."deletedAt" IS NULL
+      `;
+      const filterData = await queryRunner.query(filterQuery);
+
+      // Sample data from last 30 days
+      const sampleQuery = `
+        SELECT 
+          rpbdp.activity_date,
+          rbdp.material,
+          rbdp.activity,
+          rbdp.total_vessel,
+          mp.tyre_type
+        FROM r_parent_base_data_pro rpbdp
+        JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+        JOIN m_population mp ON rpbdp.population_id = mp.id
+        WHERE rpbdp.activity_date >= CURRENT_DATE - INTERVAL '30 days'
+        ORDER BY rpbdp.activity_date DESC
+        LIMIT 10
+      `;
+      const sampleData = await queryRunner.query(sampleQuery);
+
+      await queryRunner.release();
+
+      return {
+        statusCode: 200,
+        message: 'Debug information',
+        data: {
+          totalRecords: {
+            parentBaseData: totalParent[0]?.count || 0,
+            baseData: totalBase[0]?.count || 0,
+            population: totalPop[0]?.count || 0,
+          },
+          recentData: {
+            last30Days: recentData[0]?.count || 0,
+            withFilters: filterData[0]?.count || 0,
+          },
+          sampleData: sampleData
+        }
+      };
+    } catch (error) {
+      console.error('Error in debug:', error);
+      return {
+        statusCode: 500,
+        message: 'Debug error',
+        error: error.message
+      };
+    }
+  }
+
+  async getTmmData(startDate?: string, endDate?: string) {
+    try {
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+
+      // Set default date range if not provided (last 7 days)
+      const defaultEndDate = new Date();
+      const defaultStartDate = new Date();
+      defaultStartDate.setDate(defaultEndDate.getDate() - 7);
+
+      const start = startDate || defaultStartDate.toISOString().split('T')[0];
+      const end = endDate || defaultEndDate.toISOString().split('T')[0];
+
+      console.log('TMM Query Parameters:', { start, end });
+
+      // Debug: Check if there's any data in the tables
+      const debugQuery1 = `
+        SELECT COUNT(*) as count FROM r_parent_base_data_pro 
+        WHERE DATE(activity_date) BETWEEN $1 AND $2
+      `;
+      const debugResult1 = await queryRunner.query(debugQuery1, [start, end]);
+      console.log('Parent base data count:', debugResult1);
+
+      const debugQuery2 = `
+        SELECT COUNT(*) as count FROM r_base_data_pro rbdp
+        JOIN r_parent_base_data_pro rpbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+        WHERE DATE(rpbdp.activity_date) BETWEEN $1 AND $2
+          AND (
+            (rbdp.material = 'ore' AND rbdp.activity = 'hauling') OR
+            (rbdp.material = 'ob')
+          )
+          AND rbdp."deletedAt" IS NULL
+      `;
+      const debugResult2 = await queryRunner.query(debugQuery2, [start, end]);
+      console.log('Base data count with filters:', debugResult2);
+
+      // Debug: Check sample data
+      const debugQuery3 = `
+        SELECT 
+          rpbdp.activity_date,
+          rbdp.material,
+          rbdp.activity,
+          rbdp.total_vessel,
+          mp.tyre_type
+        FROM r_parent_base_data_pro rpbdp
+        JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+        JOIN m_population mp ON rpbdp.population_id = mp.id
+        WHERE DATE(rpbdp.activity_date) BETWEEN $1 AND $2
+          AND (
+            (rbdp.material = 'ore' AND rbdp.activity = 'hauling') OR
+            (rbdp.material = 'ob')
+          )
+          AND rbdp."deletedAt" IS NULL
+        LIMIT 5
+      `;
+      const debugResult3 = await queryRunner.query(debugQuery3, [start, end]);
+      console.log('Sample data:', debugResult3);
+
+      // Query untuk mendapatkan data TMM berdasarkan tabel analysis_hauling_barging
+      // Menggunakan tabel r_parent_base_data_pro, r_base_data_pro, dan m_population
+      const tmmQuery = `
+        SELECT 
+          DATE(rpbdp.activity_date) as activity_date,
+          SUM(
+            CASE 
+              WHEN rbdp.material = 'ore' AND rbdp.activity IN ('hauling', 'direct') THEN
+                CASE 
+                  WHEN mp.tyre_type = '6x4' THEN rbdp.total_vessel * 26.56
+                  WHEN mp.tyre_type = '8x4' THEN rbdp.total_vessel * 29.56
+                  ELSE 0
+                END
+              ELSE 0
+            END
+          ) as ore_hauling_bcm,
+          SUM(
+            CASE 
+              WHEN rbdp.material = 'ob' THEN
+                CASE 
+                  WHEN mp.tyre_type = '6x4' THEN (rbdp.total_vessel * 26.56) / 1.6
+                  WHEN mp.tyre_type = '8x4' THEN (rbdp.total_vessel * 29.56) / 1.6
+                  ELSE 0
+                END
+              ELSE 0
+            END
+          ) as ob_bcm,
+          SUM(
+            CASE 
+              WHEN rbdp.material = 'ore' AND rbdp.activity IN ('hauling', 'direct') THEN
+                CASE 
+                  WHEN mp.tyre_type = '6x4' THEN rbdp.total_vessel * 26.56
+                  WHEN mp.tyre_type = '8x4' THEN rbdp.total_vessel * 29.56
+                  ELSE 0
+                END
+              WHEN rbdp.material = 'ob' THEN
+                CASE 
+                  WHEN mp.tyre_type = '6x4' THEN (rbdp.total_vessel * 26.56) / 1.6
+                  WHEN mp.tyre_type = '8x4' THEN (rbdp.total_vessel * 29.56) / 1.6
+                  ELSE 0
+                END
+              ELSE 0
+            END
+          ) as tmm_bcm
+        FROM r_parent_base_data_pro rpbdp
+        JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+        JOIN m_population mp ON rpbdp.population_id = mp.id
+        WHERE DATE(rpbdp.activity_date) BETWEEN $1 AND $2
+          AND (
+            (rbdp.material = 'ore' AND rbdp.activity IN ('hauling', 'direct')) OR
+            (rbdp.material = 'ob')
+          )
+          AND rbdp."deletedAt" IS NULL
+        GROUP BY DATE(rpbdp.activity_date)
+        ORDER BY DATE(rpbdp.activity_date) ASC
+      `;
+
+      const tmmData = await queryRunner.query(tmmQuery, [start, end]);
+      console.log('TMM Query Result:', tmmData);
+
+      await queryRunner.release();
+
+      // Format data sesuai dengan spesifikasi yang diminta
+      const formattedData = tmmData.map(item => {
+        const date = new Date(item.activity_date);
+        const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
+        
+        const ore = Math.round(parseFloat(item.ore_hauling_bcm) || 0);
+        const over = Math.round(parseFloat(item.ob_bcm) || 0);
+        const tmm = Math.round(parseFloat(item.tmm_bcm) || 0);
+
+        return {
+          date: formattedDate,
+          ore: ore,
+          over: over,
+          tmm: tmm
+        };
+      });
+
+      return {
+        statusCode: 200,
+        message: 'success',
+        data: formattedData,
+      };
+    } catch (error) {
+      console.error('Error retrieving TMM data:', error);
+      return {
+        statusCode: 500,
+        message: 'Error retrieving TMM data',
+        error: error.message
+      };
+    }
   }
 
   async getLostTimeData() {
@@ -1126,7 +1335,7 @@ export class DashboardService {
     }
   }
 
-    async getHMockaulingSummary() : Promise<HaulingSummaryResponseDto> {
+    async getHaulingSummary() : Promise<HaulingSummaryResponseDto> {
           try {
               return {
                   statusCode: 200,
