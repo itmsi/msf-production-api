@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { concat } from 'rxjs';
 import { DataSource } from 'typeorm';
 
 @Injectable()
@@ -9,9 +10,14 @@ export class FormulaService {
    * Menghitung Cycle Time dari Control MTD Production
    * Formula: SUM[Cycle Time] sesuai rentang tanggal yang dipilih
    */
-  async calculateCycleTime(queryRunner: any, startDate: Date, endDate: Date): Promise<number> {
+  async calculateCycleTime(
+    queryRunner: any,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<number> {
     try {
-      const result = await queryRunner.query(`
+      const result = await queryRunner.query(
+        `
         SELECT 
           COALESCE(SUM(
             CASE 
@@ -27,8 +33,10 @@ export class FormulaService {
           AND rbdp.total_hm > 0 
           AND rbdp.total_vessel > 0
           AND rbdp."deletedAt" IS NULL
-      `, [startDate, endDate]);
-      
+      `,
+        [startDate, endDate],
+      );
+
       return parseFloat(result[0]?.total_cycle_time || '0');
     } catch (error) {
       console.error('Error calculating cycle time:', error);
@@ -40,9 +48,14 @@ export class FormulaService {
    * Menghitung Production Actual dari Summary Production
    * Formula: SUM[Tonnage] where material_type = ore_hauling sesuai rentang tanggal yang dipilih
    */
-  async calculateProductionActual(queryRunner: any, startDate: Date, endDate: Date): Promise<number> {
+  async calculateProductionActual(
+    queryRunner: any,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<number> {
     try {
-      const result = await queryRunner.query(`
+      const result = await queryRunner.query(
+        `
         SELECT 
           SUM(rbdp.total_vessel * 
             CASE 
@@ -58,8 +71,10 @@ export class FormulaService {
           AND rbdp.activity = 'hauling'
           AND rpbdp.activity_date BETWEEN $1 AND $2
           AND rbdp."deletedAt" IS NULL
-      `, [startDate, endDate]);
-      
+      `,
+        [startDate, endDate],
+      );
+
       return parseFloat(result[0]?.total_ore_hauling_tonnage || '0');
     } catch (error) {
       console.error('Error calculating production actual:', error);
@@ -71,9 +86,14 @@ export class FormulaService {
    * Menghitung EWH Actual dari Control Day Production
    * Formula: Total EWH lalu di rata-ratakan berdasarkan total unit yang ada
    */
-  async calculateEWHActual(queryRunner: any, startDate: Date, endDate: Date): Promise<number> {
+  async calculateEWHActual(
+    queryRunner: any,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<number> {
     try {
-      const result = await queryRunner.query(`
+      const result = await queryRunner.query(
+        `
         SELECT 
           COALESCE(AVG(rbdp.total_hm), 0) as avg_ewh_actual
         FROM r_parent_base_data_pro rpbdp
@@ -82,8 +102,10 @@ export class FormulaService {
         WHERE rpbdp.activity_date BETWEEN $1 AND $2
           AND rbdp.total_hm > 0
           AND rbdp."deletedAt" IS NULL
-      `, [startDate, endDate]);
-      
+      `,
+        [startDate, endDate],
+      );
+
       return parseFloat(result[0]?.avg_ewh_actual || '0');
     } catch (error) {
       console.error('Error calculating EWH actual:', error);
@@ -95,16 +117,24 @@ export class FormulaService {
    * Menghitung Fuel Ratio Actual
    * Formula: [SUM(qty_supply)] dibagi dengan [SUM(ORE BARGE TONNAGE)]
    */
-  async calculateFuelRatioActual(queryRunner: any, startDate: Date, endDate: Date): Promise<number> {
+  async calculateFuelRatioActual(
+    queryRunner: any,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<number> {
     try {
-      const fuelResult = await queryRunner.query(`
+      const fuelResult = await queryRunner.query(
+        `
         SELECT COALESCE(SUM(qty_supply), 0) as total_qty_supply
         FROM r_fuel 
         WHERE activity_date BETWEEN $1 AND $2
           AND qty_supply IS NOT NULL
-      `, [startDate, endDate]);
+      `,
+        [startDate, endDate],
+      );
 
-      const oreBargeResult = await queryRunner.query(`
+      const oreBargeResult = await queryRunner.query(
+        `
         SELECT 
           SUM(rbdp.total_vessel * 
             CASE 
@@ -120,11 +150,15 @@ export class FormulaService {
           AND rbdp.activity = 'barging'
           AND rpbdp.activity_date BETWEEN $1 AND $2
           AND rbdp."deletedAt" IS NULL
-      `, [startDate, endDate]);
+      `,
+        [startDate, endDate],
+      );
 
       const totalQtySupply = parseFloat(fuelResult[0]?.total_qty_supply || '0');
-      const totalOreBarge = parseFloat(oreBargeResult[0]?.total_ore_barge_tonnage || '0');
-      
+      const totalOreBarge = parseFloat(
+        oreBargeResult[0]?.total_ore_barge_tonnage || '0',
+      );
+
       return totalOreBarge > 0 ? totalQtySupply / totalOreBarge : 0;
     } catch (error) {
       console.error('Error calculating fuel ratio actual:', error);
@@ -136,9 +170,14 @@ export class FormulaService {
    * Menghitung Speed Actual dari Control MTD Production
    * Formula: AVG[SPEED] sesuai rentang tanggal yang dipilih
    */
-  async calculateSpeedActual(queryRunner: any, startDate: Date, endDate: Date): Promise<number> {
+  async calculateSpeedActual(
+    queryRunner: any,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<number> {
     try {
-      const result = await queryRunner.query(`
+      const result = await queryRunner.query(
+        `
         SELECT 
           COALESCE(AVG(
             CASE 
@@ -154,8 +193,10 @@ export class FormulaService {
           AND rbdp.total_hm > 0 
           AND rbdp.total_km > 0
           AND rbdp."deletedAt" IS NULL
-      `, [startDate, endDate]);
-      
+      `,
+        [startDate, endDate],
+      );
+
       return parseFloat(result[0]?.avg_speed || '0');
     } catch (error) {
       console.error('Error calculating speed actual:', error);
@@ -167,15 +208,22 @@ export class FormulaService {
    * Menghitung Production Target dari R_Plan_Production
    * Formula: SUM(ore_target) sesuai rentang tanggal yang dipilih
    */
-  async calculateProductionTarget(queryRunner: any, startDate: Date, endDate: Date): Promise<number> {
+  async calculateProductionTarget(
+    queryRunner: any,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<number> {
     try {
-      const result = await queryRunner.query(`
+      const result = await queryRunner.query(
+        `
         SELECT COALESCE(SUM(ore_target), 0) as total_ore_target
         FROM r_plan_production 
         WHERE plan_date BETWEEN $1 AND $2
-          AND deleted_at IS NULL
-      `, [startDate, endDate]);
-      
+          AND "deletedAt" IS NULL
+      `,
+        [startDate, endDate],
+      );
+
       return parseFloat(result[0]?.total_ore_target || '0');
     } catch (error) {
       console.error('Error calculating production target:', error);
@@ -187,32 +235,72 @@ export class FormulaService {
    * Menghitung EWH Target dari R_Plan_Working_Hours
    * Formula: MOHH dikurangi activities yang delay, breakdown, idle
    */
-  async calculateEWHTarget(queryRunner: any, startDate: Date, endDate: Date): Promise<number> {
+  // async calculateEWHTarget(
+  //   queryRunner: any,
+  //   startDate: Date,
+  //   endDate: Date,
+  // ): Promise<number> {
+  //   try {
+  //     const result = await queryRunner.query(
+  //       `
+  //       SELECT
+  //         COALESCE(AVG(
+  //           CASE
+  //             WHEN rpwh.mohh_per_month > 0
+  //             THEN rpwh.mohh_per_month - COALESCE((
+  //               SELECT SUM(rlt.duration)
+  //               FROM r_loss_time rlt
+  //               JOIN m_activities ma ON rlt.activities_id = ma.id
+  //               WHERE DATE(rlt.date_activity) = DATE(rpwh.plan_date)
+  //                 AND rlt.loss_type IN ('BD', 'STB')
+  //                 AND (LOWER(ma.name) LIKE '%delay%'
+  //                    OR LOWER(ma.name) LIKE '%breakdown%'
+  //                    OR LOWER(ma.name) LIKE '%idle%')
+  //             ), 0)
+  //             ELSE 0
+  //           END
+  //         ), 0) as avg_ewh_target
+  //       FROM r_plan_working_hour rpwh
+  //       WHERE rpwh.plan_date BETWEEN $1 AND $2
+  //         AND rpwh."deletedAt" IS NULL
+  //     `,
+  //       [startDate, endDate],
+  //     );
+
+  //     return parseFloat(result[0]?.avg_ewh_target || '0');
+  //   } catch (error) {
+  //     console.error('Error calculating EWH target:', error);
+  //     return 0;
+  //   }
+  // }
+  async calculateEWHTarget(queryRunner: any, planDate: Date): Promise<number> {
     try {
-      const result = await queryRunner.query(`
-        SELECT 
-          COALESCE(AVG(
-            CASE 
-              WHEN rpwh.mohh_per_month > 0 
-              THEN rpwh.mohh_per_month - COALESCE((
-                SELECT SUM(rlt.duration)
-                FROM r_loss_time rlt
-                JOIN m_activities ma ON rlt.activities_id = ma.id
-                WHERE DATE(rlt.date_activity) = DATE(rpwh.plan_date)
-                  AND rlt.loss_type IN ('BD', 'STB')
-                  AND (LOWER(ma.name) LIKE '%delay%' 
-                     OR LOWER(ma.name) LIKE '%breakdown%' 
-                     OR LOWER(ma.name) LIKE '%idle%')
-              ), 0)
-              ELSE 0
-            END
-          ), 0) as avg_ewh_target
-        FROM r_plan_working_hour rpwh
-        WHERE rpwh.plan_date BETWEEN $1 AND $2
-          AND rpwh.deleted_at IS NULL
-      `, [startDate, endDate]);
-      
-      return parseFloat(result[0]?.avg_ewh_target || '0');
+      if (!planDate) {
+        planDate = new Date();
+      }
+
+      // selalu reset ke 00:00:00
+      planDate.setHours(0, 0, 0, 0);
+
+      // format ke 'YYYY-MM-DD 00:00:00'
+      const formattedDate = planDate.toISOString().slice(0, 10) + ' 00:00:00';
+
+      const result = await queryRunner.query(
+        `
+      SELECT 
+        (SUM(rpwhd.activities_hour::numeric) - rpwh.mohh_per_month::numeric) AS target
+      FROM r_plan_working_hour_detail rpwhd
+      LEFT JOIN r_plan_working_hour rpwh 
+        ON rpwh.id = rpwhd.plant_working_hour_id
+      WHERE rpwh.plan_date = $1
+        AND rpwh."deletedAt" IS NULL
+      GROUP BY rpwh.mohh_per_month
+      `,
+        [formattedDate],
+      );
+      console.log(formattedDate);
+      console.log('--------->', result[0]);
+      return parseFloat(result[0]?.target || '0');
     } catch (error) {
       console.error('Error calculating EWH target:', error);
       return 0;
@@ -222,7 +310,11 @@ export class FormulaService {
   /**
    * Mendapatkan nilai target dari m_setting_dashboard
    */
-  async getSettingValue(queryRunner: any, field: 'cycle_time' | 'fuel_ratio' | 'speed', defaultValue: number): Promise<number> {
+  async getSettingValue(
+    queryRunner: any,
+    field: 'cycle_time' | 'fuel_ratio' | 'speed',
+    defaultValue: number,
+  ): Promise<number> {
     try {
       const result = await queryRunner.query(`
         SELECT ${field} FROM m_setting_dashboard 
