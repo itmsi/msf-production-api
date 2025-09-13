@@ -335,45 +335,45 @@ export class DashboardController {
     return await this.dashboardService.getTrendHaulingBarging(month);
   }
 
-  // @Get('monthly/trend-fuel-ratio')
-  // @ApiOperation({
-  //   summary: 'Get monthly trend fuel ratio data',
-  //   description:
-  //     'Retrieve monthly trend data for fuel ratio (FR) and specific ratio (SR)',
-  // })
-  // @ApiQuery({
-  //   name: 'month',
-  //   description: 'Month in YYYY-MM format',
-  //   example: '2025-09',
-  // })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: 'Successfully retrieved trend fuel ratio data',
-  //   type: TrendFuelRatioResponseDto,
-  // })
-  // async getTrendFuelRatio(@Query('month') month: string) {
-  //   return await this.dashboardService.getTrendFuelRatio(month);
-  // }
+  @Get('monthly/trend-fuel-ratio')
+  @ApiOperation({
+    summary: 'Get monthly trend fuel ratio data',
+    description:
+      'Retrieve monthly trend data for fuel ratio (FR) and specific ratio (SR)',
+  })
+  @ApiQuery({
+    name: 'month',
+    description: 'Month in YYYY-MM format',
+    example: '2025-09',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved trend fuel ratio data',
+    type: TrendFuelRatioResponseDto,
+  })
+  async getTrendFuelRatio(@Query('month') month: string) {
+    return await this.dashboardService.getTrendFuelRatio(month);
+  }
 
-  // @Get('monthly/trend-performance-unit')
-  // @ApiOperation({
-  //   summary: 'Get monthly trend performance unit data',
-  //   description:
-  //     'Retrieve monthly trend data for performance metrics (PA, MA, UA, EU)',
-  // })
-  // @ApiQuery({
-  //   name: 'month',
-  //   description: 'Month in YYYY-MM format',
-  //   example: '2025-09',
-  // })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: 'Successfully retrieved trend performance unit data',
-  //   type: TrendPerformanceUnitResponseDto,
-  // })
-  // async getTrendPerformanceUnit(@Query('month') month: string) {
-  //   return await this.dashboardService.getTrendPerformanceUnit(month);
-  // }
+  @Get('monthly/trend-performance-unit')
+  @ApiOperation({
+    summary: 'Get monthly trend performance unit data',
+    description:
+      'Retrieve monthly trend data for performance metrics (PA, MA, UA, EU)',
+  })
+  @ApiQuery({
+    name: 'month',
+    description: 'Month in YYYY-MM format',
+    example: '2025-09',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved trend performance unit data',
+    type: TrendPerformanceUnitResponseDto,
+  })
+  async getTrendPerformanceUnit(@Query('month') month: string) {
+    return await this.dashboardService.getTrendPerformanceUnit(month);
+  }
 
   @Get('summary-production')
   @ApiOperation({
@@ -388,50 +388,50 @@ export class DashboardController {
     return await this.dashboardService.getSummaryProduction();
   }
 
-  // @Get('hauling-summary')
-  // @ApiOperation({
-  //   summary: 'Get hauling summary data',
-  //   description:
-  //     'Retrieve hauling summary data with attendance, chart summary, and working hours',
-  // })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: 'Successfully retrieved hauling summary data',
-  //   type: HaulingSummaryResponseDto,
-  // })
-  // async getHaulingSummary(): Promise<HaulingSummaryResponseDto> {
-  //   return await this.dashboardService.getHaulingSummary();
-  // }
+  @Get('hauling-summary')
+  @ApiOperation({
+    summary: 'Get hauling summary data',
+    description:
+      'Retrieve hauling summary data with attendance, chart summary, and working hours',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved hauling summary data',
+    type: HaulingSummaryResponseDto,
+  })
+  async getHaulingSummary(): Promise<HaulingSummaryResponseDto> {
+    return await this.dashboardService.getHaulingSummary();
+  }
 
-  // @Get('ccr/fleet-status')
-  // @ApiOperation({
-  //   summary: 'Get CCR fleet status data',
-  //   description:
-  //     'Retrieve CCR fleet status data with fleet information, loading points, and tonnage details',
-  // })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: 'Successfully retrieved CCR fleet status data',
-  //   type: FleetStatusResponseDto,
-  // })
-  // async getFleetStatus(): Promise<FleetStatusResponseDto> {
-  //   return await this.dashboardService.getMockFleetStatus();
-  // }
+  @Get('ccr/fleet-status')
+  @ApiOperation({
+    summary: 'Get CCR fleet status data',
+    description:
+      'Retrieve CCR fleet status data with fleet information, loading points, and tonnage details',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved CCR fleet status data',
+    type: FleetStatusResponseDto,
+  })
+  async getFleetStatus(): Promise<FleetStatusResponseDto> {
+    return await this.dashboardService.getMockFleetStatus();
+  }
 
-  // @Post('ccr/tonnage')
-  // @ApiOperation({
-  //   summary: 'Get CCR tonnage data',
-  //   description:
-  //     'Retrieve CCR tonnage data with hourly chart and unit metadata',
-  // })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: 'Successfully retrieved CCR tonnage data',
-  //   type: TonnageResponseDto,
-  // })
-  // async getTonnage(): Promise<TonnageResponseDto> {
-  //   return await this.dashboardService.getMockTonnage();
-  // }
+  @Post('ccr/tonnage')
+  @ApiOperation({
+    summary: 'Get CCR tonnage data',
+    description:
+      'Retrieve CCR tonnage data with hourly chart and unit metadata',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved CCR tonnage data',
+    type: TonnageResponseDto,
+  })
+  async getTonnage(): Promise<TonnageResponseDto> {
+    return await this.dashboardService.getMockTonnage();
+  }
 
   @Get('ccr/barging-summary')
   @ApiOperation({
@@ -451,19 +451,19 @@ export class DashboardController {
     return await this.dashboardService.getMockBargingSummary(date);
   }
 
-  // @Get('ccr/activiies')
-  // @ApiOperation({
-  //   summary: 'Get CCR activities data',
-  //   description: 'Retrieve CCR activities data with target and actual values',
-  // })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: 'Successfully retrieved CCR activities data',
-  //   type: CcrActivitesResponseDto,
-  // })
-  // async getActivities(): Promise<CcrActivitesResponseDto> {
-  //   return await this.dashboardService.getMockActivities();
-  // }
+  @Get('ccr/activiies')
+  @ApiOperation({
+    summary: 'Get CCR activities data',
+    description: 'Retrieve CCR activities data with target and actual values',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved CCR activities data',
+    type: CcrActivitesResponseDto,
+  })
+  async getActivities(): Promise<CcrActivitesResponseDto> {
+    return await this.dashboardService.getMockActivities();
+  }
 
   @Get('lost-time-summary')
   @ApiOperation({
