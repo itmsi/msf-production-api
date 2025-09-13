@@ -226,8 +226,8 @@ export class FormulaService {
     try {
       const result = await queryRunner.query(`
         SELECT ${field} FROM m_setting_dashboard 
-        WHERE deleted_at IS NULL 
-        ORDER BY created_at DESC 
+        WHERE "deletedAt" IS NULL 
+        ORDER BY "createdAt" DESC 
         LIMIT 1
       `);
       return parseFloat(result[0]?.[field] || defaultValue.toString());
