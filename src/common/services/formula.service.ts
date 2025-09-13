@@ -288,7 +288,7 @@ export class FormulaService {
       const result = await queryRunner.query(
         `
       SELECT 
-        (SUM(rpwhd.activities_hour::numeric) - rpwh.mohh_per_month::numeric) AS target
+        (rpwh.mohh_per_month::numeric - SUM(rpwhd.activities_hour::numeric)) AS target
       FROM r_plan_working_hour_detail rpwhd
       LEFT JOIN r_plan_working_hour rpwh 
         ON rpwh.id = rpwhd.plant_working_hour_id
