@@ -44,26 +44,31 @@ export class ProductionFormulaService {
     let query = this.planProductionRepository
       .createQueryBuilder('pp')
       .select([
-        'SUM(pp.ore_target) as oreTarget',
-        'SUM(pp.ob_target) as obTarget', 
-        'SUM(pp.ore_shipment_target) as oreShipmentTarget',
-        'SUM(pp.quarry) as quarryTarget'
+        'SUM(pp.ore_target) AS "oreTarget"',
+        'SUM(pp.ob_target) AS "obTarget"',
+        'SUM(pp.ore_shipment_target) AS "oreShipmentTarget"',
+        'SUM(pp.quarry) AS "quarryTarget"',
       ]);
 
     if (startDate && endDate) {
       query = query.where('pp.plan_date BETWEEN :startDate AND :endDate', {
         startDate,
-        endDate
+        endDate,
       });
     }
 
-    const result = await query.getRawOne();
+    const result = await query.getRawOne<{
+      oreTarget: string | null;
+      obTarget: string | null;
+      oreShipmentTarget: string | null;
+      quarryTarget: string | null;
+    }>();
 
     return {
-      oreTarget: parseFloat(result.oreTarget) || 0,
-      obTarget: parseFloat(result.obTarget) || 0,
-      oreShipmentTarget: parseFloat(result.oreShipmentTarget) || 0,
-      quarryTarget: parseFloat(result.quarryTarget) || 0,
+      oreTarget: parseFloat(result?.oreTarget ?? '0'),
+      obTarget: parseFloat(result?.obTarget ?? '0'),
+      oreShipmentTarget: parseFloat(result?.oreShipmentTarget ?? '0'),
+      quarryTarget: parseFloat(result?.quarryTarget ?? '0'),
     };
   }
 
