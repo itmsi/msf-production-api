@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 import { Population } from '../population/entities/population.entity';
 import { FormulaService } from '../../common/services/formula.service';
 import { ProductionFormulaService } from '../../common/services/production-formula.service';
+import { AnalysisHaulingBargingService } from '../analysis-hauling-barging/analysis-hauling-barging.service';
 import {
   BargingSummaryItemDto,
   BargingSummaryResponseDto,
@@ -28,6 +29,7 @@ export class DashboardService {
     private dataSource: DataSource,
     private formulaService: FormulaService,
     private productionFormulaService: ProductionFormulaService,
+    private analysisHaulingBargingService: AnalysisHaulingBargingService,
   ) {}
   async getSpiderData(startDate?: string, endDate?: string) {
     try {
@@ -891,8 +893,19 @@ export class DashboardService {
       const startDateStr = startDate.toISOString().split('T')[0];
       const endDateStr = endDate.toISOString().split('T')[0];
 
-      // Get barge data from r_input_barge and m_barge
-      const bargeData = await this.getBargeData(startDateStr, endDateStr);
+      // Get barge data from analysis-hauling-barging service
+      const bargeDataArray = await this.getBargeData(startDateStr, endDateStr);
+      
+      // Calculate total barge and hauling tonnage
+      const totalBargeTonnage = bargeDataArray.reduce((sum, item) => sum + item.barge, 0);
+      const totalHaulingTonnage = bargeDataArray.reduce((sum, item) => sum + item.hauling, 0);
+      
+      // For now, we'll use the total tonnage as both target and actual
+      // In a real scenario, you might want to get target values from a different source
+      const bargeData = {
+        targetBarge: totalBargeTonnage,
+        actualBarge: totalBargeTonnage,
+      };
 
       // Get tonnage data
       const tonnageData = await this.getTonnageData(startDateStr, endDateStr);
@@ -2398,7 +2411,7 @@ export class DashboardService {
   }
 
   /**
-   * Get barge data from r_input_barge and m_barge tables
+   * Get barge data from analysis-hauling-barging service
    */
   async getBargeData(startDate?: string, endDate?: string) {
     try {
@@ -2411,36 +2424,36 @@ export class DashboardService {
         endDate = lastDay.toISOString().split('T')[0];
       }
 
-      // Get target barge (count of shipment from r_input_barge)
-      const targetBargeQuery = await this.dataSource.query(
-        `
-        SELECT COUNT(DISTINCT rib.shipment) as target_barge
-        FROM r_input_barge rib
-        WHERE rib.start_loading BETWEEN $1 AND $2
-          AND rib."deletedAt" IS NULL
-      `,
-        [startDate, endDate],
-      );
+      // Get data from analysis-hauling-barging service
+      const analysisData = await this.analysisHaulingBargingService.getAnalysisData({
+        startDate,
+        endDate,
+        page: 1,
+        limit: 1000, // Get all data for the date range
+      });
 
-      // Get actual barge (count of barge from r_input_barge)
-      const actualBargeQuery = await this.dataSource.query(
-        `
-        SELECT COUNT(DISTINCT rib.barge_id) as actual_barge
-        FROM r_input_barge rib
-        WHERE rib.start_loading BETWEEN $1 AND $2
-          AND rib."deletedAt" IS NULL
-      `,
-        [startDate, endDate],
-      );
+      // Process data to match the required format
+      const processedData = analysisData.data.map((item: any) => ({
+        date: this.formatDateToDDMM(item.date),
+        barge: Math.round(item.bargeTonnage || 0),
+        hauling: Math.round(item.oreHaulingTonnage || 0),
+      }));
 
-      return {
-        targetBarge: parseInt(targetBargeQuery[0]?.target_barge || '0'),
-        actualBarge: parseInt(actualBargeQuery[0]?.actual_barge || '0'),
-      };
+      return processedData;
     } catch (error) {
       console.error('Error getting barge data:', error);
-      return { targetBarge: 0, actualBarge: 0 };
+      return [];
     }
+  }
+
+  /**
+   * Format date from YYYY-MM-DD to DD/MM
+   */
+  private formatDateToDDMM(dateString: string): string {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    return `${day}/${month}`;
   }
 
   /**

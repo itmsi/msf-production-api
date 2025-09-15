@@ -30,6 +30,7 @@ import {
   HaulingSummaryResponseDto,
   TonnageResponseDto,
 } from './dto/ccr-dashboard.dto';
+import { successResponse } from '../../common/helpers/response.helper';
 
 @ApiTags('Dashboard')
 @ApiBearerAuth('jwt')
@@ -147,7 +148,12 @@ export class DashboardController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    return await this.dashboardService.getBargeData(startDate, endDate);
+    const result = await this.dashboardService.getBargeData(startDate, endDate);
+    return successResponse(
+      result,
+      'Data barge berhasil diambil',
+      200,
+    );
   }
 
   @Get('tmm')

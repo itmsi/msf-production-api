@@ -79,10 +79,10 @@ export class BargeDataDto {
   @ApiProperty({ description: 'Date in DD/MM format', example: '01/07' })
   date: string;
 
-  @ApiProperty({ description: 'Barge value', example: 3000 })
+  @ApiProperty({ description: 'Barge tonnage', example: 3000 })
   barge: number;
 
-  @ApiProperty({ description: 'Hauling value', example: 2800 })
+  @ApiProperty({ description: 'Hauling tonnage', example: 2800 })
   hauling: number;
 }
 
@@ -90,10 +90,10 @@ export class BargeResponseDto {
   @ApiProperty({ description: 'HTTP status code', example: 200 })
   statusCode: number;
 
-  @ApiProperty({ description: 'Response message', example: 'success' })
+  @ApiProperty({ description: 'Response message', example: 'Data barge berhasil diambil' })
   message: string;
 
-  @ApiProperty({ description: 'Barge data', type: [BargeDataDto] })
+  @ApiProperty({ description: 'Barge data array', type: [BargeDataDto] })
   data: BargeDataDto[];
 }
 

@@ -4,6 +4,7 @@ import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
 import { FormulaService } from '../../common/services/formula.service';
 import { ProductionFormulaService } from '../../common/services/production-formula.service';
+import { AnalysisHaulingBargingModule } from '../analysis-hauling-barging/analysis-hauling-barging.module';
 import { PlanProduction } from '../plan-production/entities/plan-production.entity';
 import { ParentPlanProduction } from '../parent-plan-production/entities/parent-plan-production.entity';
 import { BaseDataPro } from '../base-data-production/entities/base-data-pro.entity';
@@ -21,6 +22,7 @@ import { ParentPlanWorkingHour } from '../plan-working-hour/entities/parent-plan
       Activities,
       ParentPlanWorkingHour,
     ]),
+    AnalysisHaulingBargingModule,
   ],
   controllers: [DashboardController],
   providers: [DashboardService, FormulaService, ProductionFormulaService],
