@@ -353,7 +353,7 @@ export class MtdProductionService {
             ct,
             standby_time: standby,
             breakdown_time: breakdown,
-            pa: safeRatio(ewh - standby, mohh),
+            pa: safeRatio(ewh + standby, mohh),
             ua: safeRatio(ewh, ewh + standby),
             ma: safeRatio(ewh, ewh + breakdown),
             eu: safeRatio(ewh, mohh),
