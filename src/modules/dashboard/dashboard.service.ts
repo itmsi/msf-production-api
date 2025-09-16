@@ -1738,67 +1738,188 @@ export class DashboardService {
     }
   }
 
-  async getHaulingSummary(): Promise<HaulingSummaryResponseDto> {
+  async getHaulingSummary(
+    selectedDate?: string,
+  ): Promise<HaulingSummaryResponseDto> {
     try {
+        const today = new Date();
+
+        const defaultSelectedDate = selectedDate || today.toISOString()
+          .split('T')[0];
+
+        console.log(selectedDate);
+
+        const query = `
+        with ore_data_hauling as (
+        select
+          rch.activity_date,
+          coalesce(sum(vessel), 0) as total_vessel,
+          coalesce(sum(total_tonnage), 0) as total_tonnage		
+          FROM r_ccr_hauling rch
+          WHERE rch.activity_date = $1
+          group by rch.activity_date 
+        ),
+        material_data as (
+          select
+            rch.activity_date,
+            rch.material,
+            coalesce(sum(vessel), 0) as total_vessel,
+            coalesce(sum(total_tonnage), 0) as total_tonnage		
+            FROM r_ccr_hauling rch
+            WHERE rch.activity_date = $1
+            group by rch.activity_date, rch.material
+        ),
+        plan_production as (
+          SELECT rpp.plan_date AS plan_date, 
+            rpp.ore_target, 
+            rpp.ore_shipment_target,
+            rpp.ob_target,
+            rpp.quarry
+            FROM r_plan_production rpp
+            WHERE rpp.plan_date = $1
+        ),
+        plan_working_hour as (
+          select 
+            rpwh.plan_date,
+            coalesce(rpwh.mohh_per_month, 0) / 2 as ewh
+          from r_plan_working_hour rpwh
+          where rpwh.plan_date::date = $1
+        ),
+        hauling_problem as (
+          select
+            rchp.activity_date,
+              COALESCE(SUM(CASE WHEN ma.status in ('idle','delay') THEN rchp.duration END), 0) AS idle_duration,
+              COALESCE(SUM(CASE WHEN ma.status = 'breakdown' THEN rchp.duration END), 0) AS bd_duration
+          FROM r_ccr_hauling_problem rchp
+          LEFT JOIN m_activities ma ON ma.id = rchp.activities_id
+          where rchp.activity_date = $1
+          group by rchp.activity_date
+        )
+        SELECT 
+            pp.plan_date,
+            pp.ore_target,
+            pp.ore_shipment_target,
+            pp.ob_target,
+            pp.quarry,
+            coalesce(odch.total_tonnage, 0) as total_tonnage,
+            coalesce(odch.total_vessel, 0) as total_vessel,
+            coalesce(hp.idle_duration,0) as idle_duration,
+            coalesce(hp.bd_duration, 0) as bd_duration,
+            coalesce(pwh.ewh, 0) as ewh,
+            COALESCE(SUM(md.total_vessel) FILTER (WHERE md.material = 'ore'), 0) AS ore_vessel,
+            COALESCE(SUM(md.total_tonnage) FILTER (WHERE md.material = 'ore'), 0) AS ore_tonnage,
+            COALESCE(SUM(md.total_vessel) FILTER (WHERE md.material = 'quarry'), 0) AS quarry_vessel,
+            COALESCE(SUM(md.total_tonnage) FILTER (WHERE md.material = 'quarry'), 0) AS quarry_tonnage,
+            COALESCE(SUM(md.total_vessel) FILTER (WHERE md.material = 'ob'), 0) AS ob_vessel,
+            COALESCE(SUM(md.total_tonnage) FILTER (WHERE md.material = 'ob'), 0) AS ob_tonnage
+        FROM plan_production pp
+        LEFT JOIN material_data md ON md.activity_date = pp.plan_date
+        LEFT JOIN ore_data_hauling odch ON odch.activity_date = pp.plan_date
+        LEFT JOIN hauling_problem hp on hp.activity_date = odch.activity_date
+        left join plan_working_hour pwh on pwh.plan_date::date = pp.plan_date
+        GROUP BY pp.plan_date, pp.ore_target, pp.ore_shipment_target, pp.ob_target, pp.quarry,
+        pwh.ewh, odch.total_tonnage, odch.total_vessel, hp.idle_duration, hp.bd_duration;`;
+
+      const result = await this.dataSource.query(query, [
+        defaultSelectedDate
+      ]);
+        
+      const row = result[0] ?? {};
+      const productionData = {
+          planDate: row.plan_date ?? null,
+          oreTarget: row.ore_target ?? 0,
+          oreShipmentTarget: row.ore_shipment_target ?? 0,
+          obTarget: row.ob_target ?? 0,
+          quarryTarget: row.quarry ?? 0,
+          totalTonnage: row.total_tonnage ?? 0,
+          totalVessel: parseInt(row.total_vessel ?? '0'),
+          totalOreTonnage: row.ore_tonnage ?? 0,
+          totalQuarryTonnage: row.quarry_tonnage ?? 0,
+          totalObTonnage: row.ob_tonnage ?? 0,
+          bdDuration: row.bd_duration ?? 0,
+          idleDuration: row.idle_duration ?? 0,
+          ewh: row.average_day_ewh ?? 0
+      };
+
+      const tonnagePercentage = productionData.oreTarget > 0
+            ? (productionData.totalTonnage / productionData.oreTarget) * 100
+            : 0;
+      const vesselPercentage = productionData.oreTarget > 0
+            ? (productionData.totalVessel / productionData.oreTarget) * 100
+            : 0;
+      const orePercentage = productionData.oreTarget > 0
+            ? (productionData.totalOreTonnage / productionData.oreTarget) * 100
+            : 0;
+      const quarryPercentage = productionData.quarryTarget > 0
+            ? (productionData.totalQuarryTonnage / productionData.quarryTarget) * 100
+            : 0;
+      const obPercentage = productionData.obTarget > 0 
+            ? (productionData.totalObTonnage / productionData.obTarget) * 100
+            : 0;
+
       return {
         statusCode: 200,
         message: 'success',
         data: {
-          total_mp: 24,
+          total_mp: 0,
           attendance: [
-            { name: 'Hadir', value: 16, color: '#54AD9B' },
-            { name: 'Sakit', value: 2, color: '#54AD9B' },
-            { name: 'Izin', value: 1, color: '#54AD9B' },
-            { name: 'Alpa', value: 1, color: '#FF0000' },
-            { name: 'Cuti', value: 1, color: '#F1C40F' },
-            { name: 'Punishment', value: 1, color: '#F1C40F' },
-            { name: 'Standby', value: 1, color: '#F1C40F' },
+            { name: 'Hadir', value: 0, color: '#54AD9B' },
+            { name: 'Sakit', value: 0, color: '#54AD9B' },
+            { name: 'Izin', value: 0, color: '#54AD9B' },
+            { name: 'Alpa', value: 0, color: '#FF0000' },
+            { name: 'Cuti', value: 0, color: '#F1C40F' },
+            { name: 'Punishment', value: 0, color: '#F1C40F' },
+            { name: 'Standby', value: 0, color: '#F1C40F' },
           ],
           chart_summary: [
             {
               title: 'Tonnage',
               meta: {
-                actual: 4000,
-                target: 8000,
-                percent: 50,
+                actual: productionData?.totalTonnage || 0,
+                target: 
+                  productionData.oreTarget  || 0 +
+                  productionData.oreShipmentTarget || 0 +
+                  productionData.obTarget || +
+                  productionData.quarryTarget || 0,
+                percent: tonnagePercentage,
               },
             },
             {
               title: 'Vessel',
               meta: {
-                actual: 5000,
-                target: 13000,
-                percent: 38,
+                actual: productionData.totalVessel,
+                target: productionData.oreTarget / 35,
+                percent: vesselPercentage
               },
             },
             {
               title: 'Ore',
               meta: {
-                actual: 2000,
-                target: 10000,
-                percent: 20,
+                actual: productionData.totalOreTonnage,
+                target: productionData.oreTarget,
+                percent: orePercentage,
               },
             },
             {
               title: 'Quarry',
               meta: {
-                actual: 2000,
-                target: 10000,
-                percent: 20,
+                actual: productionData.totalQuarryTonnage,
+                target: productionData.quarryTarget,
+                percent: quarryPercentage,
               },
             },
             {
               title: 'OB',
               meta: {
-                actual: 2000,
-                target: 10000,
-                percent: 20,
+                actual: productionData.totalObTonnage,
+                target: productionData.obTarget,
+                percent: obPercentage,
               },
             },
           ],
           working_hour: [
-            { title: 'EWH', value: 10 },
-            { title: 'STB', value: 50 },
+            { title: 'EWH', value: productionData.ewh ?? 0 },
+            { title: 'STB', value: productionData.bdDuration + productionData.idleDuration},
           ],
         },
       };

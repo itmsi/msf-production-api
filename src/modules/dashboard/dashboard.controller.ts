@@ -405,8 +405,10 @@ export class DashboardController {
     description: 'Successfully retrieved hauling summary data',
     type: HaulingSummaryResponseDto,
   })
-  async getHaulingSummary(): Promise<HaulingSummaryResponseDto> {
-    return await this.dashboardService.getHaulingSummary();
+  async getHaulingSummary(
+     @Query('selectedDate') selectedDate?: string
+  ): Promise<HaulingSummaryResponseDto> {
+    return await this.dashboardService.getHaulingSummary(selectedDate);
   }
 
   @Get('ccr/fleet-status')
