@@ -133,7 +133,7 @@ export class MtdProductionService {
         .andWhere('rtl.population_id = :unitId', { unitId });
 
       const result = await qb.getRawOne();
-      return result.sum;
+      return result.sum / 60;
     } catch (error) {
       throw new BadRequestException(
         `Failed mendapatkan data: ${error.message}`,
