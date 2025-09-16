@@ -44,7 +44,10 @@ export class BargingListService {
     });
 
     if (!population) {
-      throwError(`Unit hauler dengan ID ${unitHaulerId} tidak ditemukan di tabel m_population`, 400);
+      throwError(
+        `Unit hauler dengan ID ${unitHaulerId} tidak ditemukan di tabel m_population`,
+        400,
+      );
     }
   }
 
@@ -57,7 +60,10 @@ export class BargingListService {
     });
 
     if (!barge) {
-      throwError(`Barge dengan ID ${bargeId} tidak ditemukan di tabel m_barge`, 400);
+      throwError(
+        `Barge dengan ID ${bargeId} tidak ditemukan di tabel m_barge`,
+        400,
+      );
     }
   }
 
@@ -66,13 +72,15 @@ export class BargingListService {
    */
   private transformResponse(bargingList: BargingList): BargingListResponseDto {
     // Pastikan activityDate dan time adalah Date object dengan timezone lokal
-    const activityDate = bargingList.activityDate instanceof Date 
-      ? bargingList.activityDate.toLocaleDateString('en-CA')
-      : new Date(bargingList.activityDate).toLocaleDateString('en-CA');
-    
-    const time = bargingList.time instanceof Date 
-      ? bargingList.time.toISOString()
-      : new Date(bargingList.time).toISOString();
+    const activityDate =
+      bargingList.activityDate instanceof Date
+        ? bargingList.activityDate.toLocaleDateString('en-CA')
+        : new Date(bargingList.activityDate).toLocaleDateString('en-CA');
+
+    const time =
+      bargingList.time instanceof Date
+        ? bargingList.time.toISOString()
+        : new Date(bargingList.time).toISOString();
 
     // Hitung time range dari time
     const timeRange = this.calculateTimeRange(bargingList.time);
@@ -108,15 +116,23 @@ export class BargingListService {
   /**
    * Hitung time range dari time dengan format HH-HH
    */
-  private calculateTimeRange(time: Date): string {
-    // Gunakan UTC time untuk menghindari masalah timezone
-    const hours = time.getUTCHours();
-    const nextHour = hours + 1;
-    
-    // Format: HH-HH (contoh: 08-09, 14-15)
+  private calculateTimeRange(
+    time: Date,
+    timeZone: string = 'Asia/Jakarta',
+  ): string {
+    // Ambil jam di zona waktu tertentu
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      hour: '2-digit',
+      hour12: false,
+      timeZone,
+    });
+
+    const hours = parseInt(formatter.format(time), 10);
+    const nextHour = (hours + 1) % 24;
+
     const currentHour = hours.toString().padStart(2, '0');
     const nextHourStr = nextHour.toString().padStart(2, '0');
-    
+
     return `${currentHour}-${nextHourStr}`;
   }
 
@@ -138,20 +154,24 @@ export class BargingListService {
       });
 
       return {
-        populations: populations.map(p => ({ id: p.id, no_unit: p.no_unit })),
-        barges: barges.map(b => ({ id: b.id, name: b.name })),
-        message: 'Data test berhasil diambil'
+        populations: populations.map((p) => ({ id: p.id, no_unit: p.no_unit })),
+        barges: barges.map((b) => ({ id: b.id, name: b.name })),
+        message: 'Data test berhasil diambil',
       };
     } catch (error) {
       console.error('Error in testData method:', error);
-      throw new InternalServerErrorException(`Gagal mengambil data test: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Gagal mengambil data test: ${error.message}`,
+      );
     }
   }
 
-  async create(createDto: CreateBargingListDto): Promise<ApiResponse<BargingListResponseDto>> {
+  async create(
+    createDto: CreateBargingListDto,
+  ): Promise<ApiResponse<BargingListResponseDto>> {
     try {
       console.log('Creating barging list with data:', createDto);
-      
+
       // Validasi unit_hauler_id
       await this.validateUnitHaulerId(createDto.unit_hauler_id);
       console.log('Unit hauler validation passed');
@@ -195,21 +215,21 @@ export class BargingListService {
       const response = this.transformResponse(savedBargingList!);
       console.log('Transformed response:', response);
 
-      return successResponse(
-        response,
-        'Barging list berhasil dibuat',
-        201,
-      );
+      return successResponse(response, 'Barging list berhasil dibuat', 201);
     } catch (error) {
       console.error('Error in create method:', error);
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException(`Gagal membuat barging list: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Gagal membuat barging list: ${error.message}`,
+      );
     }
   }
 
-  async findAll(query: GetBargingListQueryDto): Promise<ApiResponse<BargingListResponseDto[]>> {
+  async findAll(
+    query: GetBargingListQueryDto,
+  ): Promise<ApiResponse<BargingListResponseDto[]>> {
     try {
       const page = parseInt(query.page?.toString() ?? '1', 10);
       const limit = parseInt(query.limit?.toString() ?? '10', 10);
@@ -270,16 +290,26 @@ export class BargingListService {
       // Transform response
       const transformedData = data.map((item) => this.transformResponse(item));
 
-      return paginateResponse(transformedData, total, page, limit, 'Data barging list berhasil diambil');
+      return paginateResponse(
+        transformedData,
+        total,
+        page,
+        limit,
+        'Data barging list berhasil diambil',
+      );
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException('Gagal mengambil data barging list');
+      throw new InternalServerErrorException(
+        'Gagal mengambil data barging list',
+      );
     }
   }
 
-  async findOne(id: number): Promise<ApiResponse<BargingListResponseDto | null>> {
+  async findOne(
+    id: number,
+  ): Promise<ApiResponse<BargingListResponseDto | null>> {
     try {
       const bargingList = await this.bargingListRepository.findOne({
         where: { id, deletedAt: undefined },
@@ -298,7 +328,9 @@ export class BargingListService {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException('Gagal mengambil data barging list');
+      throw new InternalServerErrorException(
+        'Gagal mengambil data barging list',
+      );
     }
   }
 
@@ -364,7 +396,10 @@ export class BargingListService {
       });
 
       if (!updatedBargingList) {
-        throwError('Gagal mengambil data barging list yang sudah diupdate', 500);
+        throwError(
+          'Gagal mengambil data barging list yang sudah diupdate',
+          500,
+        );
       }
 
       return successResponse(
