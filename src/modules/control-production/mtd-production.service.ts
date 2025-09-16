@@ -336,7 +336,7 @@ export class MtdProductionService {
             ore_barge_tonnage: oreBargeTon,
             ob_tonnage: obTon,
             boulder_tonnage: boulderTon,
-            sr: obTon / oreHaulingTon,
+            sr: toNum(obTon) / toNum(oreHaulingTon) || 0,
           };
         }),
       );
