@@ -149,11 +149,7 @@ export class DashboardController {
     @Query('endDate') endDate?: string,
   ) {
     const result = await this.dashboardService.getBargeData(startDate, endDate);
-    return successResponse(
-      result,
-      'Data barge berhasil diambil',
-      200,
-    );
+    return successResponse(result, 'Data barge berhasil diambil', 200);
   }
 
   @Get('tmm')
@@ -377,8 +373,8 @@ export class DashboardController {
     description: 'Successfully retrieved trend performance unit data',
     type: TrendPerformanceUnitResponseDto,
   })
-  async getTrendPerformanceUnit(@Query('month') month: string) {
-    return await this.dashboardService.getTrendPerformanceUnit(month);
+  getTrendPerformanceUnit(@Query('month') month: string) {
+    return this.dashboardService.getTrendPerformanceUnit(month);
   }
 
   @Get('summary-production')
@@ -406,7 +402,7 @@ export class DashboardController {
     type: HaulingSummaryResponseDto,
   })
   async getHaulingSummary(
-     @Query('selectedDate') selectedDate?: string
+    @Query('selectedDate') selectedDate?: string,
   ): Promise<HaulingSummaryResponseDto> {
     return await this.dashboardService.getHaulingSummary(selectedDate);
   }
@@ -422,8 +418,8 @@ export class DashboardController {
     description: 'Successfully retrieved CCR fleet status data',
     type: FleetStatusResponseDto,
   })
-  async getFleetStatus(): Promise<FleetStatusResponseDto> {
-    return await this.dashboardService.getMockFleetStatus();
+  getFleetStatus(): FleetStatusResponseDto {
+    return this.dashboardService.getMockFleetStatus();
   }
 
   @Post('ccr/tonnage')
@@ -437,8 +433,8 @@ export class DashboardController {
     description: 'Successfully retrieved CCR tonnage data',
     type: TonnageResponseDto,
   })
-  async getTonnage(): Promise<TonnageResponseDto> {
-    return await this.dashboardService.getMockTonnage();
+  getTonnage(): TonnageResponseDto {
+    return this.dashboardService.getMockTonnage();
   }
 
   @Get('ccr/barging-summary')
@@ -469,8 +465,8 @@ export class DashboardController {
     description: 'Successfully retrieved CCR activities data',
     type: CcrActivitesResponseDto,
   })
-  async getActivities(): Promise<CcrActivitesResponseDto> {
-    return await this.dashboardService.getMockActivities();
+  getActivities(): CcrActivitesResponseDto {
+    return this.dashboardService.getMockActivities();
   }
 
   @Get('lost-time-summary')

@@ -895,11 +895,17 @@ export class DashboardService {
 
       // Get barge data from analysis-hauling-barging service
       const bargeDataArray = await this.getBargeData(startDateStr, endDateStr);
-      
+
       // Calculate total barge and hauling tonnage
-      const totalBargeTonnage = bargeDataArray.reduce((sum, item) => sum + item.barge, 0);
-      const totalHaulingTonnage = bargeDataArray.reduce((sum, item) => sum + item.hauling, 0);
-      
+      const totalBargeTonnage = bargeDataArray.reduce(
+        (sum, item) => sum + item.barge,
+        0,
+      );
+      const totalHaulingTonnage = bargeDataArray.reduce(
+        (sum, item) => sum + item.hauling,
+        0,
+      );
+
       // For now, we'll use the total tonnage as both target and actual
       // In a real scenario, you might want to get target values from a different source
       const bargeData = {
@@ -1505,7 +1511,7 @@ export class DashboardService {
     }
   }
 
-  async getTrendPerformanceUnit(month: string) {
+  getTrendPerformanceUnit(month: string) {
     // TEMPORARY: Return dummy data with actual values for testing
     return {
       statusCode: 200,
@@ -1742,14 +1748,14 @@ export class DashboardService {
     selectedDate?: string,
   ): Promise<HaulingSummaryResponseDto> {
     try {
-        const today = new Date();
+      const today = new Date();
 
-        const defaultSelectedDate = selectedDate || today.toISOString()
-          .split('T')[0];
+      const defaultSelectedDate =
+        selectedDate || today.toISOString().split('T')[0];
 
-        console.log(selectedDate);
+      console.log(selectedDate);
 
-        const query = `
+      const query = `
         with ore_data_hauling as (
         select
           rch.activity_date,
@@ -1820,42 +1826,46 @@ export class DashboardService {
         GROUP BY pp.plan_date, pp.ore_target, pp.ore_shipment_target, pp.ob_target, pp.quarry,
         pwh.ewh, odch.total_tonnage, odch.total_vessel, hp.idle_duration, hp.bd_duration;`;
 
-      const result = await this.dataSource.query(query, [
-        defaultSelectedDate
-      ]);
-        
+      const result = await this.dataSource.query(query, [defaultSelectedDate]);
+
       const row = result[0] ?? {};
       const productionData = {
-          planDate: row.plan_date ?? null,
-          oreTarget: row.ore_target ?? 0,
-          oreShipmentTarget: row.ore_shipment_target ?? 0,
-          obTarget: row.ob_target ?? 0,
-          quarryTarget: row.quarry ?? 0,
-          totalTonnage: row.total_tonnage ?? 0,
-          totalVessel: parseInt(row.total_vessel ?? '0'),
-          totalOreTonnage: row.ore_tonnage ?? 0,
-          totalQuarryTonnage: row.quarry_tonnage ?? 0,
-          totalObTonnage: row.ob_tonnage ?? 0,
-          bdDuration: row.bd_duration ?? 0,
-          idleDuration: row.idle_duration ?? 0,
-          ewh: row.average_day_ewh ?? 0
+        planDate: row.plan_date ?? null,
+        oreTarget: row.ore_target ?? 0,
+        oreShipmentTarget: row.ore_shipment_target ?? 0,
+        obTarget: row.ob_target ?? 0,
+        quarryTarget: row.quarry ?? 0,
+        totalTonnage: row.total_tonnage ?? 0,
+        totalVessel: parseInt(row.total_vessel ?? '0'),
+        totalOreTonnage: row.ore_tonnage ?? 0,
+        totalQuarryTonnage: row.quarry_tonnage ?? 0,
+        totalObTonnage: row.ob_tonnage ?? 0,
+        bdDuration: row.bd_duration ?? 0,
+        idleDuration: row.idle_duration ?? 0,
+        ewh: row.average_day_ewh ?? 0,
       };
 
-      const tonnagePercentage = productionData.oreTarget > 0
-            ? (productionData.totalTonnage / productionData.oreTarget) * 100
-            : 0;
-      const vesselPercentage = productionData.oreTarget > 0
-            ? (productionData.totalVessel / productionData.oreTarget) * 100
-            : 0;
-      const orePercentage = productionData.oreTarget > 0
-            ? (productionData.totalOreTonnage / productionData.oreTarget) * 100
-            : 0;
-      const quarryPercentage = productionData.quarryTarget > 0
-            ? (productionData.totalQuarryTonnage / productionData.quarryTarget) * 100
-            : 0;
-      const obPercentage = productionData.obTarget > 0 
-            ? (productionData.totalObTonnage / productionData.obTarget) * 100
-            : 0;
+      const tonnagePercentage =
+        productionData.oreTarget > 0
+          ? (productionData.totalTonnage / productionData.oreTarget) * 100
+          : 0;
+      const vesselPercentage =
+        productionData.oreTarget > 0
+          ? (productionData.totalVessel / productionData.oreTarget) * 100
+          : 0;
+      const orePercentage =
+        productionData.oreTarget > 0
+          ? (productionData.totalOreTonnage / productionData.oreTarget) * 100
+          : 0;
+      const quarryPercentage =
+        productionData.quarryTarget > 0
+          ? (productionData.totalQuarryTonnage / productionData.quarryTarget) *
+            100
+          : 0;
+      const obPercentage =
+        productionData.obTarget > 0
+          ? (productionData.totalObTonnage / productionData.obTarget) * 100
+          : 0;
 
       return {
         statusCode: 200,
@@ -1876,11 +1886,12 @@ export class DashboardService {
               title: 'Tonnage',
               meta: {
                 actual: productionData?.totalTonnage || 0,
-                target: 
-                  productionData.oreTarget  || 0 +
-                  productionData.oreShipmentTarget || 0 +
-                  productionData.obTarget || +
-                  productionData.quarryTarget || 0,
+                target:
+                  productionData.oreTarget ||
+                  0 + productionData.oreShipmentTarget ||
+                  0 + productionData.obTarget ||
+                  +productionData.quarryTarget ||
+                  0,
                 percent: tonnagePercentage,
               },
             },
@@ -1889,7 +1900,7 @@ export class DashboardService {
               meta: {
                 actual: productionData.totalVessel,
                 target: productionData.oreTarget / 35,
-                percent: vesselPercentage
+                percent: vesselPercentage,
               },
             },
             {
@@ -1919,7 +1930,10 @@ export class DashboardService {
           ],
           working_hour: [
             { title: 'EWH', value: productionData.ewh ?? 0 },
-            { title: 'STB', value: productionData.bdDuration + productionData.idleDuration},
+            {
+              title: 'STB',
+              value: productionData.bdDuration + productionData.idleDuration,
+            },
           ],
         },
       };
@@ -1928,7 +1942,7 @@ export class DashboardService {
     }
   }
 
-  async getMockFleetStatus(): Promise<FleetStatusResponseDto> {
+  getMockFleetStatus(): FleetStatusResponseDto {
     try {
       return {
         statusCode: 200,
@@ -1983,7 +1997,7 @@ export class DashboardService {
     }
   }
 
-  async getMockTonnage(): Promise<TonnageResponseDto> {
+  getMockTonnage(): TonnageResponseDto {
     try {
       return {
         statusCode: 200,
@@ -2115,7 +2129,7 @@ export class DashboardService {
     }
   }
 
-  async getMockActivities(): Promise<CcrActivitesResponseDto> {
+  getMockActivities(): CcrActivitesResponseDto {
     try {
       return {
         statusCode: 200,
@@ -2546,12 +2560,13 @@ export class DashboardService {
       }
 
       // Get data from analysis-hauling-barging service
-      const analysisData = await this.analysisHaulingBargingService.getAnalysisData({
-        startDate,
-        endDate,
-        page: 1,
-        limit: 1000, // Get all data for the date range
-      });
+      const analysisData =
+        await this.analysisHaulingBargingService.getAnalysisData({
+          startDate,
+          endDate,
+          page: 1,
+          limit: 1000, // Get all data for the date range
+        });
 
       // Process data to match the required format
       const processedData = analysisData.data.map((item: any) => ({
