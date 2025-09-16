@@ -1,104 +1,107 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsDateString, IsOptional, IsString } from "class-validator";
-
+import { ApiProperty } from '@nestjs/swagger';
+import { IsDateString, IsOptional, IsString } from 'class-validator';
 
 export class MtdProductionQueryDto {
-  @ApiProperty({ 
-    description: 'Start date for filtering (YYYY-MM-DD format)', 
+  @ApiProperty({
+    description: 'Start date for filtering (YYYY-MM-DD format)',
     example: '2025-01-01',
-    required: false 
+    required: false,
   })
   @IsOptional()
   @IsDateString()
   startDate?: string;
 
-  @ApiProperty({ 
-    description: 'End date for filtering (YYYY-MM-DD format)', 
+  @ApiProperty({
+    description: 'End date for filtering (YYYY-MM-DD format)',
     example: '2025-01-31',
-    required: false 
+    required: false,
   })
   @IsOptional()
   @IsDateString()
   endDate?: string;
 
-  @ApiProperty({ 
-    description: 'Page number for pagination', 
+  @ApiProperty({
+    description: 'Page number for pagination',
     example: '1',
-    required: false 
+    required: false,
   })
   @IsOptional()
   @IsString()
   page?: string;
 
-  @ApiProperty({ 
-    description: 'Number of items per page', 
+  @ApiProperty({
+    description: 'Number of items per page',
     example: '10',
-    required: false 
+    required: false,
   })
   @IsOptional()
   @IsString()
   limit?: string;
 
-  @ApiProperty({ 
-    description: 'Unit number filter (e.g., DT-001)', 
+  @ApiProperty({
+    description: 'Unit number filter (e.g., DT-001)',
     example: 'DT-001',
-    required: false 
+    required: false,
   })
   @IsOptional()
   @IsString()
   unit?: string;
+
+  @IsOptional()
+  @IsString()
+  shift?: string;
 }
 
 export class DayProductionQueryDto {
-  @ApiProperty({ 
-    description: 'Start date for filtering (YYYY-MM-DD format)', 
+  @ApiProperty({
+    description: 'Start date for filtering (YYYY-MM-DD format)',
     example: '2025-01-01',
-    required: false 
+    required: false,
   })
   @IsOptional()
   @IsDateString()
   startDate?: string;
 
-  @ApiProperty({ 
-    description: 'End date for filtering (YYYY-MM-DD format)', 
+  @ApiProperty({
+    description: 'End date for filtering (YYYY-MM-DD format)',
     example: '2025-01-31',
-    required: false 
+    required: false,
   })
   @IsOptional()
   @IsDateString()
   endDate?: string;
 
-  @ApiProperty({ 
-    description: 'Shift Type (DS/NS)', 
+  @ApiProperty({
+    description: 'Shift Type (DS/NS)',
     example: 'DS',
-    required: false 
+    required: false,
   })
   @IsOptional()
   @IsString()
   shift?: string;
 
-  @ApiProperty({ 
-    description: 'Page number for pagination', 
+  @ApiProperty({
+    description: 'Page number for pagination',
     example: '1',
-    required: false 
+    required: false,
   })
   @IsOptional()
   @IsString()
   page?: string;
 
-  @ApiProperty({ 
-    description: 'Number of items per page', 
+  @ApiProperty({
+    description: 'Number of items per page',
     example: '10',
-    required: false 
+    required: false,
   })
   @IsOptional()
   @IsString()
   limit?: string;
 
-  @ApiProperty({ 
-    description: 'Unit number filter (e.g., DT-001)', 
+  @ApiProperty({
+    description: 'Unit number filter (e.g., DT-001)',
     example: 'DT-001',
-    required: false 
+    required: false,
   })
   @IsOptional()
   @IsString()
@@ -206,10 +209,16 @@ export class MtdProductionResponseDto {
   @ApiProperty({ description: 'HTTP status code', example: 200 })
   statusCode: number;
 
-  @ApiProperty({ description: 'Response message', example: 'Data berhasil diambil' })
+  @ApiProperty({
+    description: 'Response message',
+    example: 'Data berhasil diambil',
+  })
   message: string;
 
-  @ApiProperty({ description: 'MTD Production data', type: [MtdProductionItemDto] })
+  @ApiProperty({
+    description: 'MTD Production data',
+    type: [MtdProductionItemDto],
+  })
   data: MtdProductionItemDto[];
 
   @ApiProperty({ description: 'Pagination information', type: PaginationDto })
@@ -271,13 +280,22 @@ export class DayProductionItemDto {
   @ApiProperty({ description: 'Boulder', example: 1.2 })
   boulder: number;
 
-  @ApiProperty({ description: 'Material Ore acitivity Hauling Tonnage', example: 1.2 })
+  @ApiProperty({
+    description: 'Material Ore acitivity Hauling Tonnage',
+    example: 1.2,
+  })
   ore_hauling_tonnage: number;
 
-  @ApiProperty({ description: 'Material Ore acitivity Hauling Tonnage', example: 1.2 })
+  @ApiProperty({
+    description: 'Material Ore acitivity Hauling Tonnage',
+    example: 1.2,
+  })
   ore_barge_tonnage: number;
 
-  @ApiProperty({ description: 'Material Ore acitivity Hauling Tonnage', example: 1.2 })
+  @ApiProperty({
+    description: 'Material Ore acitivity Hauling Tonnage',
+    example: 1.2,
+  })
   ob_tonnage: number;
 
   @ApiProperty({ description: 'Boulder', example: 1.2 })
@@ -297,7 +315,10 @@ export class DayProductionResponseDto {
   @ApiProperty({ description: 'Response message', example: 'success' })
   message: string;
 
-  @ApiProperty({ description: 'Daily summary production data', type: [DayProductionItemDto] })
+  @ApiProperty({
+    description: 'Daily summary production data',
+    type: [DayProductionItemDto],
+  })
   data: DayProductionItemDto[];
 }
 
@@ -308,7 +329,10 @@ export class MTDWorkHourResponseDto {
   @ApiProperty({ description: 'Response message', example: 'success' })
   message: string;
 
-  @ApiProperty({ description: 'Daily summary production data', type: [MtdProductionItemDto] })
+  @ApiProperty({
+    description: 'Daily summary production data',
+    type: [MtdProductionItemDto],
+  })
   data: MtdProductionItemDto[];
 }
 
@@ -319,6 +343,9 @@ export class DayWorkHourResponseDto {
   @ApiProperty({ description: 'Response message', example: 'success' })
   message: string;
 
-  @ApiProperty({ description: 'Daily summary production data', type: [MtdProductionItemDto] })
+  @ApiProperty({
+    description: 'Daily summary production data',
+    type: [MtdProductionItemDto],
+  })
   data: MtdProductionItemDto[];
 }
