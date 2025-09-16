@@ -48,7 +48,7 @@ export class CreateParentPlanProductionDto {
   })
   @IsNotEmpty({ message: 'total_ob_target tidak boleh kosong' })
   @IsNumber({}, { message: 'total_ob_target harus berupa angka' })
-  @IsPositive({ message: 'total_ob_target harus lebih dari 0' })
+  @Min(0, { message: 'total_ob_target tidak boleh kurang dari 0' })
   total_ob_target: number;
 
   @ApiProperty({
