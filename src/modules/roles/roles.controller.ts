@@ -32,7 +32,7 @@ import {
 
 @ApiTags('Roles')
 @ApiBearerAuth('jwt')
-@Controller('roles')
+@Controller('prod/roles')
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 

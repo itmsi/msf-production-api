@@ -32,7 +32,7 @@ import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 
 @ApiTags('Employee')
 @ApiBearerAuth('jwt')
-@Controller('employees')
+@Controller('prod/employees')
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
 

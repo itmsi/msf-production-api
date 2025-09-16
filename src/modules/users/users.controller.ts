@@ -32,7 +32,7 @@ import {
 
 @ApiTags('Users')
 @ApiBearerAuth('jwt')
-@Controller('users')
+@Controller('prod/users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
