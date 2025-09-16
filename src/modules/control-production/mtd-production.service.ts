@@ -367,7 +367,7 @@ export class MtdProductionService {
             ore_barge_tonnage: oreBargeTon,
             ob_tonnage: obTon,
             boulder_tonnage: boulderTon,
-            sr: safeRatio(obTon, oreHaulingTon),
+            sr: obTon / oreHaulingTon,
           };
         }),
       );
