@@ -26,12 +26,16 @@ import {
 import {
   BargingSummaryResponseDto,
   CcrActivitesResponseDto,
+  CcrActivitiesDto,
+  CcrActivitiesItemDto,
   FleetStatusResponseDto,
   HaulingSummaryResponseDto,
   TonnageResponseDto,
 } from './dto/ccr-dashboard.dto';
-import { successResponse } from '../../common/helpers/response.helper';
-
+import {
+  ApiResponse as ApiResponseDto,
+  successResponse,
+} from '../../common/helpers/response.helper';
 @ApiTags('Dashboard')
 @ApiBearerAuth('jwt')
 @Controller('dashboard')
@@ -465,8 +469,10 @@ export class DashboardController {
     description: 'Successfully retrieved CCR activities data',
     type: CcrActivitesResponseDto,
   })
-  getActivities(): CcrActivitesResponseDto {
-    return this.dashboardService.getMockActivities();
+  async getActivities(
+    @Query() query: CcrActivitiesDto,
+  ): Promise<ApiResponseDto<CcrActivitiesItemDto[]>> {
+    return await this.dashboardService.getCcrActivities(query);
   }
 
   @Get('lost-time-summary')

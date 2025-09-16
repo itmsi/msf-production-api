@@ -1,5 +1,5 @@
-import { ApiProperty } from "@nestjs/swagger";
-
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
 
 class AttendanceItem {
   @ApiProperty()
@@ -64,7 +64,7 @@ export class HaulingSummaryResponseDto {
   data: AttendanceSummaryDto;
 }
 
-// Fleet Status 
+// Fleet Status
 export class FleetStatusItemDto {
   @ApiProperty({ example: 'KFM-DT-001' })
   fleet: string;
@@ -186,4 +186,24 @@ export class CcrActivitesResponseDto {
 
   @ApiProperty({ type: [CcrActivitiesItemDto] })
   data: CcrActivitiesItemDto[];
+}
+
+export enum ActivityType {
+  HAULING = 'hauling',
+  BARGING = 'barging',
+}
+
+export class CcrActivitiesDto {
+  @ApiPropertyOptional({ description: 'Filter berdasarkan tanggal' })
+  @IsOptional()
+  @IsDateString()
+  date?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter berdasarkan type aktivitas',
+    enum: ActivityType,
+  })
+  @IsOptional()
+  @IsEnum(ActivityType, { message: 'type harus hauling atau barging' })
+  type?: ActivityType;
 }
