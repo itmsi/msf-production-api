@@ -455,7 +455,7 @@ export class DashboardController {
     return await this.dashboardService.getMockBargingSummary(date);
   }
 
-  @Get('ccr/activiies')
+  @Get('ccr/activities')
   @ApiOperation({
     summary: 'Get CCR activities data',
     description: 'Retrieve CCR activities data with target and actual values',
