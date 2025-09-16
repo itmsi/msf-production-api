@@ -86,35 +86,6 @@ export class MtdProductionService {
       .select('COUNT(DISTINCT rpbdp.population_id)', 'total');
   }
 
-  private async getStandBy(
-    startDate: string,
-    endDate: string,
-    unitId: number,
-    mohh: number,
-    ewh: number,
-  ) {
-    try {
-      const qb = this.dataSource
-        .createQueryBuilder()
-        .select('COALESCE(SUM(rtl.duration),0)', 'sum')
-        .from('r_loss_time', 'rtl')
-        .where('rtl.start BETWEEN :startDate AND :endDate', {
-          startDate,
-          endDate,
-        })
-        .andWhere('rtl.loss_type = :lossType', { lossType: 'BD' })
-        .andWhere('rtl.population_id = :unitId', { unitId });
-
-      const result = await qb.getRawOne();
-      const res = mohh - result.sum - ewh;
-      return res;
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed mendapatkan data: ${error.message}`,
-      );
-    }
-  }
-
   private async getBreakDown(
     startDate: string,
     endDate: string,
@@ -317,29 +288,27 @@ export class MtdProductionService {
 
           const { ore = 0, quarry = 0 } = formulaMap[row.tyre_type] || {};
 
-          const [
-            standby,
-            breakdown,
-            oreHauling,
-            quarryVal,
-            oreBarge,
-            ob,
-            boulder,
-          ] = await Promise.all([
-            this.getStandBy(startDate, endDate, row.population_id, mohh, ewh),
-            this.getBreakDown(startDate, endDate, row.population_id),
-            this.getOreHauling(startDate, endDate, row.population_id),
-            this.getMaterial(startDate, endDate, row.population_id, 'quarry'),
-            this.getOreBarge(startDate, endDate, row.population_id),
-            this.getMaterial(startDate, endDate, row.population_id, 'ob'),
-            this.getMaterial(startDate, endDate, row.population_id, 'boulder'),
-          ]);
+          const [breakdown, oreHauling, quarryVal, oreBarge, ob, boulder] =
+            await Promise.all([
+              this.getBreakDown(startDate, endDate, row.population_id),
+              this.getOreHauling(startDate, endDate, row.population_id),
+              this.getMaterial(startDate, endDate, row.population_id, 'quarry'),
+              this.getOreBarge(startDate, endDate, row.population_id),
+              this.getMaterial(startDate, endDate, row.population_id, 'ob'),
+              this.getMaterial(
+                startDate,
+                endDate,
+                row.population_id,
+                'boulder',
+              ),
+            ]);
 
           const oreHaulingTon = oreHauling * ore;
           const quarryTon = quarryVal * quarry;
           const oreBargeTon = oreBarge * ore;
           const obTon = ob * ore;
           const boulderTon = boulder * ore;
+          const standby = mohh - breakdown - ewh;
 
           return {
             population_id: row.population_id,
