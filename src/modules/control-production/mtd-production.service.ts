@@ -293,8 +293,7 @@ export class MtdProductionService {
 
     const toNum = (v: any) => Number(v) || 0;
     const safeRatio = (num: number, den: number) =>
-      den ? Math.round((num / den) * 100) / 100 : 0;
-
+      den ? Math.round((num / den) * 10000) / 100 : 0;
     const formulaMap: Record<string, { ore: number; quarry: number }> = {
       '6x4': { ore: 26.56, quarry: 16.6 },
       '8x4': { ore: 29.56, quarry: 18.56 },
