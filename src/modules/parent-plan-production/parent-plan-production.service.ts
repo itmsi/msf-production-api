@@ -359,7 +359,8 @@ export class ParentPlanProductionService {
           parent.planProductions?.filter((p) => p.is_holiday_day).length || 0;
 
         // Logic untuk is_available_to_edit dan is_available_to_delete
-        let isAvailableToEdit = false;
+        let isAvailableToEdit =
+          process.env.DEFAULT_AVAIL_TO_EDIT_PRODUCTION_PLAN === 'true';
         let isAvailableToDelete = false;
 
         if (
