@@ -80,6 +80,9 @@ export class FleetStatusItemDto {
   @ApiProperty({ example: '2025-10-01 07:00' })
   start_loading: string;
 
+  @ApiProperty({ example: '2025-10-01 07:00' })
+  finish_loading: string;
+
   @ApiProperty({ example: 'Quarry A' })
   loading_point: string;
 
@@ -109,6 +112,9 @@ export class FleetStatusItemDto {
 
   @ApiProperty({ example: 50 })
   ob: number;
+
+  @ApiProperty({ example: 'AYODA 3310' })
+  barge_name?: string;
 }
 
 export class FleetStatusResponseDto {
@@ -291,3 +297,4 @@ export class ChartTonnageVesselResult {
   })
   meta: Record<string, string>;
 }
+
