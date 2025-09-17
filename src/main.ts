@@ -58,7 +58,12 @@ async function bootstrap() {
     },
   }); // http://localhost:3000/docs
   app.enableCors({
-    origin: ['*'],
+    origin: [
+      'http://localhost:4000',
+      'https://dev-msf-part.motorsights.com',
+      'https://tid-dev.motorsightsinternational.com',
+      'https://stg-msf-part.motorsights.com',
+    ],
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
