@@ -18,6 +18,7 @@ import { paginateResponse } from '../../common/helpers/public.helper';
 import { successResponse } from '../../common/helpers/response.helper';
 import { OperationPoints } from '../operation-points/entities/operation-points.entity';
 import { Sites } from '../sites/entities/sites.entity';
+import { calculateTimeRange } from '../../common/helpers/public.helper';
 
 @Injectable()
 export class HaulingListService {
@@ -495,7 +496,7 @@ export class HaulingListService {
 
   private mapToResponseDto(haulingList: HaulingList): HaulingListResponseDto {
     // Hitung time range dari time
-    const timeRange = this.calculateTimeRange(haulingList.time);
+    const timeRange = calculateTimeRange(haulingList.time);
 
     return {
       id: haulingList.id,
@@ -519,25 +520,5 @@ export class HaulingListService {
       createdAt: haulingList.createdAt,
       updatedAt: haulingList.updatedAt,
     };
-  }
-
-  private calculateTimeRange(
-    time: Date,
-    timeZone: string = 'Asia/Jakarta',
-  ): string {
-    // Ambil jam di zona waktu tertentu
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      hour: '2-digit',
-      hour12: false,
-      timeZone,
-    });
-
-    const hours = parseInt(formatter.format(time), 10);
-    const nextHour = (hours + 1) % 24;
-
-    const currentHour = hours.toString().padStart(2, '0');
-    const nextHourStr = nextHour.toString().padStart(2, '0');
-
-    return `${currentHour}-${nextHourStr}`;
   }
 }

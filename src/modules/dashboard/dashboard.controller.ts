@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Req } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -13,7 +13,6 @@ import {
   HaulingResponseDto,
   BargeResponseDto,
   TmmResponseDto,
-  LostTimeResponseDto,
   DailyAchievementResponseDto,
   BargeListResponseDto,
   BargeStatusResponseDto,
@@ -26,12 +25,19 @@ import {
 import {
   BargingSummaryResponseDto,
   CcrActivitesResponseDto,
+  CcrActivitiesDto,
+  CcrActivitiesItemDto,
+  CcrTonnageDto,
+  ChartTonnageVesselResult,
   FleetStatusResponseDto,
   HaulingSummaryResponseDto,
   TonnageResponseDto,
 } from './dto/ccr-dashboard.dto';
-import { successResponse } from '../../common/helpers/response.helper';
-
+import {
+  ApiResponse as ApiResponseDto,
+  successResponse,
+} from '../../common/helpers/response.helper';
+import { Request } from 'express';
 @ApiTags('Dashboard')
 @ApiBearerAuth('jwt')
 @Controller('dashboard')
@@ -436,8 +442,30 @@ export class DashboardController {
     description: 'Successfully retrieved CCR tonnage data',
     type: TonnageResponseDto,
   })
-  getTonnage(): TonnageResponseDto {
-    return this.dashboardService.getMockTonnage();
+  async getTonnage(
+    @Body() body: CcrTonnageDto,
+    @Req() req: Request,
+  ): Promise<ApiResponseDto<ChartTonnageVesselResult | []>> {
+    const pathname = req.route.path;
+    return await this.dashboardService.getCcrTonnageVessel(body, pathname);
+  }
+
+  @Post('ccr/vessel')
+  @ApiOperation({
+    summary: 'Get CCR Vessel data',
+    description: 'Retrieve CCR Vessel data with hourly chart and unit metadata',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved CCR Vessel data',
+    type: TonnageResponseDto,
+  })
+  async getVessel(
+    @Body() body: CcrTonnageDto,
+    @Req() req: Request,
+  ): Promise<ApiResponseDto<ChartTonnageVesselResult | []>> {
+    const pathname = req.route.path;
+    return await this.dashboardService.getCcrTonnageVessel(body, pathname);
   }
 
   @Get('ccr/barging-summary')
@@ -468,8 +496,10 @@ export class DashboardController {
     description: 'Successfully retrieved CCR activities data',
     type: CcrActivitesResponseDto,
   })
-  getActivities(): CcrActivitesResponseDto {
-    return this.dashboardService.getMockActivities();
+  async getActivities(
+    @Query() query: CcrActivitiesDto,
+  ): Promise<ApiResponseDto<CcrActivitiesItemDto[]>> {
+    return await this.dashboardService.getCcrActivities(query);
   }
 
   @Get('lost-time-summary')
