@@ -23,6 +23,7 @@ import {
   BargingListResponseDto,
   GetBargingListQueryDto,
 } from './dto';
+import { calculateTimeRange } from '../../common/helpers/public.helper';
 
 @Injectable()
 export class BargingListService {
@@ -83,7 +84,7 @@ export class BargingListService {
         : new Date(bargingList.time).toISOString();
 
     // Hitung time range dari time
-    const timeRange = this.calculateTimeRange(bargingList.time);
+    const timeRange = calculateTimeRange(bargingList.time);
 
     return {
       id: bargingList.id,
@@ -111,29 +112,6 @@ export class BargingListService {
       .leftJoinAndSelect('barging.unitHauler', 'unitHauler')
       .leftJoinAndSelect('barging.barge', 'barge')
       .where('barging.deletedAt IS NULL');
-  }
-
-  /**
-   * Hitung time range dari time dengan format HH-HH
-   */
-  private calculateTimeRange(
-    time: Date,
-    timeZone: string = 'Asia/Jakarta',
-  ): string {
-    // Ambil jam di zona waktu tertentu
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      hour: '2-digit',
-      hour12: false,
-      timeZone,
-    });
-
-    const hours = parseInt(formatter.format(time), 10);
-    const nextHour = (hours + 1) % 24;
-
-    const currentHour = hours.toString().padStart(2, '0');
-    const nextHourStr = nextHour.toString().padStart(2, '0');
-
-    return `${currentHour}-${nextHourStr}`;
   }
 
   /**

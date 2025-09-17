@@ -1,27 +1,22 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { Population } from '../population/entities/population.entity';
 import { FormulaService } from '../../common/services/formula.service';
 import { ProductionFormulaService } from '../../common/services/production-formula.service';
 import { AnalysisHaulingBargingService } from '../analysis-hauling-barging/analysis-hauling-barging.service';
 import {
-  BargingSummaryItemDto,
-  BargingSummaryResponseDto,
-  CcrActivitesResponseDto,
+  ActivityType,
+  CcrActivitiesDto,
+  CcrActivitiesItemDto,
+  CcrTonnageDto,
+  ChartTonnageVesselResult,
+  ChartTonnageVesselRow,
   FleetStatusResponseDto,
   HaulingSummaryResponseDto,
-  TonnageResponseDto,
+  RawDataTonnageVesselRow,
 } from './dto/ccr-dashboard.dto';
-import {
-  HaulingResponseDto,
-  LostTimeSummaryResponseDto,
-} from './dto/dashboard.dto';
-import { BargeForm } from '../barge-form/entities/barge-form.entity';
-import { Barge } from '../barge/entities/barge.entity';
-import { EffectiveWorkingHours } from '../effective-working-hours/entities/effective-working-hours.entity';
-import { Activities } from '../activities/entities/activities.entity';
-import { ParentPlanWorkingHour } from '../plan-working-hour/entities/parent-plan-working-hour.entity';
-import { successResponse } from 'src/common';
+import { LostTimeSummaryResponseDto } from './dto/dashboard.dto';
+import { ApiResponse, successResponse } from 'src/common';
+import { calculateTimeRange } from '../../common/helpers/public.helper';
 
 @Injectable()
 export class DashboardService {
@@ -1997,36 +1992,98 @@ export class DashboardService {
     }
   }
 
-  getMockTonnage(): TonnageResponseDto {
+  private getUnitColumn(type: ActivityType, alias: string): string {
+    return type === ActivityType.BARGING
+      ? `${alias}.unit_hauler_id`
+      : `${alias}.unit_loading_id`;
+  }
+
+  private getValueColumn(isTonnage: boolean, alias: string): string {
+    return isTonnage ? `${alias}.total_tonnage` : `${alias}.vessel`;
+  }
+
+  private buildChart(
+    allRawData: RawDataTonnageVesselRow[],
+  ): ChartTonnageVesselResult {
+    const chartMap: Record<string, ChartTonnageVesselRow> = {};
+    const uniqueUnits: string[] = [];
+
+    allRawData.forEach((item) => {
+      const hourRange = calculateTimeRange(item.time);
+      const unit = item.unit;
+      const value = item.value ?? 0;
+
+      if (!uniqueUnits.includes(unit)) {
+        uniqueUnits.push(unit);
+      }
+
+      if (!chartMap[hourRange]) {
+        chartMap[hourRange] = { hour: hourRange, total: 0 };
+      }
+
+      chartMap[hourRange][unit] =
+        ((chartMap[hourRange][unit] as number) || 0) + value;
+      chartMap[hourRange].total += value;
+    });
+
+    const chart = Object.values(chartMap).sort((a, b) =>
+      a.hour.localeCompare(b.hour),
+    );
+
+    const colorPalette = ['#F6C89F', '#94D1B2', '#54AD9B'];
+    const meta: Record<string, string> = {};
+    uniqueUnits.forEach((unit, index) => {
+      meta[unit] = colorPalette[index] || '#000000';
+    });
+    meta.total = '#D96C06';
+
+    return { chart, meta };
+  }
+
+  async getCcrTonnageVessel(
+    body: CcrTonnageDto,
+    pathname: string,
+  ): Promise<ApiResponse<ChartTonnageVesselResult | []>> {
     try {
-      return {
-        statusCode: 200,
-        message: 'success',
-        data: {
-          chart: [
-            {
-              hour: '18-19',
-              'TID-EX-013': 1,
-              'DT-TR-001': 3,
-              'HD-EX-777': 5,
-              total: 8,
-            },
-            {
-              hour: '19-20',
-              'TID-EX-013': 2,
-              'DT-TR-001': 4,
-              'HD-EX-777': 6,
-              total: 12,
-            },
-          ],
-          meta: {
-            'TID-EX-013': '#F6C89F',
-            'DT-TR-001': '#94D1B2',
-            'HD-EX-777': '#54AD9B',
-            total: '#D96C06',
-          },
-        },
-      };
+      const { date: selectedDate, type, shift, unit_id } = body;
+      const dateToFilter =
+        selectedDate || new Date().toISOString().split('T')[0];
+      const typeFilter: ActivityType =
+        type || ('hauling' as ActivityType.HAULING);
+      const shiftFilter = shift?.toLowerCase() || 'ns';
+      const mainTable =
+        typeFilter === ActivityType.BARGING ? 'r_ccr_barging' : 'r_ccr_hauling';
+      const mainAlias = 'ccr';
+      const isTonnage = pathname.includes('vessel');
+
+      if (!unit_id.length) return successResponse([], 'success', 200);
+
+      // helper: tentukan unitColumn
+      const unitColumn = this.getUnitColumn(typeFilter, mainAlias);
+
+      // helper: tentukan valueColumn + alias selalu `value`
+      const valueColumn = this.getValueColumn(isTonnage, mainAlias);
+
+      const qb = this.dataSource
+        .createQueryBuilder()
+        .select([
+          `${valueColumn} AS value`,
+          `${mainAlias}.time AS time`,
+          'mp.no_unit AS unit',
+        ])
+        .from(mainTable, mainAlias)
+        .leftJoin('m_population', 'mp', `${unitColumn} = mp.id`)
+        .where(`DATE(${mainAlias}.activity_date) = :date`, {
+          date: dateToFilter,
+        })
+        .andWhere(`${mainAlias}.shift = :shift`, { shift: shiftFilter })
+        .andWhere(`${unitColumn} IN (:...unitIds)`, { unitIds: unit_id });
+
+      const allRawData = await qb.getRawMany();
+
+      // helper: build chart & meta
+      const result = this.buildChart(allRawData);
+      return successResponse(result, 'success', 200);
     } catch (error) {
       throw new BadRequestException(`Gagal mendapatkan data`);
     }
@@ -2129,23 +2186,54 @@ export class DashboardService {
     }
   }
 
-  getMockActivities(): CcrActivitesResponseDto {
+  async getCcrActivities(
+    query: CcrActivitiesDto,
+  ): Promise<ApiResponse<CcrActivitiesItemDto[]>> {
     try {
-      return {
-        statusCode: 200,
-        message: 'success',
-        data: [
-          { label: 'No Operator', target: 3000, actual: 2800 },
-          { label: 'Fogging', target: 2950, actual: 2700 },
-          { label: 'Friday Pray', target: 2980, actual: 2750 },
-          { label: 'Hujan', target: 2900, actual: 2600 },
-          { label: 'P2H', target: 3000, actual: 2700 },
-          { label: 'Perbaikan Front Loading', target: 2800, actual: 2500 },
-          { label: 'Refueling', target: 2900, actual: 2650 },
-          { label: 'Rest Time', target: 3000, actual: 2700 },
-          { label: 'Safety Talk', target: 2950, actual: 2800 },
-        ],
-      };
+      const { date: selectedDate, type } = query;
+      const dateToFilter =
+        selectedDate || new Date().toISOString().split('T')[0];
+      const typeFilter = type || 'hauling';
+
+      const mainTable =
+        typeFilter === ActivityType.BARGING
+          ? 'r_ccr_barging_problem'
+          : 'r_ccr_hauling_problem';
+      const mainAlias = 'cp';
+
+      const qb = this.dataSource
+        .createQueryBuilder()
+        .select([
+          `${mainAlias}.activities_id`,
+          `${mainAlias}.duration`,
+          'a.name',
+          'pwd.activities_hour',
+        ])
+        .from(mainTable, mainAlias)
+        .leftJoin(
+          'm_activities',
+          'a',
+          `${mainAlias}.activities_id = a.id AND a.status IN (:...statuses)`,
+          { statuses: ['breakdown', 'idle', 'delay'] },
+        )
+        .leftJoin(
+          'r_plan_working_hour_detail',
+          'pwd',
+          `${mainAlias}.activities_id = pwd.activities_id`,
+        )
+        .where(`DATE(${mainAlias}.activity_date) = :date`, {
+          date: dateToFilter,
+        });
+
+      const allProblems = await qb.getRawMany();
+
+      const result: CcrActivitiesItemDto[] = allProblems?.map((item) => ({
+        label: item?.a_name || '',
+        target: item?.pwd_activities_hour || 0,
+        actual: item?.[`${mainAlias}_duration`] || 0,
+      }));
+
+      return successResponse<CcrActivitiesItemDto[]>(result, 'success', 200);
     } catch (error) {
       throw new BadRequestException(`Gagal mendapatkan data`);
     }
