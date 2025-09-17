@@ -58,9 +58,15 @@ async function bootstrap() {
     },
   }); // http://localhost:3000/docs
   app.enableCors({
-    origin: ['*'],
+    origin: ['https://tid-dev.motorsightsinternational.com'],
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Origin',
+      'X-Requested-With',
+    ],
     credentials: true,
     preflightContinue: false,
     optionsSuccessStatus: 204,
