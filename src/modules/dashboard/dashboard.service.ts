@@ -2054,7 +2054,7 @@ export class DashboardService {
       const mainTable =
         typeFilter === ActivityType.BARGING ? 'r_ccr_barging' : 'r_ccr_hauling';
       const mainAlias = 'ccr';
-      const isTonnage = pathname.includes('vessel');
+      const isTonnage = pathname.includes('tonnage');
 
       if (!unit_id.length) return successResponse([], 'success', 200);
 
