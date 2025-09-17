@@ -465,7 +465,8 @@ export class GetPopulationsQueryDto {
   unit_type_name?: string;
 
   @ApiProperty({
-    description: 'Filter untuk Dump Truck (true: hanya dump truck, false: selain dump truck, null: semua)',
+    description:
+      'Filter untuk Dump Truck (true: hanya dump truck, false: selain dump truck, null: semua)',
     example: 'true',
     required: false,
     type: Boolean,
@@ -484,8 +485,6 @@ export class GetPopulationsQueryDto {
   })
   @IsIn([true, false, null])
   is_dt?: boolean | null;
-
-
 
   @ApiProperty({
     description: 'Filter berdasarkan activities ID',
@@ -585,6 +584,12 @@ export class ImportPopulationCsvRowDto {
     enum: ['active', 'inactive'],
   })
   status: string;
+
+  @ApiProperty({
+    description: 'Type name (F3000)',
+    example: 'F3000',
+  })
+  type_name: string;
 
   @ApiProperty({
     description: 'Nama unit dari tabel m_unit_type',
