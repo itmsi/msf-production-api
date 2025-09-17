@@ -988,6 +988,7 @@ export class PopulationService {
           results.push({
             date_arrive: data.date_arrive || '',
             status: data.status || '',
+            type_name: data.type_name || '',
             unit_name: data.unit_name || '',
             no_unit: data.no_unit || '',
             vin_number: data.vin_number || '',
@@ -1032,6 +1033,9 @@ export class PopulationService {
     }
     if (!row.unit_name) {
       errors.push({ field: 'unit_name', message: 'Nama unit wajib diisi' });
+    }
+    if (!row.type_name) {
+      errors.push({ field: 'type_name', message: 'Tipe unit wajib diisi' });
     }
     if (!row.no_unit) {
       errors.push({ field: 'no_unit', message: 'Nomor unit wajib diisi' });
@@ -1125,7 +1129,10 @@ export class PopulationService {
     // Validasi unit_name exists
     if (row.unit_name) {
       const unitType = await this.unitTypeRepository.findOne({
-        where: { unit_name: row.unit_name },
+        where: {
+          unit_name: row.unit_name,
+          type_name: row.type_name,
+        },
       });
       if (!unitType) {
         errors.push({
@@ -1222,7 +1229,10 @@ export class PopulationService {
   private async importCsvRow(row: ImportPopulationCsvRowDto): Promise<void> {
     // Get unit_type_id from unit_name
     const unitType = await this.unitTypeRepository.findOne({
-      where: { unit_name: row.unit_name },
+      where: {
+        unit_name: row.unit_name,
+        type_name: row.type_name,
+      },
     });
 
     if (!unitType) {
