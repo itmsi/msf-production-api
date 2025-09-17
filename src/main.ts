@@ -58,7 +58,7 @@ async function bootstrap() {
     },
   }); // http://localhost:3000/docs
   app.enableCors({
-    origin: ['https://tid-dev.motorsightsinternational.com'],
+    origin: ['*'],
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
@@ -78,7 +78,7 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: false,
-      transform: true,  // ✅ Penting untuk @Transform decorator
+      transform: true, // ✅ Penting untuk @Transform decorator
       transformOptions: {
         enableImplicitConversion: true,
       },
