@@ -1,5 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsDateString,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 class AttendanceItem {
   @ApiProperty()
@@ -206,4 +214,80 @@ export class CcrActivitiesDto {
   @IsOptional()
   @IsEnum(ActivityType, { message: 'type harus hauling atau barging' })
   type?: ActivityType;
+}
+
+export class CcrTonnageDto {
+  @ApiPropertyOptional({ description: 'Filter berdasarkan tanggal' })
+  @IsOptional()
+  @IsDateString()
+  date?: string;
+
+  @ApiProperty({
+    description: 'Unit ID wajib dikirim, boleh kosong',
+    type: [Number],
+  })
+  @IsArray({ message: 'unit_id harus berupa array' })
+  @IsNumber({}, { each: true, message: 'unit_id harus berupa angka' })
+  unit_id: number[];
+
+  @ApiPropertyOptional({ description: 'Shift (misal: ds/ns)' })
+  @IsOptional()
+  @IsString()
+  shift?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter berdasarkan type aktivitas',
+    enum: ActivityType,
+  })
+  @IsOptional()
+  @IsEnum(ActivityType, { message: 'type harus hauling atau barging' })
+  type?: ActivityType;
+}
+
+// Raw data hasil query tonnage/vessel
+export class RawDataTonnageVesselRow {
+  @ApiProperty({ example: 100, description: 'Nilai tonnage atau vessel' })
+  value: number | null;
+
+  @ApiProperty({
+    example: '2025-09-03T01:00:00.000Z',
+    description: 'Waktu aktivitas',
+  })
+  time: Date;
+
+  @ApiProperty({ example: 'KFM-DT-001', description: 'No unit' })
+  unit: string;
+}
+
+// Data per jam untuk chart tonnage/vessel
+export class ChartTonnageVesselRow {
+  @ApiProperty({ example: '01-02', description: 'Rentang jam' })
+  hour: string;
+
+  @ApiProperty({
+    example: 120,
+    description: 'Total semua unit pada jam tersebut',
+  })
+  total: number;
+
+  // Dynamic unit key → tidak bisa pakai decorator
+  [unit: string]: number | string;
+}
+
+// Hasil akhir chart tonnage/vessel
+export class ChartTonnageVesselResult {
+  @ApiProperty({ type: [ChartTonnageVesselRow] })
+  chart: ChartTonnageVesselRow[];
+
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: { type: 'string' },
+    description: 'Meta berisi mapping unit ke warna',
+    example: {
+      'KFM-DT-001': '#F6C89F',
+      'KFM-DT-002': '#94D1B2',
+      total: '#D96C06',
+    },
+  })
+  meta: Record<string, string>;
 }

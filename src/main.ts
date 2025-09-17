@@ -58,9 +58,15 @@ async function bootstrap() {
     },
   }); // http://localhost:3000/docs
   app.enableCors({
-    origin: ['*'],
+    origin: ['http://localhost:4000'],
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Origin',
+      'X-Requested-With',
+    ],
     credentials: true,
     preflightContinue: false,
     optionsSuccessStatus: 204,
@@ -72,7 +78,7 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: false,
-      transform: true,  // ✅ Penting untuk @Transform decorator
+      transform: true, // ✅ Penting untuk @Transform decorator
       transformOptions: {
         enableImplicitConversion: true,
       },
