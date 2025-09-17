@@ -63,6 +63,7 @@ async function bootstrap() {
       'https://dev-msf-part.motorsights.com',
       'https://tid-dev.motorsightsinternational.com',
       'https://stg-msf-part.motorsights.com',
+      'https://api-tid-dev.motorsightsinternational.com',
     ],
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
