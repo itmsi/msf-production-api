@@ -11,6 +11,12 @@ import { BaseDataPro } from '../base-data-production/entities/base-data-pro.enti
 import { EffectiveWorkingHours } from '../effective-working-hours/entities/effective-working-hours.entity';
 import { Activities } from '../activities/entities/activities.entity';
 import { ParentPlanWorkingHour } from '../plan-working-hour/entities/parent-plan-working-hour.entity';
+import { HaulingList } from '../hauling-list';
+import { HaulingProblem } from '../hauling-problem';
+import { BargingList } from '../barging-list/entities/barging-list.entity';
+import { BargingProblem } from '../barging-problem';
+import { OperationPoints } from '../operation-points/entities/operation-points.entity';
+import { Population } from '../population';
 
 @Module({
   imports: [
@@ -21,6 +27,12 @@ import { ParentPlanWorkingHour } from '../plan-working-hour/entities/parent-plan
       EffectiveWorkingHours,
       Activities,
       ParentPlanWorkingHour,
+      HaulingList,
+      HaulingProblem,
+      BargingList,
+      BargingProblem,
+      OperationPoints,
+      Population,
     ]),
     AnalysisHaulingBargingModule,
   ],
