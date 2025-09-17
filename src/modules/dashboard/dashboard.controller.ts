@@ -418,8 +418,11 @@ export class DashboardController {
     description: 'Successfully retrieved CCR fleet status data',
     type: FleetStatusResponseDto,
   })
-  getFleetStatus(): FleetStatusResponseDto {
-    return this.dashboardService.getMockFleetStatus();
+  async getFleetStatus(
+    @Query('type') type: string,
+    @Query('date') selectedDate?: string,
+  ) {
+    return this.dashboardService.getMockFleetStatus(type, selectedDate);
   }
 
   @Post('ccr/tonnage')

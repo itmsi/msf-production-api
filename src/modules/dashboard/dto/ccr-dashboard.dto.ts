@@ -1,5 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
-
+import { ApiProperty } from '@nestjs/swagger';
 
 class AttendanceItem {
   @ApiProperty()
@@ -64,13 +63,16 @@ export class HaulingSummaryResponseDto {
   data: AttendanceSummaryDto;
 }
 
-// Fleet Status 
+// Fleet Status
 export class FleetStatusItemDto {
   @ApiProperty({ example: 'KFM-DT-001' })
   fleet: string;
 
   @ApiProperty({ example: '2025-10-01 07:00' })
   start_loading: string;
+
+  @ApiProperty({ example: '2025-10-01 07:00' })
+  finish_loading: string;
 
   @ApiProperty({ example: 'Quarry A' })
   loading_point: string;
@@ -101,6 +103,9 @@ export class FleetStatusItemDto {
 
   @ApiProperty({ example: 50 })
   ob: number;
+
+  @ApiProperty({ example: 'AYODA 3310' })
+  barge_name?: string;
 }
 
 export class FleetStatusResponseDto {

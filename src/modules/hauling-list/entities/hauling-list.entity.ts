@@ -1,4 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
+} from 'typeorm';
 import { Population } from '../../population/entities/population.entity';
 import { Sites } from '../../sites/entities/sites.entity';
 import { OperationPoints } from '../../operation-points/entities/operation-points.entity';
@@ -24,7 +33,11 @@ export class HaulingList {
   @Column({ name: 'unit_hauler_id' })
   unitHaulerId: number;
 
-  @Column({ type: 'enum', enum: ['biomas', 'boulder', 'ob', 'ore', 'ore-barge', 'quarry'], name: 'material' })
+  @Column({
+    type: 'enum',
+    enum: ['biomas', 'boulder', 'ob', 'ore', 'ore-barge', 'quarry'],
+    name: 'material',
+  })
   material: string;
 
   @Column({ name: 'loading_point_id' })

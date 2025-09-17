@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Population } from '../population/entities/population.entity';
 import { FormulaService } from '../../common/services/formula.service';
 import { ProductionFormulaService } from '../../common/services/production-formula.service';
@@ -8,6 +8,7 @@ import {
   BargingSummaryItemDto,
   BargingSummaryResponseDto,
   CcrActivitesResponseDto,
+  FleetStatusItemDto,
   FleetStatusResponseDto,
   HaulingSummaryResponseDto,
   TonnageResponseDto,
@@ -21,7 +22,11 @@ import { Barge } from '../barge/entities/barge.entity';
 import { EffectiveWorkingHours } from '../effective-working-hours/entities/effective-working-hours.entity';
 import { Activities } from '../activities/entities/activities.entity';
 import { ParentPlanWorkingHour } from '../plan-working-hour/entities/parent-plan-working-hour.entity';
-import { successResponse } from 'src/common';
+import { ApiResponse, successResponse } from 'src/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { OperationPoints } from '../operation-points/entities/operation-points.entity';
+import { HaulingList } from '../hauling-list';
+import { BargingList } from '../barging-list/entities/barging-list.entity';
 
 @Injectable()
 export class DashboardService {
@@ -30,6 +35,14 @@ export class DashboardService {
     private formulaService: FormulaService,
     private productionFormulaService: ProductionFormulaService,
     private analysisHaulingBargingService: AnalysisHaulingBargingService,
+    @InjectRepository(HaulingList)
+    private readonly haulingRepo: Repository<HaulingList>,
+    @InjectRepository(BargingList)
+    private readonly bargingRepo: Repository<BargingList>,
+    @InjectRepository(Population)
+    private readonly populationRepo: Repository<Population>,
+    @InjectRepository(OperationPoints)
+    private readonly opPointRepo: Repository<OperationPoints>,
   ) {}
   async getSpiderData(startDate?: string, endDate?: string) {
     try {
@@ -1942,56 +1955,110 @@ export class DashboardService {
     }
   }
 
-  getMockFleetStatus(): FleetStatusResponseDto {
+  async getMockFleetStatus(
+    type?: string,
+    selectedDate?: string,
+  ): Promise<ApiResponse<FleetStatusResponseDto>> {
     try {
-      return {
-        statusCode: 200,
-        message: 'success',
-        data: [
-          {
-            fleet: 'TID-DT-001',
-            start_loading: 'ETO 1',
-            loading_point: 'EFO 1',
-            dumping_point: 'string',
-            target_hauler: 123,
-            actual_hauler: 123,
-            mf: 123,
-            total_vessel: 123,
-            total_tonnage: 123,
-            ore: 123,
-            quarry: 123,
-            ob: 123,
-          },
-          {
-            fleet: 'TID-DT-002',
-            start_loading: 'ETO 1',
-            loading_point: 'EFO 1',
-            dumping_point: 'string',
-            target_hauler: 123,
-            actual_hauler: 123,
-            mf: 123,
-            total_vessel: 123,
-            total_tonnage: 123,
-            ore: 123,
-            quarry: 123,
-            ob: 123,
-          },
-          {
-            fleet: 'TID-DT-003',
-            start_loading: 'ETO 1',
-            loading_point: 'EFO 1',
-            dumping_point: 'string',
-            target_hauler: 123,
-            actual_hauler: 123,
-            mf: 123,
-            total_vessel: 123,
-            total_tonnage: 123,
-            ore: 123,
-            quarry: 123,
-            ob: 123,
-          },
-        ],
-      };
+      const condition = type ?? 'hauling';
+
+      const date = selectedDate ?? new Date().toISOString().split('T')[0];
+
+      let result;
+      const responseData = new FleetStatusResponseDto();
+      const fleetStatusItem: FleetStatusItemDto[] = [];
+
+      if (condition === 'hauling') {
+        result = await this.haulingRepo
+          .createQueryBuilder('rch')
+          .leftJoin(Population, 'mpl', 'mpl.id = rch.unit_loading_id')
+          .leftJoin(OperationPoints, 'mopl', 'mopl.id = rch.loading_point_id')
+          .leftJoin(OperationPoints, 'mopd', 'mopd.id = rch.dumpingPointOp')
+          .select('rch.unit_loading_id', 'unit_loading_id')
+          .addSelect('MAX(rch.time)', 'end_time')
+          .addSelect('MIN(rch.time)', 'start_time')
+          .addSelect('mopl.name', 'loading_point')
+          .addSelect('mopd.name', 'dumping_point')
+          .addSelect('mpl.no_unit', 'no_unit')
+          .addSelect(
+            `COALESCE(SUM(CASE WHEN rch.material IN ('ore','ob','quarry') THEN rch.vessel ELSE 0 END),0)`,
+            'total_vessel',
+          )
+          .addSelect(`COALESCE(SUM(rch.total_tonnage),0)`, 'total_tonnage')
+          .addSelect(
+            `COALESCE(SUM(CASE WHEN rch.material = 'ore' THEN rch.vessel * 35 ELSE 0 END),0)`,
+            'ore',
+          )
+          .addSelect(
+            `COALESCE(SUM(CASE WHEN rch.material = 'ob' THEN rch.vessel * 26 ELSE 0 END),0)`,
+            'ob',
+          )
+          .addSelect(
+            `COALESCE(SUM(CASE WHEN rch.material = 'quarry' THEN rch.vessel * 35 ELSE 0 END),0)`,
+            'quarry',
+          )
+          .where('DATE(rch.activity_date) = :date', { date })
+          .groupBy('rch.unit_loading_id')
+          .addGroupBy('mopl.name')
+          .addGroupBy('mopd.name')
+          .addGroupBy('mpl.no_unit')
+          .limit(3)
+          .getRawMany();
+
+        result.map((row) => {
+          const fleetStatus = new FleetStatusItemDto();
+          fleetStatus.fleet = row.no_unit;
+          fleetStatus.start_loading = row.start_time; // bisa juga diubah ke tipe Date jika perlu
+          fleetStatus.finish_loading = row.end_time;
+          fleetStatus.loading_point = row.loading_point ?? null;
+          fleetStatus.dumping_point = row.dumping_point ?? null;
+          fleetStatus.total_vessel = Number(row.total_vessel ?? 0);
+          fleetStatus.total_tonnage = Number(row.total_tonnage ?? 0);
+          fleetStatus.ore = Number(row.ore ?? 0);
+          fleetStatus.ob = Number(row.ob ?? 0);
+          fleetStatus.quarry = Number(row.quarry ?? 0);
+
+          fleetStatusItem.push(fleetStatus);
+        });
+
+        console.log('Hauling', fleetStatusItem);
+      } else {
+        result = await this.bargingRepo
+          .createQueryBuilder('rcb')
+          .leftJoin(Population, 'mpl', 'mpl.id = rcb.unit_hauler_id')
+          .leftJoin(Barge, 'mb', 'mb.id = rcb.barge_id')
+          .select('mpl.no_unit', 'no_unit')
+          .addSelect('rcb.unit_hauler_id', 'unit_hauler_id')
+          .addSelect('mb.name', 'barge_name')
+          .addSelect('MAX(rcb.time)', 'end_time')
+          .addSelect('MIN(rcb.time)', 'start_time')
+          .addSelect('COALESCE(SUM(rcb.vessel), 0)', 'total_vessel')
+          .addSelect('COALESCE(SUM(rcb.total_tonnage), 0)', 'total_tonnage')
+          .where('DATE(rcb.activity_date) = :date', { date })
+          .groupBy('rcb.unit_hauler_id, mpl.no_unit, mb.name')
+          .limit(3)
+          .getRawMany();
+
+        result.map((row) => {
+          const fleetStatus = new FleetStatusItemDto();
+          fleetStatus.fleet = row.no_unit;
+          fleetStatus.start_loading = row.start_time ?? ''; // bisa juga diubah ke tipe Date jika perlu
+          fleetStatus.finish_loading = row.end_time ?? '';
+          fleetStatus.barge_name = row.barge_name ?? '';
+          fleetStatus.loading_point = row.loading_point ?? null;
+          fleetStatus.dumping_point = row.dumping_point ?? null;
+          fleetStatus.total_vessel = Number(row.total_vessel ?? 0);
+          fleetStatus.total_tonnage = Number(row.total_tonnage ?? 0);
+
+          fleetStatusItem.push(fleetStatus);
+        });
+
+        console.log('Barging', fleetStatusItem);
+      }
+
+      responseData.data = fleetStatusItem;
+
+      return successResponse(responseData, 'success', 200);
     } catch (error) {
       throw new BadRequestException(`Gagal mendapatkan data`);
     }
