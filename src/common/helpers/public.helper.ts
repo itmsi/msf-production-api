@@ -73,3 +73,23 @@ export function generateNIPWithInitial(name: string, id: number): string {
 
   return `${initials}${symbol}${paddedId}`;
 }
+
+export function calculateTimeRange(
+  time: Date,
+  timeZone: string = 'Asia/Jakarta',
+): string {
+  // Ambil jam di zona waktu tertentu
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    hour: '2-digit',
+    hour12: false,
+    timeZone,
+  });
+
+  const hours = parseInt(formatter.format(time), 10);
+  const nextHour = (hours + 1) % 24;
+
+  const currentHour = hours.toString().padStart(2, '0');
+  const nextHourStr = nextHour.toString().padStart(2, '0');
+
+  return `${currentHour}-${nextHourStr}`;
+}
