@@ -90,7 +90,10 @@ export class BargeResponseDto {
   @ApiProperty({ description: 'HTTP status code', example: 200 })
   statusCode: number;
 
-  @ApiProperty({ description: 'Response message', example: 'Data barge berhasil diambil' })
+  @ApiProperty({
+    description: 'Response message',
+    example: 'Data barge berhasil diambil',
+  })
   message: string;
 
   @ApiProperty({ description: 'Barge data array', type: [BargeDataDto] })
@@ -156,7 +159,10 @@ export class DailyAchievementItemDto {
   @ApiProperty({ description: 'Achievement title', example: 'Daily ACV' })
   title: string;
 
-  @ApiProperty({ description: 'Achievement details', type: [DailyAchievementDetailDto] })
+  @ApiProperty({
+    description: 'Achievement details',
+    type: [DailyAchievementDetailDto],
+  })
   details: DailyAchievementDetailDto[];
 }
 
@@ -167,7 +173,10 @@ export class DailyAchievementResponseDto {
   @ApiProperty({ description: 'Response message', example: 'success' })
   message: string;
 
-  @ApiProperty({ description: 'Daily achievement data', type: [DailyAchievementItemDto] })
+  @ApiProperty({
+    description: 'Daily achievement data',
+    type: [DailyAchievementItemDto],
+  })
   data: DailyAchievementItemDto[];
 }
 
@@ -175,10 +184,16 @@ export class BargeListItemDto {
   @ApiProperty({ description: 'Barge name', example: 'Barge Alpha' })
   barge_name: string;
 
-  @ApiProperty({ description: 'Start loading time', example: '2025-09-01 08:00' })
+  @ApiProperty({
+    description: 'Start loading time',
+    example: '2025-09-01 08:00',
+  })
   start_loading: string;
 
-  @ApiProperty({ description: 'Finish loading time', example: '2025-09-01 14:30' })
+  @ApiProperty({
+    description: 'Finish loading time',
+    example: '2025-09-01 14:30',
+  })
   finish_load: string;
 
   @ApiProperty({ description: 'Capacity', example: 12000 })
@@ -280,7 +295,10 @@ export class BargeStatusDataDto {
   @ApiProperty({ description: 'List data', type: [BargeStatusListItemDto] })
   list: BargeStatusListItemDto[];
 
-  @ApiProperty({ description: 'Gain lost data', type: [BargeStatusGainLostItemDto] })
+  @ApiProperty({
+    description: 'Gain lost data',
+    type: [BargeStatusGainLostItemDto],
+  })
   gain_lost: BargeStatusGainLostItemDto[];
 }
 
@@ -333,7 +351,10 @@ export class LostTimeSummaryTableDto {
   @ApiProperty({ description: 'Table title', example: 'PA' })
   title: string;
 
-  @ApiProperty({ description: 'Table data', type: [LostTimeSummaryTableDataDto] })
+  @ApiProperty({
+    description: 'Table data',
+    type: [LostTimeSummaryTableDataDto],
+  })
   data: LostTimeSummaryTableDataDto[];
 }
 
@@ -341,7 +362,10 @@ export class LostTimeSummaryDataDto {
   @ApiProperty({ description: 'MOHH data', type: [LostTimeSummaryMohhItemDto] })
   mohh: LostTimeSummaryMohhItemDto[];
 
-  @ApiProperty({ description: 'Lost time data', type: [LostTimeSummaryLostTimeItemDto] })
+  @ApiProperty({
+    description: 'Lost time data',
+    type: [LostTimeSummaryLostTimeItemDto],
+  })
   lost_time: LostTimeSummaryLostTimeItemDto[];
 
   @ApiProperty({ description: 'Tables data', type: [LostTimeSummaryTableDto] })
@@ -355,7 +379,10 @@ export class LostTimeSummaryResponseDto {
   @ApiProperty({ description: 'Response message', example: 'success' })
   message: string;
 
-  @ApiProperty({ description: 'Lost time summary data', type: LostTimeSummaryDataDto })
+  @ApiProperty({
+    description: 'Lost time summary data',
+    type: LostTimeSummaryDataDto,
+  })
   data: LostTimeSummaryDataDto;
 }
 
@@ -395,7 +422,10 @@ export class MonthlyStatusResponseDto {
   @ApiProperty({ description: 'Response message', example: 'success' })
   message: string;
 
-  @ApiProperty({ description: 'Monthly status data', type: [MonthlyStatusItemDto] })
+  @ApiProperty({
+    description: 'Monthly status data',
+    type: [MonthlyStatusItemDto],
+  })
   data: MonthlyStatusItemDto[];
 }
 
@@ -424,7 +454,10 @@ export class TrendHaulingBargingResponseDto {
   @ApiProperty({ description: 'Response message', example: 'success' })
   message: string;
 
-  @ApiProperty({ description: 'Trend hauling barging data', type: [TrendHaulingBargingItemDto] })
+  @ApiProperty({
+    description: 'Trend hauling barging data',
+    type: [TrendHaulingBargingItemDto],
+  })
   data: TrendHaulingBargingItemDto[];
 }
 
@@ -455,7 +488,10 @@ export class TrendFuelRatioMetaItemDto {
 }
 
 export class TrendFuelRatioDataDto {
-  @ApiProperty({ description: 'Chart data', type: [TrendFuelRatioChartItemDto] })
+  @ApiProperty({
+    description: 'Chart data',
+    type: [TrendFuelRatioChartItemDto],
+  })
   chart: TrendFuelRatioChartItemDto[];
 
   @ApiProperty({ description: 'Meta data', type: [TrendFuelRatioMetaItemDto] })
@@ -469,14 +505,17 @@ export class TrendFuelRatioResponseDto {
   @ApiProperty({ description: 'Response message', example: 'success' })
   message: string;
 
-  @ApiProperty({ description: 'Trend fuel ratio data', type: TrendFuelRatioDataDto })
+  @ApiProperty({
+    description: 'Trend fuel ratio data',
+    type: TrendFuelRatioDataDto,
+  })
   data: TrendFuelRatioDataDto;
 }
 
 // DTO untuk monthly/trend-performance-unit endpoint
 export class TrendPerformanceUnitChartItemDto {
-  @ApiProperty({ description: 'Date in DD/MM format', example: '01/07' })
-  date: string;
+  @ApiProperty({ description: 'Date in MM-YY format', example: '01/07' })
+  month: string;
 
   @ApiProperty({ description: 'PA value', example: 2500 })
   pa: number;
@@ -506,20 +545,30 @@ export class TrendPerformanceUnitMetaItemDto {
 }
 
 export class TrendPerformanceUnitDataDto {
-  @ApiProperty({ description: 'Chart data', type: [TrendPerformanceUnitChartItemDto] })
+  @ApiProperty({
+    description: 'Chart data',
+    type: [TrendPerformanceUnitChartItemDto],
+  })
   chart: TrendPerformanceUnitChartItemDto[];
 
-  @ApiProperty({ description: 'Meta data', type: [TrendPerformanceUnitMetaItemDto] })
+  @ApiProperty({
+    description: 'Meta data',
+    type: [TrendPerformanceUnitMetaItemDto],
+  })
   meta: TrendPerformanceUnitMetaItemDto[];
 }
 
-export class TrendPerformanceUnitResponseDto {
-  @ApiProperty({ description: 'HTTP status code', example: 200 })
-  statusCode: number;
+export class RawTrendPerformanceRowDto {
+  date: string;
+  mohh: number;
+  ewh: number;
+  breakdown: number;
+}
 
-  @ApiProperty({ description: 'Response message', example: 'success' })
-  message: string;
-
-  @ApiProperty({ description: 'Trend performance unit data', type: TrendPerformanceUnitDataDto })
-  data: TrendPerformanceUnitDataDto;
+export class TrendPerformanceChartDto {
+  date: string;
+  pa: string;
+  ua: string;
+  ma: string;
+  eu: string;
 }
