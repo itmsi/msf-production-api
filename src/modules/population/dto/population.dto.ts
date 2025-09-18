@@ -345,6 +345,12 @@ export class PopulationResponseDto {
   site_id: number;
 
   @ApiProperty({
+    description: 'ID Department',
+    example: 1,
+  })
+  department_id?: number;
+
+  @ApiProperty({
     description: 'Company',
     example: 'PT ABC',
   })
@@ -405,6 +411,15 @@ export class PopulationResponseDto {
   site?: {
     id: number;
     site_name: string;
+  };
+
+  @ApiProperty({
+    description: 'Department information',
+    required: false,
+  })
+  department?: {
+    id: number;
+    name: string;
   };
 }
 

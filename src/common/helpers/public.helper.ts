@@ -93,3 +93,7 @@ export function calculateTimeRange(
 
   return `${currentHour}-${nextHourStr}`;
 }
+
+export function normalizeString(value: string): string {
+  return value?.toLowerCase().trim().replace(/\s+/g, ' '); // ubah spasi berlebih jadi 1 spasi
+}
