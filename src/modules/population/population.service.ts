@@ -53,7 +53,13 @@ export class PopulationService {
     try {
       const result = await this.populationRepository.findOne({
         where: { id },
-        relations: ['unitType', 'unitType.brand', 'activities', 'site'],
+        relations: [
+          'unitType',
+          'unitType.brand',
+          'activities',
+          'site',
+          'department',
+        ],
       });
 
       if (!result) {
@@ -103,6 +109,12 @@ export class PopulationService {
           ? {
               id: result.site.id,
               site_name: result.site.name,
+            }
+          : undefined,
+        department: result.department
+          ? {
+              id: result.department.id,
+              name: result.department.name,
             }
           : undefined,
       };
@@ -161,6 +173,7 @@ export class PopulationService {
         .leftJoinAndSelect('unitType.brand', 'brand')
         .leftJoinAndSelect('population.activities', 'activities')
         .leftJoinAndSelect('population.site', 'site')
+        .leftJoinAndSelect('population.department', 'department')
         .where('population.deletedAt IS NULL'); // Exclude soft deleted records
 
       // Search filter (mencari di semua field yang relevan)
@@ -183,7 +196,9 @@ export class PopulationService {
 
       // Filter by unit_type_name (case-insensitive)
       if (unitTypeName) {
-        qb.andWhere('LOWER(unitType.unit_name) = LOWER(:unitTypeName)', { unitTypeName });
+        qb.andWhere('LOWER(unitType.unit_name) = LOWER(:unitTypeName)', {
+          unitTypeName,
+        });
       }
 
       // Filter by is_dt (Dump Truck)
@@ -194,25 +209,29 @@ export class PopulationService {
       console.log('isDt === false:', isDt === false);
       console.log('isDt !== null:', isDt !== null);
       console.log('isDt !== undefined:', isDt !== undefined);
-      
+
       if (isDt !== null && isDt !== undefined) {
         try {
           console.log('✅ Condition met: Applying is_dt filter');
-          
+
           if (isDt === true) {
             // Jika is_dt = true, hanya ambil dump truck
             console.log('🔍 Applying filter: is_dt = true (hanya dump truck)');
-            qb.andWhere('LOWER(unitType.unit_name) = LOWER(:dumpTruckName)', { 
-              dumpTruckName: 'dump truck'
+            qb.andWhere('LOWER(unitType.unit_name) = LOWER(:dumpTruckName)', {
+              dumpTruckName: 'dump truck',
             });
-            console.log('✅ Filter applied: Hanya dump truck (case-insensitive)');
+            console.log(
+              '✅ Filter applied: Hanya dump truck (case-insensitive)',
+            );
           } else if (isDt === false) {
             // Jika is_dt = false, hanya ambil excavator
             console.log('🔍 Applying filter: is_dt = false (hanya excavator)');
-            qb.andWhere('LOWER(unitType.unit_name) = LOWER(:excavatorName)', { 
-              excavatorName: 'excavator'
+            qb.andWhere('LOWER(unitType.unit_name) = LOWER(:excavatorName)', {
+              excavatorName: 'excavator',
             });
-            console.log('✅ Filter applied: Hanya excavator (case-insensitive)');
+            console.log(
+              '✅ Filter applied: Hanya excavator (case-insensitive)',
+            );
           }
         } catch (error) {
           console.error('❌ Error applying is_dt filter:', error);
@@ -220,11 +239,11 @@ export class PopulationService {
         }
       } else {
         console.log('✅ No is_dt parameter provided: Getting all data');
-        console.log('Reason: isDt is null or undefined - showing all unit types');
+        console.log(
+          'Reason: isDt is null or undefined - showing all unit types',
+        );
       }
       console.log('=== END DEBUG is_dt FILTER ===');
-
-
 
       // Filter by activities_id
       if (activitiesId) {
@@ -292,10 +311,11 @@ export class PopulationService {
       console.log('Query result:', {
         totalRecords: total,
         returnedRecords: result.length,
-        firstRecordUnitType: result[0]?.unitType?.unit_name || 'N/A'
+        firstRecordUnitType: result[0]?.unitType?.unit_name || 'N/A',
       });
 
       // Transform result to DTO format
+      console.log(result[0]);
       const transformedResult = result.map((population) => ({
         id: population.id,
         date_arrive: population.date_arrive,
@@ -341,6 +361,12 @@ export class PopulationService {
               site_name: population.site.name,
             }
           : undefined,
+        department: population.department
+          ? {
+              id: population.department.id,
+              name: population.department.name,
+            }
+          : undefined,
       }));
 
       const response = paginateResponse(
@@ -350,7 +376,6 @@ export class PopulationService {
         limit,
         'Data population berhasil diambil',
       );
-
       return {
         statusCode: response.statusCode,
         message: response.message,
