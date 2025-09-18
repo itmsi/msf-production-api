@@ -115,7 +115,8 @@ export class EffectiveWorkingHours {
   stop: Date;
 
   @ApiProperty({
-    description: 'Durasi loss time dalam menit (otomatis dihitung dari start dan end)',
+    description:
+      'Durasi loss time dalam menit (otomatis dihitung dari start dan end)',
     example: 120,
     type: 'number',
     nullable: true,
