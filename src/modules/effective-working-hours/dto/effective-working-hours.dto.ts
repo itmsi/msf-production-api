@@ -1,4 +1,11 @@
-import { IsEnum, IsDateString, IsInt, IsString, IsOptional, IsNumber } from 'class-validator';
+import {
+  IsEnum,
+  IsDateString,
+  IsInt,
+  IsString,
+  IsOptional,
+  IsNumber,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LossType, Shift } from '../entities/effective-working-hours.entity';
@@ -81,6 +88,16 @@ export class CreateEffectiveWorkingHoursDto {
   @IsOptional()
   @IsString()
   remarks?: string;
+
+  @ApiPropertyOptional({
+    description: 'User ID yang membuat data (boleh null)',
+    example: 42,
+    type: 'number',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsInt()
+  createdBy?: number;
 }
 
 export class UpdateEffectiveWorkingHoursDto {
@@ -198,7 +215,8 @@ export class QueryEffectiveWorkingHoursDto {
   lossType?: LossType;
 
   @ApiPropertyOptional({
-    description: 'Keyword pencarian untuk description, activity name, unit name, type name, atau model name',
+    description:
+      'Keyword pencarian untuk description, activity name, unit name, type name, atau model name',
     example: 'standby',
     type: 'string',
   })
@@ -321,4 +339,91 @@ export class EffectiveWorkingHoursResponseDto {
     type: 'string',
   })
   site: string;
+}
+
+export class ImportEwhCsvRowDto {
+  @ApiProperty({
+    description: 'Tanggal Aktifitas (format: yyyy-mm-dd)',
+    example: '2025-01-01',
+  })
+  activity_date: string;
+
+  @ApiProperty({
+    description: 'Category unit (STB atau BD)',
+    example: 'STB',
+    enum: ['STB', 'BD', 'stb', 'bd'],
+  })
+  category: string;
+
+  @ApiProperty({
+    description: 'Nomor unit',
+    example: 'KFM_DT_005',
+  })
+  no_unit: string;
+
+  @ApiProperty({
+    description: 'Shift unit (ns atau ds)',
+    example: 'ns',
+    enum: ['ns', 'ds'],
+  })
+  shift: string;
+
+  @ApiProperty({
+    description: 'Problem',
+    example: 'rain',
+  })
+  problem: string;
+
+  @ApiProperty({
+    description: 'Remarks',
+    example: 'Hujan turun di segmen 1',
+  })
+  remarks: string;
+
+  @ApiProperty({
+    description: 'Description',
+    example: 'description',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiProperty({
+    description: 'Start Time',
+    example: '2025-09-17 10:00',
+  })
+  start_time: string;
+
+  @ApiProperty({
+    description: 'Stop Time',
+    example: '2025-09-17 12:00',
+  })
+  stop_time: string;
+}
+
+export class ImportEwhItemDto {
+  @ApiProperty({
+    description: 'Status baris data',
+    example: 'error',
+  })
+  status: string;
+
+  @ApiProperty({
+    description: 'Pesan untuk baris data',
+    example: 'unit_name tidak ada',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Nomor baris',
+    example: 1,
+  })
+  row: number;
+
+  @ApiProperty({
+    description: 'Data baris',
+    type: ImportEwhCsvRowDto,
+  })
+  data: ImportEwhCsvRowDto;
 }

@@ -9,11 +9,15 @@ import {
   Query,
   UseGuards,
   ParseIntPipe,
+  Res,
+  InternalServerErrorException,
+  UploadedFile,
+  UseInterceptors,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
-  ApiResponse,
   ApiBody,
   ApiParam,
   ApiQuery,
@@ -23,16 +27,19 @@ import {
   ApiNotFoundResponse,
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { EffectiveWorkingHoursService } from './effective-working-hours.service';
 import {
   CreateEffectiveWorkingHoursDto,
   UpdateEffectiveWorkingHoursDto,
   QueryEffectiveWorkingHoursDto,
-  EffectiveWorkingHoursResponseDto,
 } from './dto/effective-working-hours.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { successResponse } from '../../common/helpers/response.helper';
+import { Response } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { FileUploadDto } from '../population';
 
 @ApiTags('Effective Working Hours')
 @ApiBearerAuth('jwt')
@@ -43,10 +50,53 @@ export class EffectiveWorkingHoursController {
     private readonly effectiveWorkingHoursService: EffectiveWorkingHoursService,
   ) {}
 
+  @UseGuards(JwtAuthGuard)
+  @Get('import/template')
+  @ApiOperation({
+    summary: 'Download template CSV untuk import population',
+    description:
+      'Mendownload template CSV yang berisi format kolom yang diperlukan',
+  })
+  downloadTemplate(@Res() res: Response) {
+    try {
+      const buffer = this.effectiveWorkingHoursService.downloadTemplate();
+
+      res.set({
+        'Content-Type': 'text/csv',
+        'Content-Disposition':
+          'attachment; filename="template-population-import.csv"',
+        'Content-Length': buffer.length,
+      });
+
+      res.end(buffer);
+    } catch (error) {
+      throw new InternalServerErrorException('Gagal download template CSV');
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'File CSV yang akan diimport',
+    type: FileUploadDto,
+  })
+  @ApiOperation({
+    summary: 'Import data population dari CSV',
+    description:
+      'Mengimport data population dari CSV ke database setelah validasi',
+  })
+  importData(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    const userId = req.user?.id;
+    return this.effectiveWorkingHoursService.importData(file, userId);
+  }
+
   @Post()
   @ApiOperation({
     summary: 'Create new effective working hours',
-    description: 'Create a new effective working hours record with automatic duration calculation',
+    description:
+      'Create a new effective working hours record with automatic duration calculation',
   })
   @ApiBody({
     type: CreateEffectiveWorkingHoursDto,
@@ -90,7 +140,10 @@ export class EffectiveWorkingHoursController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 201 },
-        message: { type: 'string', example: 'Effective working hours created successfully' },
+        message: {
+          type: 'string',
+          example: 'Effective working hours created successfully',
+        },
         data: {
           type: 'object',
           properties: {
@@ -101,10 +154,21 @@ export class EffectiveWorkingHoursController {
             populationId: { type: 'number', example: 1 },
             activitiesId: { type: 'number', example: 1 },
             description: { type: 'string', example: 'Standby karena hujan' },
-            start: { type: 'string', format: 'date-time', example: '2024-01-15T08:00:00Z' },
-            end: { type: 'string', format: 'date-time', example: '2024-01-15T10:00:00Z' },
+            start: {
+              type: 'string',
+              format: 'date-time',
+              example: '2024-01-15T08:00:00Z',
+            },
+            end: {
+              type: 'string',
+              format: 'date-time',
+              example: '2024-01-15T10:00:00Z',
+            },
             duration: { type: 'number', example: 120 },
-            remarks: { type: 'string', example: 'Perlu perbaikan mesin setelah hujan reda' },
+            remarks: {
+              type: 'string',
+              example: 'Perlu perbaikan mesin setelah hujan reda',
+            },
             type: { type: 'string', example: 'EXCAVATOR' },
             site: { type: 'string', example: 'Site A' },
             createdAt: { type: 'string', format: 'date-time' },
@@ -120,7 +184,11 @@ export class EffectiveWorkingHoursController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 400 },
-        message: { type: 'array', items: { type: 'string' }, example: ['dateActivity should not be empty'] },
+        message: {
+          type: 'array',
+          items: { type: 'string' },
+          example: ['dateActivity should not be empty'],
+        },
         error: { type: 'string', example: 'Bad Request' },
       },
     },
@@ -137,13 +205,17 @@ export class EffectiveWorkingHoursController {
   })
   async create(@Body() createDto: CreateEffectiveWorkingHoursDto) {
     const result = await this.effectiveWorkingHoursService.create(createDto);
-    return successResponse(result, 'Effective working hours created successfully');
+    return successResponse(
+      result,
+      'Effective working hours created successfully',
+    );
   }
 
   @Get()
   @ApiOperation({
     summary: 'Get all effective working hours',
-    description: 'Retrieve all effective working hours with filtering, searching, and pagination',
+    description:
+      'Retrieve all effective working hours with filtering, searching, and pagination',
   })
   @ApiQuery({
     name: 'startDate',
@@ -167,7 +239,8 @@ export class EffectiveWorkingHoursController {
   @ApiQuery({
     name: 'keyword',
     required: false,
-    description: 'Search keyword for description, activity name, unit name, type name, or model name',
+    description:
+      'Search keyword for description, activity name, unit name, type name, or model name',
     example: 'standby',
   })
   @ApiQuery({
@@ -201,10 +274,21 @@ export class EffectiveWorkingHoursController {
               unit: { type: 'string', example: 'EXCAVATOR-HITACHI-EX1200' },
               activity: { type: 'string', example: 'Loading' },
               description: { type: 'string', example: 'Standby karena hujan' },
-              start: { type: 'string', format: 'date-time', example: '2024-01-15T08:00:00Z' },
-              end: { type: 'string', format: 'date-time', example: '2024-01-15T10:00:00Z' },
+              start: {
+                type: 'string',
+                format: 'date-time',
+                example: '2024-01-15T08:00:00Z',
+              },
+              end: {
+                type: 'string',
+                format: 'date-time',
+                example: '2024-01-15T10:00:00Z',
+              },
               duration: { type: 'number', example: 120 },
-              remarks: { type: 'string', example: 'Perlu perbaikan mesin setelah hujan reda' },
+              remarks: {
+                type: 'string',
+                example: 'Perlu perbaikan mesin setelah hujan reda',
+              },
               type: { type: 'string', example: 'EXCAVATOR' },
               site: { type: 'string', example: 'Site A' },
             },
@@ -227,7 +311,11 @@ export class EffectiveWorkingHoursController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 400 },
-        message: { type: 'array', items: { type: 'string' }, example: ['Invalid date format'] },
+        message: {
+          type: 'array',
+          items: { type: 'string' },
+          example: ['Invalid date format'],
+        },
         error: { type: 'string', example: 'Bad Request' },
       },
     },
@@ -264,7 +352,10 @@ export class EffectiveWorkingHoursController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 200 },
-        message: { type: 'string', example: 'Effective working hours retrieved successfully' },
+        message: {
+          type: 'string',
+          example: 'Effective working hours retrieved successfully',
+        },
         data: {
           type: 'object',
           properties: {
@@ -275,10 +366,21 @@ export class EffectiveWorkingHoursController {
             populationId: { type: 'number', example: 1 },
             activitiesId: { type: 'number', example: 1 },
             description: { type: 'string', example: 'Standby karena hujan' },
-            start: { type: 'string', format: 'date-time', example: '2024-01-15T08:00:00Z' },
-            end: { type: 'string', format: 'date-time', example: '2024-01-15T10:00:00Z' },
+            start: {
+              type: 'string',
+              format: 'date-time',
+              example: '2024-01-15T08:00:00Z',
+            },
+            end: {
+              type: 'string',
+              format: 'date-time',
+              example: '2024-01-15T10:00:00Z',
+            },
             duration: { type: 'number', example: 120 },
-            remarks: { type: 'string', example: 'Perlu perbaikan mesin setelah hujan reda' },
+            remarks: {
+              type: 'string',
+              example: 'Perlu perbaikan mesin setelah hujan reda',
+            },
             type: { type: 'string', example: 'EXCAVATOR' },
             site: { type: 'string', example: 'Site A' },
             createdAt: { type: 'string', format: 'date-time' },
@@ -294,7 +396,10 @@ export class EffectiveWorkingHoursController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 404 },
-        message: { type: 'string', example: 'Effective working hours with ID 1 not found' },
+        message: {
+          type: 'string',
+          example: 'Effective working hours with ID 1 not found',
+        },
         error: { type: 'string', example: 'Not Found' },
       },
     },
@@ -305,7 +410,10 @@ export class EffectiveWorkingHoursController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 400 },
-        message: { type: 'string', example: 'Validation failed (numeric string is expected)' },
+        message: {
+          type: 'string',
+          example: 'Validation failed (numeric string is expected)',
+        },
         error: { type: 'string', example: 'Bad Request' },
       },
     },
@@ -322,13 +430,17 @@ export class EffectiveWorkingHoursController {
   })
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const result = await this.effectiveWorkingHoursService.findOne(id);
-    return successResponse(result, 'Effective working hours retrieved successfully');
+    return successResponse(
+      result,
+      'Effective working hours retrieved successfully',
+    );
   }
 
   @Patch(':id')
   @ApiOperation({
     summary: 'Update effective working hours',
-    description: 'Update an existing effective working hours record. Duration will be recalculated if start/end times are provided.',
+    description:
+      'Update an existing effective working hours record. Duration will be recalculated if start/end times are provided.',
   })
   @ApiParam({
     name: 'id',
@@ -351,7 +463,8 @@ export class EffectiveWorkingHoursController {
       },
       fullUpdate: {
         summary: 'Full Update Example',
-        description: 'Example for updating multiple fields (matches curl request)',
+        description:
+          'Example for updating multiple fields (matches curl request)',
         value: {
           dateActivity: '2024-01-15',
           lossType: 'STB',
@@ -372,7 +485,10 @@ export class EffectiveWorkingHoursController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 200 },
-        message: { type: 'string', example: 'Effective working hours updated successfully' },
+        message: {
+          type: 'string',
+          example: 'Effective working hours updated successfully',
+        },
         data: {
           type: 'object',
           properties: {
@@ -382,9 +498,20 @@ export class EffectiveWorkingHoursController {
             shift: { type: 'string', enum: ['DS', 'NS'], example: 'DS' },
             populationId: { type: 'number', example: 1 },
             activitiesId: { type: 'number', example: 1 },
-            description: { type: 'string', example: 'Standby karena hujan lebat' },
-            start: { type: 'string', format: 'date-time', example: '2024-01-15T08:00:00Z' },
-            end: { type: 'string', format: 'date-time', example: '2024-01-15T11:00:00Z' },
+            description: {
+              type: 'string',
+              example: 'Standby karena hujan lebat',
+            },
+            start: {
+              type: 'string',
+              format: 'date-time',
+              example: '2024-01-15T08:00:00Z',
+            },
+            end: {
+              type: 'string',
+              format: 'date-time',
+              example: '2024-01-15T11:00:00Z',
+            },
             duration: { type: 'number', example: 180 },
             remarks: { type: 'string', example: 'Update catatan perbaikan' },
             type: { type: 'string', example: 'EXCAVATOR' },
@@ -402,7 +529,10 @@ export class EffectiveWorkingHoursController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 404 },
-        message: { type: 'string', example: 'Effective working hours with ID 1 not found' },
+        message: {
+          type: 'string',
+          example: 'Effective working hours with ID 1 not found',
+        },
         error: { type: 'string', example: 'Not Found' },
       },
     },
@@ -413,7 +543,11 @@ export class EffectiveWorkingHoursController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 400 },
-        message: { type: 'array', items: { type: 'string' }, example: ['Invalid date format'] },
+        message: {
+          type: 'array',
+          items: { type: 'string' },
+          example: ['Invalid date format'],
+        },
         error: { type: 'string', example: 'Bad Request' },
       },
     },
@@ -431,15 +565,22 @@ export class EffectiveWorkingHoursController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateEffectiveWorkingHoursDto,
-    ) {
-    const result = await this.effectiveWorkingHoursService.update(id, updateDto);
-    return successResponse(result, 'Effective working hours updated successfully');
+  ) {
+    const result = await this.effectiveWorkingHoursService.update(
+      id,
+      updateDto,
+    );
+    return successResponse(
+      result,
+      'Effective working hours updated successfully',
+    );
   }
 
   @Delete(':id')
   @ApiOperation({
     summary: 'Delete effective working hours',
-    description: 'Soft delete an effective working hours record. The record will be marked as deleted but not removed from the database.',
+    description:
+      'Soft delete an effective working hours record. The record will be marked as deleted but not removed from the database.',
   })
   @ApiParam({
     name: 'id',
@@ -453,7 +594,10 @@ export class EffectiveWorkingHoursController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 200 },
-        message: { type: 'string', example: 'Effective working hours deleted successfully' },
+        message: {
+          type: 'string',
+          example: 'Effective working hours deleted successfully',
+        },
         data: { type: 'null', example: null },
       },
     },
@@ -464,7 +608,10 @@ export class EffectiveWorkingHoursController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 404 },
-        message: { type: 'string', example: 'Effective working hours with ID 1 not found' },
+        message: {
+          type: 'string',
+          example: 'Effective working hours with ID 1 not found',
+        },
         error: { type: 'string', example: 'Not Found' },
       },
     },
@@ -475,7 +622,10 @@ export class EffectiveWorkingHoursController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 400 },
-        message: { type: 'string', example: 'Validation failed (numeric string is expected)' },
+        message: {
+          type: 'string',
+          example: 'Validation failed (numeric string is expected)',
+        },
         error: { type: 'string', example: 'Bad Request' },
       },
     },
@@ -492,6 +642,9 @@ export class EffectiveWorkingHoursController {
   })
   async remove(@Param('id', ParseIntPipe) id: number) {
     await this.effectiveWorkingHoursService.remove(id);
-    return successResponse(null, 'Effective working hours deleted successfully');
+    return successResponse(
+      null,
+      'Effective working hours deleted successfully',
+    );
   }
 }

@@ -85,10 +85,11 @@ export class S3Service {
   async uploadErrorFile(
     fileName: string,
     fileBuffer: Buffer,
+    keyPrefix: string = 'population_import_error',
   ): Promise<{ key: string; downloadUrl: string } | null> {
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const key = `population_import_error/${timestamp}_${fileName}`;
+      const key = `${keyPrefix}/${timestamp}_${fileName}`;
 
       await this.uploadFile(key, fileBuffer);
       const downloadUrl = await this.generateDownloadUrl(key);
