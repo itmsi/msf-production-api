@@ -5,9 +5,6 @@ import { FormulaService } from '../../common/services/formula.service';
 import { ProductionFormulaService } from '../../common/services/production-formula.service';
 import { AnalysisHaulingBargingService } from '../analysis-hauling-barging/analysis-hauling-barging.service';
 import {
-  BargingSummaryItemDto,
-  BargingSummaryResponseDto,
-  CcrActivitesResponseDto,
   FleetStatusItemDto,
   ActivityType,
   CcrActivitiesDto,
@@ -20,20 +17,21 @@ import {
   RawDataTonnageVesselRow,
 } from './dto/ccr-dashboard.dto';
 import {
-  HaulingResponseDto,
   LostTimeSummaryResponseDto,
+  RawTrendPerformanceRowDto,
+  TrendPerformanceChartDto,
+  TrendPerformanceUnitChartItemDto,
+  TrendPerformanceUnitDataDto,
 } from './dto/dashboard.dto';
-import { BargeForm } from '../barge-form/entities/barge-form.entity';
 import { Barge } from '../barge/entities/barge.entity';
-import { EffectiveWorkingHours } from '../effective-working-hours/entities/effective-working-hours.entity';
-import { Activities } from '../activities/entities/activities.entity';
-import { ParentPlanWorkingHour } from '../plan-working-hour/entities/parent-plan-working-hour.entity';
 import { ApiResponse, successResponse } from 'src/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { OperationPoints } from '../operation-points/entities/operation-points.entity';
 import { HaulingList } from '../hauling-list';
 import { BargingList } from '../barging-list/entities/barging-list.entity';
 import { calculateTimeRange } from '../../common/helpers/public.helper';
+import { BaseDataPro } from '../base-data-production';
+import moment from 'moment';
 
 @Injectable()
 export class DashboardService {
@@ -46,10 +44,8 @@ export class DashboardService {
     private readonly haulingRepo: Repository<HaulingList>,
     @InjectRepository(BargingList)
     private readonly bargingRepo: Repository<BargingList>,
-    @InjectRepository(Population)
-    private readonly populationRepo: Repository<Population>,
-    @InjectRepository(OperationPoints)
-    private readonly opPointRepo: Repository<OperationPoints>,
+    @InjectRepository(BaseDataPro)
+    private readonly baseDataProductionRepository: Repository<BaseDataPro>,
   ) {}
   async getSpiderData(startDate?: string, endDate?: string) {
     try {
@@ -1531,27 +1527,119 @@ export class DashboardService {
     }
   }
 
-  getTrendPerformanceUnit(month: string) {
-    // TEMPORARY: Return dummy data with actual values for testing
-    return {
-      statusCode: 200,
-      message: 'success',
-      data: {
-        chart: [
-          { date: '01/08', pa: 0.85, ma: 0.92, ua: 0.78, eu: 0.65 },
-          { date: '02/08', pa: 0.88, ma: 0.89, ua: 0.82, eu: 0.68 },
-          { date: '03/08', pa: 0.82, ma: 0.94, ua: 0.75, eu: 0.62 },
-          { date: '04/08', pa: 0.9, ma: 0.87, ua: 0.85, eu: 0.72 },
-          { date: '05/08', pa: 0.86, ma: 0.91, ua: 0.8, eu: 0.66 },
-        ],
+  private toNum(value: any): number {
+    return Number(value) || 0;
+  }
+
+  // Helper: safe percentage calculation
+  private safeRatio(num: number, den: number): string {
+    return den ? `${Math.round((num / den) * 10000) / 100}%` : '0%';
+  }
+
+  private aggregateByDate(
+    rows: RawTrendPerformanceRowDto[],
+  ): Record<string, RawTrendPerformanceRowDto> {
+    return rows.reduce(
+      (acc, row) => {
+        const dateKey = moment(row.date).format('DD/MM');
+        if (!acc[dateKey]) {
+          acc[dateKey] = { date: dateKey, mohh: 0, ewh: 0, breakdown: 0 };
+        }
+        acc[dateKey].mohh += this.toNum(row.mohh);
+        acc[dateKey].ewh += this.toNum(row.ewh);
+        acc[dateKey].breakdown += this.toNum(row.breakdown);
+        return acc;
+      },
+      {} as Record<string, RawTrendPerformanceRowDto>,
+    );
+  }
+
+  private mapToChartData(
+    aggregated: Record<string, RawTrendPerformanceRowDto>,
+  ): TrendPerformanceChartDto[] {
+    return Object.values(aggregated).map(({ date, mohh, ewh, breakdown }) => {
+      const standby = mohh - breakdown - ewh;
+      return {
+        date,
+        pa: this.safeRatio(ewh + standby, mohh),
+        ua: this.safeRatio(ewh, ewh + standby),
+        ma: this.safeRatio(ewh, ewh + breakdown),
+        eu: this.safeRatio(ewh, mohh),
+      };
+    });
+  }
+
+  private async fetchBaseDataProRawData(
+    startDate: string,
+    endDate: string,
+  ): Promise<RawTrendPerformanceRowDto[]> {
+    return this.baseDataProductionRepository
+      .createQueryBuilder('rbdp')
+      .select('rpbdp.population_id', 'population_id')
+      .addSelect('rpbdp.shift', 'shift')
+      .addSelect('rpbdp.activity_date::date', 'date')
+      .addSelect('((DATE(:endDate) - DATE(:startDate) + 1) * 24)', 'mohh')
+      .addSelect('SUM(rbdp.total_hm::numeric)', 'ewh')
+      .addSelect('COALESCE(SUM(rtl.duration),0) / 60', 'breakdown')
+      .where('rpbdp.activity_date BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .leftJoin(
+        'r_parent_base_data_pro',
+        'rpbdp',
+        'rpbdp.id = rbdp.parent_base_data_pro_id',
+      )
+      .leftJoin(
+        'r_loss_time',
+        'rtl',
+        'rtl.population_id = rpbdp.population_id AND rtl.loss_type = :lossType AND rtl.start BETWEEN :startDate AND :endDate',
+        { lossType: 'BD', startDate, endDate },
+      )
+      .groupBy('rpbdp.population_id')
+      .addGroupBy('rpbdp.shift')
+      .addGroupBy('rpbdp.activity_date::date')
+      .getRawMany<RawTrendPerformanceRowDto>();
+  }
+
+  async getTrendPerformanceUnit(month: string): Promise<ApiResponse<any>> {
+    try {
+      const [year, monthNum] = month.split('-').map(Number);
+      const startDate = moment({ year, month: monthNum - 1, day: 1 }).format(
+        'YYYY-MM-DD',
+      );
+      const endDate = moment({ year, month: monthNum - 1, day: 1 })
+        .endOf('month')
+        .format('YYYY-MM-DD');
+
+      const rawData = await this.fetchBaseDataProRawData(startDate, endDate);
+      const aggregated = this.aggregateByDate(rawData);
+      const chart = this.mapToChartData(aggregated);
+
+      return successResponse({
+        chart,
         meta: [
           { key: 'pa', label: 'PA', color: '#D96C06', yAxis: 'left' },
           { key: 'ma', label: 'MA', color: '#3E7D70', yAxis: 'left' },
           { key: 'ua', label: 'UA', color: '#54AD9B', yAxis: 'left' },
           { key: 'eu', label: 'EU', color: '#D7EED2', yAxis: 'left' },
         ],
-      },
-    };
+      });
+    } catch (error) {
+      return {
+        statusCode: 500,
+        message: 'Internal server error',
+        data: {
+          chart: [],
+          meta: [
+            { key: 'pa', label: 'PA', color: '#D96C06', yAxis: 'left' },
+            { key: 'ma', label: 'MA', color: '#3E7D70', yAxis: 'left' },
+            { key: 'ua', label: 'UA', color: '#54AD9B', yAxis: 'left' },
+            { key: 'eu', label: 'EU', color: '#D7EED2', yAxis: 'left' },
+          ],
+        },
+      };
+    }
   }
 
   private generateDummyPerformanceData(startDate: Date, endDate: Date) {

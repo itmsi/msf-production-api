@@ -20,7 +20,7 @@ import {
   MonthlyStatusResponseDto,
   TrendHaulingBargingResponseDto,
   TrendFuelRatioResponseDto,
-  TrendPerformanceUnitResponseDto,
+  TrendPerformanceUnitDataDto,
 } from './dto/dashboard.dto';
 import {
   BargingSummaryResponseDto,
@@ -374,13 +374,8 @@ export class DashboardController {
     description: 'Month in YYYY-MM format',
     example: '2025-09',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Successfully retrieved trend performance unit data',
-    type: TrendPerformanceUnitResponseDto,
-  })
-  getTrendPerformanceUnit(@Query('month') month: string) {
-    return this.dashboardService.getTrendPerformanceUnit(month);
+  async getTrendPerformanceUnit(@Query('month') month: string) {
+    return await this.dashboardService.getTrendPerformanceUnit(month);
   }
 
   @Get('summary-production')
