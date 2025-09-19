@@ -1480,8 +1480,8 @@ export class DashboardService {
   }
 
   // Helper: safe percentage calculation
-  private safeRatio(num: number, den: number): string {
-    return den ? `${Math.round((num / den) * 10000) / 100}%` : '0%';
+  private safeRatio(num: number, den: number): number {
+    return den ? Math.round((num / den) * 10000) / 100 : 0;
   }
 
   private aggregateByDate(
