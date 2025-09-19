@@ -567,8 +567,5 @@ export class RawTrendPerformanceRowDto {
 
 export class TrendPerformanceChartDto {
   date: string;
-  pa: string;
-  ua: string;
-  ma: string;
-  eu: string;
+  [key: string]: number | string;
 }
