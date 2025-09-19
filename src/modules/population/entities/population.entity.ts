@@ -53,6 +53,9 @@ export class Population {
   @Column({ type: 'int', nullable: true })
   site_id: number;
 
+  @Column({ type: 'int', nullable: true })
+  department_id: number;
+
   @Column({ type: 'enum', enum: ['6x4', '8x4'], nullable: true })
   tyre_type: string;
 
