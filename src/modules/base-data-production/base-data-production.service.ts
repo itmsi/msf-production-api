@@ -752,22 +752,25 @@ export class BaseDataProductionService {
   }
 
   async remove(id: number) {
-    const parentBaseDataPro = await this.parentBaseDataProRepository.findOne({
+    const baseDataPro = await this.baseDataProRepository.findOne({
       where: { id },
-      relations: ['baseDataPro'],
     });
 
-    if (!parentBaseDataPro) {
+    if (!baseDataPro) {
       throw new NotFoundException(
         `Base data production with ID ${id} not found`,
       );
     }
 
-    // Delete base data pro details first
-    await this.baseDataProRepository.delete({ parentBaseDataProId: id });
+    await this.baseDataProRepository.delete({ id });
 
-    // Delete parent base data pro
-    await this.parentBaseDataProRepository.remove(parentBaseDataPro);
+    const baseDataProCHK = await this.baseDataProRepository.count({
+      where: { parentBaseDataProId: baseDataPro.parentBaseDataProId },
+    });
+
+    await this.parentBaseDataProRepository.delete({
+      id: baseDataPro.parentBaseDataProId,
+    });
 
     return successResponse(null, 'Base data production berhasil dihapus');
   }
