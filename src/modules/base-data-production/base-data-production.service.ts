@@ -54,7 +54,7 @@ export class BaseDataProductionService {
 
       // Validate KM values based on type
       this.validateKmBasedOnType(createDto);
-
+      let savedParent;
       const checkParent = await this.parentBaseDataProRepository.findOne({
         where: {
           populationId: createDto.population_id,
@@ -64,35 +64,29 @@ export class BaseDataProductionService {
         },
       });
 
-      if (checkParent) {
-        const updated = await this.update(checkParent.id, createDto, userId);
-        return successResponse(
-          updated,
-          'Base data production berhasil dibuat dan update parentnya',
-          201,
-        );
+      if (!checkParent) {
+        const parentBaseDataPro = this.parentBaseDataProRepository.create({
+          populationId: createDto.population_id,
+          activityDate: new Date(createDto.activityDate),
+          shift: createDto.shift,
+          driverId: createDto.driverId,
+          startShift: createDto.startShift
+            ? new Date(createDto.startShift)
+            : null,
+          endShift: createDto.endShift ? new Date(createDto.endShift) : null,
+        });
+
+        savedParent = (await this.parentBaseDataProRepository.save(
+          parentBaseDataPro,
+        )) as ParentBaseDataPro;
       }
 
       // Create parent base data pro
-      const parentBaseDataPro = this.parentBaseDataProRepository.create({
-        populationId: createDto.population_id,
-        activityDate: new Date(createDto.activityDate),
-        shift: createDto.shift,
-        driverId: createDto.driverId,
-        startShift: createDto.startShift
-          ? new Date(createDto.startShift)
-          : null,
-        endShift: createDto.endShift ? new Date(createDto.endShift) : null,
-      });
-
-      const savedParent = (await this.parentBaseDataProRepository.save(
-        parentBaseDataPro,
-      )) as ParentBaseDataPro;
 
       // Create base data pro details
       const baseDataProDetails = createDto.detail.map((detail) =>
         this.baseDataProRepository.create({
-          parentBaseDataProId: savedParent.id,
+          parentBaseDataProId: checkParent?.id || savedParent.id,
           kmAwal: detail.kmAwal,
           kmAkhir: detail.kmAkhir,
           totalKm:
