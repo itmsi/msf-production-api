@@ -196,8 +196,8 @@ export class PopulationService {
 
       // Filter by unit_type_name (case-insensitive)
       if (unitTypeName) {
-        qb.andWhere('LOWER(unitType.unit_name) = LOWER(:unitTypeName)', {
-          unitTypeName,
+        qb.andWhere('unitType.unit_name ILIKE :unitTypeName', {
+          unitTypeName: `%${unitTypeName}%`,
         });
       }
 
