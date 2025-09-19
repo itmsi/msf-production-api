@@ -82,11 +82,11 @@ export class BaseDataProductionService {
       }
 
       // Create parent base data pro
-
+      const parent = checkParent ?? savedParent;
       // Create base data pro details
       const baseDataProDetails = createDto.detail.map((detail) =>
         this.baseDataProRepository.create({
-          parentBaseDataProId: checkParent?.id || savedParent.id,
+          parentBaseDataProId: parent.id,
           kmAwal: detail.kmAwal,
           kmAkhir: detail.kmAkhir,
           totalKm:
@@ -115,7 +115,7 @@ export class BaseDataProductionService {
 
       // Get created data for response
       const createdData = await this.parentBaseDataProRepository.findOne({
-        where: { id: savedParent.id },
+        where: { id: parent.id },
         relations: ['baseDataPro'],
       });
 
