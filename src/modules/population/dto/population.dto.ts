@@ -270,6 +270,13 @@ export class UpdatePopulationDto {
   @IsOptional()
   @IsEnum(['6x4', '8x4'])
   tyre_type?: string;
+
+  @ApiProperty({
+    description: 'ID Department',
+    example: 1,
+  })
+  @IsInt()
+  department_id: number;
 }
 
 export class PopulationResponseDto {
