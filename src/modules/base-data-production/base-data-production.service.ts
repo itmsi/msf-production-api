@@ -24,6 +24,7 @@ import {
   throwError,
 } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
+import { use } from 'passport';
 
 @Injectable()
 export class BaseDataProductionService {
@@ -53,6 +54,24 @@ export class BaseDataProductionService {
 
       // Validate KM values based on type
       this.validateKmBasedOnType(createDto);
+
+      const checkParent = await this.parentBaseDataProRepository.findOne({
+        where: {
+          populationId: createDto.population_id,
+          activityDate: new Date(createDto.activityDate),
+          shift: createDto.shift,
+          driverId: createDto.driverId,
+        },
+      });
+
+      if (checkParent) {
+        const updated = await this.update(checkParent.id, createDto, userId);
+        return successResponse(
+          updated,
+          'Base data production berhasil dibuat dan update parentnya',
+          201,
+        );
+      }
 
       // Create parent base data pro
       const parentBaseDataPro = this.parentBaseDataProRepository.create({
