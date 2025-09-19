@@ -647,7 +647,7 @@ export class EffectiveWorkingHoursService {
       dateActivity: result.dateActivity, // Already in YYYY-MM-DD format
       lossType: this.mapLossType(result.lossType),
       shift: result.shift,
-      unit: `${result.population?.unitType?.unit_name || ''}-${result.population?.unitType?.type_name || ''}-${result.population?.unitType?.model_name || ''}`,
+      unit: result?.population?.no_unit,
       activity: result.activities?.name || '',
       description: result.description || '',
       start:
