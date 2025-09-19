@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, Between, In, IsNull } from 'typeorm';
+import { Repository, Like, Between, In, IsNull, DataSource } from 'typeorm';
 import { ParentBaseDataPro, BaseDataPro } from './entities';
 import { Population } from '../population/entities/population.entity';
 import { Employee } from '../employee/entities/employee.entity';
@@ -566,138 +566,6 @@ export class BaseDataProductionService {
     );
   }
 
-  // async findAll(queryDto: QueryBaseDataProductionDto): Promise<any> {
-  //   try {
-  //     const { startDate, endDate, keyword, page = 1, limit = 10 } = queryDto;
-  //     const skip = (page - 1) * limit;
-
-  //     // Simple query first to test basic functionality
-  //     let whereConditions: any = {};
-
-  //     // Apply date filter
-  //     if (startDate && endDate) {
-  //       whereConditions.activityDate = Between(
-  //         new Date(startDate),
-  //         new Date(endDate),
-  //       );
-  //     }
-
-  //     // Get total count
-  //     const total = await this.parentBaseDataProRepository.count({
-  //       where: whereConditions,
-  //     });
-
-  //     // Get parent data with details
-  //     const parentData = await this.parentBaseDataProRepository.find({
-  //       where: whereConditions,
-  //       relations: ['baseDataPro'],
-  //       skip: skip,
-  //       take: limit,
-  //       order: { id: 'DESC' },
-  //     });
-
-  //     // Get additional data for joins
-  //     const dumpingPointOpIds = parentData
-  //       .flatMap((parent) => parent.baseDataPro)
-  //       .map((detail) => detail.dumpingPointOpId)
-  //       .filter((id) => id !== null && id !== undefined);
-
-  //     const dumpingPointBargeIds = parentData
-  //       .flatMap((parent) => parent.baseDataPro)
-  //       .map((detail) => detail.dumpingPointBargeId)
-  //       .filter((id) => id !== null && id !== undefined);
-
-  //     const loadingPointIds = parentData
-  //       .flatMap((parent) => parent.baseDataPro)
-  //       .map((detail) => detail.loadingPointId)
-  //       .filter((id) => id !== null && id !== undefined);
-
-  //     const dumpingPointIds = parentData
-  //       .flatMap((parent) => parent.baseDataPro)
-  //       .map((detail) => detail.dumpingPointId)
-  //       .filter((id) => id !== null && id !== undefined);
-
-  //     const populationIds = parentData.map((parent) => parent.populationId);
-  //     const driverIds = parentData.map((parent) => parent.driverId);
-
-  //     // Fetch related data
-  //     const [operationPoints, barges, sites, populations, employees] =
-  //       await Promise.all([
-  //         this.operationPointsRepository.find({
-  //           where: { id: In(dumpingPointOpIds) },
-  //         }),
-  //         this.bargeRepository.find({
-  //           where: { id: In(dumpingPointBargeIds) },
-  //         }),
-  //         this.sitesRepository.find({
-  //           where: { id: In([...loadingPointIds, ...dumpingPointIds]) },
-  //         }),
-  //         this.populationRepository.find({ where: { id: In(populationIds) } }),
-  //         this.employeeRepository.find({ where: { id: In(driverIds) } }),
-  //       ]);
-
-  //     // Create lookup maps
-  //     const operationPointsMap = new Map(
-  //       operationPoints.map((op) => [op.id, op.name]),
-  //     );
-  //     const bargesMap = new Map(barges.map((barge) => [barge.id, barge.name]));
-  //     const sitesMap = new Map(sites.map((site) => [site.id, site.name]));
-  //     const populationsMap = new Map(
-  //       populations.map((pop) => [pop.id, pop.no_unit || `Unit ${pop.id}`]),
-  //     );
-  //     const employeesMap = new Map(employees.map((emp) => [emp.id, emp.name]));
-
-  //     // Transform data to DTO format
-  //     const data = parentData.map((parent) => {
-  //       const baseData = parent.baseDataPro?.[0];
-  //       return {
-  //         id: parent.id,
-  //         date: parent.activityDate,
-  //         shift: parent.shift,
-  //         driver:
-  //           employeesMap.get(parent.driverId) || `Driver ${parent.driverId}`,
-  //         activity: this.getActivityDisplayName(baseData?.activity),
-  //         unit:
-  //           populationsMap.get(parent.populationId) ||
-  //           `Unit ${parent.populationId}`,
-  //         start_shift: parent.startShift,
-  //         end_shift: parent.endShift,
-  //         km_awal: baseData?.kmAwal || 0,
-  //         km_akhir: baseData?.kmAkhir || 0,
-  //         hm_awal: baseData?.hmAwal || 0,
-  //         hm_akhir: baseData?.hmAkhir || 0,
-  //         total_km: (baseData?.kmAkhir || 0) - (baseData?.kmAwal || 0),
-  //         total_hm: (baseData?.hmAkhir || 0) - (baseData?.hmAwal || 0),
-  //         total_vessel: baseData?.totalVessel || 0,
-  //         loading_point:
-  //           sitesMap.get(baseData?.loadingPointId || 0) ||
-  //           `Loading ${baseData?.loadingPointId || 'N/A'}`,
-  //         dumping_point:
-  //           sitesMap.get(baseData?.dumpingPointId || 0) ||
-  //           `Dumping ${baseData?.dumpingPointId || 'N/A'}`,
-  //         dumping_point_op:
-  //           operationPointsMap.get(baseData?.dumpingPointOpId || 0) || '',
-  //         dumping_point_barge:
-  //           bargesMap.get(baseData?.dumpingPointBargeId || 0) || '',
-  //         activity_type: baseData?.activity || null,
-  //         mround_distance: baseData?.mroundDistance || 0,
-  //         distance: baseData?.distance || 0,
-  //         material: baseData?.material || 'none',
-  //       };
-  //     });
-
-  //     return paginateResponse(
-  //       data,
-  //       total,
-  //       page,
-  //       limit,
-  //       'Base data production data retrieved successfully',
-  //     );
-  //   } catch (error) {
-  //     console.error('Error in findAll:', error);
-  //     throw error;
-  //   }
-  // }
   async findAll(queryDto: QueryBaseDataProductionDto): Promise<any> {
     try {
       const page = Number(queryDto.page);
@@ -809,76 +677,59 @@ export class BaseDataProductionService {
     }
   }
 
-  private getActivityDisplayName(activity: string | null): string {
-    if (!activity) return 'N/A';
-
-    switch (activity.toLowerCase()) {
-      case 'hauling':
-        return 'Hauling';
-      case 'barging':
-        return 'Barging';
-      case 'direct':
-        return 'Direct';
-      case 'support':
-        return 'Support';
-      default:
-        return activity;
-    }
-  }
-
   async findOne(id: number) {
     try {
-      const parentBaseDataPro = await this.parentBaseDataProRepository.findOne({
+      const baseData = await this.baseDataProRepository.findOne({
         where: { id },
-        relations: ['baseDataPro'],
+        relations: [
+          'parentBaseDataPro',
+          'loadingPoint',
+          'dumpingPoint',
+          'dumpingPointOp',
+          'dumpingPointBarge',
+          'parentBaseDataPro.population',
+          'parentBaseDataPro.population.unitType', // kalau mau ambil unit_type
+        ],
       });
 
-      if (!parentBaseDataPro) {
-        return emptyDataResponse('Base data production not found');
+      if (!baseData) {
+        throwError('Base data production not found', 404);
       }
 
-      // Transform data to response format
-      const transformedData = {
-        id: parentBaseDataPro.id,
-        population_id: parentBaseDataPro.populationId,
-        type: 'DT', // Default type since it's not stored in database
-        activityDate: parentBaseDataPro.activityDate,
-        shift: parentBaseDataPro.shift,
-        driverId: parentBaseDataPro.driverId,
-        startShift: parentBaseDataPro.startShift,
-        endShift: parentBaseDataPro.endShift,
-        baseDataPro:
-          parentBaseDataPro.baseDataPro?.map((detail) => ({
-            id: detail.id,
-            parentBaseDataProId: detail.parentBaseDataProId,
-            kmAwal: detail.kmAwal,
-            kmAkhir: detail.kmAkhir,
-            totalKm: detail.totalKm,
-            hmAwal: detail.hmAwal,
-            hmAkhir: detail.hmAkhir,
-            totalHm: detail.totalHm,
-            loadingPointId: detail.loadingPointId,
-            dumpingPointId: detail.dumpingPointId,
-            dumpingPointOpId: detail.dumpingPointOpId,
-            dumpingPointBargeId: detail.dumpingPointBargeId,
-            activity: detail.activity,
-            activityDisplayName: this.getActivityDisplayName(detail.activity),
-            mroundDistance: detail.mroundDistance,
-            distance: detail.distance,
-            totalVessel: detail.totalVessel,
-            material: detail.material,
-            createdBy: detail.createdBy,
-            updatedBy: detail.updatedBy,
-            deletedBy: detail.deletedBy,
-            createdAt: detail.createdAt,
-            updatedAt: detail.updatedAt,
-            deletedAt: detail.deletedAt,
-          })) || [],
+      const result = {
+        id: baseData?.parentBaseDataPro.id,
+        population_id: baseData?.parentBaseDataPro.population.id,
+        type: baseData?.parentBaseDataPro.population.unitType.unit_name,
+        activityDate: baseData?.parentBaseDataPro.activityDate,
+        shift: baseData?.parentBaseDataPro.shift,
+        driverId: baseData?.parentBaseDataPro.driverId,
+        startShift: baseData?.parentBaseDataPro.startShift,
+        endShift: baseData?.parentBaseDataPro.endShift,
+        baseDataPro: {
+          id: baseData?.id,
+          parentBaseDataProId: baseData?.parentBaseDataProId,
+          kmAwal: Number(baseData?.kmAwal),
+          kmAkhir: Number(baseData?.kmAkhir),
+          totalKm: Number(baseData?.totalKm),
+          hmAwal: Number(baseData?.hmAwal),
+          hmAkhir: Number(baseData?.hmAkhir),
+          totalHm: Number(baseData?.totalHm),
+          loadingPointId: baseData?.loadingPointId,
+          dumpingPointId: baseData?.dumpingPointId,
+          dumpingPointOpId: baseData?.dumpingPointOpId,
+          dumpingPointBargeId: baseData?.dumpingPointBargeId,
+          activity: baseData?.activity,
+          mroundDistance: Number(baseData?.mroundDistance),
+          distance: Number(baseData?.distance),
+          totalVessel: Number(baseData?.totalVessel),
+          material: baseData?.material,
+        },
       };
 
       return successResponse(
-        transformedData,
+        result,
         'Base data production retrieved successfully',
+        200,
       );
     } catch (error) {
       throwError('Failed to retrieve base data production', 500);
