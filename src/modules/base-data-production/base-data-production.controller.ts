@@ -9,8 +9,16 @@ import {
   Query,
   UseGuards,
   Request,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { BaseDataProductionService } from './base-data-production.service';
 import {
   CreateBaseDataProductionDto,
@@ -20,6 +28,8 @@ import {
   ParentBaseDataProResponseDto,
 } from './dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { FileUploadDto } from '../population';
 
 @ApiTags('Base Data Production')
 @ApiBearerAuth('jwt')
@@ -51,7 +61,9 @@ export class BaseDataProductionController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get all base data production with pagination and filters' })
+  @ApiOperation({
+    summary: 'Get all base data production with pagination and filters',
+  })
   @ApiResponse({
     status: 200,
     description: 'Base data production retrieved successfully',

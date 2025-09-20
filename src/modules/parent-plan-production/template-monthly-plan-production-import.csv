@@ -1,0 +1,4 @@
+plan_date,total_average_month_ewh,total_average_day_ewh,total_ore_target,total_ore_shipment_target,total_sisa_stock,total_ob_target,total_quarry_target,total_fleet
+2026-01-01,600,24,100000,125000,110,0,0,3
+2026-02-01,610,24,200000,225000,210,0,0,3
+2026-03-01,660,24,300000,325000,330,0,0,3
