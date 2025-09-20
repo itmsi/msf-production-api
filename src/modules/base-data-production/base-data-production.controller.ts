@@ -9,8 +9,19 @@ import {
   Query,
   UseGuards,
   Request,
+  Res,
+  UseInterceptors,
+  UploadedFile,
+  Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { BaseDataProductionService } from './base-data-production.service';
 import {
   CreateBaseDataProductionDto,
@@ -20,6 +31,7 @@ import {
   ParentBaseDataProResponseDto,
 } from './dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Base Data Production')
 @ApiBearerAuth('jwt')
@@ -51,7 +63,9 @@ export class BaseDataProductionController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get all base data production with pagination and filters' })
+  @ApiOperation({
+    summary: 'Get all base data production with pagination and filters',
+  })
   @ApiResponse({
     status: 200,
     description: 'Base data production retrieved successfully',
@@ -110,5 +124,33 @@ export class BaseDataProductionController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   remove(@Param('id') id: string) {
     return this.baseDataProductionService.remove(+id);
+  }
+
+  //download
+  // @UseGuards(JwtAuthGuard)
+  // @Get('import/template')
+  // downloadTemplate(@Res() res: Response) {
+  //   try {
+  //     const buffer = this.baseDataProductionService.downloadTemplate();
+
+  //     res.set({
+  //       'Content-Type': 'text/csv',
+  //       'Content-Disposition':
+  //         'attachment; filename="template-population-import.csv"',
+  //       'Content-Length': buffer.length,
+  //     });
+
+  //     res.end(buffer);
+  //   } catch (error) {
+  //     throw new InternalServerErrorException('Gagal download template CSV');
+  //   }
+  // }
+
+  //import
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  async importData(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    const userId = req.user?.id;
+    return this.baseDataProductionService.importData(file, userId);
   }
 }
