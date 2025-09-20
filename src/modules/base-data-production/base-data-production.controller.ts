@@ -64,9 +64,7 @@ export class BaseDataProductionController {
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
-   
     summary: 'Get all base data production with pagination and filters',
- ,
   })
   @ApiOperation({
     summary: 'Get all base data production with pagination and filters',
