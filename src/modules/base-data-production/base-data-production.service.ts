@@ -13,6 +13,15 @@ import {
   DataSource,
   ILike,
 } from 'typeorm';
+import {
+  Repository,
+  Like,
+  Between,
+  In,
+  IsNull,
+  DataSource,
+  ILike,
+} from 'typeorm';
 import { ParentBaseDataPro, BaseDataPro } from './entities';
 import { Population } from '../population/entities/population.entity';
 import { Employee } from '../employee/entities/employee.entity';
@@ -1113,11 +1122,11 @@ export class BaseDataProductionService {
         validationResult.populationId,
         validationResult.driverId,
       );
-      
+
       if (payload) {
         await this.create(payload, userId);
       }
-      
+
       const errorFileInfo = await this.generateErrorCsv(
         validationResult.failedRows,
       );
