@@ -581,15 +581,23 @@ export class BaseDataProductionService {
     driverId?: number,
   ): any | null {
     if (
+      !csvData ||
       csvData.length === 0 ||
+      !details ||
       details.length === 0 ||
       !populationId ||
-      !driverId
+      !driverId ||
+      populationId <= 0 ||
+      driverId <= 0
     ) {
       return null;
     }
 
     const firstRow = csvData[0];
+    
+    if (!firstRow || !firstRow.activityDate) {
+      return null;
+    }
 
     return {
       activityDate: firstRow.activityDate,
@@ -1115,7 +1123,7 @@ export class BaseDataProductionService {
         validationResult.driverId,
       );
 
-      if (payload) {
+   if (payload && validationResult.successCount > 0) {
         await this.create(payload, userId);
       }
 
