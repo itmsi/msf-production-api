@@ -9,10 +9,21 @@ import { Sites } from '../sites/entities/sites.entity';
 import { Barge } from '../barge/entities/barge.entity';
 import { OperationPoints } from '../operation-points/entities/operation-points.entity';
 import { Users } from '../users/entities/users.entity';
+import { S3Module } from 'src/integrations/s3/s3.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ParentBaseDataPro, BaseDataPro, Population, Employee, Sites, Barge, OperationPoints, Users]),
+    TypeOrmModule.forFeature([
+      ParentBaseDataPro,
+      BaseDataPro,
+      Population,
+      Employee,
+      Sites,
+      Barge,
+      OperationPoints,
+      Users,
+    ]),
+    S3Module,
   ],
   controllers: [BaseDataProductionController],
   providers: [BaseDataProductionService],

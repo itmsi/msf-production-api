@@ -4,7 +4,15 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, Between, In, IsNull, DataSource } from 'typeorm';
+import {
+  Repository,
+  Like,
+  Between,
+  In,
+  IsNull,
+  DataSource,
+  ILike,
+} from 'typeorm';
 import { ParentBaseDataPro, BaseDataPro } from './entities';
 import { Population } from '../population/entities/population.entity';
 import { Employee } from '../employee/entities/employee.entity';
@@ -23,8 +31,13 @@ import {
   emptyDataResponse,
   throwError,
 } from '../../common/helpers/response.helper';
-import { paginateResponse } from '../../common/helpers/public.helper';
+import {
+  CsvHelper,
+  paginateResponse,
+  PublicHelper,
+} from '../../common/helpers/public.helper';
 import { use } from 'passport';
+import { S3Service } from 'src/integrations/s3/s3.service';
 
 @Injectable()
 export class BaseDataProductionService {
@@ -45,6 +58,7 @@ export class BaseDataProductionService {
     private operationPointsRepository: Repository<OperationPoints>,
     @InjectRepository(Users)
     private usersRepository: Repository<Users>,
+    private s3Service: S3Service,
   ) {}
 
   async create(createDto: CreateBaseDataProductionDto, userId: number) {
@@ -399,6 +413,320 @@ export class BaseDataProductionService {
     // Tidak perlu validasi khusus
   }
 
+  private async getPopulation(no_unit: string): Promise<number | undefined> {
+    const unit = await this.populationRepository.findOne({
+      where: { no_unit: no_unit },
+    });
+
+    return unit?.id;
+  }
+
+  private async getEmployee(fullname: string): Promise<number | undefined> {
+    const parts = fullname.trim().split(' ');
+    const first_name = parts.shift() ?? '';
+    const last_name = parts.length > 0 ? parts.join(' ') : '';
+
+    const employee = await this.employeeRepository.findOne({
+      where: {
+        firstName: ILike(`%${first_name}%`),
+        lastName: ILike(`%${last_name}%`),
+      },
+    });
+
+    return employee?.id;
+  }
+
+  private async getOperationPoint(point: string): Promise<number | undefined> {
+    const operation = await this.operationPointsRepository.findOne({
+      where: { name: point },
+    });
+    return operation?.id;
+  }
+
+  private validateImportFile(file: Express.Multer.File): void {
+    if (!file) {
+      throw new BadRequestException('File tidak ditemukan');
+    }
+    if (!file.mimetype.includes('csv') && !file.originalname.endsWith('.csv')) {
+      throw new BadRequestException('File harus berupa CSV');
+    }
+  }
+
+  private async processImportData(csvData: any[]): Promise<{
+    results: any[];
+    details: any[];
+    failedRows: any[];
+    successCount: number;
+    failedCount: number;
+    populationId?: number;
+    driverId?: number;
+  }> {
+    const results: any[] = [];
+    const details: any[] = [];
+    const failedRows: any[] = [];
+    let successCount = 0;
+    let failedCount = 0;
+    let populationId: number | undefined;
+    let driverId: number | undefined;
+
+    const validations = await Promise.all(
+      csvData.map(async (row: any, idx: number) => {
+        const rowNumber = idx + 1;
+        try {
+          const validationResult = await this.validateRowData(row);
+
+          if (!validationResult.isValid) {
+            failedCount++;
+            failedRows.push({
+              rowNumber,
+              ...row,
+              error: validationResult.error,
+            });
+            return {
+              row: rowNumber,
+              status: 'error',
+              message: validationResult.error,
+              data: row,
+            };
+          }
+
+          details.push(validationResult.detail);
+          // Store the first valid IDs
+          if (!populationId && validationResult.populationId) {
+            populationId = validationResult.populationId;
+          }
+          if (!driverId && validationResult.driverId) {
+            driverId = validationResult.driverId;
+          }
+          successCount++;
+
+          return {
+            row: rowNumber,
+            status: 'success',
+            message: 'Data valid',
+            data: row,
+          };
+        } catch (err) {
+          failedCount++;
+          failedRows.push({ rowNumber, ...row, error: err.message });
+          return {
+            row: rowNumber,
+            status: 'error',
+            message: err.message || 'Validasi gagal',
+            data: row,
+          };
+        }
+      }),
+    );
+
+    results.push(...validations);
+
+    return {
+      results,
+      details,
+      failedRows,
+      successCount,
+      failedCount,
+      populationId,
+      driverId,
+    };
+  }
+
+  private async validateRowData(row: any): Promise<{
+    isValid: boolean;
+    error?: string;
+    detail?: any;
+    populationId?: number;
+    driverId?: number;
+  }> {
+    const unitId = await this.getPopulation(row.population_id);
+    const driverId = await this.getEmployee(row.driverId);
+    const loadingId = await this.getOperationPoint(row.loadingPointId);
+    const dumpingId = await this.getOperationPoint(row.dumpingPointId);
+
+    if (!unitId || !driverId || !loadingId || !dumpingId) {
+      return {
+        isValid: false,
+        error:
+          'Foreign key tidak ditemukan (population/driver/loading/dumping)',
+      };
+    }
+
+    const detail = {
+      hmAwal: Number(row.hmAwal),
+      hmAkhir: Number(row.hmAkhir),
+      kmAwal: Number(row.kmAwal),
+      kmAkhir: Number(row.kmAkhir),
+      totalVessel: Number(row.totalVessel),
+      distance: Number(row.distance),
+      loadingPointId: loadingId,
+      dumpingPointId: dumpingId,
+      activity: row.activity,
+      material: row.material,
+    };
+
+    return {
+      isValid: true,
+      detail,
+      populationId: unitId,
+      driverId: driverId,
+    };
+  }
+
+  private buildImportPayload(
+    csvData: any[],
+    details: any[],
+    populationId?: number,
+    driverId?: number,
+  ): any | null {
+    if (
+      csvData.length === 0 ||
+      details.length === 0 ||
+      !populationId ||
+      !driverId
+    ) {
+      return null;
+    }
+
+    const firstRow = csvData[0];
+
+    return {
+      activityDate: firstRow.activityDate,
+      population_id: populationId, // Use resolved ID
+      driverId: driverId, // Use resolved ID
+      shift: firstRow.shift,
+      startShift: firstRow.startShift,
+      endShift: firstRow.endShift,
+      type: firstRow.type,
+      detail: details.map((d) => ({
+        hmAwal: d.hmAwal,
+        hmAkhir: d.hmAkhir,
+        kmAwal: d.kmAwal,
+        kmAkhir: d.kmAkhir,
+        totalVessel: d.totalVessel,
+        distance: d.distance,
+        loadingPointId: d.loadingPointId,
+        dumpingPointId: d.dumpingPointId,
+        activity: d.activity,
+        material: d.material,
+      })),
+    };
+  }
+
+  private async generateErrorCsv(failedRows: any[]): Promise<{
+    error_file: { download_url: string; file_name: string } | null;
+  }> {
+    if (failedRows.length === 0) {
+      return {
+        error_file: null,
+      };
+    }
+
+    try {
+      const csvContent = this.createErrorCsvContent(failedRows);
+      const csvBuffer = Buffer.from(csvContent, 'utf8');
+      const filename = `import-base-data-pro-errors-${Date.now()}.csv`;
+
+      const result = await this.s3Service.uploadErrorFile(
+        filename,
+        csvBuffer,
+        'base_data_production_import_error',
+      );
+
+      return {
+        error_file: result
+          ? {
+              download_url: result.downloadUrl,
+              file_name: filename,
+            }
+          : null,
+      };
+    } catch (error) {
+      console.error('Error generating CSV file:', error);
+      return {
+        error_file: null,
+      };
+    }
+  }
+
+  private createErrorCsvContent(failedRows: any[]): string {
+    const csvHeaders = [
+      'rowNumber',
+      'population_id',
+      'driverId',
+      'activityDate',
+      'shift',
+      'startShift',
+      'endShift',
+      'type',
+      'hmAwal',
+      'hmAkhir',
+      'kmAwal',
+      'kmAkhir',
+      'totalVessel',
+      'distance',
+      'loadingPointId',
+      'dumpingPointId',
+      'activity',
+      'material',
+      'error_message',
+    ];
+
+    const csvRows = failedRows.map((row) => [
+      row.rowNumber,
+      row.population_id || '',
+      row.driverId || '',
+      row.activityDate || '',
+      row.shift || '',
+      row.startShift || '',
+      row.endShift || '',
+      row.type || '',
+      row.hmAwal || '',
+      row.hmAkhir || '',
+      row.kmAwal || '',
+      row.kmAkhir || '',
+      row.totalVessel || '',
+      row.distance || '',
+      row.loadingPointId || '',
+      row.dumpingPointId || '',
+      row.activity || '',
+      row.material || '',
+      row.error || 'Foreign key tidak ditemukan',
+    ]);
+
+    return [
+      csvHeaders.join(','),
+      ...csvRows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
+    ].join('\n');
+  }
+
+  private buildImportResponse(
+    total: number,
+    successCount: number,
+    failedCount: number,
+    errorFileInfo: {
+      error_file: { download_url: string; file_name: string } | null;
+    },
+  ) {
+    return successResponse(
+      {
+        total,
+        success: successCount,
+        failed: failedCount,
+        error_file: errorFileInfo.error_file,
+        hasErrorFile: failedCount > 0,
+      },
+      failedCount > 0
+        ? `Import selesai dengan ${failedCount} error. ${
+            errorFileInfo.error_file
+              ? 'Download error CSV untuk detail.'
+              : 'Gagal generate error file.'
+          }`
+        : 'Semua data valid',
+    );
+  }
+
+  /** PUBLIC */
   async update(
     id: number,
     updateDto: UpdateBaseDataProductionDto,
@@ -647,7 +975,6 @@ export class BaseDataProductionService {
       }
 
       const total = await qb.getCount();
-      // const result = await qb.offset(skip).limit(limit).getRawMany();
       const rawResult = await qb.offset(skip).limit(limit).getRawMany();
 
       const result = rawResult.map((item) => ({
@@ -773,5 +1100,54 @@ export class BaseDataProductionService {
     });
 
     return successResponse(null, 'Base data production berhasil dihapus');
+  }
+
+  async importData(file: Express.Multer.File, userId: number) {
+    try {
+      this.validateImportFile(file);
+      const csvData = await CsvHelper.parseCsvFile(file.buffer);
+      const validationResult = await this.processImportData(csvData);
+      const payload = this.buildImportPayload(
+        csvData,
+        validationResult.details,
+        validationResult.populationId,
+        validationResult.driverId,
+      );
+      await this.create(payload, userId);
+      const errorFileInfo = await this.generateErrorCsv(
+        validationResult.failedRows,
+      );
+
+      return this.buildImportResponse(
+        csvData.length,
+        validationResult.successCount,
+        validationResult.failedCount,
+        errorFileInfo,
+      );
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throwError(error, 400);
+      }
+
+      if (error.message?.includes('CSV') || error.message?.includes('parse')) {
+        throwError(
+          'Format CSV tidak valid. Pastikan file CSV memiliki format yang benar.',
+          400,
+        );
+      }
+
+      if (error.code === '23503') {
+        throwError(
+          'Data referensi tidak ditemukan. Pastikan semua ID referensi valid.',
+          400,
+        );
+      }
+
+      console.error('Unexpected error in importData:', error);
+      throwError(
+        'Terjadi kesalahan saat memproses file import. Silakan coba lagi atau hubungi administrator.',
+        400,
+      );
+    }
   }
 }
