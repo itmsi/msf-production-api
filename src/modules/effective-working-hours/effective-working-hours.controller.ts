@@ -14,6 +14,7 @@ import {
   UploadedFile,
   UseInterceptors,
   Req,
+  StreamableFile,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -37,7 +38,8 @@ import {
 } from './dto/effective-working-hours.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { successResponse } from '../../common/helpers/response.helper';
-import { Response } from 'express';
+import { createReadStream } from 'fs';
+import { join } from 'path';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileUploadDto } from '../population';
 
@@ -57,20 +59,19 @@ export class EffectiveWorkingHoursController {
     description:
       'Mendownload template CSV yang berisi format kolom yang diperlukan',
   })
-  downloadTemplate(@Res() res: Response) {
+  downloadTemplate(): StreamableFile {
     try {
-      const buffer = this.effectiveWorkingHoursService.downloadTemplate();
-
-      res.set({
-        'Content-Type': 'text/csv',
-        'Content-Disposition':
-          'attachment; filename="template-population-import.csv"',
-        'Content-Length': buffer.length,
+      const file = join(
+        process.cwd(),
+        'src/modules/effective-working-hours/template-ewh-import.csv',
+      );
+      const stream = createReadStream(file);
+      return new StreamableFile(stream, {
+        type: 'text/csv',
+        disposition: 'attachment; filename="template-population-import.csv"',
       });
-
-      res.end(buffer);
     } catch (error) {
-      throw new InternalServerErrorException('Gagal download template CSV');
+      throw new InternalServerErrorException('Failed to download CSV template');
     }
   }
 
