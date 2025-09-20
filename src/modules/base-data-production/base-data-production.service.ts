@@ -1156,7 +1156,7 @@ export class BaseDataProductionService {
         );
       }
 
-      console.error('Unexpected error in importData:', error);
+      console.error('Unexpected error in importData:', error.stack);
       throwError(
         'Terjadi kesalahan saat memproses file import. Silakan coba lagi atau hubungi administrator.',
         400,
