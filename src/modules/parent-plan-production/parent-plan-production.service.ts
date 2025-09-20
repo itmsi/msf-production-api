@@ -1226,42 +1226,4 @@ export class ParentPlanProductionService {
 
     await this.create(monthlyPlanProduction);
   }
-
-  downloadTemplate(): Buffer {
-    try {
-      // Coba beberapa path yang mungkin
-      const possiblePaths = [
-        Path.join(__dirname, 'template-monthly-plan-production-import.csv'),
-        Path.join(
-          process.cwd(),
-          'src/modules/parent-plan-production/template-monthly-plan-production-import.csv',
-        ),
-        Path.join(
-          process.cwd(),
-          'dist/modules/parent-plan-production/template-monthly-plan-production-import.csv',
-        ),
-      ];
-
-      let templatePath: string | null = null;
-      for (const p of possiblePaths) {
-        if (Fs.existsSync(p)) {
-          templatePath = p;
-          break;
-        }
-      }
-
-      if (!templatePath) {
-        console.error('Template paths tried:', possiblePaths);
-        throw new Error(
-          'Template CSV tidak ditemukan di semua lokasi yang mungkin',
-        );
-      }
-
-      return Fs.readFileSync(templatePath);
-    } catch (error) {
-      throw new InternalServerErrorException(
-        'Gagal download template CSV: ' + error.message,
-      );
-    }
-  }
 }

@@ -4,12 +4,29 @@ import {
   ExecutionContext,
   CallHandler,
 } from '@nestjs/common';
+import { request } from 'express';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { Reflector } from '@nestjs/core';
+import { SetMetadata } from '@nestjs/common';
+
+export const SKIP_LOGGING_KEY = 'skipLogging';
+export const SkipLogging = () => SetMetadata(SKIP_LOGGING_KEY, true);
 
 @Injectable()
 export class NumberFormatInterceptor implements NestInterceptor {
+  constructor(private readonly reflector: Reflector) {}
+
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const skip = this.reflector.get<boolean>(
+      SKIP_LOGGING_KEY,
+      context.getHandler(),
+    );
+
+    if (skip) {
+      return next.handle();
+    }
+
     return next.handle().pipe(
       map((data) => {
         return this.formatNumbers(data);
@@ -61,9 +78,18 @@ export class NumberFormatInterceptor implements NestInterceptor {
   private shouldSkipFormatting(key: string, value: any): boolean {
     // Skip field yang tidak boleh diformat
     const skipFields = [
-      'id', 'createdAt', 'updatedAt', 'deletedAt', 'plan_date', 'date',
-      'is_calender_day', 'is_holiday_day', 'is_available_day',
-      'schedule_day', 'total_fleet', 'month_year'
+      'id',
+      'createdAt',
+      'updatedAt',
+      'deletedAt',
+      'plan_date',
+      'date',
+      'is_calender_day',
+      'is_holiday_day',
+      'is_available_day',
+      'schedule_day',
+      'total_fleet',
+      'month_year',
     ];
 
     // Skip jika key ada dalam daftar skip
