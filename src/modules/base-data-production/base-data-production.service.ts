@@ -1113,7 +1113,11 @@ export class BaseDataProductionService {
         validationResult.populationId,
         validationResult.driverId,
       );
-      await this.create(payload, userId);
+      
+      if (payload) {
+        await this.create(payload, userId);
+      }
+      
       const errorFileInfo = await this.generateErrorCsv(
         validationResult.failedRows,
       );
