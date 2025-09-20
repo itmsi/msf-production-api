@@ -15,6 +15,8 @@ import {
   Req,
   Res,
   InternalServerErrorException,
+  StreamableFile,
+  ClassSerializerInterceptor,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -36,11 +38,16 @@ import {
   GetRemainingStockQueryDto,
 } from './dto/parent-plan-production.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
-import { NumberFormatInterceptor } from '../../common/interceptors/number-format.interceptor';
+import {
+  NumberFormatInterceptor,
+  SkipLogging,
+} from '../../common/interceptors/number-format.interceptor';
 import { Pagination } from '../../common/helpers/public.helper';
 import { successResponse } from '../../common/helpers/response.helper';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileUploadDto } from '../population';
+import { createReadStream, existsSync } from 'fs';
+import { join } from 'path';
 import { Response } from 'express';
 
 @ApiTags('Parent Plan Production')
@@ -764,25 +771,26 @@ export class ParentPlanProductionController {
 
   @UseGuards(JwtAuthGuard)
   @Get('import/template')
+  @SkipLogging()
   @ApiOperation({
     summary: 'Download template CSV untuk import population',
     description:
       'Mendownload template CSV yang berisi format kolom yang diperlukan',
   })
-  downloadTemplate(@Res() res: Response) {
+  downloadTemplate(): StreamableFile {
     try {
-      const buffer = this.parentPlanProductionService.downloadTemplate();
-
-      res.set({
-        'Content-Type': 'text/csv',
-        'Content-Disposition':
+      const file = join(
+        process.cwd(),
+        'src/modules/parent-plan-production/template-monthly-plan-production-import.csv',
+      );
+      const stream = createReadStream(file);
+      return new StreamableFile(stream, {
+        type: 'text/csv',
+        disposition:
           'attachment; filename="template-monthly-plan-production-import.csv"',
-        'Content-Length': buffer.length,
       });
-
-      res.end(buffer);
     } catch (error) {
-      throw new InternalServerErrorException('Gagal download template CSV');
+      throw new InternalServerErrorException('Failed to download CSV template');
     }
   }
 }
