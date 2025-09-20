@@ -68,6 +68,9 @@ export class BaseDataProductionController {
     summary: 'Get all base data production with pagination and filters',
  ,
   })
+  @ApiOperation({
+    summary: 'Get all base data production with pagination and filters',
+  })
   @ApiResponse({
     status: 200,
     description: 'Base data production retrieved successfully',
