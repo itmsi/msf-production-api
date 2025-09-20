@@ -7,14 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  Repository,
-  Like,
-  Between,
-  SelectQueryBuilder,
-  DataSource,
-  ILike,
-} from 'typeorm';
+import { Repository, Between, DataSource } from 'typeorm';
 import {
   EffectiveWorkingHours,
   LossType,
@@ -31,8 +24,6 @@ import {
   normalizeString,
   paginateResponse,
 } from '../../common/helpers/public.helper';
-import Fs from 'fs';
-import Path from 'path';
 import { ApiResponse, successResponse } from 'src/common';
 import { Readable } from 'stream';
 import csv from 'csv-parser';
@@ -70,44 +61,6 @@ export class EffectiveWorkingHoursService {
 
     const date = new Date(dateTimeStr.replace(' ', 'T'));
     return !isNaN(date.getTime());
-  }
-
-  downloadTemplate(): Buffer {
-    try {
-      // Coba beberapa path yang mungkin
-      const possiblePaths = [
-        Path.join(__dirname, 'template-ewh-import.csv'),
-        Path.join(
-          process.cwd(),
-          'src/modules/effective-working-hours/template-ewh-import.csv',
-        ),
-        Path.join(
-          process.cwd(),
-          'dist/modules/effective-working-hours/template-ewh-import.csv',
-        ),
-      ];
-
-      let templatePath: string | null = null;
-      for (const p of possiblePaths) {
-        if (Fs.existsSync(p)) {
-          templatePath = p;
-          break;
-        }
-      }
-
-      if (!templatePath) {
-        console.error('Template paths tried:', possiblePaths);
-        throw new Error(
-          'Template CSV tidak ditemukan di semua lokasi yang mungkin',
-        );
-      }
-
-      return Fs.readFileSync(templatePath);
-    } catch (error) {
-      throw new InternalServerErrorException(
-        'Gagal download template CSV: ' + error.message,
-      );
-    }
   }
 
   private async parseCsvFile(buffer: Buffer): Promise<ImportEwhCsvRowDto[]> {
