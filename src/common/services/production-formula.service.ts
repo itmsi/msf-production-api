@@ -815,21 +815,21 @@ export class ProductionFormulaService {
       .select(
         `
           SUM(CASE 
-                WHEN rbdp.material = 'ore' AND rbdp.activity = 'hauling' THEN 
+                WHEN rbdp.material = 'ore' AND rbdp.activity in ('hauling','direct') THEN 
                   CASE WHEN mp.tyre_type = '6x4' THEN rbdp.total_vessel * 26.56
                       WHEN mp.tyre_type = '8x4' THEN rbdp.total_vessel * 29.56
                       ELSE 0 END
                 ELSE 0 END
               ) AS "oreHaulingTonnage",
           SUM(CASE 
-                WHEN rbdp.material = 'ob' AND rbdp.activity = 'barging' THEN 
+                WHEN rbdp.material = 'ob'THEN 
                   CASE WHEN mp.tyre_type = '6x4' THEN rbdp.total_vessel * 26.56 / 1.6
                       WHEN mp.tyre_type = '8x4' THEN rbdp.total_vessel * 29.56 / 1.6
                       ELSE 0 END
                 ELSE 0 END
               ) AS "obBCM",
           SUM(CASE 
-                WHEN rbdp.material = 'ore-barge' AND rbdp.activity IN ('barging','direct') THEN 
+                WHEN rbdp.material in ('ore','ore-barge') AND rbdp.activity = 'barging' THEN 
                   CASE WHEN mp.tyre_type = '6x4' THEN rbdp.total_vessel * 26.56
                       WHEN mp.tyre_type = '8x4' THEN rbdp.total_vessel * 29.56
                       ELSE 0 END
