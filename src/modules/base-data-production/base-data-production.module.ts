@@ -12,7 +12,16 @@ import { Users } from '../users/entities/users.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ParentBaseDataPro, BaseDataPro, Population, Employee, Sites, Barge, OperationPoints, Users]),
+    TypeOrmModule.forFeature([
+      ParentBaseDataPro,
+      BaseDataPro,
+      Population,
+      Employee,
+      Sites,
+      Barge,
+      OperationPoints,
+      Users,
+    ]),
   ],
   controllers: [BaseDataProductionController],
   providers: [BaseDataProductionService],

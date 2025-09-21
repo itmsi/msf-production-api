@@ -9,27 +9,22 @@ import {
   Query,
   UseGuards,
   Request,
-  UseInterceptors,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiConsumes,
-  ApiBody,
-} from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { BaseDataProductionService } from './base-data-production.service';
 import {
   CreateBaseDataProductionDto,
   UpdateBaseDataProductionDto,
   QueryBaseDataProductionDto,
-  PaginatedBaseDataProductionResponseDto,
-  ParentBaseDataProResponseDto,
 } from './dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { FileUploadDto } from '../population';
+import {
+  SwaggerCreateBaseDataProduction,
+  SwaggerFindAllBaseDataProduction,
+  SwaggerFindOneBaseDataProduction,
+  SwaggerUpdateBaseDataProduction,
+  SwaggerDeleteBaseDataProduction,
+} from './swagger/base-data-production.swagger';
 
 @ApiTags('Base Data Production')
 @ApiBearerAuth('jwt')
@@ -41,85 +36,39 @@ export class BaseDataProductionController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Create new base data production' })
-  @ApiResponse({
-    status: 201,
-    description: 'Base data production created successfully',
-    type: ParentBaseDataProResponseDto,
-  })
-  @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  create(
-    @Body() createBaseDataProductionDto: CreateBaseDataProductionDto,
-    @Request() req: any,
-  ) {
-    return this.baseDataProductionService.create(
-      createBaseDataProductionDto,
-      req.user.id,
-    );
+  @SwaggerCreateBaseDataProduction()
+  create(@Body() dto: CreateBaseDataProductionDto, @Request() req: any) {
+    return this.baseDataProductionService.create(dto, req.user.id);
   }
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({
-    summary: 'Get all base data production with pagination and filters',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Base data production retrieved successfully',
-    type: PaginatedBaseDataProductionResponseDto,
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @SwaggerFindAllBaseDataProduction()
   findAll(@Query() queryDto: QueryBaseDataProductionDto) {
     return this.baseDataProductionService.findAll(queryDto);
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get base data production by ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Base data production retrieved successfully',
-    type: ParentBaseDataProResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'Base data production not found' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @SwaggerFindOneBaseDataProduction()
   findOne(@Param('id') id: string) {
     return this.baseDataProductionService.findOne(+id);
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Update base data production by ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Base data production updated successfully',
-    type: ParentBaseDataProResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'Base data production not found' })
-  @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @SwaggerUpdateBaseDataProduction()
   update(
     @Param('id') id: string,
-    @Body() updateBaseDataProductionDto: UpdateBaseDataProductionDto,
+    @Body() dto: UpdateBaseDataProductionDto,
     @Request() req: any,
   ) {
-    return this.baseDataProductionService.update(
-      +id,
-      updateBaseDataProductionDto,
-      req.user.id,
-    );
+    return this.baseDataProductionService.update(+id, dto, req.user.id);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Delete base data production by ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Base data production deleted successfully',
-  })
-  @ApiResponse({ status: 404, description: 'Base data production not found' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @SwaggerDeleteBaseDataProduction()
   remove(@Param('id') id: string) {
     return this.baseDataProductionService.remove(+id);
   }

@@ -75,10 +75,8 @@ export class BaseDataProductionService {
             : null,
           endShift: createDto.endShift ? new Date(createDto.endShift) : null,
         });
-
-        savedParent = (await this.parentBaseDataProRepository.save(
-          parentBaseDataPro,
-        )) as ParentBaseDataPro;
+        savedParent =
+          await this.parentBaseDataProRepository.save(parentBaseDataPro);
       }
 
       // Create parent base data pro
