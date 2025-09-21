@@ -1,4 +1,7 @@
 import { Response } from 'express';
+import { Readable } from 'stream';
+import csv from 'csv-parser';
+import { Buffer } from 'buffer';
 
 export interface Pagination {
   total: number;
@@ -94,6 +97,67 @@ export function calculateTimeRange(
   const nextHourStr = nextHour.toString().padStart(2, '0');
 
   return `${currentHour}-${nextHourStr}`;
+}
+
+export class CsvHelper {
+  static async parseCsvFile(buffer: Buffer): Promise<any[]> {
+    const rows: any[] = [];
+    return new Promise((resolve, reject) => {
+      Readable.from(buffer)
+        .pipe(csv())
+        .on('data', (row) => rows.push(row))
+        .on('end', () => resolve(rows))
+        .on('error', (err) => reject(err));
+    });
+  }
+
+  static generateErrorCsv(errorRows: any[]): Buffer {
+    if (errorRows.length === 0) {
+      return Buffer.from('No errors found', 'utf-8');
+    }
+
+    const headers = Object.keys(errorRows[0]);
+    const csvContent = [
+      headers.join(','), // header line
+      ...errorRows.map((row) =>
+        headers.map((h) => JSON.stringify(row[h] ?? '')).join(','),
+      ),
+    ].join('\n');
+
+    return Buffer.from(csvContent, 'utf-8');
+  }
+}
+export class PublicHelper {
+  /**
+   * Generate CSV stream dari baris error
+   */
+  static generateErrorCsvStream(errorRows: any[]): Readable {
+    const headers = ['row', 'error', 'data'];
+    const csvLines: string[] = [];
+
+    // Header
+    csvLines.push(headers.join(','));
+
+    // Isi
+    errorRows.forEach((err) => {
+      const row = [
+        err.row ?? '',
+        `"${(err.message ?? '').replace(/"/g, '""')}"`,
+        `"${JSON.stringify(err.data ?? {}).replace(/"/g, '""')}"`,
+      ];
+      csvLines.push(row.join(','));
+    });
+
+    // Gabungkan jadi satu string
+    const csvContent = csvLines.join('\n');
+
+    // Jadikan stream biar bisa langsung return
+    const stream = new Readable();
+    stream.push(csvContent);
+    stream.push(null);
+
+    return stream;
+  }
 }
 
 export function normalizeString(value: string): string {
