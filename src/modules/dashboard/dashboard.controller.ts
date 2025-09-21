@@ -124,10 +124,10 @@ export class DashboardController {
     description: 'End date in YYYY-MM-DD format',
   })
   async getHaulingData(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
+    @Query('date_from') date_from?: string,
+    @Query('date_to') date_to?: string,
   ) {
-    return await this.dashboardService.getHaulingData(startDate, endDate);
+    return await this.dashboardService.getHaulingData(date_from, date_to);
   }
 
   @Get('barge')
