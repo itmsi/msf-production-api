@@ -204,39 +204,46 @@ export class ProductionFormulaService {
    * Formula: SUM [Barge Tonnage] sesuai rentang tanggal
    */
   async getBargeTonnage(startDate?: string, endDate?: string): Promise<number> {
-    let query = `
-      SELECT 
-        CASE 
-          WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 26.56)
-          WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 29.56)
-          ELSE 0
-        END as tonnage
-      FROM r_parent_base_data_pro rpbdp
-      JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
-      JOIN m_population mp ON rpbdp.population_id = mp.id
-      WHERE rbdp.material = $1 AND rbdp.activity = $2
-    `;
-
-    const queryParams: any[] = [MaterialType.ORE_BARGE, ActivityType.BARGING];
-    let paramIndex = 3;
+    const qb = this.baseDataProRepository
+      .createQueryBuilder('rbdp')
+      .select(
+        `
+      CASE
+        WHEN mp.tyre_type = '6x4' THEN SUM(rbdp.total_vessel) * 26.56
+        WHEN mp.tyre_type = '8x4' THEN SUM(rbdp.total_vessel) * 29.56
+        ELSE 0
+      END
+    `,
+        'tonnage',
+      )
+      .innerJoin(
+        'r_parent_base_data_pro',
+        'rpbdp',
+        'rpbdp.id = rbdp.parent_base_data_pro_id',
+      )
+      .innerJoin('m_population', 'mp', 'mp.id = rpbdp.population_id')
+      .where('rbdp.material = :material', { material: MaterialType.ORE_BARGE })
+      .andWhere('rbdp.activity = :activity', {
+        activity: ActivityType.BARGING,
+      });
 
     if (startDate) {
-      query += ` AND DATE(rpbdp.activity_date) >= $${paramIndex}`;
-      queryParams.push(startDate);
-      paramIndex++;
+      qb.andWhere('rpbdp.activity_date >= :startDate', { startDate });
     }
 
     if (endDate) {
-      query += ` AND DATE(rpbdp.activity_date) <= $${paramIndex}`;
-      queryParams.push(endDate);
-      paramIndex++;
+      qb.andWhere('rpbdp.activity_date <= :endDate', { endDate });
     }
 
-    query += ` GROUP BY mp.tyre_type`;
+    qb.groupBy('mp.tyre_type');
 
-    const result = await this.baseDataProRepository.query(query, queryParams);
-    
-    return result.reduce((total: number, row: any) => total + parseFloat(row.tonnage), 0);
+    const result = await qb.getRawMany();
+
+    // jumlahkan tonnage dari semua tyre_type
+    return result.reduce(
+      (total: number, row: any) => total + parseFloat(row.tonnage),
+      0,
+    );
   }
 
   /**
