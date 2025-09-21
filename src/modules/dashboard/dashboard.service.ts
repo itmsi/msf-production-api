@@ -2262,8 +2262,16 @@ export class DashboardService {
         }, 't')
         .setParameter('dateParam', dateParam);
 
-      const tonnageRaw = await qb.getRawOne();
-      const vesselRaw = await qb2.getRawOne();
+      const tonnageRaw = (await qb.getRawOne()) || {
+        actual: 0,
+        target: 0,
+        percent: 0,
+      };
+      const vesselRaw = (await qb2.getRawOne()) || {
+        actual: 0,
+        target: 0,
+        percent: 0,
+      };
 
       const tonnage = {
         actual: Number(tonnageRaw.actual),
