@@ -11,6 +11,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -28,7 +29,9 @@ import {
   UpdateBargeFormDto,
   BargeFormResponseDto,
   QueryBargeFormDto,
+  QueryExportBargeFormDto,
 } from './dto';
+import { Response } from 'express';
 
 @ApiTags('Barge Form')
 @ApiBearerAuth('jwt')
@@ -38,11 +41,26 @@ import {
 export class BargeFormController {
   constructor(private readonly bargeFormService: BargeFormService) {}
 
+  @UseGuards(JwtAuthGuard)
+  @Get('export')
+  @ApiOperation({
+    summary: 'Export data Barge Form dari CSV',
+    description:
+      'Mengimport data Barge Form dari CSV ke database setelah validasi',
+  })
+  async exportData(
+    @Query() query: QueryExportBargeFormDto,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    return await this.bargeFormService.exportData(query, res);
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Membuat barge form baru',
-    description: 'Membuat barge form baru dengan perhitungan otomatis capacity_per_dt, achievment, dan status. Perhitungan: capacity_per_dt = vol_by_survey / total_vessel, achievment = vol_by_survey / capacity_per_dt, status = "Completed" jika end_loading ada, "On Progress" jika end_loading null',
+    description:
+      'Membuat barge form baru dengan perhitungan otomatis capacity_per_dt, achievment, dan status. Perhitungan: capacity_per_dt = vol_by_survey / total_vessel, achievment = vol_by_survey / capacity_per_dt, status = "Completed" jika end_loading ada, "On Progress" jika end_loading null',
   })
   @ApiResponse({
     status: 201,
@@ -83,24 +101,28 @@ export class BargeFormController {
   @Get()
   @ApiOperation({
     summary: 'Mendapatkan semua barge form',
-    description: 'Mengambil semua barge form dengan filter opsional berdasarkan rentang tanggal, pencarian keyword, dan barge_id. Mendukung pagination dan sorting berdasarkan tanggal pembuatan.',
+    description:
+      'Mengambil semua barge form dengan filter opsional berdasarkan rentang tanggal, pencarian keyword, dan barge_id. Mendukung pagination dan sorting berdasarkan tanggal pembuatan.',
   })
   @ApiQuery({
     name: 'start_date',
     required: false,
-    description: 'Tanggal mulai untuk filter rentang tanggal (start_loading) - format YYYY-MM-DD',
+    description:
+      'Tanggal mulai untuk filter rentang tanggal (start_loading) - format YYYY-MM-DD',
     example: '2024-01-01',
   })
   @ApiQuery({
     name: 'end_date',
     required: false,
-    description: 'Tanggal akhir untuk filter rentang tanggal (end_loading) - format YYYY-MM-DD',
+    description:
+      'Tanggal akhir untuk filter rentang tanggal (end_loading) - format YYYY-MM-DD',
     example: '2024-01-31',
   })
   @ApiQuery({
     name: 'keyword',
     required: false,
-    description: 'Kata kunci pencarian untuk nama barge, nama site, shipment, atau remarks',
+    description:
+      'Kata kunci pencarian untuk nama barge, nama site, shipment, atau remarks',
     example: 'alpha',
   })
   @ApiQuery({
@@ -128,7 +150,10 @@ export class BargeFormController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 200 },
-        message: { type: 'string', example: 'Barge forms retrieved successfully' },
+        message: {
+          type: 'string',
+          example: 'Barge forms retrieved successfully',
+        },
         data: {
           type: 'array',
           items: { $ref: '#/components/schemas/BargeFormResponseDto' },
@@ -167,7 +192,8 @@ export class BargeFormController {
   @Get(':id')
   @ApiOperation({
     summary: 'Mendapatkan barge form berdasarkan ID',
-    description: 'Mengambil barge form spesifik berdasarkan ID dengan relasi barge dan site',
+    description:
+      'Mengambil barge form spesifik berdasarkan ID dengan relasi barge dan site',
   })
   @ApiParam({
     name: 'id',
@@ -182,7 +208,10 @@ export class BargeFormController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 200 },
-        message: { type: 'string', example: 'Barge form retrieved successfully' },
+        message: {
+          type: 'string',
+          example: 'Barge form retrieved successfully',
+        },
         data: { $ref: '#/components/schemas/BargeFormResponseDto' },
       },
     },
@@ -214,7 +243,8 @@ export class BargeFormController {
   @Patch(':id')
   @ApiOperation({
     summary: 'Memperbarui barge form',
-    description: 'Memperbarui barge form yang sudah ada dengan perhitungan ulang otomatis capacity_per_dt, achievment, dan status. Perhitungan: capacity_per_dt = vol_by_survey / total_vessel, achievment = vol_by_survey / capacity_per_dt, status = "Completed" jika end_loading ada, "On Progress" jika end_loading null',
+    description:
+      'Memperbarui barge form yang sudah ada dengan perhitungan ulang otomatis capacity_per_dt, achievment, dan status. Perhitungan: capacity_per_dt = vol_by_survey / total_vessel, achievment = vol_by_survey / capacity_per_dt, status = "Completed" jika end_loading ada, "On Progress" jika end_loading null',
   })
   @ApiParam({
     name: 'id',
@@ -269,7 +299,8 @@ export class BargeFormController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Menghapus barge form',
-    description: 'Soft delete barge form berdasarkan ID. Data tidak benar-benar dihapus dari database.',
+    description:
+      'Soft delete barge form berdasarkan ID. Data tidak benar-benar dihapus dari database.',
   })
   @ApiParam({
     name: 'id',
