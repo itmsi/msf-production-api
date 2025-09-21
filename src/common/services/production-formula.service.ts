@@ -101,40 +101,61 @@ export class ProductionFormulaService {
    * Mendapatkan actual produksi dari Analysis Hauling and Barging
    * Formula: SUM [Ore Hauling Tonnage] sesuai rentang tanggal
    */
-  async getOreHaulingTonnage(startDate?: string, endDate?: string): Promise<number> {
-    let query = `
-      SELECT 
-        CASE 
-          WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 26.56)
-          WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 29.56)
-          ELSE 0
-        END as tonnage
-      FROM r_parent_base_data_pro rpbdp
-      JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
-      JOIN m_population mp ON rpbdp.population_id = mp.id
-      WHERE rbdp.material = $1 AND rbdp.activity = $2
-    `;
+  async getOreHaulingTonnage(
+    startDate?: string,
+    endDate?: string,
+  ): Promise<number> {
+    const today = new Date();
 
-    const queryParams: any[] = [MaterialType.ORE, ActivityType.HAULING];
-    let paramIndex = 3;
-
-    if (startDate) {
-      query += ` AND DATE(rpbdp.activity_date) >= $${paramIndex}`;
-      queryParams.push(startDate);
-      paramIndex++;
+    if (!startDate) {
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      startDate = firstDay.toISOString().split('T')[0];
     }
 
-    if (endDate) {
-      query += ` AND DATE(rpbdp.activity_date) <= $${paramIndex}`;
-      queryParams.push(endDate);
-      paramIndex++;
+    if (!endDate) {
+      endDate = today.toISOString().split('T')[0];
     }
 
-    query += ` GROUP BY mp.tyre_type`;
+    console.log(startDate);
+    console.log(endDate);
 
-    const result = await this.baseDataProRepository.query(query, queryParams);
-    
-    return result.reduce((total: number, row: any) => total + parseFloat(row.tonnage), 0);
+    const qb = this.baseDataProRepository
+      .createQueryBuilder()
+      .select(
+        `COALESCE(SUM(
+    CASE
+      WHEN rbdp.material = 'ore' AND rbdp.activity IN ('hauling','direct') AND mp.tyre_type = '6x4'
+        THEN rbdp.total_vessel * 26.56
+      WHEN rbdp.material = 'ore' AND rbdp.activity IN ('hauling','direct') AND mp.tyre_type = '8x4'
+        THEN rbdp.total_vessel * 29.56
+      ELSE 0
+    END
+  ), 0)`,
+        'total_tonnage',
+      )
+      .from('r_base_data_pro', 'rbdp')
+      .leftJoin(
+        'r_parent_base_data_pro',
+        'rpbdp',
+        'rpbdp.id = rbdp.parent_base_data_pro_id',
+      )
+      .leftJoin('m_population', 'mp', 'mp.id = rpbdp.population_id')
+      .where('DATE(rpbdp.activity_date) BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
+
+    const resultData = await qb.getRawMany();
+
+    console.log(resultData);
+
+    let total_tonnage = 0;
+
+    resultData.map((item) => {
+      total_tonnage = item.total_tonnage ?? 0;
+    });
+
+    return total_tonnage;
   }
 
   /**
