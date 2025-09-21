@@ -185,11 +185,13 @@ export class DashboardService {
   }
 
   async getMtdAchievement(startDate?: string, endDate?: string) {
+    const start = startDate ?? moment().startOf('month').format('YYYY-MM-DD');
+    const end = endDate ?? moment().format('YYYY-MM-DD');
     try {
       // Mendapatkan target dan actual menggunakan shared formula service
       const [targets, actuals] = await Promise.all([
-        this.productionFormulaService.getProductionTargets(startDate, endDate),
-        this.productionFormulaService.getProductionActuals(startDate, endDate),
+        this.productionFormulaService.getProductionTargets(start, end),
+        this.productionFormulaService.getProductionActuals(start, end),
       ]);
 
       return {
