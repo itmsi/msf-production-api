@@ -646,7 +646,7 @@ export class ProductionFormulaService {
             mp.no_unit,
             pbdp.shift,
             CASE 
-              WHEN rbdp.material = 'ore' AND rbdp.activity = 'hauling' THEN
+              WHEN rbdp.material = 'ore' AND rbdp.activity in('hauling','direct') THEN
                 CASE 
                   WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 26.56)
                   WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 29.56)
@@ -664,7 +664,7 @@ export class ProductionFormulaService {
               ELSE 0
             END as ob_tonnage,
             CASE 
-              WHEN rbdp.material = 'ore-barge' AND rbdp.activity = 'barging' THEN
+              WHEN rbdp.material = 'ore-barge' AND rbdp.activity in('barging','direct') THEN
                 CASE 
                   WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 26.56)
                   WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 29.56)
