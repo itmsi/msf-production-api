@@ -68,7 +68,7 @@ export class FormulaService {
         JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
         JOIN m_population mp ON rpbdp.population_id = mp.id
         WHERE rbdp.material = 'ore'
-          AND rbdp.activity = 'hauling'
+          AND rbdp.activity in ('hauling','direct')
           AND rpbdp.activity_date BETWEEN $1 AND $2
           AND rbdp."deletedAt" IS NULL
       `,
