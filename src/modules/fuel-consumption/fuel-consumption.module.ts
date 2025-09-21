@@ -8,9 +8,19 @@ import { Users } from '../users/entities/users.entity';
 import { Sites } from '../sites/entities/sites.entity';
 import { UnitType } from '../unit-type/entities/unit-type.entity';
 import { Employee } from '../employee/entities/employee.entity';
-
+import { S3Module } from 'src/integrations/s3/s3.module';
 @Module({
-  imports: [TypeOrmModule.forFeature([FuelConsumption, Population, Users, Sites, UnitType, Employee])],
+  imports: [
+    TypeOrmModule.forFeature([
+      FuelConsumption,
+      Population,
+      Users,
+      Sites,
+      UnitType,
+      Employee,
+    ]),
+    S3Module,
+  ],
   controllers: [FuelConsumptionController],
   providers: [FuelConsumptionService],
   exports: [FuelConsumptionService],
