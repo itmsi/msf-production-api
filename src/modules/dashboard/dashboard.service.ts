@@ -270,13 +270,22 @@ export class DashboardService {
       `;
 
       const actualData = await queryRunner.query(actualQuery, [start, end]);
-
       await queryRunner.release();
 
       // Create a map of actual data by date
+      // const actualMap = new Map();
+      // actualData.forEach((item) => {
+      //   actualMap.set(item.date, {
+      //     tonnage: parseFloat(item.total_tonnage) || 0,
+      //     slippery: parseFloat(item.total_slippery) || 0,
+      //     rain: parseFloat(item.total_rain) || 0,
+      //   });
+      // });
       const actualMap = new Map();
       actualData.forEach((item) => {
-        actualMap.set(item.date, {
+        // convert ke YYYY-MM-DD string
+        const key = new Date(item.date).toISOString().split('T')[0];
+        actualMap.set(key, {
           tonnage: parseFloat(item.total_tonnage) || 0,
           slippery: parseFloat(item.total_slippery) || 0,
           rain: parseFloat(item.total_rain) || 0,
@@ -285,14 +294,15 @@ export class DashboardService {
 
       // Combine target and actual data
       const result = targetData.map((item) => {
-        const date = new Date(item.plan_date);
-        const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
-
-        const actualInfo = actualMap.get(item.plan_date) || {
+        const key = new Date(item.plan_date).toISOString().split('T')[0];
+        const actualInfo = actualMap.get(key) || {
           tonnage: 0,
           slippery: 0,
           rain: 0,
         };
+
+        const date = new Date(item.plan_date);
+        const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
 
         return {
           date: formattedDate,
