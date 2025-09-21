@@ -22,7 +22,8 @@ export class QueryBargeFormDto {
   end_date?: string;
 
   @ApiProperty({
-    description: 'Search keyword for barge name, site name, shipment, or remarks',
+    description:
+      'Search keyword for barge name, site name, shipment, or remarks',
     example: 'alpha',
     required: false,
   })
@@ -60,4 +61,45 @@ export class QueryBargeFormDto {
   @IsOptional()
   @Transform(({ value }) => parseInt(value) || 10)
   limit?: number = 10;
+}
+
+export class QueryExportBargeFormDto {
+  @ApiProperty({
+    description: 'Start date for date range filter (start_loading)',
+    example: '2024-01-01',
+    required: false,
+  })
+  @IsOptional()
+  @IsDateString()
+  start_date?: string;
+
+  @ApiProperty({
+    description: 'End date for date range filter (end_loading)',
+    example: '2024-01-31',
+    required: false,
+  })
+  @IsOptional()
+  @IsDateString()
+  end_date?: string;
+
+  @ApiProperty({
+    description:
+      'Search keyword for barge name, site name, shipment, or remarks',
+    example: 'alpha',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => value?.trim())
+  keyword?: string;
+
+  @ApiProperty({
+    description: 'Filter by barge ID',
+    example: 1,
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  @Transform(({ value }) => parseInt(value))
+  barge_id?: number;
 }
