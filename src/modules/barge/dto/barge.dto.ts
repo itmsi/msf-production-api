@@ -85,7 +85,7 @@ export class UpdateBargeDto {
   remarks?: string;
 }
 
-export class BargeResponseDto {
+export class BargeDataMasterResponseDto {
   @ApiProperty({
     example: 1,
     description: 'ID unik barge',
@@ -218,7 +218,7 @@ export class GetBargesQueryDto {
   sortOrder?: string;
 }
 
-export class BargeListResponseDto {
+export class BargeDataMasterListResponseDto {
   @ApiProperty({
     example: 200,
     description: 'Status code response',
@@ -232,10 +232,10 @@ export class BargeListResponseDto {
   message: string;
 
   @ApiProperty({
-    type: [BargeResponseDto],
+    type: [BargeDataMasterResponseDto],
     description: 'Array data barge',
   })
-  data: BargeResponseDto[];
+  data: BargeDataMasterResponseDto[];
 
   @ApiProperty({
     description: 'Metadata pagination',
@@ -266,8 +266,8 @@ export class SingleBargeResponseDto {
   message: string;
 
   @ApiProperty({
-    type: BargeResponseDto,
+    type: BargeDataMasterResponseDto,
     description: 'Data barge',
   })
-  data: BargeResponseDto;
+  data: BargeDataMasterResponseDto;
 }
