@@ -2287,14 +2287,6 @@ export class DashboardService {
       const construct = [
         {
           title: 'Tonnage',
-          meta: {
-            actual: 4000,
-            target: 8000,
-            percent: 50,
-          },
-        },
-        {
-          title: 'Tonnage',
           meta: tonnage,
         },
         {
