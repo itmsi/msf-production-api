@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, DataSource } from 'typeorm';
+import { Repository, Between, DataSource, SelectQueryBuilder } from 'typeorm';
 import {
   EffectiveWorkingHours,
   LossType,
@@ -19,10 +19,12 @@ import {
   QueryEffectiveWorkingHoursDto,
   ImportEwhCsvRowDto,
   ImportEwhItemDto,
+  QueryExportEffectiveWorkingHoursDto,
 } from './dto/effective-working-hours.dto';
 import {
   normalizeString,
   paginateResponse,
+  setCsvExportHeaders,
 } from '../../common/helpers/public.helper';
 import { ApiResponse, successResponse } from 'src/common';
 import { Readable } from 'stream';
@@ -30,6 +32,9 @@ import csv from 'csv-parser';
 import { Population } from '../population';
 import { S3Service } from '../../integrations/s3/s3.service';
 import { Activities } from '../activities';
+import { Response } from 'express';
+import { format } from '@fast-csv/format';
+import moment from 'moment';
 
 @Injectable()
 export class EffectiveWorkingHoursService {
@@ -533,6 +538,97 @@ export class EffectiveWorkingHoursService {
         throw error;
       }
       throw new InternalServerErrorException('Gagal import CSV');
+    }
+  }
+
+  private applyFilterExportData(
+    qb: SelectQueryBuilder<EffectiveWorkingHours>,
+    query: QueryExportEffectiveWorkingHoursDto,
+  ): SelectQueryBuilder<EffectiveWorkingHours> {
+    const { startDate, endDate, lossType, keyword } = query;
+
+    // Kondisi filter tanggal
+    if (startDate && endDate) {
+      qb.andWhere('ewh.dateActivity BETWEEN :from AND :to', {
+        from: startDate,
+        to: endDate,
+      });
+      qb.orderBy('ewh.dateActivity', 'ASC');
+    } else {
+      qb.orderBy('ewh.dateActivity', 'DESC').limit(10);
+    }
+
+    if (lossType) {
+      qb.andWhere('ewh.lossType = :lossType', { lossType });
+    }
+
+    if (keyword) {
+      qb.andWhere(
+        '(LOWER(ewh.description) LIKE :keyword OR LOWER(activities.name) LIKE :keyword OR LOWER(population.no_unit) LIKE :keyword)',
+        { keyword: `%${keyword.toLowerCase()}%` },
+      );
+    }
+
+    return qb;
+  }
+
+  private mapExportDataToCsvRow(item: EffectiveWorkingHours, index: number) {
+    return {
+      No: index + 1,
+      'Activity Date': item.dateActivity,
+      Shift: item.shift,
+      Unit: item.population?.no_unit || '',
+      Type: item.population?.unitType?.unit_name || '',
+      Category: this.mapLossType(item.lossType),
+      Problem: item.activities?.name || '',
+      Site: item.population?.site?.name || '',
+      Start:
+        item.start instanceof Date
+          ? moment(item.start).format('YYYY-MM-DD HH:mm')
+          : item.start || '',
+      Stop:
+        item.stop instanceof Date
+          ? moment(item.stop).format('YYYY-MM-DD HH:mm')
+          : item.stop || '',
+      Duration: item.duration || 0,
+      Remarks: item.remarks || '-',
+      Description: item.description || '-',
+    };
+  }
+
+  async exportData(query: QueryExportEffectiveWorkingHoursDto, res: Response) {
+    try {
+      const qb = this.effectiveWorkingHoursRepository
+        .createQueryBuilder('ewh')
+        .leftJoinAndSelect('ewh.population', 'population')
+        .leftJoinAndSelect('population.unitType', 'unitType')
+        .leftJoinAndSelect('population.site', 'site')
+        .leftJoinAndSelect('ewh.activities', 'activities');
+
+      // Apply filters & sorting
+      this.applyFilterExportData(qb, query);
+
+      const data = await qb.getMany();
+      if (!data.length) {
+        res.status(200).json(successResponse([], 'Data Not Found'));
+        return;
+      }
+      // Set headers CSV
+      setCsvExportHeaders(res, `ewh_export_${Date.now()}.csv`);
+
+      // Buat stream writer
+      const csvStream = format({ headers: true });
+      csvStream.pipe(res);
+
+      // Mapping ke row CSV
+      data.forEach((item, i) => {
+        csvStream.write(this.mapExportDataToCsvRow(item, i));
+      });
+
+      csvStream.end();
+    } catch (error) {
+      this.logger.error('Error exporting data:', error);
+      throw new InternalServerErrorException('Gagal export data');
     }
   }
 

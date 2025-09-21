@@ -67,6 +67,7 @@ async function bootstrap() {
       'Origin',
       'X-Requested-With',
     ],
+    exposedHeaders: ['Content-Disposition'],
     credentials: true,
     preflightContinue: false,
     optionsSuccessStatus: 204,

@@ -1,3 +1,5 @@
+import { Response } from 'express';
+
 export interface Pagination {
   total: number;
   page: number;
@@ -96,4 +98,20 @@ export function calculateTimeRange(
 
 export function normalizeString(value: string): string {
   return value?.toLowerCase().trim().replace(/\s+/g, ' '); // ubah spasi berlebih jadi 1 spasi
+}
+
+export function setCsvExportHeaders(res: Response, filename: string) {
+  // Tentukan tipe file sebagai CSV
+  res.setHeader('Content-Type', 'text/csv');
+
+  // Set agar browser mendownload file, bukan ditampilkan inline
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+  // Nonaktifkan caching untuk memastikan data selalu terbaru
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
+  // Security: cegah browser men-"sniff" MIME type
+  res.setHeader('X-Content-Type-Options', 'nosniff');
 }

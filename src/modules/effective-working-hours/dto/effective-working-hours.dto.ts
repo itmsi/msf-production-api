@@ -427,3 +427,43 @@ export class ImportEwhItemDto {
   })
   data: ImportEwhCsvRowDto;
 }
+
+export class QueryExportEffectiveWorkingHoursDto {
+  @ApiPropertyOptional({
+    description: 'Tanggal mulai filter (format: YYYY-MM-DD)',
+    example: '2024-01-01',
+    type: 'string',
+  })
+  @IsOptional()
+  @IsString()
+  startDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'Tanggal akhir filter (format: YYYY-MM-DD)',
+    example: '2024-01-31',
+    type: 'string',
+  })
+  @IsOptional()
+  @IsString()
+  endDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter berdasarkan tipe loss',
+    enum: LossType,
+    example: LossType.STB,
+    enumName: 'LossType',
+  })
+  @IsOptional()
+  @IsEnum(LossType)
+  lossType?: LossType;
+
+  @ApiPropertyOptional({
+    description:
+      'Keyword pencarian untuk description, activity name, unit name, type name, atau model name',
+    example: 'standby',
+    type: 'string',
+  })
+  @IsOptional()
+  @IsString()
+  keyword?: string;
+}
