@@ -2307,10 +2307,13 @@ export class DashboardService {
     query: CcrActivitiesDto,
   ): Promise<ApiResponse<CcrActivitiesItemDto[]>> {
     try {
-      const { date: selectedDate, type } = query;
-      const dateToFilter =
-        selectedDate || new Date().toISOString().split('T')[0];
+      const { date: selectedDate, type, shift } = query;
+      const dateToFilter = selectedDate
+        ? moment(selectedDate).format('YYYY-MM-DD')
+        : moment().format('YYYY-MM-DD');
+
       const typeFilter = type || 'hauling';
+      const shiftFilter = shift.toLowerCase();
 
       const mainTable =
         typeFilter === ActivityType.BARGING
@@ -2318,13 +2321,15 @@ export class DashboardService {
           : 'r_ccr_hauling_problem';
       const mainAlias = 'cp';
 
-      const qb = this.dataSource
+      const allProblems = await this.dataSource
         .createQueryBuilder()
         .select([
           `${mainAlias}.activities_id`,
           `${mainAlias}.duration`,
           'a.name',
           'pwd.activities_hour',
+          'pwd.plant_working_hour_id',
+          'pwh.id AS pwh_id',
         ])
         .from(mainTable, mainAlias)
         .leftJoin(
@@ -2333,22 +2338,50 @@ export class DashboardService {
           `${mainAlias}.activities_id = a.id AND a.status IN (:...statuses)`,
           { statuses: ['breakdown', 'idle', 'delay'] },
         )
+        .leftJoin('r_plan_working_hour', 'pwh', 'DATE(pwh.plan_date) = :date', {
+          date: dateToFilter,
+        })
         .leftJoin(
           'r_plan_working_hour_detail',
           'pwd',
-          `${mainAlias}.activities_id = pwd.activities_id`,
+          `pwd.plant_working_hour_id = pwh.id AND pwd.activities_id = ${mainAlias}.activities_id`,
         )
-        .where(`DATE(${mainAlias}.activity_date) = :date`, {
-          date: dateToFilter,
-        });
+        .where(
+          `DATE(${mainAlias}.activity_date) = :date AND ${mainAlias}.shift = :shift`,
+          {
+            date: dateToFilter,
+            shift: shiftFilter,
+          },
+        )
+        .getRawMany();
+      // Handle duplikasi: group berdasarkan activities_id
+      const grouped = new Map<string, CcrActivitiesItemDto>();
 
-      const allProblems = await qb.getRawMany();
+      allProblems.forEach((item) => {
+        // key unik per activity_id + date + shift
+        const key = `${item.activities_id}_${dateToFilter}_${shiftFilter}`;
 
-      const result: CcrActivitiesItemDto[] = allProblems?.map((item) => ({
-        label: item?.a_name || '',
-        target: item?.pwd_activities_hour || 0,
-        actual: item?.[`${mainAlias}_duration`] || 0,
-      }));
+        if (!grouped.has(key)) {
+          grouped.set(key, {
+            label: item.a_name || '',
+            target: item.pwd_activities_hour || 0,
+            actual: item[`${mainAlias}_duration`] || 0,
+          });
+        } else {
+          const existing = grouped.get(key)!;
+          // jika target ingin ambil max, actual dijumlahkan
+          existing.target = Math.max(
+            existing.target,
+            item.pwd_activities_hour || 0,
+          );
+          existing.actual += item[`${mainAlias}_duration`] || 0;
+        }
+      });
+      grouped.forEach((value) => {
+        value.actual = value.actual / 2;
+      });
+
+      const result: CcrActivitiesItemDto[] = Array.from(grouped.values());
 
       return successResponse<CcrActivitiesItemDto[]>(result, 'success', 200);
     } catch (error) {

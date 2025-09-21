@@ -25,8 +25,7 @@ import {
   CreateBargeDto,
   GetBargesQueryDto,
   UpdateBargeDto,
-  BargeResponseDto,
-  BargeListResponseDto,
+  BargeDataMasterListResponseDto,
   SingleBargeResponseDto,
 } from './dto/barge.dto';
 
@@ -101,7 +100,7 @@ export class BargeController {
   @SwaggerApiResponse({
     status: 200,
     description: 'Data barge berhasil diambil',
-    type: BargeListResponseDto,
+    type: BargeDataMasterListResponseDto,
     schema: {
       example: {
         statusCode: 200,
