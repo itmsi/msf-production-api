@@ -15,7 +15,7 @@ import {
 import { paginateResponse } from '../../common/helpers/public.helper';
 import {
   CreateBargeDto,
-  BargeResponseDto,
+  BargeDataMasterResponseDto,
   GetBargesQueryDto,
   UpdateBargeDto,
 } from './dto/barge.dto';
@@ -27,7 +27,9 @@ export class BargeService {
     private bargeRepository: Repository<Barge>,
   ) {}
 
-  async findById(id: number): Promise<ApiResponse<BargeResponseDto | null>> {
+  async findById(
+    id: number,
+  ): Promise<ApiResponse<BargeDataMasterResponseDto | null>> {
     try {
       const result = await this.bargeRepository.findOne({
         where: { id },
@@ -37,7 +39,7 @@ export class BargeService {
         return emptyDataResponse('Barge tidak ditemukan', null);
       }
 
-      return successResponse(result as BargeResponseDto);
+      return successResponse(result as BargeDataMasterResponseDto);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -48,7 +50,7 @@ export class BargeService {
 
   async findAll(
     query: GetBargesQueryDto,
-  ): Promise<ApiResponse<BargeResponseDto[]>> {
+  ): Promise<ApiResponse<BargeDataMasterResponseDto[]>> {
     try {
       const page = parseInt(query.page ?? '1', 10);
       const limit = parseInt(query.limit ?? '10', 10);
@@ -125,7 +127,13 @@ export class BargeService {
         updatedBy: barge.updatedBy,
       }));
 
-      return paginateResponse(transformedResult, total, page, limit, 'Barge data retrieved successfully');
+      return paginateResponse(
+        transformedResult,
+        total,
+        page,
+        limit,
+        'Barge data retrieved successfully',
+      );
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -137,7 +145,7 @@ export class BargeService {
   async create(
     createBargeDto: CreateBargeDto,
     userId: number,
-  ): Promise<ApiResponse<BargeResponseDto>> {
+  ): Promise<ApiResponse<BargeDataMasterResponseDto>> {
     try {
       const barge = this.bargeRepository.create({
         ...createBargeDto,
@@ -148,7 +156,7 @@ export class BargeService {
       const result = await this.bargeRepository.save(barge);
 
       return successResponse(
-        result as BargeResponseDto,
+        result as BargeDataMasterResponseDto,
         'Barge berhasil dibuat',
       );
     } catch (error) {
@@ -163,7 +171,7 @@ export class BargeService {
     id: number,
     updateBargeDto: UpdateBargeDto,
     userId: number,
-  ): Promise<ApiResponse<BargeResponseDto>> {
+  ): Promise<ApiResponse<BargeDataMasterResponseDto>> {
     try {
       const barge = await this.bargeRepository.findOne({
         where: { id, deletedAt: undefined },
@@ -180,7 +188,7 @@ export class BargeService {
       const result = await this.bargeRepository.save(barge!);
 
       return successResponse(
-        result as BargeResponseDto,
+        result as BargeDataMasterResponseDto,
         'Barge berhasil diupdate',
       );
     } catch (error) {
@@ -219,7 +227,7 @@ export class BargeService {
   async restore(
     id: number,
     userId: number,
-  ): Promise<ApiResponse<BargeResponseDto>> {
+  ): Promise<ApiResponse<BargeDataMasterResponseDto>> {
     try {
       const barge = await this.bargeRepository.findOne({
         where: { id, deletedAt: Not(undefined) as any },
@@ -240,7 +248,7 @@ export class BargeService {
       const result = await this.bargeRepository.save(barge!);
 
       return successResponse(
-        result as BargeResponseDto,
+        result as BargeDataMasterResponseDto,
         'Barge berhasil dipulihkan',
       );
     } catch (error) {

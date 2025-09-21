@@ -337,13 +337,20 @@ export class MenuPermissionByRoleDto {
   @ApiProperty({ example: 'Create', description: 'Nama permission' })
   permission_name: string;
 
-  @ApiProperty({ example: true, description: 'Status apakah role memiliki permission ini' })
+  @ApiProperty({
+    example: true,
+    description: 'Status apakah role memiliki permission ini',
+  })
   role_has_status: boolean;
 
   @ApiProperty({ example: 1, description: 'ID menu has permission' })
   mhp_id: number;
 
-  @ApiProperty({ example: 1, description: 'ID role has permission (dari tabel r_role_has_permission)', required: false })
+  @ApiProperty({
+    example: 1,
+    description: 'ID role has permission (dari tabel r_role_has_permission)',
+    required: false,
+  })
   role_has_permission_id?: number;
 }
 
@@ -361,7 +368,7 @@ export class MenuByRoleResponseDto {
   has_permission: MenuPermissionByRoleDto[];
 }
 
-export class MenuByRoleListResponseDto {
+export class RolePermissionListResponseDto {
   @ApiProperty({ example: 200, description: 'HTTP status code' })
   statusCode: number;
 

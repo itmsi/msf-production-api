@@ -4,10 +4,12 @@ import {
   IsArray,
   IsDateString,
   IsEnum,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
 } from 'class-validator';
+import { ShiftType } from 'src/modules/hauling-problem';
 
 class AttendanceItem {
   @ApiProperty()
@@ -213,13 +215,22 @@ export class CcrActivitiesDto {
   @IsDateString()
   date?: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Filter berdasarkan type aktivitas',
     enum: ActivityType,
+    example: ActivityType.HAULING,
   })
-  @IsOptional()
   @IsEnum(ActivityType, { message: 'type harus hauling atau barging' })
-  type?: ActivityType;
+  @IsNotEmpty({ message: 'type is required' })
+  type: ActivityType;
+
+  @ApiProperty({
+    description: 'Shift (misal: ds/ns)',
+    enum: ShiftType,
+    example: ShiftType.DS,
+  })
+  @IsNotEmpty({ message: 'shift is required' })
+  shift: ShiftType;
 }
 
 export class CcrTonnageDto {
@@ -297,4 +308,3 @@ export class ChartTonnageVesselResult {
   })
   meta: Record<string, string>;
 }
-
