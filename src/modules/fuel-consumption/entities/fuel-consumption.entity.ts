@@ -19,11 +19,11 @@ export class FuelConsumption {
   @Column({ type: 'int', nullable: false })
   unit_id: number;
 
-  @Column({ 
-    type: 'enum', 
-    enum: ['DS', 'NS'], 
+  @Column({
+    type: 'enum',
+    enum: ['DS', 'NS'],
     nullable: false,
-    default: 'DS'
+    default: 'DS',
   })
   shift: string;
 
@@ -42,10 +42,10 @@ export class FuelConsumption {
   @Column({ type: 'float', nullable: true })
   now_refueling_hm: number;
 
-  @Column({ 
-    type: 'float', 
+  @Column({
+    type: 'float',
     nullable: true,
-    comment: 'Calculated: (now - last)'
+    comment: 'Calculated: (now - last)',
   })
   running_refueling_hm: number;
 
@@ -55,35 +55,35 @@ export class FuelConsumption {
   @Column({ type: 'float', nullable: true })
   now_refueling_km: number;
 
-  @Column({ 
-    type: 'float', 
+  @Column({
+    type: 'float',
     nullable: true,
-    comment: 'Calculated: (now - last)'
+    comment: 'Calculated: (now - last)',
   })
   running_refueling_km: number;
 
   @Column({ type: 'float', nullable: true })
   qty_supply: number;
 
-  @Column({ 
-    type: 'enum', 
-    enum: ['none', 'liter'], 
+  @Column({
+    type: 'enum',
+    enum: ['none', 'liter'],
     nullable: false,
-    default: 'liter'
+    default: 'liter',
   })
   uom: string;
 
-  @Column({ 
-    type: 'float', 
+  @Column({
+    type: 'float',
     nullable: true,
-    comment: 'Calculated: qty_supply / running_refueling_km'
+    comment: 'Calculated: qty_supply / running_refueling_km',
   })
   l_per_km: number;
 
-  @Column({ 
-    type: 'float', 
+  @Column({
+    type: 'float',
     nullable: true,
-    comment: 'Calculated: qty_supply / running_refueling_hm'
+    comment: 'Calculated: qty_supply / running_refueling_hm',
   })
   l_per_hm: number;
 
@@ -93,10 +93,10 @@ export class FuelConsumption {
   @Column({ type: 'timestamp', nullable: true })
   end_refueling_time: Date;
 
-  @Column({ 
-    type: 'float', 
+  @Column({
+    type: 'float',
     nullable: true,
-    comment: 'Calculated: start - end refueling time'
+    comment: 'Calculated: start - end refueling time',
   })
   lead_time_refueling_time: number;
 

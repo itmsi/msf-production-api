@@ -1,0 +1,4 @@
+activity_date,no_unit,operator_name,shift,part_name,uom,last_refueling_hm,now_refueling_hm,last_refueling_km,now_refueling_km,qty_supply,start_refueling_time,end_refueling_time
+2026-01-01,DT 001,Ahmad,ns,B40,liter,100,110,2000,2005,100,2025-09-17 10:00,2025-09-17 12:00
+2026-01-01,DT 002,Ahmad,ds,B40,liter,110,120,2000,2005,200,2025-09-17 10:00,2025-09-17 12:00
+2026-01-01,DT 003,Ahmad,ns,B40,liter,120,130,2000,2005,250,2025-09-17 10:00,2025-09-17 12:00
