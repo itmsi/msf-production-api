@@ -222,7 +222,9 @@ export class ProductionFormulaService {
         'rpbdp.id = rbdp.parent_base_data_pro_id',
       )
       .innerJoin('m_population', 'mp', 'mp.id = rpbdp.population_id')
-      .where('rbdp.material = :material', { material: MaterialType.ORE_BARGE })
+      .where('rbdp.material IN (:...materials)', {
+        materials: [MaterialType.ORE, MaterialType.ORE_BARGE],
+      })
       .andWhere('rbdp.activity = :activity', {
         activity: ActivityType.BARGING,
       });
