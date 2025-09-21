@@ -120,7 +120,7 @@ export class ProductionFormulaService {
     console.log(endDate);
 
     const qb = this.baseDataProRepository
-      .createQueryBuilder()
+      .createQueryBuilder('rbdp')
       .select(
         `COALESCE(SUM(
     CASE
@@ -133,7 +133,6 @@ export class ProductionFormulaService {
   ), 0)`,
         'total_tonnage',
       )
-      .from('r_base_data_pro', 'rbdp')
       .leftJoin(
         'r_parent_base_data_pro',
         'rpbdp',
