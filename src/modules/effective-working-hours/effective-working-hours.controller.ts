@@ -35,6 +35,7 @@ import {
   CreateEffectiveWorkingHoursDto,
   UpdateEffectiveWorkingHoursDto,
   QueryEffectiveWorkingHoursDto,
+  QueryExportEffectiveWorkingHoursDto,
 } from './dto/effective-working-hours.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { successResponse } from '../../common/helpers/response.helper';
@@ -42,6 +43,7 @@ import { createReadStream } from 'fs';
 import { join } from 'path';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileUploadDto } from '../population';
+import { Response } from 'express';
 
 @ApiTags('Effective Working Hours')
 @ApiBearerAuth('jwt')
@@ -55,7 +57,7 @@ export class EffectiveWorkingHoursController {
   @UseGuards(JwtAuthGuard)
   @Get('import/template')
   @ApiOperation({
-    summary: 'Download template CSV untuk import population',
+    summary: 'Download template CSV untuk import EWH',
     description:
       'Mendownload template CSV yang berisi format kolom yang diperlukan',
   })
@@ -68,7 +70,7 @@ export class EffectiveWorkingHoursController {
       const stream = createReadStream(file);
       return new StreamableFile(stream, {
         type: 'text/csv',
-        disposition: 'attachment; filename="template-population-import.csv"',
+        disposition: 'attachment; filename="template-ewh-import.csv"',
       });
     } catch (error) {
       throw new InternalServerErrorException('Failed to download CSV template');
@@ -84,13 +86,25 @@ export class EffectiveWorkingHoursController {
     type: FileUploadDto,
   })
   @ApiOperation({
-    summary: 'Import data population dari CSV',
-    description:
-      'Mengimport data population dari CSV ke database setelah validasi',
+    summary: 'Import data EWH dari CSV',
+    description: 'Mengimport data EWH dari CSV ke database setelah validasi',
   })
   importData(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
     const userId = req.user?.id;
     return this.effectiveWorkingHoursService.importData(file, userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('export')
+  @ApiOperation({
+    summary: 'Export data EWH dari CSV',
+    description: 'Mengimport data EWH dari CSV ke database setelah validasi',
+  })
+  async exportData(
+    @Query() query: QueryExportEffectiveWorkingHoursDto,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    return await this.effectiveWorkingHoursService.exportData(query, res);
   }
 
   @Post()
