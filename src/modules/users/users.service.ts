@@ -58,7 +58,9 @@ export class UsersService {
 
       // Filter by position_name (case-insensitive)
       if (position_name) {
-        qb.andWhere('LOWER(role.position_name) = LOWER(:position_name)', { position_name });
+        qb.andWhere('LOWER(role.position_name) = LOWER(:position_name)', {
+          position_name,
+        });
       }
 
       // Validate limit
@@ -79,32 +81,30 @@ export class UsersService {
         : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
-      qb.orderBy(`user.${validSortBy}`, validSortOrder)
-        .skip(skip)
-        .take(limit);
+      qb.orderBy(`user.${validSortBy}`, validSortOrder).skip(skip).take(limit);
 
       const [result, total] = await qb.getManyAndCount();
 
-      const transformedResult = result.map((user) => ({
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        isActive: user.isActive,
-        employee_id: user.employee_id,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt || undefined,
+      const transformedResult = result?.map((user) => ({
+        id: user?.id,
+        username: user?.username,
+        email: user?.email,
+        isActive: user?.isActive,
+        employee_id: user?.employee_id,
+        createdAt: user?.createdAt,
+        updatedAt: user?.updatedAt || undefined,
         roles:
           user.userRoles?.map((ur) => ({
-            id: ur.role.id,
-            role_code: ur.role.role_code,
-            position_name: ur.role.position_name,
+            id: ur?.role.id,
+            role_code: ur?.role?.role_code,
+            position_name: ur?.role?.position_name,
           })) || [],
-        employees: user.employees
+        employees: user?.employees
           ? {
-              id: user.employees.id,
-              firstName: user.employees.firstName,
-              lastName: user.employees.lastName,
-              email: `${user.employees.firstName.toLowerCase()}.${user.employees.lastName.toLowerCase()}@company.com`,
+              id: user?.employees?.id,
+              firstName: user?.employees?.firstName,
+              lastName: user?.employees?.lastName,
+              email: `${user?.employees?.firstName?.toLowerCase()}.${user?.employees?.lastName?.toLowerCase()}@company.com`,
             }
           : undefined,
       }));
