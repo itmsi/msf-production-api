@@ -118,7 +118,6 @@ export class AnalysisHaulingBargingService {
       const vessel = parseInt(row.total_vessel) || 0;
       const tonnage = parseFloat(row.tonnage) || 0;
       const bcm = tonnage / 1.6;
-      console.log(tonnage, '<<<<<<<<');
 
       switch (materialType) {
         case 'ore-barge':
@@ -149,20 +148,22 @@ export class AnalysisHaulingBargingService {
     });
 
     // Convert to array and format dates
-    return Object.values(groupedByDate).map((data: any) => ({
-      date: data.date,
-      bargeVessel: data.bargeVessel,
-      bargeBCM: Math.round(data.bargeBCM * 100) / 100,
-      bargeTonnage: Math.round(data.bargeTonnage * 100) / 100,
-      oreHaulingVessel: data.oreHaulingVessel,
-      oreHaulingBCM: Math.round(data.oreHaulingBCM * 100) / 100,
-      oreHaulingTonnage: Math.round(data.oreHaulingTonnage * 100) / 100,
-      obVessel: data.obVessel,
-      obBCM: Math.round(data.obBCM * 100) / 100,
-      obTonnage: Math.round(data.obTonnage * 100) / 100,
-      tmmVessel: data.tmmVessel,
-      tmmBCM: Math.round(data.tmmBCM * 100) / 100,
-      tmmTonnage: Math.round(data.tmmTonnage * 100) / 100,
-    }));
+    return Object.values(groupedByDate)
+      .map((data: any) => ({
+        date: data.date,
+        bargeVessel: data.bargeVessel,
+        bargeBCM: Math.round(data.bargeBCM * 100) / 100,
+        bargeTonnage: Math.round(data.bargeTonnage * 100) / 100,
+        oreHaulingVessel: data.oreHaulingVessel,
+        oreHaulingBCM: Math.round(data.oreHaulingBCM * 100) / 100,
+        oreHaulingTonnage: Math.round(data.oreHaulingTonnage * 100) / 100,
+        obVessel: data.obVessel,
+        obBCM: Math.round(data.obBCM * 100) / 100,
+        obTonnage: Math.round(data.obTonnage * 100) / 100,
+        tmmVessel: data.tmmVessel,
+        tmmBCM: Math.round(data.tmmBCM * 100) / 100,
+        tmmTonnage: Math.round(data.tmmTonnage * 100) / 100,
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }
 }
