@@ -46,8 +46,8 @@ export class AnalysisHaulingBargingService {
       JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
       JOIN m_population mp ON rpbdp.population_id = mp.id
       WHERE (
-        (rbdp.material = 'ore-barge' AND rbdp.activity = 'barging') OR
-        (rbdp.material = 'ore' AND rbdp.activity = 'hauling') OR
+        (rbdp.material in('ore-barge','ore') AND rbdp.activity = 'barging') OR
+        (rbdp.material = 'ore' AND rbdp.activity in ('hauling','direct')) OR
         (rbdp.material = 'ob')
       )
     `;
@@ -114,11 +114,11 @@ export class AnalysisHaulingBargingService {
           tmmTonnage: 0,
         };
       }
-
       const materialType = row.material_type;
       const vessel = parseInt(row.total_vessel) || 0;
       const tonnage = parseFloat(row.tonnage) || 0;
       const bcm = tonnage / 1.6;
+      console.log(tonnage, '<<<<<<<<');
 
       switch (materialType) {
         case 'ore-barge':
