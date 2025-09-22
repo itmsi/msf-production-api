@@ -1817,11 +1817,8 @@ export class DashboardService {
   ): Promise<HaulingSummaryResponseDto> {
     try {
       const today = new Date();
-
       const defaultSelectedDate =
-        selectedDate || today.toISOString().split('T')[0];
-
-      console.log(selectedDate);
+        selectedDate ?? today.toISOString().split('T')[0];
 
       const query = `
         WITH ore_data_hauling AS (
@@ -1915,7 +1912,6 @@ export class DashboardService {
         idleDuration: row.idle_duration ?? 0,
         ewh: row.ewh ?? 0,
       };
-
       const tonnagePercentage =
         productionData.oreTarget > 0
           ? (productionData.totalTonnage / productionData.oreTarget) * 100
