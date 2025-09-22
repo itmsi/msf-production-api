@@ -423,11 +423,41 @@ export class DashboardController {
     description: 'Successfully retrieved CCR fleet status data',
     type: FleetStatusResponseDto,
   })
-  async getFleetStatus(
+  getFleetStatus(
     @Query('type') type: string,
     @Query('date') selectedDate?: string,
   ) {
-    return this.dashboardService.getMockFleetStatus(type, selectedDate);
+    return {
+      statusCode: 200,
+      message: 'success',
+      data: [
+        {
+          fleet: 'DT-0089',
+          start_loading: 'ETO 1',
+          stop_loading: 'EFO 1',
+          barge_name: 'Ayoda 3350',
+          total_vessel: 12,
+          total_tonnage: 354.72,
+        },
+        {
+          fleet: 'DT-0090',
+          start_loading: 'ETO 1',
+          stop_loading: 'EFO 2',
+          barge_name: 'Ayoda 3350',
+          total_vessel: 9,
+          total_tonnage: 266.04,
+        },
+        {
+          fleet: 'DT-0026',
+          start_loading: 'ETO 1',
+          stop_loading: 'EFO 3',
+          barge_name: 'Ayoda 3350',
+          total_vessel: 10,
+          total_tonnage: 295.6,
+        },
+      ],
+    };
+    // return this.dashboardService.getMockFleetStatus(type, selectedDate);
   }
 
   @Post('ccr/tonnage')
@@ -441,12 +471,37 @@ export class DashboardController {
     description: 'Successfully retrieved CCR tonnage data',
     type: TonnageResponseDto,
   })
-  async getTonnage(
-    @Body() body: CcrTonnageDto,
-    @Req() req: Request,
-  ): Promise<ApiResponseDto<ChartTonnageVesselResult | []>> {
+  getTonnage(@Body() body: CcrTonnageDto, @Req() req: Request) {
     const pathname = req.route.path;
-    return await this.dashboardService.getCcrTonnageVessel(body, pathname);
+    return {
+      statusCode: 200,
+      message: 'success',
+      data: {
+        chart: [
+          {
+            hour: '18-19',
+            'TID-EX-013': 1,
+            'DT-TR-001': 3,
+            'HD-EX-777': 5,
+            total: 8,
+          },
+          {
+            hour: '19-20',
+            'TID-EX-013': 2,
+            'DT-TR-001': 4,
+            'HD-EX-777': 6,
+            total: 12,
+          },
+        ],
+        meta: {
+          'TID-EX-013': '#F6C89F',
+          'DT-TR-001': '#94D1B2',
+          'HD-EX-777': '#54AD9B',
+          total: '#D96C06',
+        },
+      },
+    };
+    // return await this.dashboardService.getCcrTonnageVessel(body, pathname);
   }
 
   @Post('ccr/vessel')
@@ -459,12 +514,37 @@ export class DashboardController {
     description: 'Successfully retrieved CCR Vessel data',
     type: TonnageResponseDto,
   })
-  async getVessel(
-    @Body() body: CcrTonnageDto,
-    @Req() req: Request,
-  ): Promise<ApiResponseDto<ChartTonnageVesselResult | []>> {
+  getVessel(@Body() body: CcrTonnageDto, @Req() req: Request) {
     const pathname = req.route.path;
-    return await this.dashboardService.getCcrTonnageVessel(body, pathname);
+    return {
+      statusCode: 200,
+      message: 'success',
+      data: {
+        chart: [
+          {
+            hour: '18-19',
+            'TID-EX-013': 1,
+            'DT-TR-001': 3,
+            'HD-EX-777': 5,
+            total: 8,
+          },
+          {
+            hour: '19-20',
+            'TID-EX-013': 2,
+            'DT-TR-001': 4,
+            'HD-EX-777': 6,
+            total: 12,
+          },
+        ],
+        meta: {
+          'TID-EX-013': '#F6C89F',
+          'DT-TR-001': '#94D1B2',
+          'HD-EX-777': '#54AD9B',
+          total: '#D96C06',
+        },
+      },
+    };
+    // return await this.dashboardService.getCcrTonnageVessel(body, pathname);
   }
 
   @Get('ccr/barging-summary')
@@ -495,10 +575,23 @@ export class DashboardController {
     description: 'Successfully retrieved CCR activities data',
     type: CcrActivitesResponseDto,
   })
-  async getActivities(
-    @Query() query: CcrActivitiesDto,
-  ): Promise<ApiResponseDto<CcrActivitiesItemDto[]>> {
-    return await this.dashboardService.getCcrActivities(query);
+  getActivities(@Query() query: CcrActivitiesDto) {
+    return {
+      statusCode: 200,
+      message: 'success',
+      data: [
+        { label: 'No Operator', target: 3000, actual: 2800 },
+        { label: 'Fogging', target: 2950, actual: 2700 },
+        { label: 'Friday Pray', target: 2980, actual: 2750 },
+        { label: 'Hujan', target: 2900, actual: 2600 },
+        { label: 'P2H', target: 3000, actual: 2700 },
+        { label: 'Perbaikan Front Loading', target: 2800, actual: 2500 },
+        { label: 'Refueling', target: 2900, actual: 2650 },
+        { label: 'Rest Time', target: 3000, actual: 2700 },
+        { label: 'Safety Talk', target: 2950, actual: 2800 },
+      ],
+    };
+    // return await this.dashboardService.getCcrActivities(query);
   }
 
   @Get('lost-time-summary')
