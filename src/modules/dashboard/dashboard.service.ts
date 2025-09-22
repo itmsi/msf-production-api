@@ -1887,9 +1887,9 @@ export class DashboardService {
             COALESCE(SUM(md.total_vessel) FILTER (WHERE md.material = 'ob'), 0) AS ob_vessel,
             COALESCE(SUM(md.total_tonnage) FILTER (WHERE md.material = 'ob'), 0) AS ob_tonnage
         FROM plan_production pp
-        LEFT JOIN material_data md ON md.activity_date = pp.plan_date
-        LEFT JOIN ore_data_hauling odch ON odch.activity_date = pp.plan_date
-        LEFT JOIN hauling_problem hp on hp.activity_date = odch.activity_date
+        LEFT JOIN material_data md ON md.activity_date::date = pp.plan_date
+        LEFT JOIN ore_data_hauling odch ON odch.activity_date::date = pp.plan_date
+        LEFT JOIN hauling_problem hp on hp.activity_date::date = odch.activity_date
         left join plan_working_hour pwh on pwh.plan_date::date = pp.plan_date
         GROUP BY pp.plan_date, pp.ore_target, pp.ore_shipment_target, pp.ob_target, pp.quarry,
         pwh.ewh, odch.total_tonnage, odch.total_vessel, hp.idle_duration, hp.bd_duration;`;
