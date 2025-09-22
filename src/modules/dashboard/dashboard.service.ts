@@ -1830,7 +1830,7 @@ export class DashboardService {
           coalesce(sum(vessel), 0) as total_vessel,
           coalesce(sum(total_tonnage), 0) as total_tonnage		
           FROM r_ccr_hauling rch
-          WHERE rch.activity_date = $1
+          WHERE rch.activity_date::date = $1
           group by rch.activity_date 
         ),
         material_data as (
@@ -1840,7 +1840,7 @@ export class DashboardService {
             coalesce(sum(vessel), 0) as total_vessel,
             coalesce(sum(total_tonnage), 0) as total_tonnage		
             FROM r_ccr_hauling rch
-            WHERE rch.activity_date = $1
+            WHERE rch.activity_date::date = $1
             group by rch.activity_date, rch.material
         ),
         plan_production as (
@@ -1850,7 +1850,7 @@ export class DashboardService {
             rpp.ob_target,
             rpp.quarry
             FROM r_plan_production rpp
-            WHERE rpp.plan_date = $1
+            WHERE rpp.plan_date::date = $1
         ),
         plan_working_hour as (
           select 
@@ -1866,7 +1866,7 @@ export class DashboardService {
               COALESCE(SUM(CASE WHEN ma.status = 'breakdown' THEN rchp.duration END), 0) AS bd_duration
           FROM r_ccr_hauling_problem rchp
           LEFT JOIN m_activities ma ON ma.id = rchp.activities_id
-          where rchp.activity_date = $1
+          where rchp.activity_date::date = $1
           group by rchp.activity_date
         )
         SELECT 
@@ -1894,6 +1894,7 @@ export class DashboardService {
         GROUP BY pp.plan_date, pp.ore_target, pp.ore_shipment_target, pp.ob_target, pp.quarry,
         pwh.ewh, odch.total_tonnage, odch.total_vessel, hp.idle_duration, hp.bd_duration;`;
 
+      console.log('RAW QUERY:', query);
       const result = await this.dataSource.query(query, [defaultSelectedDate]);
 
       const row = result[0] ?? {};
