@@ -2476,7 +2476,7 @@ export class DashboardService {
       // Hitung EWH = SUM(r_base_data_pro.totalHM) all unit
       const ewhQuery = await this.dataSource.query(
         `
-        SELECT COALESCE(SUM(rbdp.totalHM), 0) as total_ewh
+        SELECT COALESCE(SUM(rbdp.total_hm), 0) as total_ewh
         FROM r_parent_base_data_pro rpbdp
         LEFT JOIN r_base_data_pro rbdp ON rbdp.parent_base_data_pro_id = rpbdp.id
         WHERE rpbdp.activity_date BETWEEN $1 AND $2
@@ -2644,7 +2644,7 @@ export class DashboardService {
       const actualDataQuery = await this.dataSource.query(
         `
         SELECT 
-          COALESCE(SUM(rbdp.totalHM), 0) as total_ewh,
+          COALESCE(SUM(rbdp.total_hm), 0) as total_ewh,
           COALESCE(SUM(lt.duration), 0) as total_breakdown,
           COALESCE(SUM(
             CASE 
@@ -3027,11 +3027,11 @@ export class DashboardService {
       // Get EWHactual from Control Day Production
       const ewhActualQuery = await this.dataSource.query(
         `
-        SELECT COALESCE(AVG(rbdp.totalHM), 0) as ewh_actual
+        SELECT COALESCE(AVG(rbdp.total_hm), 0) as ewh_actual
         FROM r_parent_base_data_pro rpbdp
         JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
         WHERE rpbdp.activity_date BETWEEN $1 AND $2
-          AND rbdp.totalHM > 0
+          AND rbdp.total_hm > 0
           AND rbdp.deletedAt IS NULL
       `,
         [startDate, endDate],
@@ -3082,11 +3082,11 @@ export class DashboardService {
         `
         SELECT COALESCE(AVG(unit_ewh.total_ewh), 0) as pa_actual
         FROM (
-          SELECT SUM(rbdp.totalHM) as total_ewh
+          SELECT SUM(rbdp.total_hm) as total_ewh
           FROM r_parent_base_data_pro rpbdp
           JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
           WHERE rpbdp.activity_date BETWEEN $1 AND $2
-            AND rbdp.totalHM > 0
+            AND rbdp.total_hm > 0
             AND rbdp.deletedAt IS NULL
           GROUP BY rpbdp.population_id
         ) as unit_ewh
