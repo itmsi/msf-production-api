@@ -94,8 +94,8 @@ export class UsersService {
         createdAt: user?.createdAt,
         updatedAt: user?.updatedAt || undefined,
         roles:
-          user.userRoles?.map((ur) => ({
-            id: ur?.role.id,
+          user?.userRoles?.map((ur) => ({
+            id: ur?.role?.id,
             role_code: ur?.role?.role_code,
             position_name: ur?.role?.position_name,
           })) || [],
@@ -117,6 +117,7 @@ export class UsersService {
         'Get users successfully',
       );
     } catch (error) {
+      console.log(error, '<<<<<');
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch users');
     }
