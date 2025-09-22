@@ -2181,8 +2181,10 @@ export class DashboardService {
   ): Promise<ApiResponse<ChartTonnageVesselResult | []>> {
     try {
       const { date: selectedDate, type, shift, unit_id } = body;
-      const dateToFilter =
-        selectedDate || new Date().toISOString().split('T')[0];
+      const dateToFilter = selectedDate
+        ? moment(selectedDate).format('YYYY-MM-DD')
+        : moment().format('YYYY-MM-DD');
+
       const typeFilter: ActivityType =
         type || ('hauling' as ActivityType.HAULING);
       const shiftFilter = shift?.toLowerCase() || 'ns';
@@ -2193,18 +2195,15 @@ export class DashboardService {
 
       if (!unit_id.length) return successResponse([], 'success', 200);
 
-      // helper: tentukan unitColumn
       const unitColumn = this.getUnitColumn(typeFilter, mainAlias);
-
-      // helper: tentukan valueColumn + alias selalu `value`
       const valueColumn = this.getValueColumn(isTonnage, mainAlias);
 
       const qb = this.dataSource
         .createQueryBuilder()
         .select([
-          `${valueColumn} AS value`,
+          `COALESCE(${valueColumn}, 0) AS value`,
           `${mainAlias}.time AS time`,
-          'mp.no_unit AS unit',
+          `mp.no_unit AS unit`,
         ])
         .from(mainTable, mainAlias)
         .leftJoin('m_population', 'mp', `${unitColumn} = mp.id`)
@@ -2213,7 +2212,6 @@ export class DashboardService {
         })
         .andWhere(`${mainAlias}.shift = :shift`, { shift: shiftFilter })
         .andWhere(`${unitColumn} IN (:...unitIds)`, { unitIds: unit_id });
-
       const allRawData = await qb.getRawMany();
 
       // helper: build chart & meta
