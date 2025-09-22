@@ -3032,7 +3032,7 @@ export class DashboardService {
         JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
         WHERE rpbdp.activity_date BETWEEN $1 AND $2
           AND rbdp.total_hm > 0
-          AND rbdp.deletedAt IS NULL
+          AND rbdp."deletedAt" IS NULL
       `,
         [startDate, endDate],
       );
@@ -3087,7 +3087,7 @@ export class DashboardService {
           JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
           WHERE rpbdp.activity_date BETWEEN $1 AND $2
             AND rbdp.total_hm > 0
-            AND rbdp.deletedAt IS NULL
+            AND rbdp."deletedAt" IS NULL
           GROUP BY rpbdp.population_id
         ) as unit_ewh
       `,
