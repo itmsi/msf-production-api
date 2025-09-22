@@ -1814,12 +1814,18 @@ export class DashboardService {
 
   async getHaulingSummary(
     selectedDate?: string,
+    shift?: string,
   ): Promise<HaulingSummaryResponseDto> {
     try {
       const today = new Date();
       const defaultSelectedDate =
         selectedDate ?? today.toISOString().split('T')[0];
-
+      let shiftChange = '';
+      let shiftProb = '';
+      if (shift) {
+        shiftChange = `AND rch.shift ='${shift}'`;
+        shiftProb = `AND rchp.shift ='${shift}'`;
+      }
       const query = `
         WITH ore_data_hauling AS (
           SELECT
@@ -1828,6 +1834,7 @@ export class DashboardService {
             COALESCE(SUM(total_tonnage), 0) AS total_tonnage
           FROM r_ccr_hauling rch
           WHERE rch.activity_date::date = $1
+          ${shiftChange}
           GROUP BY rch.activity_date
         ),
         material_data AS (
@@ -1838,6 +1845,7 @@ export class DashboardService {
             COALESCE(SUM(total_tonnage), 0) AS total_tonnage
           FROM r_ccr_hauling rch
           WHERE rch.activity_date::date = $1
+          ${shiftChange}
           GROUP BY rch.activity_date, rch.material
         ),
         plan_production AS (
@@ -1865,6 +1873,7 @@ export class DashboardService {
           FROM r_ccr_hauling_problem rchp
           LEFT JOIN m_activities ma ON ma.id = rchp.activities_id
           WHERE rchp.activity_date::date = $1
+          ${shiftProb}
           GROUP BY rchp.activity_date
         )
         SELECT 

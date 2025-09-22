@@ -404,8 +404,12 @@ export class DashboardController {
   })
   async getHaulingSummary(
     @Query('date') date?: string,
+    @Query('shift') shift?: string,
   ): Promise<HaulingSummaryResponseDto> {
-    return await this.dashboardService.getHaulingSummary(date);
+    return await this.dashboardService.getHaulingSummary(
+      date,
+      shift?.toLowerCase(),
+    );
   }
 
   @Get('ccr/fleet-status')
