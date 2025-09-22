@@ -471,37 +471,9 @@ export class DashboardController {
     description: 'Successfully retrieved CCR tonnage data',
     type: TonnageResponseDto,
   })
-  getTonnage(@Body() body: CcrTonnageDto, @Req() req: Request) {
+  async getTonnage(@Body() body: CcrTonnageDto, @Req() req: Request) {
     const pathname = req.route.path;
-    return {
-      statusCode: 200,
-      message: 'success',
-      data: {
-        chart: [
-          {
-            hour: '18-19',
-            'TID-EX-013': 1,
-            'DT-TR-001': 3,
-            'HD-EX-777': 5,
-            total: 8,
-          },
-          {
-            hour: '19-20',
-            'TID-EX-013': 2,
-            'DT-TR-001': 4,
-            'HD-EX-777': 6,
-            total: 12,
-          },
-        ],
-        meta: {
-          'TID-EX-013': '#F6C89F',
-          'DT-TR-001': '#94D1B2',
-          'HD-EX-777': '#54AD9B',
-          total: '#D96C06',
-        },
-      },
-    };
-    // return await this.dashboardService.getCcrTonnageVessel(body, pathname);
+    return await this.dashboardService.getCcrTonnageVessel(body, pathname);
   }
 
   @Post('ccr/vessel')
@@ -514,37 +486,9 @@ export class DashboardController {
     description: 'Successfully retrieved CCR Vessel data',
     type: TonnageResponseDto,
   })
-  getVessel(@Body() body: CcrTonnageDto, @Req() req: Request) {
+  async getVessel(@Body() body: CcrTonnageDto, @Req() req: Request) {
     const pathname = req.route.path;
-    return {
-      statusCode: 200,
-      message: 'success',
-      data: {
-        chart: [
-          {
-            hour: '18-19',
-            'TID-EX-013': 1,
-            'DT-TR-001': 3,
-            'HD-EX-777': 5,
-            total: 8,
-          },
-          {
-            hour: '19-20',
-            'TID-EX-013': 2,
-            'DT-TR-001': 4,
-            'HD-EX-777': 6,
-            total: 12,
-          },
-        ],
-        meta: {
-          'TID-EX-013': '#F6C89F',
-          'DT-TR-001': '#94D1B2',
-          'HD-EX-777': '#54AD9B',
-          total: '#D96C06',
-        },
-      },
-    };
-    // return await this.dashboardService.getCcrTonnageVessel(body, pathname);
+    return await this.dashboardService.getCcrTonnageVessel(body, pathname);
   }
 
   @Get('ccr/barging-summary')
