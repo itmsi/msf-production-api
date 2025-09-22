@@ -32,8 +32,8 @@ export class AnalysisHaulingBargingService {
         mp.no_unit,
         SUM(rbdp.total_vessel) as total_vessel,
         CASE 
-          WHEN rbdp.material = 'ore-barge' AND rbdp.activity = 'barging' THEN 'ore-barge'
-          WHEN rbdp.material = 'ore' AND rbdp.activity = 'hauling' THEN 'ore'
+          WHEN rbdp.material in('ore-barge','ore') AND rbdp.activity = 'barging' THEN 'ore-barge'
+          WHEN rbdp.material = 'ore' AND rbdp.activity in ('hauling','direct') THEN 'ore'
           WHEN rbdp.material = 'ob' THEN 'ob'
           ELSE rbdp.material
         END as material_type,
@@ -74,9 +74,10 @@ export class AnalysisHaulingBargingService {
 
     // Execute query
     const rawData = await this.baseDataProRepository.query(query, queryParams);
-
     // Process data sesuai spesifikasi
     const processedData = this.processAnalysisData(rawData);
+    console.log(rawData);
+    console.log(processedData);
 
     // Pagination
     const total = processedData.length;
