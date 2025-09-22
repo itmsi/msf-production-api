@@ -282,8 +282,8 @@ export class FormulaService {
       // selalu reset ke 00:00:00
       planDate.setHours(0, 0, 0, 0);
 
-      // format ke 'YYYY-MM-DD 00:00:00'
-      const formattedDate = planDate.toISOString().slice(0, 10) + ' 00:00:00';
+      // format ke 'YYYY-MM-DD'
+      const formattedDate = planDate.toISOString().slice(0, 10);
 
       const result = await queryRunner.query(
         `
@@ -292,7 +292,7 @@ export class FormulaService {
       FROM r_plan_working_hour_detail rpwhd
       LEFT JOIN r_plan_working_hour rpwh 
         ON rpwh.id = rpwhd.plant_working_hour_id
-      WHERE rpwh.plan_date = $1
+      WHERE rpwh.plan_date::date = $1
         AND rpwh."deletedAt" IS NULL
       GROUP BY rpwh.mohh_per_month
       `,
