@@ -987,7 +987,7 @@ export class BaseDataProductionService {
       const total = await qb.getCount();
       const rawResult = await qb.offset(skip).limit(limit).getRawMany();
       if (rawResult.length == 0) {
-        throwError('Batch Inbound not found', 404);
+        emptyDataResponse('Batch Inbound not found');
       }
 
       const result = rawResult.map((item) => ({
