@@ -1009,7 +1009,7 @@ export class BaseDataProductionService {
         distance: item.distance ? Number(item.distance) : 0,
       }));
 
-      if (result.length < 1) {
+      if (result.length == 1) {
         throwError('data production not found', 404);
       }
 
