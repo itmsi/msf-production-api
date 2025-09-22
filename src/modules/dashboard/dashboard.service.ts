@@ -2615,7 +2615,10 @@ export class DashboardService {
       const targetDataQuery = await this.dataSource.query(
         `
         SELECT 
-          COALESCE(SUM(pwh.mohh_per_month), 0) as target_mohh,
+          (SELECT COALESCE(SUM(mohh_per_month), 0)
+          FROM r_plan_working_hour
+          WHERE plan_date BETWEEN $1 AND $2
+          ) as target_mohh,
           COALESCE(SUM(
             CASE 
               WHEN a.status = 'delay' THEN COALESCE(pwhd.activities_hour, 0)
@@ -2638,7 +2641,7 @@ export class DashboardService {
         LEFT JOIN r_plan_working_hour pwh ON pwh.parent_plan_working_hour_id = ppwh.id
         LEFT JOIN r_plan_working_hour_detail pwhd ON pwhd.plant_working_hour_id = pwh.id
         LEFT JOIN m_activities a ON a.id = pwhd.activities_id
-        WHERE ppwh.plan_date BETWEEN $1 AND $2
+        WHERE pwh.plan_date BETWEEN $1 AND $2
       `,
         [startDate, endDate],
       );
