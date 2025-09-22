@@ -403,9 +403,9 @@ export class DashboardController {
     type: HaulingSummaryResponseDto,
   })
   async getHaulingSummary(
-    @Query('selectedDate') selectedDate?: string,
+    @Query('date') date?: string,
   ): Promise<HaulingSummaryResponseDto> {
-    return await this.dashboardService.getHaulingSummary(selectedDate);
+    return await this.dashboardService.getHaulingSummary(date);
   }
 
   @Get('ccr/fleet-status')
