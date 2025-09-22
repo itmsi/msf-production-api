@@ -620,9 +620,9 @@ export class DashboardController {
     type: LostTimeSummaryResponseDto,
   })
   async getLostTimeSummary(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
+    @Query('date_from') date_from?: string,
+    @Query('date_to') date_to?: string,
   ): Promise<LostTimeSummaryResponseDto> {
-    return await this.dashboardService.getLostTimeSummary(startDate, endDate);
+    return await this.dashboardService.getLostTimeSummary(date_from, date_to);
   }
 }
