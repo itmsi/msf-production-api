@@ -278,13 +278,7 @@ export class FormulaService {
       if (!planDate) {
         planDate = new Date();
       }
-
       // selalu reset ke 00:00:00
-      planDate.setHours(0, 0, 0, 0);
-
-      // format ke 'YYYY-MM-DD'
-      const formattedDate = planDate.toISOString().slice(0, 10);
-
       const result = await queryRunner.query(
         `
       SELECT 
@@ -296,10 +290,9 @@ export class FormulaService {
         AND rpwh."deletedAt" IS NULL
       GROUP BY rpwh.mohh_per_month
       `,
-        [formattedDate],
+        [planDate],
       );
-      console.log(formattedDate);
-      console.log('--------->', result[0]);
+
       return parseFloat(result[0]?.target || '0');
     } catch (error) {
       console.error('Error calculating EWH target:', error);

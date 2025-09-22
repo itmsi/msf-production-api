@@ -93,7 +93,7 @@ export class DashboardService {
       // 3. EWH (Effective Working Hours) - Static metric
       const ewhTarget = await this.formulaService.calculateEWHTarget(
         queryRunner,
-        start,
+        end,
       );
       const ewhActual = await this.formulaService.calculateEWHActual(
         queryRunner,
