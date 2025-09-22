@@ -1824,77 +1824,79 @@ export class DashboardService {
       console.log(selectedDate);
 
       const query = `
-        with ore_data_hauling as (
-        select
-          rch.activity_date,
-          coalesce(sum(vessel), 0) as total_vessel,
-          coalesce(sum(total_tonnage), 0) as total_tonnage		
+        WITH ore_data_hauling AS (
+          SELECT
+            rch.activity_date,
+            COALESCE(SUM(vessel), 0) AS total_vessel,
+            COALESCE(SUM(total_tonnage), 0) AS total_tonnage
           FROM r_ccr_hauling rch
           WHERE rch.activity_date::date = $1
-          group by rch.activity_date 
+          GROUP BY rch.activity_date
         ),
-        material_data as (
-          select
+        material_data AS (
+          SELECT
             rch.activity_date,
             rch.material,
-            coalesce(sum(vessel), 0) as total_vessel,
-            coalesce(sum(total_tonnage), 0) as total_tonnage		
-            FROM r_ccr_hauling rch
-            WHERE rch.activity_date::date = $1
-            group by rch.activity_date, rch.material
+            COALESCE(SUM(vessel), 0) AS total_vessel,
+            COALESCE(SUM(total_tonnage), 0) AS total_tonnage
+          FROM r_ccr_hauling rch
+          WHERE rch.activity_date::date = $1
+          GROUP BY rch.activity_date, rch.material
         ),
-        plan_production as (
-          SELECT rpp.plan_date AS plan_date, 
-            rpp.ore_target, 
+        plan_production AS (
+          SELECT
+            rpp.plan_date,
+            rpp.ore_target,
             rpp.ore_shipment_target,
             rpp.ob_target,
             rpp.quarry
-            FROM r_plan_production rpp
-            WHERE rpp.plan_date::date = $1
+          FROM r_plan_production rpp
+          WHERE rpp.plan_date::date = $1
         ),
-        plan_working_hour as (
-          select 
+        plan_working_hour AS (
+          SELECT
             rpwh.plan_date,
-            coalesce(rpwh.mohh_per_month, 0) / 2 as ewh
-          from r_plan_working_hour rpwh
-          where rpwh.plan_date::date = $1
+            COALESCE(rpwh.mohh_per_month, 0) / 2 AS ewh
+          FROM r_plan_working_hour rpwh
+          WHERE rpwh.plan_date::date = $1
         ),
-        hauling_problem as (
-          select
+        hauling_problem AS (
+          SELECT
             rchp.activity_date,
-              COALESCE(SUM(CASE WHEN ma.status in ('idle','delay') THEN rchp.duration END), 0) AS idle_duration,
-              COALESCE(SUM(CASE WHEN ma.status = 'breakdown' THEN rchp.duration END), 0) AS bd_duration
+            COALESCE(SUM(CASE WHEN ma.status IN ('idle','delay') THEN rchp.duration END), 0) AS idle_duration,
+            COALESCE(SUM(CASE WHEN ma.status = 'breakdown' THEN rchp.duration END), 0) AS bd_duration
           FROM r_ccr_hauling_problem rchp
           LEFT JOIN m_activities ma ON ma.id = rchp.activities_id
-          where rchp.activity_date::date = $1
-          group by rchp.activity_date
+          WHERE rchp.activity_date::date = $1
+          GROUP BY rchp.activity_date
         )
         SELECT 
-            pp.plan_date,
-            pp.ore_target,
-            pp.ore_shipment_target,
-            pp.ob_target,
-            pp.quarry,
-            coalesce(odch.total_tonnage, 0) as total_tonnage,
-            coalesce(odch.total_vessel, 0) as total_vessel,
-            coalesce(hp.idle_duration,0) as idle_duration,
-            coalesce(hp.bd_duration, 0) as bd_duration,
-            coalesce(pwh.ewh, 0) as ewh,
-            COALESCE(SUM(md.total_vessel) FILTER (WHERE md.material = 'ore'), 0) AS ore_vessel,
-            COALESCE(SUM(md.total_tonnage) FILTER (WHERE md.material = 'ore'), 0) AS ore_tonnage,
-            COALESCE(SUM(md.total_vessel) FILTER (WHERE md.material = 'quarry'), 0) AS quarry_vessel,
-            COALESCE(SUM(md.total_tonnage) FILTER (WHERE md.material = 'quarry'), 0) AS quarry_tonnage,
-            COALESCE(SUM(md.total_vessel) FILTER (WHERE md.material = 'ob'), 0) AS ob_vessel,
-            COALESCE(SUM(md.total_tonnage) FILTER (WHERE md.material = 'ob'), 0) AS ob_tonnage
+          pp.plan_date,
+          pp.ore_target,
+          pp.ore_shipment_target,
+          pp.ob_target,
+          pp.quarry,
+          COALESCE(odch.total_tonnage, 0) AS total_tonnage,
+          COALESCE(odch.total_vessel, 0) AS total_vessel,
+          COALESCE(hp.idle_duration, 0) AS idle_duration,
+          COALESCE(hp.bd_duration, 0) AS bd_duration,
+          COALESCE(pwh.ewh, 0) AS ewh,
+          COALESCE(SUM(md.total_vessel) FILTER (WHERE md.material = 'ore'), 0) AS ore_vessel,
+          COALESCE(SUM(md.total_tonnage) FILTER (WHERE md.material = 'ore'), 0) AS ore_tonnage,
+          COALESCE(SUM(md.total_vessel) FILTER (WHERE md.material = 'quarry'), 0) AS quarry_vessel,
+          COALESCE(SUM(md.total_tonnage) FILTER (WHERE md.material = 'quarry'), 0) AS quarry_tonnage,
+          COALESCE(SUM(md.total_vessel) FILTER (WHERE md.material = 'ob'), 0) AS ob_vessel,
+          COALESCE(SUM(md.total_tonnage) FILTER (WHERE md.material = 'ob'), 0) AS ob_tonnage
         FROM plan_production pp
         LEFT JOIN material_data md ON md.activity_date::date = pp.plan_date
         LEFT JOIN ore_data_hauling odch ON odch.activity_date::date = pp.plan_date
-        LEFT JOIN hauling_problem hp on hp.activity_date::date = odch.activity_date
-        left join plan_working_hour pwh on pwh.plan_date::date = pp.plan_date
-        GROUP BY pp.plan_date, pp.ore_target, pp.ore_shipment_target, pp.ob_target, pp.quarry,
-        pwh.ewh, odch.total_tonnage, odch.total_vessel, hp.idle_duration, hp.bd_duration;`;
+        LEFT JOIN hauling_problem hp ON hp.activity_date::date = pp.plan_date
+        LEFT JOIN plan_working_hour pwh ON pwh.plan_date::date = pp.plan_date
+        GROUP BY
+          pp.plan_date, pp.ore_target, pp.ore_shipment_target, pp.ob_target, pp.quarry,
+          odch.total_tonnage, odch.total_vessel, hp.idle_duration, hp.bd_duration, pwh.ewh;
+        `;
 
-      console.log('RAW QUERY:', query);
       const result = await this.dataSource.query(query, [defaultSelectedDate]);
 
       const row = result[0] ?? {};
@@ -1911,7 +1913,7 @@ export class DashboardService {
         totalObTonnage: row.ob_tonnage ?? 0,
         bdDuration: row.bd_duration ?? 0,
         idleDuration: row.idle_duration ?? 0,
-        ewh: row.average_day_ewh ?? 0,
+        ewh: row.ewh ?? 0,
       };
 
       const tonnagePercentage =
