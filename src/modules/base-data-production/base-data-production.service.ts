@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  HttpException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
@@ -985,6 +986,9 @@ export class BaseDataProductionService {
 
       const total = await qb.getCount();
       const rawResult = await qb.offset(skip).limit(limit).getRawMany();
+      if (rawResult.length == 0) {
+        throwError('Batch Inbound not found', 404);
+      }
 
       const result = rawResult.map((item) => ({
         ...item,
@@ -1009,10 +1013,6 @@ export class BaseDataProductionService {
         distance: item.distance ? Number(item.distance) : 0,
       }));
 
-      if (result.length == 1) {
-        throwError('data production not found', 404);
-      }
-
       return paginateResponse(
         result,
         total,
@@ -1022,7 +1022,8 @@ export class BaseDataProductionService {
         200,
       );
     } catch (error) {
-      throwError('Failed to retrieve base data production', 500);
+      if (error instanceof HttpException) throw error;
+      return throwError('Failed to fetch Relocation Inbound', 500);
     }
   }
 
