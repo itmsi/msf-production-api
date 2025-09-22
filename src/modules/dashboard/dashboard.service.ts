@@ -3002,22 +3002,23 @@ export class DashboardService {
       // Get EWHplan from r_plan_working_hours
       const ewhPlanQuery = await this.dataSource.query(
         `
-        SELECT COALESCE(SUM(
-          pwh.mohh_per_month - COALESCE(SUM(
-            CASE 
-              WHEN a.status = 'delay' THEN pwhd.activities_hour
-              WHEN a.status = 'idle' THEN pwhd.activities_hour
-              WHEN a.status = 'breakdown' THEN pwhd.activities_hour
-              ELSE 0
-            END
-          ), 0)
-        ), 0) as ewh_plan
+        SELECT COALESCE(SUM(pwh.mohh_per_month - sub.total_hour), 0) AS ewh_plan
         FROM r_parent_plan_working_hour ppwh
-        LEFT JOIN r_plan_working_hour pwh ON pwh.parent_plan_working_hour_id = ppwh.id
-        LEFT JOIN r_plan_working_hour_detail pwhd ON pwhd.plant_working_hour_id = pwh.id
-        LEFT JOIN m_activities a ON a.id = pwhd.activities_id
-        WHERE ppwh.plan_date BETWEEN $1 AND $2
-        GROUP BY pwh.mohh_per_month
+        LEFT JOIN r_plan_working_hour pwh 
+            ON pwh.parent_plan_working_hour_id = ppwh.id
+        LEFT JOIN (
+            SELECT pwhd.plant_working_hour_id,
+                  SUM(
+                    CASE 
+                      WHEN a.status IN ('delay','idle','breakdown') THEN pwhd.activities_hour
+                      ELSE 0
+                    END
+                  ) AS total_hour
+            FROM r_plan_working_hour_detail pwhd
+            LEFT JOIN m_activities a ON a.id = pwhd.activities_id
+            GROUP BY pwhd.plant_working_hour_id
+        ) sub ON sub.plant_working_hour_id = pwh.id
+        WHERE ppwh.plan_date BETWEEN $1 AND $2;
       `,
         [startDate, endDate],
       );
