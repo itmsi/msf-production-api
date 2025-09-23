@@ -954,7 +954,8 @@ export class BaseDataProductionService {
           'r2',
           'r2.id = r.parent_base_data_pro_id',
         )
-        .leftJoin('m_user', 'u', 'u.id = r2.driver_id')
+        // .leftJoin('m_user', 'u', 'u.id = r2.driver_id')
+        .leftJoin('users', 'u', 'u.id = r2.driver_id')
         .leftJoin('m_population', 'm', 'm.id = r2.population_id')
         .leftJoin(
           'm_operation_points',
