@@ -318,8 +318,8 @@ export class LostTimeSummaryMohhItemDto {
   @ApiProperty({ description: 'Name', example: 'STB' })
   name: string;
 
-  @ApiProperty({ description: 'Value', example: 2224.3 })
-  value: number;
+  @ApiProperty({ description: 'Value', example: '10:10:10' })
+  value: string | number;
 
   @ApiProperty({ description: 'Color', example: '#34d399' })
   color: string;
