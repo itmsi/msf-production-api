@@ -2038,6 +2038,7 @@ export class DashboardService {
           .leftJoin(OperationPoints, 'mopl', 'mopl.id = rch.loading_point_id')
           .leftJoin(OperationPoints, 'mopd', 'mopd.id = rch.dumpingPointOp')
           .select('rch.unit_loading_id', 'unit_loading_id')
+          .addSelect('mpl.id', 'unit_id')
           .addSelect('mpl.no_unit', 'no_unit')
           .addSelect((subQuery) => {
             return subQuery
@@ -2101,6 +2102,7 @@ export class DashboardService {
           .where('DATE(rch.activity_date) = :date', { date })
           .groupBy('rch.unit_loading_id')
           .addGroupBy('mpl.no_unit')
+          .addGroupBy('mpl.id')
           .limit(3);
 
         if (shift) {
@@ -2111,7 +2113,7 @@ export class DashboardService {
 
         result.map((row) => {
           const fleetStatus = new FleetStatusItemDto();
-          fleetStatus.fleet_id = row.no_unit;
+          fleetStatus.fleet_id = row.unit_id;
           fleetStatus.fleet = row.no_unit;
           fleetStatus.start_loading = row.start_time
             ? moment(row.start_time).format('HH:mm')
@@ -2141,7 +2143,7 @@ export class DashboardService {
           .addSelect('COALESCE(SUM(rcb.vessel), 0)', 'total_vessel')
           .addSelect('COALESCE(SUM(rcb.total_tonnage), 0)', 'total_tonnage')
           .where('DATE(rcb.activity_date) = :date', { date })
-          .groupBy('rcb.unit_hauler_id, mpl.no_unit, mb.name')
+          .groupBy('rcb.unit_hauler_id, mpl.no_unit, mpl.id, mb.name')
           .limit(3);
 
         if (shift) {
@@ -2152,7 +2154,7 @@ export class DashboardService {
 
         result.map((row) => {
           const fleetStatus = new FleetStatusItemDto();
-          fleetStatus.fleet_id = row.no_unit;
+          fleetStatus.fleet_id = row.unit_id;
           fleetStatus.fleet = row.no_unit;
           fleetStatus.start_loading = row.start_time
             ? moment(row.start_time).format('HH:mm')
@@ -2173,6 +2175,7 @@ export class DashboardService {
       responseData.data = fleetStatusItem;
       return successResponse(responseData.data, 'success', 200);
     } catch (error) {
+      console.log(error, '<<Err');
       throw new BadRequestException(`Gagal mendapatkan data`);
     }
   }

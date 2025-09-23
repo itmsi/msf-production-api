@@ -76,8 +76,8 @@ export class HaulingSummaryResponseDto {
 
 // Fleet Status
 export class FleetStatusItemDto {
-  @ApiProperty({ example: 'KFM-DT-001' })
-  fleet_id: string;
+  @ApiProperty({ example: 123 })
+  fleet_id: number;
 
   @ApiProperty({ example: 'KFM-DT-001' })
   fleet: string;

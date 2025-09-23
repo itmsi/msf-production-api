@@ -524,23 +524,8 @@ export class DashboardController {
     description: 'Successfully retrieved CCR activities data',
     type: CcrActivitesResponseDto,
   })
-  getActivities(@Query() query: CcrActivitiesDto) {
-    return {
-      statusCode: 200,
-      message: 'success',
-      data: [
-        { label: 'No Operator', target: 3000, actual: 2800 },
-        { label: 'Fogging', target: 2950, actual: 2700 },
-        { label: 'Friday Pray', target: 2980, actual: 2750 },
-        { label: 'Hujan', target: 2900, actual: 2600 },
-        { label: 'P2H', target: 3000, actual: 2700 },
-        { label: 'Perbaikan Front Loading', target: 2800, actual: 2500 },
-        { label: 'Refueling', target: 2900, actual: 2650 },
-        { label: 'Rest Time', target: 3000, actual: 2700 },
-        { label: 'Safety Talk', target: 2950, actual: 2800 },
-      ],
-    };
-    // return await this.dashboardService.getCcrActivities(query);
+  async getActivities(@Query() query: CcrActivitiesDto) {
+    return await this.dashboardService.getCcrActivities(query);
   }
 
   @Get('lost-time-summary')
