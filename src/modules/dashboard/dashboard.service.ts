@@ -2451,6 +2451,9 @@ export class DashboardService {
   }
 
   private formatMinuteToHHmmss = (minutes: number): string => {
+    if (typeof minutes !== 'number' || isNaN(minutes) || minutes < 0) {
+      return '00:00:00';
+    }
     const calculate = Math.round(minutes * 10) / 10;
     const totalSeconds = calculate * 60;
     return moment.utc(totalSeconds * 1000).format('HH:mm:ss');
