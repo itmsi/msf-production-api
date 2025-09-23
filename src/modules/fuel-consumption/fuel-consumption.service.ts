@@ -1053,7 +1053,8 @@ export class FuelConsumptionService {
     if (row.operator_name) {
       const operator = await this.usersRepository
         .createQueryBuilder('u')
-        .leftJoin('m_employee', 'me', 'me.id = u.employee_id')
+        // .leftJoin('m_employee', 'me', 'me.id = u.employee_id')
+        .leftJoin('employee', 'me', 'me.id = u.employee_id')
         .where('LOWER(u.username) LIKE LOWER(:username)', {
           username: `%${row.operator_name}%`,
         })
@@ -1098,7 +1099,7 @@ export class FuelConsumptionService {
         .getOne(),
       this.usersRepository
         .createQueryBuilder('u')
-        .leftJoin('m_employee', 'm', 'm.id = u.employee_id')
+        .leftJoin('employee', 'm', 'm.id = u.employee_id')
         .where('LOWER(u.username) LIKE LOWER(:username)', {
           username: `%${row.operator_name}%`,
         })

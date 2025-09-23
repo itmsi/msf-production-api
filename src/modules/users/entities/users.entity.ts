@@ -15,11 +15,16 @@ import { Employee } from '../../employee/entities/employee.entity';
 import { Sites } from '../../sites/entities/sites.entity';
 import { UserRole } from './user-role.entity';
 
-@Entity('m_user')
+// @Entity('m_user')
+@Entity('users')
 export class Users {
   @Expose()
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Expose()
+  @Column()
+  name: string;
 
   @Expose()
   @Column({ unique: true })
@@ -36,6 +41,14 @@ export class Users {
   @Expose()
   @Column()
   isActive: boolean;
+
+  @Expose()
+  @Column()
+  role: string;
+
+  @Expose()
+  @Column()
+  roleId: number;
 
   @Expose()
   @Column()
