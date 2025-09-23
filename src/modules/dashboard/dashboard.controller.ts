@@ -215,10 +215,10 @@ export class DashboardController {
     example: '2024-01-31',
   })
   async getLostTimeData(
-    @Query('start_date') startDate?: string,
-    @Query('end_date') endDate?: string,
+    @Query('date_from') date_from?: string,
+    @Query('date_to') date_to?: string,
   ) {
-    return await this.dashboardService.getLostTimeData(startDate, endDate);
+    return await this.dashboardService.getLostTimeData(date_from, date_to);
   }
 
   @Get('activities-list')
