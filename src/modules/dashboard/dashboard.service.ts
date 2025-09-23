@@ -2024,7 +2024,6 @@ export class DashboardService {
   ): Promise<ApiResponse<FleetStatusItemDto[]>> {
     try {
       const condition = type ?? 'hauling';
-
       const date = selectedDate ?? new Date().toISOString().split('T')[0];
 
       let result;
@@ -2038,11 +2037,49 @@ export class DashboardService {
           .leftJoin(OperationPoints, 'mopl', 'mopl.id = rch.loading_point_id')
           .leftJoin(OperationPoints, 'mopd', 'mopd.id = rch.dumpingPointOp')
           .select('rch.unit_loading_id', 'unit_loading_id')
-          .addSelect('MAX(rch.time)', 'end_time')
-          .addSelect('MIN(rch.time)', 'start_time')
-          .addSelect('mopl.name', 'loading_point')
-          .addSelect('mopd.name', 'dumping_point')
           .addSelect('mpl.no_unit', 'no_unit')
+          .addSelect((subQuery) => {
+            return subQuery
+              .select('rch2.time')
+              .from('r_ccr_hauling', 'rch2')
+              .where('rch2.unit_loading_id = rch.unit_loading_id')
+              .orderBy('rch2.time', 'ASC')
+              .limit(1);
+          }, 'start_time')
+          .addSelect((subQuery) => {
+            return subQuery
+              .select('mopl2.name')
+              .from('r_ccr_hauling', 'rch2')
+              .leftJoin(
+                'm_operation_points',
+                'mopl2',
+                'mopl2.id = rch2.loading_point_id',
+              )
+              .where('rch2.unit_loading_id = rch.unit_loading_id')
+              .orderBy('rch2.time', 'ASC')
+              .limit(1);
+          }, 'loading_point')
+          .addSelect((subQuery) => {
+            return subQuery
+              .select('rch3.time')
+              .from('r_ccr_hauling', 'rch3')
+              .where('rch3.unit_loading_id = rch.unit_loading_id')
+              .orderBy('rch3.time', 'DESC')
+              .limit(1);
+          }, 'end_time')
+          .addSelect((subQuery) => {
+            return subQuery
+              .select('mopd3.name')
+              .from('r_ccr_hauling', 'rch3')
+              .leftJoin(
+                'm_operation_points',
+                'mopd3',
+                'mopd3.id = rch3.dumpingPointOp',
+              )
+              .where('rch3.unit_loading_id = rch.unit_loading_id')
+              .orderBy('rch3.time', 'DESC')
+              .limit(1);
+          }, 'dumping_point')
           .addSelect(
             `COALESCE(SUM(CASE WHEN rch.material IN ('ore','ob','quarry') THEN rch.vessel ELSE 0 END),0)`,
             'total_vessel',
@@ -2062,17 +2099,21 @@ export class DashboardService {
           )
           .where('DATE(rch.activity_date) = :date', { date })
           .groupBy('rch.unit_loading_id')
-          .addGroupBy('mopl.name')
-          .addGroupBy('mopd.name')
           .addGroupBy('mpl.no_unit')
           .limit(3)
           .getRawMany();
 
         result.map((row) => {
           const fleetStatus = new FleetStatusItemDto();
+          fleetStatus.fleet_id = row.no_unit;
           fleetStatus.fleet = row.no_unit;
-          fleetStatus.start_loading = row.start_time; // bisa juga diubah ke tipe Date jika perlu
-          fleetStatus.finish_loading = row.end_time;
+          fleetStatus.start_loading = row.start_time
+            ? moment(row.start_time).format('HH:mm')
+            : '';
+
+          fleetStatus.finish_loading = row.end_time
+            ? moment(row.end_time).format('HH:mm')
+            : '';
           fleetStatus.loading_point = row.loading_point ?? null;
           fleetStatus.dumping_point = row.dumping_point ?? null;
           fleetStatus.total_vessel = Number(row.total_vessel ?? 0);
@@ -2080,11 +2121,8 @@ export class DashboardService {
           fleetStatus.ore = Number(row.ore ?? 0);
           fleetStatus.ob = Number(row.ob ?? 0);
           fleetStatus.quarry = Number(row.quarry ?? 0);
-
           fleetStatusItem.push(fleetStatus);
         });
-
-        console.log('Hauling', fleetStatusItem);
       } else {
         result = await this.bargingRepo
           .createQueryBuilder('rcb')
@@ -2104,22 +2142,26 @@ export class DashboardService {
 
         result.map((row) => {
           const fleetStatus = new FleetStatusItemDto();
+          fleetStatus.fleet_id = row.no_unit;
           fleetStatus.fleet = row.no_unit;
-          fleetStatus.start_loading = row.start_time ?? ''; // bisa juga diubah ke tipe Date jika perlu
-          fleetStatus.finish_loading = row.end_time ?? '';
+          fleetStatus.start_loading = row.start_time
+            ? moment(row.start_time).format('HH:mm')
+            : '';
+
+          fleetStatus.finish_loading = row.end_time
+            ? moment(row.end_time).format('HH:mm')
+            : '';
+
           fleetStatus.barge_name = row.barge_name ?? '';
           fleetStatus.loading_point = row.loading_point ?? null;
           fleetStatus.dumping_point = row.dumping_point ?? null;
           fleetStatus.total_vessel = Number(row.total_vessel ?? 0);
           fleetStatus.total_tonnage = Number(row.total_tonnage ?? 0);
-
           fleetStatusItem.push(fleetStatus);
         });
-
-        console.log('Barging', fleetStatusItem);
       }
+      console.log(fleetStatusItem);
       responseData.data = fleetStatusItem;
-
       return successResponse(responseData.data, 'success', 200);
     } catch (error) {
       throw new BadRequestException(`Gagal mendapatkan data`);
