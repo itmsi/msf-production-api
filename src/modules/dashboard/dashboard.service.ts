@@ -2521,17 +2521,17 @@ export class DashboardService {
       return [
         {
           name: 'STB',
-          value: this.formatMinuteToHHmmss(standbyTime),
+          value: Math.round(standbyTime * 10) / 10,
           color: '#34d399',
         },
         {
           name: 'BD',
-          value: this.formatMinuteToHHmmss(totalBreakdown),
+          value: Math.round(totalBreakdown * 10) / 10,
           color: '#d1d5db',
         },
         {
           name: 'EWH',
-          value: this.formatMinuteToHHmmss(totalEwh),
+          value: Math.round(totalEwh * 10) / 10,
           color: '#10b981',
         },
       ];
@@ -2575,7 +2575,7 @@ export class DashboardService {
 
       const result = lostTimeQuery.map((item: any) => ({
         name: item.activity_name,
-        value: this.formatMinuteToHHmmss(item.duration),
+        value: Math.round(parseFloat(item.duration) * 10) / 10,
         color: activityColors[item.activity_name] || '#6b7280',
       }));
       // Pastikan semua aktivitas yang diharapkan ada dalam response
@@ -2592,7 +2592,7 @@ export class DashboardService {
         if (!existingNames.includes(activityName)) {
           result.push({
             name: activityName,
-            value: this.formatMinuteToHHmmss(0),
+            value: 0,
             color: activityColors[activityName] || '#6b7280',
           });
         }
