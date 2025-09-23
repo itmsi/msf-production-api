@@ -2021,7 +2021,7 @@ export class DashboardService {
   async getMockFleetStatus(
     type?: string,
     selectedDate?: string,
-  ): Promise<ApiResponse<FleetStatusResponseDto>> {
+  ): Promise<ApiResponse<FleetStatusItemDto[]>> {
     try {
       const condition = type ?? 'hauling';
 
@@ -2118,10 +2118,9 @@ export class DashboardService {
 
         console.log('Barging', fleetStatusItem);
       }
-
       responseData.data = fleetStatusItem;
 
-      return successResponse(responseData, 'success', 200);
+      return successResponse(responseData.data, 'success', 200);
     } catch (error) {
       throw new BadRequestException(`Gagal mendapatkan data`);
     }
