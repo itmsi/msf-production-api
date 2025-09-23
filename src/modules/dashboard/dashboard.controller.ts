@@ -426,6 +426,7 @@ export class DashboardController {
   getFleetStatus(
     @Query('type') type: string,
     @Query('date') selectedDate?: string,
+    @Query('shift') shift?: string,
   ) {
     // return {
     //   statusCode: 200,
@@ -457,7 +458,11 @@ export class DashboardController {
     //     },
     //   ],
     // };
-    return this.dashboardService.getMockFleetStatus(type, selectedDate);
+    return this.dashboardService.getMockFleetStatus(
+      type,
+      selectedDate,
+      shift?.toLowerCase(),
+    );
   }
 
   @Post('ccr/tonnage')

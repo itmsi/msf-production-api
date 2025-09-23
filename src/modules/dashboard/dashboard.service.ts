@@ -2021,6 +2021,7 @@ export class DashboardService {
   async getMockFleetStatus(
     type?: string,
     selectedDate?: string,
+    shift?: string,
   ): Promise<ApiResponse<FleetStatusItemDto[]>> {
     try {
       const condition = type ?? 'hauling';
@@ -2031,7 +2032,7 @@ export class DashboardService {
       const fleetStatusItem: FleetStatusItemDto[] = [];
 
       if (condition === 'hauling') {
-        result = await this.haulingRepo
+        const query = this.haulingRepo
           .createQueryBuilder('rch')
           .leftJoin(Population, 'mpl', 'mpl.id = rch.unit_loading_id')
           .leftJoin(OperationPoints, 'mopl', 'mopl.id = rch.loading_point_id')
@@ -2100,8 +2101,13 @@ export class DashboardService {
           .where('DATE(rch.activity_date) = :date', { date })
           .groupBy('rch.unit_loading_id')
           .addGroupBy('mpl.no_unit')
-          .limit(3)
-          .getRawMany();
+          .limit(3);
+
+        if (shift) {
+          query.andWhere('rch.shift = :shift', { shift });
+        }
+
+        result = await query.getRawMany();
 
         result.map((row) => {
           const fleetStatus = new FleetStatusItemDto();
@@ -2110,7 +2116,6 @@ export class DashboardService {
           fleetStatus.start_loading = row.start_time
             ? moment(row.start_time).format('HH:mm')
             : '';
-
           fleetStatus.finish_loading = row.end_time
             ? moment(row.end_time).format('HH:mm')
             : '';
@@ -2124,7 +2129,7 @@ export class DashboardService {
           fleetStatusItem.push(fleetStatus);
         });
       } else {
-        result = await this.bargingRepo
+        const query = this.bargingRepo
           .createQueryBuilder('rcb')
           .leftJoin(Population, 'mpl', 'mpl.id = rcb.unit_hauler_id')
           .leftJoin(Barge, 'mb', 'mb.id = rcb.barge_id')
@@ -2137,8 +2142,13 @@ export class DashboardService {
           .addSelect('COALESCE(SUM(rcb.total_tonnage), 0)', 'total_tonnage')
           .where('DATE(rcb.activity_date) = :date', { date })
           .groupBy('rcb.unit_hauler_id, mpl.no_unit, mb.name')
-          .limit(3)
-          .getRawMany();
+          .limit(3);
+
+        if (shift) {
+          query.andWhere('rcb.shift = :shift', { shift });
+        }
+
+        result = await query.getRawMany();
 
         result.map((row) => {
           const fleetStatus = new FleetStatusItemDto();
@@ -2147,11 +2157,9 @@ export class DashboardService {
           fleetStatus.start_loading = row.start_time
             ? moment(row.start_time).format('HH:mm')
             : '';
-
           fleetStatus.finish_loading = row.end_time
             ? moment(row.end_time).format('HH:mm')
             : '';
-
           fleetStatus.barge_name = row.barge_name ?? '';
           fleetStatus.loading_point = row.loading_point ?? null;
           fleetStatus.dumping_point = row.dumping_point ?? null;
@@ -2160,6 +2168,7 @@ export class DashboardService {
           fleetStatusItem.push(fleetStatus);
         });
       }
+
       console.log(fleetStatusItem);
       responseData.data = fleetStatusItem;
       return successResponse(responseData.data, 'success', 200);
