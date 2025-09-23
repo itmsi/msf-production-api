@@ -2446,10 +2446,18 @@ export class DashboardService {
         },
       };
     } catch (error) {
-      console.error('Error in getLostTimeSummary:', error);
       throw new BadRequestException('Gagal mendapatkan data lost time summary');
     }
   }
+
+  private formatMinuteToHHmmss = (minutes: number): string => {
+    if (typeof minutes !== 'number' || isNaN(minutes) || minutes < 0) {
+      return '00:00:00';
+    }
+    const calculate = Math.round(minutes * 10) / 10;
+    const totalSeconds = calculate * 60;
+    return moment.utc(totalSeconds * 1000).format('HH:mm:ss');
+  };
 
   private async calculateMohhData(startDate: string, endDate: string) {
     try {
@@ -2513,22 +2521,21 @@ export class DashboardService {
       return [
         {
           name: 'STB',
-          value: Math.round(standbyTime * 10) / 10,
+          value: this.formatMinuteToHHmmss(standbyTime),
           color: '#34d399',
         },
         {
           name: 'BD',
-          value: Math.round(totalBreakdown * 10) / 10,
+          value: this.formatMinuteToHHmmss(totalBreakdown),
           color: '#d1d5db',
         },
         {
           name: 'EWH',
-          value: Math.round(totalEwh * 10) / 10,
+          value: this.formatMinuteToHHmmss(totalEwh),
           color: '#10b981',
         },
       ];
     } catch (error) {
-      console.error('Error calculating MOHH data:', error);
       return [
         { name: 'STB', value: 0, color: '#34d399' },
         { name: 'BD', value: 0, color: '#d1d5db' },
@@ -2568,10 +2575,9 @@ export class DashboardService {
 
       const result = lostTimeQuery.map((item: any) => ({
         name: item.activity_name,
-        value: Math.round(parseFloat(item.total_duration) * 10) / 10,
+        value: this.formatMinuteToHHmmss(item.duration),
         color: activityColors[item.activity_name] || '#6b7280',
       }));
-
       // Pastikan semua aktivitas yang diharapkan ada dalam response
       const expectedActivities = [
         'Rain',
@@ -2586,7 +2592,7 @@ export class DashboardService {
         if (!existingNames.includes(activityName)) {
           result.push({
             name: activityName,
-            value: 0,
+            value: this.formatMinuteToHHmmss(0),
             color: activityColors[activityName] || '#6b7280',
           });
         }
@@ -2787,7 +2793,6 @@ export class DashboardService {
         },
       ];
     } catch (error) {
-      console.error('Error calculating tables data:', error);
       return [
         { title: 'PA', data: [{ target: 0, actual: 0, percent: 0 }] },
         { title: 'MA', data: [{ target: 0, actual: 0, percent: 0 }] },
