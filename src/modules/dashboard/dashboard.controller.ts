@@ -427,37 +427,37 @@ export class DashboardController {
     @Query('type') type: string,
     @Query('date') selectedDate?: string,
   ) {
-    return {
-      statusCode: 200,
-      message: 'success',
-      data: [
-        {
-          fleet: 'DT-0089',
-          start_loading: 'ETO 1',
-          stop_loading: 'EFO 1',
-          barge_name: 'Ayoda 3350',
-          total_vessel: 12,
-          total_tonnage: 354.72,
-        },
-        {
-          fleet: 'DT-0090',
-          start_loading: 'ETO 1',
-          stop_loading: 'EFO 2',
-          barge_name: 'Ayoda 3350',
-          total_vessel: 9,
-          total_tonnage: 266.04,
-        },
-        {
-          fleet: 'DT-0026',
-          start_loading: 'ETO 1',
-          stop_loading: 'EFO 3',
-          barge_name: 'Ayoda 3350',
-          total_vessel: 10,
-          total_tonnage: 295.6,
-        },
-      ],
-    };
-    // return this.dashboardService.getMockFleetStatus(type, selectedDate);
+    // return {
+    //   statusCode: 200,
+    //   message: 'success',
+    //   data: [
+    //     {
+    //       fleet: 'DT-0089',
+    //       start_loading: 'ETO 1',
+    //       stop_loading: 'EFO 1',
+    //       barge_name: 'Ayoda 3350',
+    //       total_vessel: 12,
+    //       total_tonnage: 354.72,
+    //     },
+    //     {
+    //       fleet: 'DT-0090',
+    //       start_loading: 'ETO 1',
+    //       stop_loading: 'EFO 2',
+    //       barge_name: 'Ayoda 3350',
+    //       total_vessel: 9,
+    //       total_tonnage: 266.04,
+    //     },
+    //     {
+    //       fleet: 'DT-0026',
+    //       start_loading: 'ETO 1',
+    //       stop_loading: 'EFO 3',
+    //       barge_name: 'Ayoda 3350',
+    //       total_vessel: 10,
+    //       total_tonnage: 295.6,
+    //     },
+    //   ],
+    // };
+    return this.dashboardService.getMockFleetStatus(type, selectedDate);
   }
 
   @Post('ccr/tonnage')
