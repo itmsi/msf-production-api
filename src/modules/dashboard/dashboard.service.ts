@@ -2749,8 +2749,8 @@ export class DashboardService {
           title: 'PA',
           data: [
             {
-              target: Math.round(paTarget * 100) / 100,
-              actual: Math.round(paActual * 100) / 100,
+              target: Math.round(paTarget * 100),
+              actual: Math.round(paActual * 100),
               percent: Math.round(paPercent * 100) / 100,
             },
           ],
@@ -2759,8 +2759,8 @@ export class DashboardService {
           title: 'MA',
           data: [
             {
-              target: Math.round(maTarget * 100) / 100,
-              actual: Math.round(maActual * 100) / 100,
+              target: Math.round(maTarget * 100),
+              actual: Math.round(maActual * 100),
               percent: Math.round(maPercent * 100) / 100,
             },
           ],
@@ -2769,8 +2769,8 @@ export class DashboardService {
           title: 'UA',
           data: [
             {
-              target: Math.round(uaTarget * 100) / 100,
-              actual: Math.round(uaActual * 100) / 100,
+              target: Math.round(uaTarget * 100),
+              actual: Math.round(uaActual * 100),
               percent: Math.round(uaPercent * 100) / 100,
             },
           ],
@@ -2779,8 +2779,8 @@ export class DashboardService {
           title: 'EU',
           data: [
             {
-              target: Math.round(euTarget * 100) / 100,
-              actual: Math.round(euActual * 100) / 100,
+              target: Math.round(euTarget * 100),
+              actual: Math.round(euActual * 100),
               percent: Math.round(euPercent * 100) / 100,
             },
           ],
