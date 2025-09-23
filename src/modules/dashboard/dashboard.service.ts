@@ -1904,8 +1904,9 @@ export class DashboardService {
         `;
 
       const result = await this.dataSource.query(query, [defaultSelectedDate]);
-
+      console.log(result);
       const row = result[0] ?? {};
+      const ewh = row.ewh - (row.bd_duration + row.idle_duration);
       const productionData = {
         planDate: row.plan_date ?? null,
         oreTarget: row.ore_target ?? 0,
@@ -1919,7 +1920,7 @@ export class DashboardService {
         totalObTonnage: row.ob_tonnage ?? 0,
         bdDuration: row.bd_duration ?? 0,
         idleDuration: row.idle_duration ?? 0,
-        ewh: row.ewh ?? 0,
+        ewh: ewh ?? 0,
       };
       const tonnagePercentage =
         productionData.oreTarget > 0
