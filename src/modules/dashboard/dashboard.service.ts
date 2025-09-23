@@ -1921,14 +1921,14 @@ export class DashboardService {
         idleDuration: row.idle_duration ?? 0,
         ewh: ewh ?? 0,
       };
-      console.log(productionData);
+
       const tonnagePercentage =
         productionData.oreTarget > 0
           ? (productionData.totalTonnage / productionData.oreTarget) * 100
           : 0;
       const vesselPercentage =
         productionData.oreTarget > 0
-          ? (productionData.totalVessel / productionData.oreTarget) * 100
+          ? (productionData.totalVessel / (productionData.oreTarget / 35)) * 100
           : 0;
       const orePercentage =
         productionData.oreTarget > 0
@@ -1943,7 +1943,6 @@ export class DashboardService {
         productionData.obTarget > 0
           ? (productionData.totalObTonnage / productionData.obTarget) * 100
           : 0;
-
       return {
         statusCode: 200,
         message: 'success',
