@@ -1873,6 +1873,7 @@ export class DashboardService {
           FROM r_ccr_hauling_problem rchp
           LEFT JOIN m_activities ma ON ma.id = rchp.activities_id
           WHERE rchp.activity_date::date = $1
+          and rchp."deletedAt" IS NULL
           ${shiftProb}
           GROUP BY rchp.activity_date
         )
