@@ -1834,6 +1834,7 @@ export class DashboardService {
             COALESCE(SUM(total_tonnage), 0) AS total_tonnage
           FROM r_ccr_hauling rch
           WHERE rch.activity_date::date = $1
+          AND rch."deletedAt" IS NULL
           ${shiftChange}
           GROUP BY rch.activity_date
         ),
@@ -1845,6 +1846,7 @@ export class DashboardService {
             COALESCE(SUM(total_tonnage), 0) AS total_tonnage
           FROM r_ccr_hauling rch
           WHERE rch.activity_date::date = $1
+          AND rch."deletedAt" IS NULL
           ${shiftChange}
           GROUP BY rch.activity_date, rch.material
         ),
@@ -1857,6 +1859,7 @@ export class DashboardService {
             rpp.quarry
           FROM r_plan_production rpp
           WHERE rpp.plan_date::date = $1
+          AND rpp."deletedAt" IS NULL
         ),
         plan_working_hour AS (
           SELECT
@@ -1864,6 +1867,7 @@ export class DashboardService {
             COALESCE(rpwh.mohh_per_month, 0) / 2 AS ewh
           FROM r_plan_working_hour rpwh
           WHERE rpwh.plan_date::date = $1
+          AND rpwh."deletedAt" IS NULL
         ),
         hauling_problem AS (
           SELECT
@@ -1873,7 +1877,7 @@ export class DashboardService {
           FROM r_ccr_hauling_problem rchp
           LEFT JOIN m_activities ma ON ma.id = rchp.activities_id
           WHERE rchp.activity_date::date = $1
-          and rchp."deletedAt" IS NULL
+          AND rchp."deletedAt" IS NULL
           ${shiftProb}
           GROUP BY rchp.activity_date
         )
@@ -1898,6 +1902,7 @@ export class DashboardService {
       LEFT JOIN material_data md ON md.activity_date::date = pp.plan_date
       LEFT JOIN hauling_problem hp ON hp.activity_date::date = pp.plan_date
       LEFT JOIN plan_working_hour pwh ON pwh.plan_date::date = pp.plan_date
+      WHERE pp."deletedAt" IS NULL
       GROUP BY
         pp.plan_date, pp.ore_target, pp.ore_shipment_target, pp.ob_target, pp.quarry;
 
