@@ -1902,7 +1902,6 @@ export class DashboardService {
       LEFT JOIN material_data md ON md.activity_date::date = pp.plan_date
       LEFT JOIN hauling_problem hp ON hp.activity_date::date = pp.plan_date
       LEFT JOIN plan_working_hour pwh ON pwh.plan_date::date = pp.plan_date
-      WHERE pp."deletedAt" IS NULL
       GROUP BY
         pp.plan_date, pp.ore_target, pp.ore_shipment_target, pp.ob_target, pp.quarry;
 
