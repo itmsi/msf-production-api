@@ -1834,6 +1834,7 @@ export class DashboardService {
             COALESCE(SUM(total_tonnage), 0) AS total_tonnage
           FROM r_ccr_hauling rch
           WHERE rch.activity_date::date = $1
+          AND rch."deletedAt" IS NULL
           ${shiftChange}
           GROUP BY rch.activity_date
         ),
@@ -1845,6 +1846,7 @@ export class DashboardService {
             COALESCE(SUM(total_tonnage), 0) AS total_tonnage
           FROM r_ccr_hauling rch
           WHERE rch.activity_date::date = $1
+          AND rch."deletedAt" IS NULL
           ${shiftChange}
           GROUP BY rch.activity_date, rch.material
         ),
@@ -1857,6 +1859,7 @@ export class DashboardService {
             rpp.quarry
           FROM r_plan_production rpp
           WHERE rpp.plan_date::date = $1
+          AND rpp."deletedAt" IS NULL
         ),
         plan_working_hour AS (
           SELECT
@@ -1864,6 +1867,7 @@ export class DashboardService {
             COALESCE(rpwh.mohh_per_month, 0) / 2 AS ewh
           FROM r_plan_working_hour rpwh
           WHERE rpwh.plan_date::date = $1
+          AND rpwh."deletedAt" IS NULL
         ),
         hauling_problem AS (
           SELECT
@@ -1873,6 +1877,7 @@ export class DashboardService {
           FROM r_ccr_hauling_problem rchp
           LEFT JOIN m_activities ma ON ma.id = rchp.activities_id
           WHERE rchp.activity_date::date = $1
+          AND rchp."deletedAt" IS NULL
           ${shiftProb}
           GROUP BY rchp.activity_date
         )
@@ -2038,6 +2043,7 @@ export class DashboardService {
           .leftJoin(OperationPoints, 'mopl', 'mopl.id = rch.loading_point_id')
           .leftJoin(OperationPoints, 'mopd', 'mopd.id = rch.dumpingPointOp')
           .select('rch.unit_loading_id', 'unit_loading_id')
+          .addSelect('mpl.id', 'unit_id')
           .addSelect('mpl.no_unit', 'no_unit')
           .addSelect((subQuery) => {
             return subQuery
@@ -2101,6 +2107,7 @@ export class DashboardService {
           .where('DATE(rch.activity_date) = :date', { date })
           .groupBy('rch.unit_loading_id')
           .addGroupBy('mpl.no_unit')
+          .addGroupBy('mpl.id')
           .limit(3);
 
         if (shift) {
@@ -2111,7 +2118,7 @@ export class DashboardService {
 
         result.map((row) => {
           const fleetStatus = new FleetStatusItemDto();
-          fleetStatus.fleet_id = row.no_unit;
+          fleetStatus.fleet_id = row.unit_id;
           fleetStatus.fleet = row.no_unit;
           fleetStatus.start_loading = row.start_time
             ? moment(row.start_time).format('HH:mm')
@@ -2141,7 +2148,7 @@ export class DashboardService {
           .addSelect('COALESCE(SUM(rcb.vessel), 0)', 'total_vessel')
           .addSelect('COALESCE(SUM(rcb.total_tonnage), 0)', 'total_tonnage')
           .where('DATE(rcb.activity_date) = :date', { date })
-          .groupBy('rcb.unit_hauler_id, mpl.no_unit, mb.name')
+          .groupBy('rcb.unit_hauler_id, mpl.no_unit, mpl.id, mb.name')
           .limit(3);
 
         if (shift) {
@@ -2152,7 +2159,7 @@ export class DashboardService {
 
         result.map((row) => {
           const fleetStatus = new FleetStatusItemDto();
-          fleetStatus.fleet_id = row.no_unit;
+          fleetStatus.fleet_id = row.unit_id;
           fleetStatus.fleet = row.no_unit;
           fleetStatus.start_loading = row.start_time
             ? moment(row.start_time).format('HH:mm')
@@ -2173,6 +2180,7 @@ export class DashboardService {
       responseData.data = fleetStatusItem;
       return successResponse(responseData.data, 'success', 200);
     } catch (error) {
+      console.log(error, '<<Err');
       throw new BadRequestException(`Gagal mendapatkan data`);
     }
   }
@@ -2420,6 +2428,7 @@ export class DashboardService {
           },
         )
         .getRawMany();
+      console.log(allProblems, '<<<<alllproblem');
       // Handle duplikasi: group berdasarkan activities_id
       const grouped = new Map<string, CcrActivitiesItemDto>();
 
@@ -2444,7 +2453,7 @@ export class DashboardService {
         }
       });
       grouped.forEach((value) => {
-        value.actual = value.actual / 2;
+        value.target = value.target / 2;
       });
 
       const result: CcrActivitiesItemDto[] = Array.from(grouped.values());
