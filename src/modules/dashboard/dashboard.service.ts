@@ -2423,6 +2423,7 @@ export class DashboardService {
           },
         )
         .getRawMany();
+      console.log(allProblems, '<<<<alllproblem');
       // Handle duplikasi: group berdasarkan activities_id
       const grouped = new Map<string, CcrActivitiesItemDto>();
 
@@ -2447,7 +2448,7 @@ export class DashboardService {
         }
       });
       grouped.forEach((value) => {
-        value.actual = value.actual / 2;
+        value.target = value.target / 2;
       });
 
       const result: CcrActivitiesItemDto[] = Array.from(grouped.values());
