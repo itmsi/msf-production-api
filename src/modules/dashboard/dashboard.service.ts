@@ -2060,7 +2060,7 @@ export class DashboardService {
               .leftJoin(
                 'm_operation_points',
                 'mopl2',
-                'mopl2.id = rch2.loading_point_id',
+                'mopl2.id = rch.loading_point_id',
               )
               .where('rch2.unit_loading_id = rch.unit_loading_id')
               .orderBy('rch2.time', 'ASC')
@@ -2081,7 +2081,7 @@ export class DashboardService {
               .leftJoin(
                 'm_operation_points',
                 'mopd3',
-                'mopd3.id = rch3.dumpingPointOp',
+                'mopd3.id = rch.dumpingPointOp',
               )
               .where('rch3.unit_loading_id = rch.unit_loading_id')
               .orderBy('rch3.time', 'DESC')
