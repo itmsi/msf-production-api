@@ -2069,7 +2069,7 @@ export class DashboardService {
                 'mopl2.id = rch2.loading_point_id',
               )
               .where('rch2.unit_loading_id = rch.unit_loading_id')
-              .orderBy('rch2.id', 'DESC')
+              .orderBy(`rch2.time + interval '7 hour'`, 'DESC')
               .limit(1);
           }, 'loading_point')
           .addSelect((subQuery) => {
@@ -2090,7 +2090,7 @@ export class DashboardService {
                 'mopd3.id = rch3.dumpingPointOp',
               )
               .where('rch3.unit_loading_id = rch.unit_loading_id')
-              .orderBy('rch3.id', 'DESC')
+              .orderBy(`rch3.time + interval '7 hour'`, 'DESC')
               .limit(1);
           }, 'dumping_point')
           .addSelect(
