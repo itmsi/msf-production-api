@@ -1935,24 +1935,28 @@ export class DashboardService {
 
       const tonnagePercentage =
         productionData.oreTarget > 0
-          ? (productionData.totalTonnage / productionData.oreTarget) * 100
+          ? (productionData.totalTonnage / (productionData.oreTarget / 2)) * 100
           : 0;
       const vesselPercentage =
         productionData.oreTarget > 0
-          ? (productionData.totalVessel / (productionData.oreTarget / 35)) * 100
+          ? (productionData.totalVessel / (productionData.oreTarget / 35 / 2)) *
+            100
           : 0;
       const orePercentage =
         productionData.oreTarget > 0
-          ? (productionData.totalOreTonnage / productionData.oreTarget) * 100
+          ? (productionData.totalOreTonnage / (productionData.oreTarget / 2)) *
+            100
           : 0;
       const quarryPercentage =
         productionData.quarryTarget > 0
-          ? (productionData.totalQuarryTonnage / productionData.quarryTarget) *
+          ? (productionData.totalQuarryTonnage /
+              (productionData.quarryTarget / 2)) *
             100
           : 0;
       const obPercentage =
         productionData.obTarget > 0
-          ? (productionData.totalObTonnage / productionData.obTarget) * 100
+          ? (productionData.totalObTonnage / (productionData.obTarget / 2)) *
+            100
           : 0;
       return {
         statusCode: 200,
