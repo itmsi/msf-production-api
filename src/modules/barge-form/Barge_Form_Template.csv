@@ -1,0 +1,4 @@
+shipment,barge,vol_by_draft_survey,start_date,finish_date,site,total_vessel,remarks
+shipment001,GOLDEN WAY 3363,100,2025-09-01,2025-09-02,KFM,100,done
+shipment002,AYODA 3303,100,2025-09-02,2025-09-03,KFM,100,done
+shipment003,GOLDEN WAY 3365,100,2025-09-03,2025-09-04,KFM,100,done

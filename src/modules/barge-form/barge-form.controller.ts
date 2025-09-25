@@ -12,6 +12,11 @@ import {
   HttpStatus,
   UseGuards,
   Res,
+  UseInterceptors,
+  UploadedFile,
+  Req,
+  StreamableFile,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -31,7 +36,10 @@ import {
   QueryBargeFormDto,
   QueryExportBargeFormDto,
 } from './dto';
-import { Response } from 'express';
+import { Request, Response } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { join } from 'path';
+import { createReadStream } from 'fs';
 
 @ApiTags('Barge Form')
 @ApiBearerAuth('jwt')
@@ -42,6 +50,35 @@ export class BargeFormController {
   constructor(private readonly bargeFormService: BargeFormService) {}
 
   @UseGuards(JwtAuthGuard)
+  @Get('import/template')
+  @ApiOperation({
+    summary: 'Download template CSV untuk import Barge',
+    description:
+      'Mendownload template CSV yang berisi format kolom yang diperlukan',
+  })
+  downloadTemplate(): StreamableFile {
+    try {
+      const file = join(
+        process.cwd(),
+        'src/modules/effective-working-hours/template-barge-import.csv',
+      );
+      const stream = createReadStream(file);
+      return new StreamableFile(stream, {
+        type: 'text/csv',
+        disposition: 'attachment; filename="template-barge-import.csv"',
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to download CSV template');
+    }
+  }
+
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  async importData(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    const userId = req.user?.id;
+    return await this.bargeFormService.importData(file, userId);
+  }
+
   @Get('export')
   @ApiOperation({
     summary: 'Export data Barge Form dari CSV',
