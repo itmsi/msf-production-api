@@ -34,6 +34,7 @@ import { BaseDataPro } from '../base-data-production';
 import moment from 'moment';
 import { Activities } from '../activities';
 import { EffectiveWorkingHours } from '../effective-working-hours';
+import { BargeForm } from '../barge-form';
 
 @Injectable()
 export class DashboardService {
@@ -870,17 +871,22 @@ export class DashboardService {
       const endDateStr = endDate.toISOString().split('T')[0];
 
       // Get barge data from analysis-hauling-barging service
-      const bargeDataArray = await this.getBargeData(startDateStr, endDateStr);
-
+      // const bargeDataArray = await this.getBargeData(startDateStr, endDateStr);
+      const bargeDataArrayList = await this.getBargeDataList(
+        startDateStr,
+        endDateStr,
+      );
+      console.log(bargeDataArrayList.total);
       // Calculate total barge and hauling tonnage
-      const totalBargeTonnage = bargeDataArray.reduce(
-        (sum, item) => sum + item.barge,
-        0,
-      );
-      const totalHaulingTonnage = bargeDataArray.reduce(
-        (sum, item) => sum + item.hauling,
-        0,
-      );
+      // const totalBargeTonnage = bargeDataArray.reduce(
+      //   (sum, item) => sum + item.barge,
+      //   0,
+      // );
+      const totalBargeTonnage = bargeDataArrayList;
+      // const totalHaulingTonnage = bargeDataArray.reduce(
+      //   (sum, item) => sum + item.hauling,
+      //   0,
+      // );
 
       // For now, we'll use the total tonnage as both target and actual
       // In a real scenario, you might want to get target values from a different source
@@ -920,15 +926,19 @@ export class DashboardService {
           list: [
             {
               variable: 'Barge',
-              target: bargeData.targetBarge,
-              actual: bargeData.actualBarge,
-              dev: bargeData.targetBarge - bargeData.actualBarge,
+              target: bargeDataArrayList.total,
+              actual: bargeDataArrayList.result.filter(
+                (item) => item.status === 'Completed',
+              ).length,
+              dev:
+                bargeDataArrayList.total -
+                bargeDataArrayList.result.filter(
+                  (item) => item.status === 'Completed',
+                ).length,
               percent:
-                bargeData.actualBarge > 0 && bargeData.targetBarge > 0
-                  ? Math.round(
-                      (bargeData.actualBarge / bargeData.targetBarge) * 100,
-                    )
-                  : 0,
+                bargeDataArrayList.result.filter(
+                  (item) => item.status === 'Completed',
+                ).length / bargeDataArrayList.total,
             },
             {
               variable: 'Tonnage',
@@ -2917,6 +2927,40 @@ export class DashboardService {
     } catch (error) {
       console.error('Error getting barge data:', error);
       return [];
+    }
+  }
+  async getBargeDataList(startDate?: string, endDate?: string) {
+    try {
+      const qb = this.dataSource
+        .getRepository(BargeForm)
+        .createQueryBuilder('rib');
+
+      if (startDate && endDate) {
+        qb.where('DATE(rib.start_loading) BETWEEN :startDate AND :endDate', {
+          startDate,
+          endDate,
+        });
+      } else if (startDate) {
+        qb.where('DATE(rib.start_loading) >= :startDate', { startDate });
+      } else if (endDate) {
+        qb.where('DATE(rib.start_loading) <= :endDate', { endDate });
+      }
+
+      const result = await qb
+        .select([
+          'rib.id',
+          'rib.start_loading',
+          'rib.barge_id',
+          'rib.total_vessel',
+        ])
+        .orderBy('rib.start_loading', 'ASC')
+        .getMany();
+
+      const total = await qb.getCount();
+      return { result, total };
+    } catch (error) {
+      console.error(error);
+      return { result: [], total: 0 };
     }
   }
 
