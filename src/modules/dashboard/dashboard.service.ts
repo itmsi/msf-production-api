@@ -1066,9 +1066,15 @@ export class DashboardService {
         const tonnage = parseFloat(row.tonnage) || 0;
         if (row.material === 'ob') {
           achievements['ob'] += tonnage;
-        } else if (row.material === 'ore' && row.activity === 'hauling') {
+        } else if (
+          (row.material === 'ore' && row.activity === 'hauling') ||
+          row.activity === 'direct'
+        ) {
           achievements['ore_hauling'] += tonnage;
-        } else if (row.material === 'ore' && row.activity === 'barging') {
+        } else if (
+          row.material === 'ore' ||
+          (row.material === 'ore-barge' && row.activity === 'barging')
+        ) {
           achievements['ore_barging'] += tonnage;
         } else if (row.material === 'quarry') {
           achievements['quarry'] += tonnage;
