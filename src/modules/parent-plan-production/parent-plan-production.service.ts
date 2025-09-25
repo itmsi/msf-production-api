@@ -12,10 +12,14 @@ import { ParentPlanProduction } from './entities/parent-plan-production.entity';
 import { PlanProduction } from '../plan-production/entities/plan-production.entity';
 import { CreateParentPlanProductionDto } from './dto/create-parent-plan-production.dto';
 import {
+  ExportParentPlanProductionQueryDto,
   GetParentPlanProductionQueryDto,
   UpdateParentPlanProductionDto,
 } from './dto/parent-plan-production.dto';
-import { paginateResponse } from '../../common/helpers/public.helper';
+import {
+  paginateResponse,
+  setCsvExportHeaders,
+} from '../../common/helpers/public.helper';
 import { ApiResponse, successResponse } from 'src/common';
 import {
   ImportParentPlanProductionRow,
@@ -24,8 +28,9 @@ import {
 import { Readable } from 'stream';
 import csv from 'csv-parser';
 import { S3Service } from '../../integrations/s3/s3.service';
-import Path from 'path';
-import Fs from 'fs';
+import { format } from '@fast-csv/format';
+import { Response } from 'express';
+import moment from 'moment';
 
 @Injectable()
 export class ParentPlanProductionService {
@@ -298,12 +303,7 @@ export class ParentPlanProductionService {
       if (month !== null && month !== undefined && (month < 1 || month > 12)) {
         throw new BadRequestException('Bulan harus antara 1-12');
       }
-
-      const qb: SelectQueryBuilder<ParentPlanProduction> =
-        this.parentPlanProductionRepository
-          .createQueryBuilder('parent')
-          .leftJoinAndSelect('parent.planProductions', 'planProductions');
-
+      const qb = this.findAllQueryBuilder();
       // Filter by month (1-12) - akan filter data sesuai bulan tersebut walaupun tahunnya beda
       if (month) {
         qb.andWhere('EXTRACT(MONTH FROM parent.plan_date) = :month', { month });
@@ -1225,5 +1225,76 @@ export class ParentPlanProductionService {
     };
 
     await this.create(monthlyPlanProduction);
+  }
+
+  private findAllQueryBuilder(): SelectQueryBuilder<ParentPlanProduction> {
+    return this.parentPlanProductionRepository
+      .createQueryBuilder('parent')
+      .leftJoinAndSelect('parent.planProductions', 'planProductions');
+  }
+
+  private applyFilterExportData(
+    qb: SelectQueryBuilder<ParentPlanProduction>,
+    query: ExportParentPlanProductionQueryDto,
+  ): SelectQueryBuilder<ParentPlanProduction> {
+    const month = query?.month ? parseInt(query.month, 10) : null;
+    if (month) {
+      qb.andWhere('EXTRACT(MONTH FROM parent.plan_date) = :month', { month });
+    }
+    const validSortOrder = query?.sortOrder === 'ASC' ? 'ASC' : 'DESC';
+    qb.orderBy('parent.plan_date', validSortOrder);
+    return qb;
+  }
+
+  private mapExportDataToCsvRow(parent: any, index: number) {
+    const availableDay =
+      parent.planProductions?.filter((p) => p.is_available_day).length || 0;
+    const holidayDay =
+      parent.planProductions?.filter((p) => p.is_holiday_day).length || 0;
+
+    return {
+      No: index + 1,
+      Month: moment(parent.plan_date, 'MMMM/YYYY'),
+      'Calendar Day': availableDay + holidayDay,
+      'Available Day': availableDay,
+      'Holiday Day': holidayDay,
+      'EWH Hours/Month': parent.total_average_month_ewh,
+      'EWH Hours/Day': parent.total_average_day_ewh,
+      'OB Target (BCM)': parent.total_ob_target,
+      'Ore Target (WMT)': parent.total_ore_target,
+      Quary: parent.total_quarry_target,
+      'SR Target (BCM/WMT)': parent.total_ob_target / parent.total_ore_target,
+      'Ore Shipment Target (WMT)': parent.total_ore_shipment_target,
+      'Sisa Stock di EFO': parent.total_sisa_stock,
+    };
+  }
+
+  async exportData(query: ExportParentPlanProductionQueryDto, res: Response) {
+    try {
+      const qb = this.findAllQueryBuilder();
+      // Apply filters & sorting
+      this.applyFilterExportData(qb, query);
+
+      const data = await qb.getMany();
+      if (!data.length) {
+        res.status(200).json(successResponse([], 'Data Not Found'));
+        return;
+      }
+      // Set headers CSV
+      setCsvExportHeaders(res, `monthly_working_hour_export_${Date.now()}.csv`);
+
+      // Buat stream writer
+      const csvStream = format({ headers: true });
+      csvStream.pipe(res);
+
+      // Mapping ke row CSV
+      data.forEach((item, i) => {
+        csvStream.write(this.mapExportDataToCsvRow(item, i));
+      });
+
+      csvStream.end();
+    } catch (error) {
+      throw new InternalServerErrorException('Gagal export data');
+    }
   }
 }

@@ -526,11 +526,36 @@ export class ParentPlanProductionSummaryResponseDto {
 
 export class GetRemainingStockQueryDto {
   @ApiProperty({
-    description: 'Tanggal rencana produksi (format: YYYY-MM-DD). Sistem akan mencari remaining stock dari tanggal terakhir bulan sebelumnya.',
+    description:
+      'Tanggal rencana produksi (format: YYYY-MM-DD). Sistem akan mencari remaining stock dari tanggal terakhir bulan sebelumnya.',
     example: '2025-09-06',
     required: true,
   })
   @IsNotEmpty()
   @IsString()
   plan_date: string;
+}
+
+export class ExportParentPlanProductionQueryDto {
+  @ApiProperty({
+    description:
+      'Filter bulan (1-12) untuk menampilkan data sesuai bulan tersebut',
+    example: '8',
+    required: false,
+    minimum: 1,
+    maximum: 12,
+  })
+  @IsOptional()
+  @IsNumberString()
+  month?: string;
+
+  @ApiProperty({
+    description: 'Urutan sorting (ASC/DESC)',
+    example: 'DESC',
+    required: false,
+    default: 'DESC',
+    enum: ['ASC', 'DESC'],
+  })
+  @IsOptional()
+  sortOrder?: 'ASC' | 'DESC';
 }
