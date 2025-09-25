@@ -5,10 +5,36 @@ import {
   IsString,
   IsOptional,
   IsNumber,
+  ValidateIf,
+  registerDecorator,
+  ValidationOptions,
+  ValidationArguments,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LossType, Shift } from '../entities/effective-working-hours.entity';
+
+function IsGreaterThan(
+  property: string,
+  validationOptions?: ValidationOptions,
+) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: 'isGreaterThan',
+      target: object.constructor,
+      propertyName: propertyName,
+      constraints: [property],
+      options: validationOptions,
+      validator: {
+        validate(value: any, args: ValidationArguments) {
+          const [relatedPropertyName] = args.constraints;
+          const relatedValue = (args.object as any)[relatedPropertyName];
+          return value > relatedValue;
+        },
+      },
+    });
+  };
+}
 
 export class CreateEffectiveWorkingHoursDto {
   @ApiProperty({
@@ -78,6 +104,10 @@ export class CreateEffectiveWorkingHoursDto {
   })
   @IsOptional()
   @IsDateString()
+  @ValidateIf((o) => o.start !== undefined && o.stop !== undefined)
+  @IsGreaterThan('start', {
+    message: 'Stop Time tidak boleh kurang dari atau sama dengan Start Time',
+  })
   stop?: string;
 
   @ApiPropertyOptional({
