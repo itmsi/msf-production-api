@@ -2084,19 +2084,30 @@ export class DashboardService {
               .orderBy('rch3.time', 'DESC')
               .limit(1);
           }, 'end_time')
-          .addSelect((subQuery) => {
-            return subQuery
-              .select('mopd3.name')
-              .from('r_ccr_hauling', 'rch3')
-              .leftJoin(
-                'm_operation_points',
-                'mopd3',
-                'mopd3.id = rch3.dumpingPointOp',
-              )
-              .where('rch3.unit_loading_id = rch.unit_loading_id')
-              .orderBy(`rch3.time + interval '7 hour'`, 'DESC')
-              .limit(1);
-          }, 'dumping_point')
+          .addSelect(
+            `CASE 
+                WHEN rch.dumping_point_barge_id IS NOT NULL THEN (
+                  SELECT mb.name
+                  FROM m_barge mb
+                  WHERE mb.id = rch.dumping_point_barge_id
+                    AND mb."deletedAt" IS NULL
+                  LIMIT 1
+                )
+                ELSE (
+                  SELECT mopd3.name
+                  FROM r_ccr_hauling rch3
+                  LEFT JOIN m_operation_points mopd3
+                    ON mopd3.id = rch3.dumping_point_op_id
+                    AND mopd3."deletedAt" IS NULL
+                  WHERE rch3.unit_loading_id = rch.unit_loading_id
+                    AND rch3."deletedAt" IS NULL
+                  ORDER BY rch3.id DESC
+                  LIMIT 1
+                )
+              END`,
+            'dumping_point',
+          )
+
           .addSelect(
             `COALESCE(SUM(CASE WHEN rch.material IN ('ore','ob','quarry') THEN rch.vessel ELSE 0 END),0)`,
             'total_vessel',
@@ -2115,7 +2126,9 @@ export class DashboardService {
             'quarry',
           )
           .where('DATE(rch.activity_date) = :date', { date })
-          .groupBy('rch.unit_loading_id')
+          .groupBy(
+            'rch.unit_loading_id,dumping_point_barge_id,dumping_point_op_id',
+          )
           .addGroupBy('mpl.no_unit')
           .addGroupBy('mpl.id')
           .limit(3);
@@ -2123,11 +2136,8 @@ export class DashboardService {
         if (shift) {
           query.andWhere('rch.shift = :shift', { shift });
         }
-        const sql = query.getQuery();
-        console.log(sql);
 
         result = await query.getRawMany();
-        console.log(result);
         result.map((row) => {
           const fleetStatus = new FleetStatusItemDto();
           fleetStatus.fleet_id = row.unit_id;
