@@ -36,6 +36,7 @@ import {
   ParentPlanProductionSummaryResponseDto,
   UpdateParentPlanProductionDto,
   GetRemainingStockQueryDto,
+  ExportParentPlanProductionQueryDto,
 } from './dto/parent-plan-production.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import {
@@ -60,6 +61,19 @@ export class ParentPlanProductionController {
   constructor(
     private readonly parentPlanProductionService: ParentPlanProductionService,
   ) {}
+
+  @Get('export')
+  @ApiOperation({
+    summary: 'Export data Barge Form dari CSV',
+    description:
+      'Mengimport data Barge Form dari CSV ke database setelah validasi',
+  })
+  async exportData(
+    @Query() query: ExportParentPlanProductionQueryDto,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    return await this.parentPlanProductionService.exportData(query, res);
+  }
 
   @UseGuards(JwtAuthGuard)
   @Post()

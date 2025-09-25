@@ -915,56 +915,7 @@ export class BaseDataProductionService {
       const limit = Number(queryDto.limit);
       const skip = (page - 1) * limit;
 
-      const qb = this.baseDataProRepository
-        .createQueryBuilder('r')
-        .select([
-          'r.id AS id',
-          'r2.activity_date AS date',
-          'r2.shift AS shift',
-          'u.username AS driver',
-          'r.activity AS activity',
-          'm.no_unit AS unit',
-          'r2.start_shift',
-          'r2.end_shift',
-          'r.km_awal',
-          'r.km_akhir',
-          'r.hm_awal',
-          'r.hm_akhir',
-          'r.total_km',
-          'r.total_hm',
-          'r.total_vessel',
-          'm2.name AS loading_point',
-          'm3.name AS dumping_point',
-          'm4.name AS dumping_point_op',
-          'm5.name AS dumping_point_barge',
-          'r.mround_distance',
-          'r.distance AS distance',
-          'r.material AS material',
-        ])
-        .leftJoin(
-          'r_parent_base_data_pro',
-          'r2',
-          'r2.id = r.parent_base_data_pro_id',
-        )
-        // .leftJoin('m_user', 'u', 'u.id = r2.driver_id')
-        .leftJoin('users', 'u', 'u.id = r2.driver_id')
-        .leftJoin('m_population', 'm', 'm.id = r2.population_id')
-        .leftJoin(
-          'm_operation_points',
-          'm2',
-          `m2.id = r.loading_point_id AND m2.type = 'loading'`,
-        )
-        .leftJoin(
-          'm_operation_points',
-          'm3',
-          `m3.id = r.dumping_point_id AND m3.type = 'dumping'`,
-        )
-        .leftJoin(
-          'm_operation_points',
-          'm4',
-          `m4.id = r.dumping_point_op_id AND m4.type = 'dumping'`,
-        )
-        .leftJoin('m_barge', 'm5', 'm5.id = r.dumping_point_barge_id');
+      const qb = this.findAllQueryBuilder();
 
       if (queryDto.startDate && queryDto.endDate) {
         qb.andWhere('r2.activity_date BETWEEN :start AND :end', {
