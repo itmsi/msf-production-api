@@ -13,6 +13,8 @@ import {
   UseInterceptors,
   UploadedFile,
   Req,
+  StreamableFile,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -29,9 +31,13 @@ import {
   QueryBaseDataProductionDto,
   PaginatedBaseDataProductionResponseDto,
   ParentBaseDataProResponseDto,
+  QueryExportBaseDataProductionDto,
 } from './dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
+import { join } from 'path';
+import { createReadStream } from 'fs';
 
 @ApiTags('Base Data Production')
 @ApiBearerAuth('jwt')
@@ -40,6 +46,17 @@ export class BaseDataProductionController {
   constructor(
     private readonly baseDataProductionService: BaseDataProductionService,
   ) {}
+
+  @Get('export')
+  @ApiOperation({
+    summary: 'Export data production dari CSV',
+  })
+  async exportData(
+    @Query() queryDto: QueryExportBaseDataProductionDto,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    return await this.baseDataProductionService.exportData(queryDto, res);
+  }
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -129,27 +146,28 @@ export class BaseDataProductionController {
     return this.baseDataProductionService.remove(+id);
   }
 
-  //download
-  // @UseGuards(JwtAuthGuard)
-  // @Get('import/template')
-  // downloadTemplate(@Res() res: Response) {
-  //   try {
-  //     const buffer = this.baseDataProductionService.downloadTemplate();
+  @Get('import/template')
+  @ApiOperation({
+    summary: 'Download template CSV untuk import Base Data Pro',
+    description:
+      'Mendownload template CSV yang berisi format kolom yang diperlukan',
+  })
+  downloadTemplate(): StreamableFile {
+    try {
+      const file = join(
+        process.cwd(),
+        'src/modules/base-data-production/template-production-import.csv',
+      );
+      const stream = createReadStream(file);
+      return new StreamableFile(stream, {
+        type: 'text/csv',
+        disposition: 'attachment; filename="template-production-import.csv"',
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to download CSV template');
+    }
+  }
 
-  //     res.set({
-  //       'Content-Type': 'text/csv',
-  //       'Content-Disposition':
-  //         'attachment; filename="template-population-import.csv"',
-  //       'Content-Length': buffer.length,
-  //     });
-
-  //     res.end(buffer);
-  //   } catch (error) {
-  //     throw new InternalServerErrorException('Gagal download template CSV');
-  //   }
-  // }
-
-  //import
   @Post('import')
   @UseInterceptors(FileInterceptor('file'))
   async importData(@UploadedFile() file: Express.Multer.File, @Req() req: any) {

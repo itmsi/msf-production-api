@@ -1,0 +1,4 @@
+activityDate,population_id,type,driverId,shift,startShift,endShift,hmAwal,hmAkhir,kmAwal,kmAkhir,totalVessel,distance,loadingPointId,dumpingPointId,activity,material
+2026-01-01,DT-0089,Dump Truck,First Name Last Name,DS,2026-01-01 8:00:00,2026-01-01 18:00:00,100,120,100,105,5,100,ETO 1,EFO 1,hauling,ore
+2026-01-01,DT-0090,Dump Truck,First Name Last Name,NS,2026-01-01 8:00:00,2026-01-01 18:00:00,100,120,100,105,5,100,ETO 1,EFO 1,hauling,ore
+2026-01-01,DT-0091,Dump Truck,First Name Last Name,DS,2026-01-01 8:00:00,2026-01-01 18:00:00,100,120,100,105,5,100,ETO 1,EFO 1,hauling,ore
