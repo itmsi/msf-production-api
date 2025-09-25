@@ -1067,13 +1067,13 @@ export class DashboardService {
         if (row.material === 'ob') {
           achievements['ob'] += tonnage;
         } else if (
-          (row.material === 'ore' && row.activity === 'hauling') ||
-          row.activity === 'direct'
+          row.material === 'ore' &&
+          (row.activity === 'hauling' || row.activity === 'direct')
         ) {
           achievements['ore_hauling'] += tonnage;
         } else if (
-          row.material === 'ore' ||
-          (row.material === 'ore-barge' && row.activity === 'barging')
+          (row.material === 'ore' || row.material === 'ore-barge') &&
+          row.activity === 'barging'
         ) {
           achievements['ore_barging'] += tonnage;
         } else if (row.material === 'quarry') {
