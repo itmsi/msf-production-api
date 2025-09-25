@@ -16,6 +16,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Req,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -40,6 +41,8 @@ import { createReadStream } from 'fs';
 import { join } from 'path';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileUploadDto } from '../population';
+import { Response } from 'express';
+import { SkipLogging } from 'src/common';
 
 @ApiTags('Fuel Consumption')
 @ApiBearerAuth('jwt')
@@ -50,6 +53,19 @@ export class FuelConsumptionController {
   constructor(
     private readonly fuelConsumptionService: FuelConsumptionService,
   ) {}
+
+  @Get('export')
+  @ApiOperation({
+    summary: 'Export data Fuel consumption dari CSV',
+    description:
+      'Mengimport data Fuel consumption dari CSV ke database setelah validasi',
+  })
+  async exportData(
+    @Query() query: QueryFuelConsumptionDto,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    return await this.fuelConsumptionService.exportData(query, res);
+  }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)

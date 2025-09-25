@@ -7,7 +7,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, Between, DataSource } from 'typeorm';
 import { FuelConsumption } from './entities/fuel-consumption.entity';
 import {
   CreateFuelConsumptionDto,
@@ -24,6 +23,7 @@ import {
 import {
   normalizeString,
   paginateResponse,
+  setCsvExportHeaders,
 } from '../../common/helpers/public.helper';
 import {
   ImportFuelConsumptionCsvRowDto,
@@ -34,6 +34,10 @@ import csv from 'csv-parser';
 import { Readable } from 'stream';
 import { Population } from '../population';
 import { Users } from '../users/entities/users.entity';
+import { format } from '@fast-csv/format';
+import moment from 'moment';
+import { Response } from 'express';
+import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 
 export enum Shift {
   DS = 'DS',
@@ -355,6 +359,43 @@ export class FuelConsumptionService {
     } catch (error) {
       console.error('Error creating fuel consumption:', error);
       throwError('Failed to create fuel consumption', 500);
+    }
+  }
+
+  async selectAll(queryDto: QueryFuelConsumptionDto) {
+    try {
+      const { start_date, end_date, keyword } = queryDto;
+
+      let queryBuilder = this.fuelConsumptionRepository
+        .createQueryBuilder('fuelConsumption')
+        .leftJoinAndSelect('fuelConsumption.unit', 'unit')
+        .leftJoinAndSelect('fuelConsumption.operator', 'operator')
+        .leftJoinAndSelect('unit.site', 'site')
+        .leftJoinAndSelect('unit.unitType', 'unitType')
+        .leftJoinAndSelect('operator.employees', 'employees');
+
+      if (start_date && end_date) {
+        queryBuilder = queryBuilder.andWhere(
+          'DATE(fuelConsumption.activity_date) >= :start_date AND DATE(fuelConsumption.activity_date) <= :end_date',
+          { start_date, end_date },
+        );
+      }
+
+      // Apply keyword filter
+      if (keyword) {
+        queryBuilder = queryBuilder.andWhere(
+          '(fuelConsumption.part_name LIKE :keyword OR unit.no_unit LIKE :keyword OR site.name LIKE :keyword OR unitType.unit_name LIKE :keyword OR unit.vin_number LIKE :keyword OR employees.firstName LIKE :keyword OR employees.lastName LIKE :keyword)',
+          { keyword: `%${keyword}%` },
+        );
+      }
+      // Apply pagination
+      const fuelConsumptions = await queryBuilder
+        .orderBy('fuelConsumption.createdAt', 'DESC')
+        .getMany();
+
+      return fuelConsumptions;
+    } catch (error) {
+      throwError('Failed to retrieve fuel consumption data', 500);
     }
   }
 
@@ -1189,5 +1230,62 @@ export class FuelConsumptionService {
       this.logger.error('Error in generateErrorCsv:', error);
       throw error;
     }
+  }
+
+  async exportData(query: QueryFuelConsumptionDto, res: Response) {
+    try {
+      const result = await this.selectAll(query);
+
+      if (!result || !result.length) {
+        res.status(200).json(successResponse([], 'Data Not Found'));
+        return;
+      }
+
+      setCsvExportHeaders(res, `fuel_consumption_export_${Date.now()}.csv`);
+
+      const csvStream = format({ headers: true });
+      csvStream.pipe(res);
+
+      result?.forEach((item, i) => {
+        csvStream.write(this.mapExportDataToCsvRow(item, i));
+      });
+
+      csvStream.end();
+    } catch (error) {
+      this.logger.error('Error exporting data:', error);
+      throw new InternalServerErrorException('Gagal export data');
+    }
+  }
+
+  private mapExportDataToCsvRow(item: FuelConsumption, index: number) {
+    return {
+      No: index + 1,
+      'Activity Date': item.activity_date,
+      Shift: item.shift,
+      'Part Name': item.part_name ?? '',
+      Unit: item?.unit?.no_unit ?? '',
+      Type: item.unit?.unitType?.unit_name || '',
+      Site: item.unit?.site?.name ?? '',
+      Operator: item?.operator?.name ?? '',
+      'Last Refueling (HM)': item.last_refueling_hm ?? 0,
+      'Now Refueling (HM)': item.now_refueling_hm ?? 0,
+      'Running HM': item.running_refueling_hm ?? 0,
+      'Last Refueling (KM)': item.last_refueling_km ?? 0,
+      'Now Refueling (KM)': item.now_refueling_km ?? 0,
+      'Running KM': item.running_refueling_km ?? 0,
+      'Qty Supply': item.qty_supply ?? 0,
+      uom: item.uom ?? '',
+      'L/KM': item.l_per_km ?? 0,
+      'L/HM': item.l_per_hm ?? 0,
+      Start:
+        item.start_refueling_time instanceof Date
+          ? moment(item.start_refueling_time).format('YYYY-MM-DD HH:mm')
+          : item.start_refueling_time || '',
+      Stop:
+        item.end_refueling_time instanceof Date
+          ? moment(item.end_refueling_time).format('YYYY-MM-DD HH:mm')
+          : item.end_refueling_time || '',
+      'Lead Time': item.lead_time_refueling_time || 0,
+    };
   }
 }
