@@ -52,45 +52,27 @@ export class BargeFormService {
   private createErrorCsvContent(failedRows: any[]): string {
     const csvHeaders = [
       'rowNumber',
-      'population_id',
-      'driverId',
-      'activityDate',
-      'shift',
-      'startShift',
-      'endShift',
-      'type',
-      'hmAwal',
-      'hmAkhir',
-      'kmAwal',
-      'kmAkhir',
-      'totalVessel',
-      'distance',
-      'loadingPointId',
-      'dumpingPointId',
-      'activity',
-      'material',
+      'shipment',
+      'barge',
+      'vol_by_draft_survey',
+      'start_date',
+      'finish_date',
+      'site',
+      'total_vessel',
+      'remarks',
       'error_message',
     ];
 
     const csvRows = failedRows.map((row) => [
       row.rowNumber,
-      row.population_id || '',
-      row.driverId || '',
-      row.activityDate || '',
-      row.shift || '',
-      row.startShift || '',
-      row.endShift || '',
-      row.type || '',
-      row.hmAwal || '',
-      row.hmAkhir || '',
-      row.kmAwal || '',
-      row.kmAkhir || '',
-      row.totalVessel || '',
-      row.distance || '',
-      row.loadingPointId || '',
-      row.dumpingPointId || '',
-      row.activity || '',
-      row.material || '',
+      row.shipment || '',
+      row.barge || '',
+      row.vol_by_draft_survey || '',
+      row.start_date || '',
+      row.finish_date || '',
+      row.site || '',
+      row.total_vessel || '',
+      row.remarks || '',
       row.error || 'Foreign key tidak ditemukan',
     ]);
 
@@ -112,12 +94,12 @@ export class BargeFormService {
     try {
       const csvContent = this.createErrorCsvContent(failedRows);
       const csvBuffer = Buffer.from(csvContent, 'utf8');
-      const filename = `import-base-data-pro-errors-${Date.now()}.csv`;
+      const filename = `import-barge-errors-${Date.now()}.csv`;
 
       const result = await this.s3Service.uploadErrorFile(
         filename,
         csvBuffer,
-        'base_data_production_import_error',
+        'barge_import_error',
       );
 
       return {
@@ -129,7 +111,6 @@ export class BargeFormService {
           : null,
       };
     } catch (error) {
-      console.error('Error generating CSV file:', error);
       return {
         error_file: null,
       };
@@ -374,7 +355,6 @@ export class BargeFormService {
         .where('barge.id IN (:...ids)', { ids: bargeIds })
         .getMany();
 
-      // 3. Mapping biar akses cepat
       const capacityMap = new Map<number, number>();
       bargeCapacities.forEach((b) => {
         capacityMap.set(b.id, b.capacity);
@@ -410,11 +390,7 @@ export class BargeFormService {
       await queryRunner.manager.save(BargeForm, bargeFormEntities);
 
       await queryRunner.commitTransaction();
-      return successResponse(
-        [],
-        `${bargeFormEntities.length} barge forms imported successfully`,
-        201,
-      );
+      return;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throwError('Failed to import barge forms', 500);
