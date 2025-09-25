@@ -203,6 +203,10 @@ export class UpdateEffectiveWorkingHoursDto {
   })
   @IsOptional()
   @IsDateString()
+  @ValidateIf((o) => o.start !== undefined && o.stop !== undefined)
+  @IsGreaterThan('start', {
+    message: 'Stop Time tidak boleh kurang dari atau sama dengan Start Time',
+  })
   stop?: string;
 
   @ApiPropertyOptional({
