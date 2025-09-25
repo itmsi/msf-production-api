@@ -935,10 +935,13 @@ export class DashboardService {
                 bargeDataArrayList.result.filter(
                   (item) => item.status === 'Completed',
                 ).length,
-              percent:
-                bargeDataArrayList.result.filter(
-                  (item) => item.status === 'Completed',
-                ).length / bargeDataArrayList.total,
+              percent: Number(
+                (
+                  bargeDataArrayList.result.filter(
+                    (item) => item.status === 'Completed',
+                  ).length / bargeDataArrayList.total
+                ).toFixed(2),
+              ),
             },
             {
               variable: 'Tonnage',
