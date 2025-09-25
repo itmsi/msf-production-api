@@ -1021,7 +1021,7 @@ export class DashboardService {
               CASE 
                 WHEN bdp.material = 'ob' THEN (SUM(bdp.total_vessel) * 26.56) / 1.6
                 WHEN bdp.material = 'ore' AND bdp.activity in('hauling','direct') THEN SUM(bdp.total_vessel) * 26.56
-                WHEN bdp.material in('ore','ore-barge') AND bdp.activity = 'barging' THEN SUM(bdp.total_vessel) * 16.6
+                WHEN bdp.material in('ore','ore-barge') AND bdp.activity = 'barging' THEN SUM(bdp.total_vessel) * 26.56
                 WHEN bdp.material = 'quarry' THEN SUM(bdp.total_vessel) * 16.6
                 ELSE 0
               END
@@ -1029,7 +1029,7 @@ export class DashboardService {
               CASE 
                 WHEN bdp.material = 'ob' THEN (SUM(bdp.total_vessel) * 29.56) / 1.6
                 WHEN bdp.material = 'ore' AND bdp.activity in('hauling','direct') THEN SUM(bdp.total_vessel) * 29.56
-                WHEN bdp.material  in('ore','ore-barge') AND bdp.activity = 'barging' THEN SUM(bdp.total_vessel) * 18.26
+                WHEN bdp.material  in('ore','ore-barge') AND bdp.activity = 'barging' THEN SUM(bdp.total_vessel) * 29.56
                 WHEN bdp.material = 'quarry' THEN SUM(bdp.total_vessel) * 18.26
                 ELSE 0
               END
