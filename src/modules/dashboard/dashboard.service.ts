@@ -2601,6 +2601,7 @@ export class DashboardService {
         FROM r_loss_time 
         WHERE loss_type = 'BD' 
           AND date_activity BETWEEN $1 AND $2
+          AND "deletedAt" is null
       `,
         [startDate, endDate],
       );
