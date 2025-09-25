@@ -7,8 +7,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   Repository,
-  Like,
-  Between,
   SelectQueryBuilder,
   ILike,
   DataSource,
@@ -219,8 +217,10 @@ export class BargeFormService {
       }
     }
 
-    const siteId = await this.getSite(row.site);
-    const bargeId = await this.getBarge(row.barge);
+    const [siteId, bargeId] = await Promise.all([
+      this.getSite(row.site),
+      this.getBarge(row.barge),
+    ]);
 
     if (!siteId) {
       const message = row.site
@@ -428,7 +428,6 @@ export class BargeFormService {
       this.validateImportFile(file);
       const csvData = await CsvHelper.parseCsvFile(file.buffer);
       const validationResult = await this.processImportData(csvData);
-      return validationResult;
       if (
         validationResult?.payload.length &&
         validationResult.successCount > 0
