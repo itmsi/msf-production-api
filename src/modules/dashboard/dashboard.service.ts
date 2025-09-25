@@ -1020,16 +1020,16 @@ export class DashboardService {
             WHEN mp.tyre_type = '6x4' THEN 
               CASE 
                 WHEN bdp.material = 'ob' THEN (SUM(bdp.total_vessel) * 26.56) / 1.6
-                WHEN bdp.material = 'ore' AND bdp.activity = 'hauling' THEN SUM(bdp.total_vessel) * 26.56
-                WHEN bdp.material = 'ore' AND bdp.activity = 'barging' THEN SUM(bdp.total_vessel) * 16.6
+                WHEN bdp.material = 'ore' AND bdp.activity in('hauling','direct') THEN SUM(bdp.total_vessel) * 26.56
+                WHEN bdp.material in('ore','ore-barge') AND bdp.activity = 'barging' THEN SUM(bdp.total_vessel) * 16.6
                 WHEN bdp.material = 'quarry' THEN SUM(bdp.total_vessel) * 16.6
                 ELSE 0
               END
             WHEN mp.tyre_type = '8x4' THEN 
               CASE 
                 WHEN bdp.material = 'ob' THEN (SUM(bdp.total_vessel) * 29.56) / 1.6
-                WHEN bdp.material = 'ore' AND bdp.activity = 'hauling' THEN SUM(bdp.total_vessel) * 29.56
-                WHEN bdp.material = 'ore' AND bdp.activity = 'barging' THEN SUM(bdp.total_vessel) * 18.26
+                WHEN bdp.material = 'ore' AND bdp.activity in('hauling','direct') THEN SUM(bdp.total_vessel) * 29.56
+                WHEN bdp.material  in('ore','ore-barge') AND bdp.activity = 'barging' THEN SUM(bdp.total_vessel) * 18.26
                 WHEN bdp.material = 'quarry' THEN SUM(bdp.total_vessel) * 18.26
                 ELSE 0
               END
@@ -1042,8 +1042,8 @@ export class DashboardService {
         AND bdp."deletedAt" IS NULL
         AND (
           (bdp.material = 'ob') OR
-          (bdp.material = 'ore' AND bdp.activity = 'hauling') OR
-          (bdp.material = 'ore' AND bdp.activity = 'barging') OR
+          (bdp.material = 'ore' AND bdp.activity in('hauling','direct')) OR
+          (bdp.material in('ore','ore-barge') AND bdp.activity = 'barging') OR
           (bdp.material = 'quarry')
         )
         GROUP BY bdp.material, bdp.activity, mp.tyre_type
@@ -2060,7 +2060,7 @@ export class DashboardService {
               .leftJoin(
                 'm_operation_points',
                 'mopl2',
-                'mopl2.id = rch3.loading_point_id',
+                'mopl2.id = rch2.loading_point_id',
               )
               .where('rch2.unit_loading_id = rch.unit_loading_id')
               .orderBy('rch2.time', 'DESC')
