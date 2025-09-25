@@ -60,7 +60,7 @@ export class BargeFormController {
     try {
       const file = join(
         process.cwd(),
-        'src/modules/effective-working-hours/template-barge-import.csv',
+        'src/modules/barge-form/template-barge-import.csv',
       );
       const stream = createReadStream(file);
       return new StreamableFile(stream, {
