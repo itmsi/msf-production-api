@@ -2115,7 +2115,7 @@ export class DashboardService {
         }
 
         result = await query.getRawMany();
-
+        console.log(result);
         result.map((row) => {
           const fleetStatus = new FleetStatusItemDto();
           fleetStatus.fleet_id = row.unit_id;
