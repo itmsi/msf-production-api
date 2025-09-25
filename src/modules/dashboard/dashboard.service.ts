@@ -2053,7 +2053,7 @@ export class DashboardService {
           .addSelect('mpl.no_unit', 'no_unit')
           .addSelect((subQuery) => {
             return subQuery
-              .select('rch2.time')
+              .select(`rch2.time + interval '7 hour'`, 'time')
               .from('r_ccr_hauling', 'rch2')
               .where('rch2.unit_loading_id = rch.unit_loading_id')
               .orderBy('rch2.time', 'ASC')
@@ -2069,12 +2069,12 @@ export class DashboardService {
                 'mopl2.id = rch2.loading_point_id',
               )
               .where('rch2.unit_loading_id = rch.unit_loading_id')
-              .orderBy('rch2.time', 'DESC')
+              .orderBy('rch2.id', 'DESC')
               .limit(1);
           }, 'loading_point')
           .addSelect((subQuery) => {
             return subQuery
-              .select('rch3.time')
+              .select(`rch3.time + interval '7 hour'`, 'time')
               .from('r_ccr_hauling', 'rch3')
               .where('rch3.unit_loading_id = rch.unit_loading_id')
               .orderBy('rch3.time', 'DESC')
@@ -2090,7 +2090,7 @@ export class DashboardService {
                 'mopd3.id = rch3.dumpingPointOp',
               )
               .where('rch3.unit_loading_id = rch.unit_loading_id')
-              .orderBy('rch3.time', 'DESC')
+              .orderBy('rch3.id', 'DESC')
               .limit(1);
           }, 'dumping_point')
           .addSelect(
@@ -2119,6 +2119,8 @@ export class DashboardService {
         if (shift) {
           query.andWhere('rch.shift = :shift', { shift });
         }
+        const sql = query.getQuery();
+        console.log(sql);
 
         result = await query.getRawMany();
         console.log(result);
