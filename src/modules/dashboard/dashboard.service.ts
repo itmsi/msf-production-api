@@ -1968,11 +1968,11 @@ export class DashboardService {
               meta: {
                 actual: productionData?.totalTonnage || 0,
                 target:
-                  productionData.oreTarget ||
-                  0 + productionData.oreShipmentTarget ||
-                  0 + productionData.obTarget ||
-                  +productionData.quarryTarget ||
-                  0,
+                  (productionData.oreTarget ||
+                    0 + productionData.oreShipmentTarget ||
+                    0 + productionData.obTarget ||
+                    +productionData.quarryTarget ||
+                    0) / 2,
                 percent: tonnagePercentage,
               },
             },
@@ -1980,7 +1980,7 @@ export class DashboardService {
               title: 'Vessel',
               meta: {
                 actual: productionData.totalVessel,
-                target: productionData.oreTarget / 35,
+                target: productionData.oreTarget / 35 / 2,
                 percent: vesselPercentage,
               },
             },
@@ -1988,7 +1988,7 @@ export class DashboardService {
               title: 'Ore',
               meta: {
                 actual: productionData.totalOreTonnage,
-                target: productionData.oreTarget,
+                target: productionData.oreTarget / 2,
                 percent: orePercentage,
               },
             },
@@ -1996,7 +1996,7 @@ export class DashboardService {
               title: 'Quarry',
               meta: {
                 actual: productionData.totalQuarryTonnage,
-                target: productionData.quarryTarget,
+                target: productionData.quarryTarget / 2,
                 percent: quarryPercentage,
               },
             },
@@ -2004,7 +2004,7 @@ export class DashboardService {
               title: 'OB',
               meta: {
                 actual: productionData.totalObTonnage,
-                target: productionData.obTarget,
+                target: productionData.obTarget / 2,
                 percent: obPercentage,
               },
             },
