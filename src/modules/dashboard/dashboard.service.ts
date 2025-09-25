@@ -937,9 +937,11 @@ export class DashboardService {
                 ).length,
               percent: Number(
                 (
-                  bargeDataArrayList.result.filter(
+                  (bargeDataArrayList.result.filter(
                     (item) => item.status === 'Completed',
-                  ).length / bargeDataArrayList.total
+                  ).length /
+                    bargeDataArrayList.total) *
+                  100
                 ).toFixed(2),
               ),
             },
