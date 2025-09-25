@@ -43,3 +43,26 @@ export class QueryBaseDataProductionDto {
   @IsString()
   search?: string;
 }
+
+export class QueryExportBaseDataProductionDto {
+  @ApiPropertyOptional({
+    description: 'Filter by date range start (YYYY-MM-DD)',
+    example: '2025-01-01',
+  })
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by date range end (YYYY-MM-DD)',
+    example: '2025-12-31',
+  })
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
+
+  @ApiPropertyOptional({ description: 'Unit Number', example: 'DT-XXX' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+}

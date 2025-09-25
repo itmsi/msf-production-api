@@ -54,7 +54,6 @@ export class EffectiveWorkingHoursController {
     private readonly effectiveWorkingHoursService: EffectiveWorkingHoursService,
   ) {}
 
-  @UseGuards(JwtAuthGuard)
   @Get('import/template')
   @ApiOperation({
     summary: 'Download template CSV untuk import EWH',
@@ -77,7 +76,6 @@ export class EffectiveWorkingHoursController {
     }
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('import')
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
@@ -94,7 +92,6 @@ export class EffectiveWorkingHoursController {
     return this.effectiveWorkingHoursService.importData(file, userId);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('export')
   @ApiOperation({
     summary: 'Export data EWH dari CSV',

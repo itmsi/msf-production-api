@@ -3,22 +3,14 @@ import {
   NotFoundException,
   BadRequestException,
   HttpException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  Repository,
-  Like,
-  Between,
-  In,
-  IsNull,
-  DataSource,
-  ILike,
-} from 'typeorm';
+import { Repository, IsNull, ILike, SelectQueryBuilder } from 'typeorm';
 
 import { ParentBaseDataPro, BaseDataPro } from './entities';
 import { Population } from '../population/entities/population.entity';
 import { Employee } from '../employee/entities/employee.entity';
-import { Sites } from '../sites/entities/sites.entity';
 import { Barge } from '../barge/entities/barge.entity';
 import { OperationPoints } from '../operation-points/entities/operation-points.entity';
 import { Users } from '../users/entities/users.entity';
@@ -26,7 +18,7 @@ import {
   CreateBaseDataProductionDto,
   UpdateBaseDataProductionDto,
   QueryBaseDataProductionDto,
-  PaginatedBaseDataProductionResponseDto,
+  QueryExportBaseDataProductionDto,
 } from './dto';
 import {
   successResponse,
@@ -36,10 +28,12 @@ import {
 import {
   CsvHelper,
   paginateResponse,
-  PublicHelper,
+  setCsvExportHeaders,
 } from '../../common/helpers/public.helper';
-import { use } from 'passport';
 import { S3Service } from 'src/integrations/s3/s3.service';
+import { Response } from 'express';
+import { format } from '@fast-csv/format';
+import moment from 'moment';
 
 @Injectable()
 export class BaseDataProductionService {
@@ -52,8 +46,6 @@ export class BaseDataProductionService {
     private populationRepository: Repository<Population>,
     @InjectRepository(Employee)
     private employeeRepository: Repository<Employee>,
-    @InjectRepository(Sites)
-    private sitesRepository: Repository<Sites>,
     @InjectRepository(Barge)
     private bargeRepository: Repository<Barge>,
     @InjectRepository(OperationPoints)
@@ -580,7 +572,7 @@ export class BaseDataProductionService {
     details: any[],
     populationId?: number,
     driverId?: number,
-  ): any | null {
+  ): any {
     if (
       !csvData ||
       csvData.length === 0 ||
@@ -1163,6 +1155,156 @@ export class BaseDataProductionService {
         'Terjadi kesalahan saat memproses file import. Silakan coba lagi atau hubungi administrator.',
         400,
       );
+    }
+  }
+
+  private findAllQueryBuilder(): SelectQueryBuilder<BaseDataPro> {
+    const qb = this.baseDataProRepository
+      .createQueryBuilder('r')
+      .select([
+        'r.id AS id',
+        'r2.activity_date AS date',
+        'r2.shift AS shift',
+        'u.username AS driver',
+        'r.activity AS activity',
+        'm.no_unit AS unit',
+        'r2.start_shift',
+        'r2.end_shift',
+        'r.km_awal',
+        'r.km_akhir',
+        'r.hm_awal',
+        'r.hm_akhir',
+        'r.total_km',
+        'r.total_hm',
+        'r.total_vessel',
+        'm2.name AS loading_point',
+        'm3.name AS dumping_point',
+        'm4.name AS dumping_point_op',
+        'm5.name AS dumping_point_barge',
+        'r.mround_distance',
+        'r.distance AS distance',
+        'r.material AS material',
+      ])
+      .leftJoin(
+        'r_parent_base_data_pro',
+        'r2',
+        'r2.id = r.parent_base_data_pro_id',
+      )
+      // .leftJoin('m_user', 'u', 'u.id = r2.driver_id')
+      .leftJoin('users', 'u', 'u.id = r2.driver_id')
+      .leftJoin('m_population', 'm', 'm.id = r2.population_id')
+      .leftJoin(
+        'm_operation_points',
+        'm2',
+        `m2.id = r.loading_point_id AND m2.type = 'loading'`,
+      )
+      .leftJoin(
+        'm_operation_points',
+        'm3',
+        `m3.id = r.dumping_point_id AND m3.type = 'dumping'`,
+      )
+      .leftJoin(
+        'm_operation_points',
+        'm4',
+        `m4.id = r.dumping_point_op_id AND m4.type = 'dumping'`,
+      )
+      .leftJoin('m_barge', 'm5', 'm5.id = r.dumping_point_barge_id');
+    return qb;
+  }
+
+  private applyFilterExportData(
+    qb: SelectQueryBuilder<BaseDataPro>,
+    query: QueryExportBaseDataProductionDto,
+  ): SelectQueryBuilder<BaseDataPro> {
+    const { search, startDate, endDate } = query;
+
+    if (startDate && endDate) {
+      qb.andWhere('r2.activity_date BETWEEN :start AND :end', {
+        start: startDate,
+        end: endDate,
+      });
+    } else {
+      qb.orderBy('r.updatedAt', 'DESC').limit(10);
+    }
+
+    if (search) {
+      qb.andWhere('m.no_unit ILIKE :unit', { unit: `%${search}%` });
+    }
+
+    return qb;
+  }
+
+  private mapExportDataToCsvRow(item: any, index: number) {
+    const formatDate = (date: any, formatStr: string) => {
+      return date && moment(date).isValid()
+        ? moment(date).format(formatStr)
+        : '-';
+    };
+    return {
+      No: index + 1,
+      Date: formatDate(item.date, 'DD/MM/YYYY'),
+      Shift: item?.shift?.toUpperCase() || '-',
+      Driver: item?.driver || '-',
+      Activity: item?.activity || '-',
+      Unit: item?.unit || '-',
+      'Shift Start': formatDate(item?.start_shift, 'HH:mm'),
+      'Shift End': formatDate(item?.end_shift, 'HH:mm'),
+      'KM Start': item.km_awal
+        ? parseFloat(Number(item.km_awal).toFixed(2))
+        : 0,
+      'KM End': item.km_akhir
+        ? parseFloat(Number(item.km_akhir).toFixed(2))
+        : 0,
+      'KM Total': item.total_km
+        ? parseFloat(Number(item.total_km).toFixed(2))
+        : 0,
+      'HM Start': item.hm_awal
+        ? parseFloat(Number(item.hm_awal).toFixed(2))
+        : 0,
+      'HM End': item.hm_akhir
+        ? parseFloat(Number(item.hm_akhir).toFixed(2))
+        : 0,
+      'HM Total': item.total_hm
+        ? parseFloat(Number(item.total_hm).toFixed(2))
+        : 0,
+      'Loading Point': item?.loading_point || '-',
+      'Dumping Point': item?.dumping_point || '-',
+      'M Round Distance (m)': item.mround_distance
+        ? Number(item.mround_distance)
+        : 0,
+      'Distance (m)': item.distance ? Number(item.distance) : 0,
+      Vessel: item.total_vessel ? Number(item.total_vessel) : 0,
+      Material: item?.material || '-',
+    };
+  }
+
+  async exportData(query: QueryExportBaseDataProductionDto, res: Response) {
+    try {
+      const qb = this.findAllQueryBuilder();
+      // Apply filters & sorting
+      this.applyFilterExportData(qb, query);
+
+      const data = await qb.getRawMany();
+      if (!data.length) {
+        res.status(200).json(successResponse([], 'Data Not Found'));
+        return;
+      }
+      // Set headers CSV
+      setCsvExportHeaders(res, `production_export_${Date.now()}.csv`);
+
+      // Buat stream writer
+      const csvStream = format({ headers: true });
+      csvStream.pipe(res);
+
+      // Mapping ke row CSV
+      data.forEach((item, i) => {
+        csvStream.write(this.mapExportDataToCsvRow(item, i));
+      });
+
+      csvStream.end();
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException('Gagal export data');
     }
   }
 }
