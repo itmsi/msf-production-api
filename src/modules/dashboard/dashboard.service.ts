@@ -876,7 +876,7 @@ export class DashboardService {
         startDateStr,
         endDateStr,
       );
-      console.log(bargeDataArrayList.total);
+
       // Calculate total barge and hauling tonnage
       // const totalBargeTonnage = bargeDataArray.reduce(
       //   (sum, item) => sum + item.barge,
@@ -2931,32 +2931,38 @@ export class DashboardService {
   }
   async getBargeDataList(startDate?: string, endDate?: string) {
     try {
-      const qb = this.dataSource
+      const baseQb = this.dataSource
         .getRepository(BargeForm)
         .createQueryBuilder('rib');
 
       if (startDate && endDate) {
-        qb.where('DATE(rib.start_loading) BETWEEN :startDate AND :endDate', {
-          startDate,
-          endDate,
-        });
+        baseQb.where(
+          'DATE(rib.start_loading) BETWEEN :startDate AND :endDate',
+          {
+            startDate,
+            endDate,
+          },
+        );
       } else if (startDate) {
-        qb.where('DATE(rib.start_loading) >= :startDate', { startDate });
+        baseQb.where('DATE(rib.start_loading) >= :startDate', { startDate });
       } else if (endDate) {
-        qb.where('DATE(rib.start_loading) <= :endDate', { endDate });
+        baseQb.where('DATE(rib.start_loading) <= :endDate', { endDate });
       }
 
-      const result = await qb
+      const result = await baseQb
+        .clone()
         .select([
           'rib.id',
           'rib.start_loading',
           'rib.barge_id',
           'rib.total_vessel',
+          'rib.status',
         ])
         .orderBy('rib.start_loading', 'ASC')
         .getMany();
 
-      const total = await qb.getCount();
+      const total = await baseQb.clone().getCount();
+
       return { result, total };
     } catch (error) {
       console.error(error);
