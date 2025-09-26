@@ -57,21 +57,32 @@ async function bootstrap() {
       showRequestHeaders: true,
     },
   }); // http://localhost:3000/docs
+  // app.enableCors({
+  //   origin: ['*'],
+  //   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+  //   allowedHeaders: [
+  //     'Content-Type',
+  //     'Authorization',
+  //     'Accept',
+  //     'Origin',
+  //     'X-Requested-With',
+  //   ],
+  //   exposedHeaders: ['Content-Disposition'],
+  //   credentials: true,
+  //   preflightContinue: false,
+  //   optionsSuccessStatus: 204,
+  // });
   app.enableCors({
-    origin: ['*'],
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'Accept',
-      'Origin',
-      'X-Requested-With',
+    origin: [
+      '*',
+      'http://localhost:3000',
+      'https://tid-dev.motorsightsinternational.com', // FE di server
     ],
-    exposedHeaders: ['Content-Disposition'],
     credentials: true,
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
+    methods: 'GET,POST,PUT,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Authorization',
   });
+
   app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalInterceptors(new LoggerInterceptor());
   // ValidationPipe harus selalu aktif untuk transformasi parameter query
