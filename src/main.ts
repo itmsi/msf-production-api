@@ -57,32 +57,26 @@ async function bootstrap() {
       showRequestHeaders: true,
     },
   }); // http://localhost:3000/docs
-  // app.enableCors({
-  //   origin: ['*'],
-  //   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-  //   allowedHeaders: [
-  //     'Content-Type',
-  //     'Authorization',
-  //     'Accept',
-  //     'Origin',
-  //     'X-Requested-With',
-  //   ],
-  //   exposedHeaders: ['Content-Disposition'],
-  //   credentials: true,
-  //   preflightContinue: false,
-  //   optionsSuccessStatus: 204,
-  // });
-  app.enableCors({
-    origin: [
-      '*',
-      'http://localhost:3000',
-      'https://tid-dev.motorsightsinternational.com', // FE di server
-    ],
-    credentials: true,
-    methods: 'GET,POST,PUT,DELETE,OPTIONS',
-    allowedHeaders: 'Content-Type, Authorization',
-  });
+  const corsOrigin =
+    process.env.CORS_SITES_ALLOW === '*'
+      ? '*'
+      : process.env.CORS_SITES_ALLOW?.split(',').map((o) => o.trim());
 
+  app.enableCors({
+    origin: corsOrigin || '*',
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Origin',
+      'X-Requested-With',
+    ],
+    exposedHeaders: ['Content-Disposition'],
+    credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+  });
   app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalInterceptors(new LoggerInterceptor());
   // ValidationPipe harus selalu aktif untuk transformasi parameter query
