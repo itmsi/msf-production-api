@@ -79,7 +79,7 @@ async function bootstrap() {
       'https://tid-dev.motorsightsinternational.com', // FE di server
     ],
     credentials: true,
-    methods: 'GET,POST,PUT,DELETE,OPTIONS',
+    methods: 'GET,POST,PUT,DELETE,OPTIONS,PATCH',
     allowedHeaders: 'Content-Type, Authorization',
   });
 
