@@ -3,6 +3,8 @@
  * Bisa digunakan di service atau controller untuk validasi tambahan
  */
 
+import { BadRequestException } from '@nestjs/common';
+
 export interface ValidationResult {
   isValid: boolean;
   errors: string[];
@@ -315,3 +317,12 @@ export function validateNullableLatitude(
     errors: [],
   };
 }
+
+export const validateImportFile = (file: Express.Multer.File): void => {
+  if (!file) {
+    throw new BadRequestException('File tidak ditemukan');
+  }
+  if (!file.mimetype.includes('csv') && !file.originalname.endsWith('.csv')) {
+    throw new BadRequestException('File harus berupa CSV');
+  }
+};

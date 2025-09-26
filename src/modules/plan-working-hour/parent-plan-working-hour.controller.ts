@@ -12,6 +12,12 @@ import {
   UsePipes,
   ValidationPipe,
   BadRequestException,
+  UseInterceptors,
+  UploadedFile,
+  Req,
+  Res,
+  StreamableFile,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -31,9 +37,14 @@ import {
   GetParentPlanWorkingHourDetailQueryDto,
   UpdateDetailParentPlanWorkingHourDto,
   UpdateParentPlanWorkingHourSimpleDto,
+  ExportParentPlanWorkingHourQueryDto,
 } from './dto/parent-plan-working-hour.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { successResponse } from '../../common/helpers/response.helper';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
+import { join } from 'path';
+import { createReadStream } from 'fs';
 
 @ApiTags('Parent Plan Working Hour')
 @ApiBearerAuth('jwt')
@@ -43,6 +54,41 @@ export class ParentPlanWorkingHourController {
   constructor(
     private readonly parentPlanWorkingHourService: ParentPlanWorkingHourService,
   ) {}
+
+  // @Get('export')
+  // @ApiOperation({
+  //   summary: 'Export data Barge Form dari CSV',
+  //   description:
+  //     'Mengimport data Barge Form dari CSV ke database setelah validasi',
+  // })
+  // async exportData(
+  //   @Query() query: ExportParentPlanWorkingHourQueryDto,
+  //   @Res({ passthrough: false }) res: Response,
+  // ) {
+  //   return await this.parentPlanWorkingHourService.exportData(query, res);
+  // }
+
+  @Get('import/template')
+  @ApiOperation({
+    summary: 'Download template CSV untuk import Parent Plan Working Hour',
+    description:
+      'Mendownload template CSV yang berisi format kolom yang diperlukan',
+  })
+  downloadTemplate(): StreamableFile {
+    try {
+      const file = join(
+        process.cwd(),
+        'src/modules/barge-form/template-barge-import.csv',
+      );
+      const stream = createReadStream(file);
+      return new StreamableFile(stream, {
+        type: 'text/csv',
+        disposition: 'attachment; filename="template-barge-import.csv"',
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to download CSV template');
+    }
+  }
 
   @Post()
   @ApiOperation({
@@ -329,12 +375,16 @@ export class ParentPlanWorkingHourController {
   async getDetail(@Query() query: any) {
     // Manual validation untuk parameter optional
     if (query.start_date && isNaN(new Date(query.start_date).getTime())) {
-      throw new BadRequestException('start_date must be a valid date format (YYYY-MM-DD)');
+      throw new BadRequestException(
+        'start_date must be a valid date format (YYYY-MM-DD)',
+      );
     }
     if (query.end_date && isNaN(new Date(query.end_date).getTime())) {
-      throw new BadRequestException('end_date must be a valid date format (YYYY-MM-DD)');
+      throw new BadRequestException(
+        'end_date must be a valid date format (YYYY-MM-DD)',
+      );
     }
-    
+
     const result = await this.parentPlanWorkingHourService.getDetail(query);
     return result;
   }
@@ -880,10 +930,11 @@ export class ParentPlanWorkingHourController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: Partial<UpdateDetailParentPlanWorkingHourDto>,
   ) {
-    const result = await this.parentPlanWorkingHourService.updateDetailByPlanWorkingHourId(
-      id,
-      updateDto,
-    );
+    const result =
+      await this.parentPlanWorkingHourService.updateDetailByPlanWorkingHourId(
+        id,
+        updateDto,
+      );
     return successResponse(
       result,
       'Detail parent plan working hour berhasil diupdate',
@@ -926,5 +977,12 @@ export class ParentPlanWorkingHourController {
   async remove(@Param('id', ParseIntPipe) id: number) {
     await this.parentPlanWorkingHourService.remove(id);
     return successResponse(null, 'Parent plan working hour berhasil dihapus');
+  }
+
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  async importData(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    const userId = req.user?.id;
+    return await this.parentPlanWorkingHourService.importData(file);
   }
 }
