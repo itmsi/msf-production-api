@@ -212,7 +212,6 @@ export class MenuHasPermissionSeeder {
       );
 
       if (menu.length === 0) {
-        console.log(`❌ Menu not found: ${menuPermission.menuCode}`);
         continue;
       }
 
@@ -226,7 +225,6 @@ export class MenuHasPermissionSeeder {
         );
 
         if (permission.length === 0) {
-          console.log(`❌ Permission not found: ${permissionCode}`);
           continue;
         }
 
@@ -245,20 +243,12 @@ export class MenuHasPermissionSeeder {
             [menuId, permissionId],
           );
           createdCount++;
-          console.log(
-            `✅ Menu-permission relationship created: ${menuPermission.menuCode} -> ${permissionCode}`,
-          );
         } else {
           skippedCount++;
-          console.log(
-            `⏭️  Menu-permission relationship already exists: ${menuPermission.menuCode} -> ${permissionCode}`,
-          );
         }
       }
     }
 
-    console.log(`\n📊 Menu-Permission Seeding Summary:`);
-    console.log(`   • Created: ${createdCount} relationships`);
     console.log(`   • Skipped: ${skippedCount} existing relationships`);
   }
 }

@@ -103,16 +103,7 @@ export class ParentPlanProductionService {
         await this.parentPlanProductionRepository.save(parentPlanProduction);
 
       // Generate data plan production harian
-      const generatedDailyData = await this.generateDailyPlanProductions(
-        savedParent,
-        createDto,
-      );
-
-      // Log hasil generate
-      console.log(`Parent Plan Production created with ID: ${savedParent.id}`);
-      console.log(
-        `Generated ${generatedDailyData.length} daily plan productions`,
-      );
+      await this.generateDailyPlanProductions(savedParent, createDto);
 
       return savedParent;
     } catch (error) {
@@ -191,20 +182,9 @@ export class ParentPlanProductionService {
         planProductions.push(planProduction);
       }
 
-      // Log untuk debugging
-      console.log(
-        `Generating ${planProductions.length} daily plan productions for month ${planDate.getMonth() + 1}/${planDate.getFullYear()}`,
-      );
-      console.log(
-        `Date range: ${planProductions[0]?.plan_date} to ${planProductions[planProductions.length - 1]?.plan_date}`,
-      );
-
       // Simpan semua plan production
       const savedPlanProductions =
         await this.planProductionRepository.save(planProductions);
-      console.log(
-        `Successfully saved ${savedPlanProductions.length} daily plan productions`,
-      );
 
       return savedPlanProductions;
     } catch (error) {

@@ -143,19 +143,6 @@ export class PopulationService {
       const unitTypeName = query.unit_type_name;
       const isDt = query.is_dt;
 
-      // Log query parameters untuk debugging
-      console.log('Query parameters received:', {
-        page,
-        limit,
-        search,
-        status,
-        unitTypeId,
-        unitTypeName,
-        isDt,
-        typeOfIsDt: typeof isDt,
-        activitiesId: query.activities_id,
-      });
-
       const activitiesId = query.activities_id
         ? parseInt(query.activities_id, 10)
         : undefined;
@@ -202,49 +189,22 @@ export class PopulationService {
       }
 
       // Filter by is_dt (Dump Truck)
-      console.log('=== DEBUG is_dt FILTER ===');
-      console.log('Raw isDt value:', isDt);
-      console.log('Type of isDt:', typeof isDt);
-      console.log('isDt === true:', isDt === true);
-      console.log('isDt === false:', isDt === false);
-      console.log('isDt !== null:', isDt !== null);
-      console.log('isDt !== undefined:', isDt !== undefined);
 
       if (isDt !== null && isDt !== undefined) {
         try {
-          console.log('✅ Condition met: Applying is_dt filter');
-
           if (isDt === true) {
             // Jika is_dt = true, hanya ambil dump truck
-            console.log('🔍 Applying filter: is_dt = true (hanya dump truck)');
             qb.andWhere('LOWER(unitType.unit_name) = LOWER(:dumpTruckName)', {
               dumpTruckName: 'dump truck',
             });
-            console.log(
-              '✅ Filter applied: Hanya dump truck (case-insensitive)',
-            );
           } else if (isDt === false) {
             // Jika is_dt = false, hanya ambil excavator
-            console.log('🔍 Applying filter: is_dt = false (hanya excavator)');
             qb.andWhere('LOWER(unitType.unit_name) = LOWER(:excavatorName)', {
               excavatorName: 'excavator',
             });
-            console.log(
-              '✅ Filter applied: Hanya excavator (case-insensitive)',
-            );
           }
-        } catch (error) {
-          console.error('❌ Error applying is_dt filter:', error);
-          console.log('🔄 Fallback: Tidak ada filter is_dt');
-        }
-      } else {
-        console.log('✅ No is_dt parameter provided: Getting all data');
-        console.log(
-          'Reason: isDt is null or undefined - showing all unit types',
-        );
+        } catch (error) {}
       }
-      console.log('=== END DEBUG is_dt FILTER ===');
-
       // Filter by activities_id
       if (activitiesId) {
         qb.andWhere('population.activities_id = :activitiesId', {
@@ -296,26 +256,9 @@ export class PopulationService {
         .skip(skip)
         .take(limit);
 
-      // Log SQL query untuk debugging
-      try {
-        const sql = qb.getSql();
-        console.log('Generated SQL Query:', sql);
-        console.log('Query Parameters:', qb.getParameters());
-      } catch (error) {
-        console.error('Error getting SQL:', error);
-      }
-
       const [result, total] = await qb.getManyAndCount();
 
-      // Log result untuk debugging
-      console.log('Query result:', {
-        totalRecords: total,
-        returnedRecords: result.length,
-        firstRecordUnitType: result[0]?.unitType?.unit_name || 'N/A',
-      });
-
       // Transform result to DTO format
-      console.log(result[0]);
       const transformedResult = result.map((population) => ({
         id: population.id,
         date_arrive: population.date_arrive,
@@ -981,7 +924,6 @@ export class PopulationService {
         );
       }
 
-      console.log('Template found at:', templatePath);
       return fs.readFileSync(templatePath);
     } catch (error) {
       console.error('Error downloading template:', error);

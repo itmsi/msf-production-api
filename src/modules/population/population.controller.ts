@@ -148,12 +148,6 @@ export class PopulationController {
   })
   findAll(@Query() query: GetPopulationsQueryDto) {
     // Log incoming query untuk debugging
-    console.log('Controller received query:', {
-      ...query,
-      is_dt: query.is_dt,
-      typeOfIsDt: typeof query.is_dt
-    });
-    
     return this.populationService.findAll(query);
   }
 

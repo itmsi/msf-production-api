@@ -28,8 +28,6 @@ export class MenuService {
 
   async create(createMenuDto: CreateMenuDto): Promise<ApiResponse<Menu>> {
     try {
-      console.log('Creating menu with data:', createMenuDto);
-
       // Check if menu_code already exists
       const existingMenu = await this.menuRepository.findOne({
         where: { menu_code: createMenuDto.menu_code },
@@ -53,25 +51,19 @@ export class MenuService {
         createdBy: createMenuDto.createdBy ?? undefined,
       };
 
-      console.log('Processed menu data:', menuData);
-
       const menu = this.menuRepository.create(menuData);
       const savedMenu = await this.menuRepository.save(menu);
-
-      console.log('Menu saved successfully:', savedMenu);
 
       // Handle permissions if provided
       if (
         createMenuDto.permissionIds &&
         createMenuDto.permissionIds.length > 0
       ) {
-        console.log('Assigning permissions:', createMenuDto.permissionIds);
         await this.assignPermissionsToMenu(
           savedMenu.id,
           createMenuDto.permissionIds,
           createMenuDto.createdBy || 0,
         );
-        console.log('Permissions assigned successfully');
       }
 
       return successResponse(savedMenu, 'Menu created successfully', 201);

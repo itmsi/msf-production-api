@@ -17,21 +17,16 @@ async function seedComplete() {
 
   try {
     await dataSource.initialize();
-    console.log('✅ Database connection established');
 
     // Jalankan seeder
-    console.log('🌱 Starting seeding process...');
     const completeSeeder = new CompleteSeeder(dataSource);
     await completeSeeder.run();
-
-    console.log('🎉 Seeding completed successfully!');
   } catch (error) {
     console.error('❌ Error during seeding:', error);
     throw error;
   } finally {
     if (dataSource.isInitialized) {
       await dataSource.destroy();
-      console.log('🔌 Database connection closed');
     }
   }
 }
@@ -40,7 +35,6 @@ async function seedComplete() {
 if (require.main === module) {
   seedComplete()
     .then(() => {
-      console.log('🎯 Seed complete process finished');
       process.exit(0);
     })
     .catch((error) => {

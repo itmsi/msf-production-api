@@ -127,9 +127,6 @@ export class ProductionFormulaService {
       endDate = today.toISOString().split('T')[0];
     }
 
-    console.log(startDate);
-    console.log(endDate);
-
     const qb = this.baseDataProRepository
       .createQueryBuilder('rbdp')
       .select(
@@ -156,8 +153,6 @@ export class ProductionFormulaService {
       });
 
     const resultData = await qb.getRawMany();
-
-    console.log(resultData);
 
     let total_tonnage = 0;
 
@@ -791,7 +786,6 @@ export class ProductionFormulaService {
   //   `;
 
   //   const result = await this.baseDataProRepository.query(query, queryParams);
-  //   console.log(result);
   //   const data = result[0] || {};
 
   //   return {
@@ -808,8 +802,6 @@ export class ProductionFormulaService {
     const dateToUse = selectedDate || new Date().toISOString().split('T')[0];
     const shifts = shift ? [shift] : ['ds', 'ns'];
 
-    console.log(dateToUse);
-    console.log(shifts);
     const result = await this.baseDataProRepository
       .createQueryBuilder('rbdp')
       .select(
@@ -856,7 +848,6 @@ export class ProductionFormulaService {
       bargeTonnage: parseFloat(result.bargeTonnage) || 0,
       quarryTonnage: parseFloat(result.quarryTonnage) || 0,
     };
-    console.log(response);
     return response;
   }
   /**

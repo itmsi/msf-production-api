@@ -519,10 +519,8 @@ export class MenuSeeder {
             ],
           );
           createdCount++;
-          console.log(`✅ Parent menu created: ${menuData.menuCode}`);
         } else {
           skippedCount++;
-          console.log(`⏭️  Parent menu already exists: ${menuData.menuCode}`);
         }
       }
     }
@@ -558,21 +556,11 @@ export class MenuSeeder {
               ],
             );
             createdCount++;
-            console.log(
-              `✅ Child menu created: ${menuData.menuCode} (parent: ${menuData.parentCode})`,
-            );
-          } else {
-            console.log(`❌ Parent menu not found: ${menuData.parentCode}`);
           }
         } else {
           skippedCount++;
-          console.log(`⏭️  Child menu already exists: ${menuData.menuCode}`);
         }
       }
     }
-
-    console.log(`\n📊 Menu Seeding Summary:`);
-    console.log(`   • Created: ${createdCount} menus`);
-    console.log(`   • Skipped: ${skippedCount} existing menus`);
   }
 }

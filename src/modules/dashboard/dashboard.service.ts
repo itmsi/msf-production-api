@@ -423,16 +423,12 @@ export class DashboardService {
       const start = startDate || defaultStartDate.toISOString().split('T')[0];
       const end = endDate || defaultEndDate.toISOString().split('T')[0];
 
-      console.log('TMM Query Parameters:', { start, end });
-
       // Debug: Check if there's any data in the tables
       const debugQuery1 = `
         SELECT COUNT(*) as count FROM r_parent_base_data_pro 
         WHERE DATE(activity_date) BETWEEN $1 AND $2
       `;
-      const debugResult1 = await queryRunner.query(debugQuery1, [start, end]);
-      console.log('Parent base data count:', debugResult1);
-
+      await queryRunner.query(debugQuery1, [start, end]);
       const debugQuery2 = `
         SELECT COUNT(*) as count FROM r_base_data_pro rbdp
         JOIN r_parent_base_data_pro rpbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
@@ -443,9 +439,7 @@ export class DashboardService {
           )
           AND rbdp."deletedAt" IS NULL
       `;
-      const debugResult2 = await queryRunner.query(debugQuery2, [start, end]);
-      console.log('Base data count with filters:', debugResult2);
-
+      await queryRunner.query(debugQuery2, [start, end]);
       // Debug: Check sample data
       const debugQuery3 = `
         SELECT 
@@ -465,8 +459,7 @@ export class DashboardService {
           AND rbdp."deletedAt" IS NULL
         LIMIT 5
       `;
-      const debugResult3 = await queryRunner.query(debugQuery3, [start, end]);
-      console.log('Sample data:', debugResult3);
+      await queryRunner.query(debugQuery3, [start, end]);
 
       // Query untuk mendapatkan data TMM berdasarkan tabel analysis_hauling_barging
       // Menggunakan tabel r_parent_base_data_pro, r_base_data_pro, dan m_population
@@ -526,7 +519,6 @@ export class DashboardService {
       `;
 
       const tmmData = await queryRunner.query(tmmQuery, [start, end]);
-      console.log('TMM Query Result:', tmmData);
 
       await queryRunner.release();
 
@@ -1671,11 +1663,7 @@ export class DashboardService {
       WHERE activity_date BETWEEN $1 AND $2
     `;
 
-    const countResult = await this.dataSource.query(checkQuery, [
-      startDate,
-      endDate,
-    ]);
-    console.log('Parent data count:', countResult);
+    await this.dataSource.query(checkQuery, [startDate, endDate]);
 
     const checkQuery2 = `
       SELECT COUNT(*) as count FROM r_base_data_pro rbdp
@@ -1683,11 +1671,7 @@ export class DashboardService {
       WHERE rpbdp.activity_date BETWEEN $1 AND $2
     `;
 
-    const countResult2 = await this.dataSource.query(checkQuery2, [
-      startDate,
-      endDate,
-    ]);
-    console.log('Base data count:', countResult2);
+    await this.dataSource.query(checkQuery2, [startDate, endDate]);
 
     const query = `
       SELECT 
@@ -1707,9 +1691,7 @@ export class DashboardService {
       ORDER BY DATE(rpbdp.activity_date)
     `;
 
-    console.log('Query parameters:', { startDate, endDate });
     const result = await this.dataSource.query(query, [startDate, endDate]);
-    console.log('Query result:', result);
     return result;
   }
 
@@ -2213,11 +2195,9 @@ export class DashboardService {
         });
       }
 
-      console.log(fleetStatusItem);
       responseData.data = fleetStatusItem;
       return successResponse(responseData.data, 'success', 200);
     } catch (error) {
-      console.log(error, '<<Err');
       throw new BadRequestException(`Gagal mendapatkan data`);
     }
   }
@@ -2465,7 +2445,6 @@ export class DashboardService {
           },
         )
         .getRawMany();
-      console.log(allProblems, '<<<<alllproblem');
       // Handle duplikasi: group berdasarkan activities_id
       const grouped = new Map<string, CcrActivitiesItemDto>();
 

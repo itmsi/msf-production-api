@@ -117,7 +117,6 @@ export class UsersService {
         'Get users successfully',
       );
     } catch (error) {
-      console.log(error, '<<<<<');
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch users');
     }
