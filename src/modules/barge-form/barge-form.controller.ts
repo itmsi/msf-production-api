@@ -49,7 +49,6 @@ import { createReadStream } from 'fs';
 export class BargeFormController {
   constructor(private readonly bargeFormService: BargeFormService) {}
 
-  @UseGuards(JwtAuthGuard)
   @Get('import/template')
   @ApiOperation({
     summary: 'Download template CSV untuk import Barge',

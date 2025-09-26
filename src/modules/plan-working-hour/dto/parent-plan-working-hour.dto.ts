@@ -71,7 +71,8 @@ export class CreateParentPlanWorkingHourDto {
   total_working_hour_month: number;
 
   @ApiProperty({
-    description: 'Total hari kerja dengan long shift (boolean: true/false, atau number: jumlah hari)',
+    description:
+      'Total hari kerja dengan long shift (boolean: true/false, atau number: jumlah hari)',
     example: 5,
     type: 'number',
     required: true,
@@ -81,8 +82,8 @@ export class CreateParentPlanWorkingHourDto {
       '10': { summary: '10 hari long shift', value: 10 },
       '15': { summary: '15 hari long shift', value: 15 },
       '0': { summary: 'Tidak ada long shift', value: 0 },
-      'true': { summary: 'Aktifkan long shift', value: true },
-      'false': { summary: 'Nonaktifkan long shift', value: false },
+      true: { summary: 'Aktifkan long shift', value: true },
+      false: { summary: 'Nonaktifkan long shift', value: false },
     },
   })
   @ValidateIf((o) => typeof o.total_working_day_longshift === 'number')
@@ -174,7 +175,8 @@ export class ParentPlanWorkingHourResponseDto {
   total_working_hour_month: number;
 
   @ApiProperty({
-    description: 'Total hari kerja dengan long shift (boolean: true/false, atau number: jumlah hari)',
+    description:
+      'Total hari kerja dengan long shift (boolean: true/false, atau number: jumlah hari)',
     example: 5,
   })
   total_working_day_longshift: number | boolean;
@@ -286,7 +288,8 @@ export class ParentPlanWorkingHourSummaryResponseDto {
 
   @ApiProperty({
     example: 80,
-    description: 'Rumus: total_mohh - total_delay - total_idle - total_breakdown',
+    description:
+      'Rumus: total_mohh - total_delay - total_idle - total_breakdown',
   })
   ewh: number;
 
@@ -500,7 +503,8 @@ export class ParentPlanWorkingHourDetailResponseDto {
   mohh_per_month: number;
 
   @ApiProperty({
-    description: 'Status long shift dari kolom working_longshift (boolean: true = ada long shift, false = tidak ada long shift)',
+    description:
+      'Status long shift dari kolom working_longshift (boolean: true = ada long shift, false = tidak ada long shift)',
     example: true,
   })
   working_longshift: boolean;
@@ -651,7 +655,8 @@ export class ParentPlanWorkingHourDetailByIdResponseDto {
   total_working_hour_day: number;
 
   @ApiProperty({
-    description: 'Total hari kerja longshift (boolean: true/false, atau number: jumlah hari)',
+    description:
+      'Total hari kerja longshift (boolean: true/false, atau number: jumlah hari)',
     example: 5,
   })
   total_working_day_longshift: number | boolean;
@@ -669,7 +674,8 @@ export class ParentPlanWorkingHourDetailByIdResponseDto {
   total_mohh_per_month: number;
 
   @ApiProperty({
-    description: 'Status long shift dari kolom working_longshift (boolean: true = ada long shift, false = tidak ada long shift)',
+    description:
+      'Status long shift dari kolom working_longshift (boolean: true = ada long shift, false = tidak ada long shift)',
     example: true,
   })
   working_longshift: boolean;
@@ -703,7 +709,8 @@ export class UpdateDetailParentPlanWorkingHourDto {
   working_hour_month: number;
 
   @ApiProperty({
-    description: 'Total hari kerja dengan long shift (boolean: true/false, atau number: jumlah hari)',
+    description:
+      'Total hari kerja dengan long shift (boolean: true/false, atau number: jumlah hari)',
     example: 5,
     type: 'number',
     required: true,
@@ -833,16 +840,25 @@ export class UpdateParentPlanWorkingHourSimpleDto {
   total_working_hour_month?: number;
 
   @ApiProperty({
-    description: 'Total hari kerja dengan long shift (boolean: true/false, atau number: jumlah hari)',
+    description:
+      'Total hari kerja dengan long shift (boolean: true/false, atau number: jumlah hari)',
     example: 5,
     type: 'number',
     required: false,
     minimum: 0,
   })
   @IsOptional()
-  @ValidateIf((o) => o.total_working_day_longshift !== undefined && typeof o.total_working_day_longshift === 'number')
+  @ValidateIf(
+    (o) =>
+      o.total_working_day_longshift !== undefined &&
+      typeof o.total_working_day_longshift === 'number',
+  )
   @IsNumber()
-  @ValidateIf((o) => o.total_working_day_longshift !== undefined && typeof o.total_working_day_longshift === 'boolean')
+  @ValidateIf(
+    (o) =>
+      o.total_working_day_longshift !== undefined &&
+      typeof o.total_working_day_longshift === 'boolean',
+  )
   @IsBoolean()
   total_working_day_longshift?: number | boolean;
 
@@ -896,4 +912,28 @@ export class UpdateParentPlanWorkingHourSimpleDto {
   @ValidateNested({ each: true })
   @Type(() => SimpleActivityDetailDto)
   detail?: SimpleActivityDetailDto[];
+}
+
+export class ExportParentPlanWorkingHourQueryDto {
+  @ApiProperty({
+    required: false,
+    example: '8',
+    description: 'Filter berdasarkan bulan (1-12)',
+    minimum: 1,
+    maximum: 12,
+  })
+  @IsOptional()
+  @IsNumberString()
+  month?: string;
+
+  @ApiProperty({
+    required: false,
+    example: 'DESC',
+    description: 'Urutan sorting',
+    enum: ['ASC', 'DESC'],
+    default: 'DESC',
+  })
+  @IsOptional()
+  @IsString()
+  sortOrder?: 'ASC' | 'DESC';
 }
