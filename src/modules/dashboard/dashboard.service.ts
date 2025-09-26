@@ -792,7 +792,7 @@ export class DashboardService {
           SUM(mb.capacity) as total_capacity,
           SUM(rib.total_vessel) as total_vessel,
           SUM(rib.vol_by_survey) as total_vol_by_draft,
-          SUM(rib.achievment) as total_acv
+          coalesce(SUM(rib.vol_by_survey) / SUM(mb.capacity), 0) * 100 as total_acv
         FROM r_input_barge rib
         JOIN m_barge mb ON rib.barge_id = mb.id
         ${whereClause}
@@ -818,12 +818,12 @@ export class DashboardService {
               .slice(0, 16)
               .replace('T', ' ')
           : '',
-        capacity: item.capacity || 0,
-        total_vessel: item.total_vessel || 0,
-        vol_by_draft: item.vol_by_draft || 0,
-        capacity_per_dt: item.capacity_per_dt || 0,
-        acv: item.acv || 0,
-        remarks: item.remarks || '',
+        capacity: item.capacity ?? 0,
+        total_vessel: item.total_vessel ?? 0,
+        vol_by_draft: item.vol_by_draft ?? 0,
+        capacity_per_dt: item.capacity_per_dt ?? 0,
+        acv: Math.round(((item.acv * 100) / 100) * 100),
+        remarks: item.remarks ?? '',
       }));
 
       return {
@@ -834,19 +834,19 @@ export class DashboardService {
           details: [
             {
               title: 'Capacity',
-              value: summary.total_capacity || 0,
+              value: Number(summary.total_capacity ?? 0),
             },
             {
               title: 'Vessel',
-              value: summary.total_vessel || 0,
+              value: Number(summary.total_vessel ?? 0),
             },
             {
               title: 'Vol By Draft',
-              value: summary.total_vol_by_draft || 0,
+              value: Number(summary.total_vol_by_draft ?? 0),
             },
             {
               title: 'ACV',
-              value: summary.total_acv || 0,
+              value: Math.round(summary.total_acv * 100) / 100 || 0,
             },
           ],
         },
