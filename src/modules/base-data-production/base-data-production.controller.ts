@@ -9,8 +9,21 @@ import {
   Query,
   UseGuards,
   Request,
+  Res,
+  UseInterceptors,
+  UploadedFile,
+  Req,
+  StreamableFile,
+  InternalServerErrorException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { BaseDataProductionService } from './base-data-production.service';
 import {
   CreateBaseDataProductionDto,
@@ -18,8 +31,13 @@ import {
   QueryBaseDataProductionDto,
   PaginatedBaseDataProductionResponseDto,
   ParentBaseDataProResponseDto,
+  QueryExportBaseDataProductionDto,
 } from './dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
+import { join } from 'path';
+import { createReadStream } from 'fs';
 
 @ApiTags('Base Data Production')
 @ApiBearerAuth('jwt')
@@ -28,6 +46,17 @@ export class BaseDataProductionController {
   constructor(
     private readonly baseDataProductionService: BaseDataProductionService,
   ) {}
+
+  @Get('export')
+  @ApiOperation({
+    summary: 'Export data production dari CSV',
+  })
+  async exportData(
+    @Query() queryDto: QueryExportBaseDataProductionDto,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    return await this.baseDataProductionService.exportData(queryDto, res);
+  }
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -51,7 +80,12 @@ export class BaseDataProductionController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get all base data production with pagination and filters' })
+  @ApiOperation({
+    summary: 'Get all base data production with pagination and filters',
+  })
+  @ApiOperation({
+    summary: 'Get all base data production with pagination and filters',
+  })
   @ApiResponse({
     status: 200,
     description: 'Base data production retrieved successfully',
@@ -110,5 +144,34 @@ export class BaseDataProductionController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   remove(@Param('id') id: string) {
     return this.baseDataProductionService.remove(+id);
+  }
+
+  @Get('import/template')
+  @ApiOperation({
+    summary: 'Download template CSV untuk import Base Data Pro',
+    description:
+      'Mendownload template CSV yang berisi format kolom yang diperlukan',
+  })
+  downloadTemplate(): StreamableFile {
+    try {
+      const file = join(
+        process.cwd(),
+        'src/modules/base-data-production/template-production-import.csv',
+      );
+      const stream = createReadStream(file);
+      return new StreamableFile(stream, {
+        type: 'text/csv',
+        disposition: 'attachment; filename="template-production-import.csv"',
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to download CSV template');
+    }
+  }
+
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  async importData(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    const userId = req.user?.id;
+    return this.baseDataProductionService.importData(file, userId);
   }
 }

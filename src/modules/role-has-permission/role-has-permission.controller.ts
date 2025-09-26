@@ -27,7 +27,7 @@ import {
   GetRoleHasPermissionsQueryDto,
   RoleHasPermissionListResponseDto,
   SingleRoleHasPermissionResponseDto,
-  MenuByRoleListResponseDto,
+  RolePermissionListResponseDto,
 } from './dto/role-has-permission.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 
@@ -259,7 +259,7 @@ export class RoleHasPermissionController {
   @ApiResponse({
     status: 200,
     description: 'Data menu permissions berdasarkan role berhasil diambil',
-    type: MenuByRoleListResponseDto,
+    type: RolePermissionListResponseDto,
     schema: {
       example: {
         statusCode: 200,
@@ -319,8 +319,7 @@ export class RoleHasPermissionController {
   })
   @ApiResponse({
     status: 500,
-    description:
-      'Internal Server Error - Terjadi kesalahan pada server',
+    description: 'Internal Server Error - Terjadi kesalahan pada server',
   })
   findByRoleId(@Param('roleId', ParseIntPipe) roleId: number) {
     return this.roleHasPermissionService.findByRoleId(roleId);

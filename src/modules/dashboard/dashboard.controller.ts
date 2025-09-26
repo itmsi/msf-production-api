@@ -124,10 +124,10 @@ export class DashboardController {
     description: 'End date in YYYY-MM-DD format',
   })
   async getHaulingData(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
+    @Query('date_from') date_from?: string,
+    @Query('date_to') date_to?: string,
   ) {
-    return await this.dashboardService.getHaulingData(startDate, endDate);
+    return await this.dashboardService.getHaulingData(date_from, date_to);
   }
 
   @Get('barge')
@@ -215,10 +215,10 @@ export class DashboardController {
     example: '2024-01-31',
   })
   async getLostTimeData(
-    @Query('start_date') startDate?: string,
-    @Query('end_date') endDate?: string,
+    @Query('date_from') date_from?: string,
+    @Query('date_to') date_to?: string,
   ) {
-    return await this.dashboardService.getLostTimeData(startDate, endDate);
+    return await this.dashboardService.getLostTimeData(date_from, date_to);
   }
 
   @Get('activities-list')
@@ -403,9 +403,13 @@ export class DashboardController {
     type: HaulingSummaryResponseDto,
   })
   async getHaulingSummary(
-    @Query('selectedDate') selectedDate?: string,
+    @Query('date') date?: string,
+    @Query('shift') shift?: string,
   ): Promise<HaulingSummaryResponseDto> {
-    return await this.dashboardService.getHaulingSummary(selectedDate);
+    return await this.dashboardService.getHaulingSummary(
+      date,
+      shift?.toLowerCase(),
+    );
   }
 
   @Get('ccr/fleet-status')
@@ -419,11 +423,16 @@ export class DashboardController {
     description: 'Successfully retrieved CCR fleet status data',
     type: FleetStatusResponseDto,
   })
-  async getFleetStatus(
+  getFleetStatus(
     @Query('type') type: string,
     @Query('date') selectedDate?: string,
+    @Query('shift') shift?: string,
   ) {
-    return this.dashboardService.getMockFleetStatus(type, selectedDate);
+    return this.dashboardService.getMockFleetStatus(
+      type,
+      selectedDate,
+      shift?.toLowerCase(),
+    );
   }
 
   @Post('ccr/tonnage')
@@ -437,10 +446,7 @@ export class DashboardController {
     description: 'Successfully retrieved CCR tonnage data',
     type: TonnageResponseDto,
   })
-  async getTonnage(
-    @Body() body: CcrTonnageDto,
-    @Req() req: Request,
-  ): Promise<ApiResponseDto<ChartTonnageVesselResult | []>> {
+  async getTonnage(@Body() body: CcrTonnageDto, @Req() req: Request) {
     const pathname = req.route.path;
     return await this.dashboardService.getCcrTonnageVessel(body, pathname);
   }
@@ -455,10 +461,7 @@ export class DashboardController {
     description: 'Successfully retrieved CCR Vessel data',
     type: TonnageResponseDto,
   })
-  async getVessel(
-    @Body() body: CcrTonnageDto,
-    @Req() req: Request,
-  ): Promise<ApiResponseDto<ChartTonnageVesselResult | []>> {
+  async getVessel(@Body() body: CcrTonnageDto, @Req() req: Request) {
     const pathname = req.route.path;
     return await this.dashboardService.getCcrTonnageVessel(body, pathname);
   }
@@ -491,9 +494,7 @@ export class DashboardController {
     description: 'Successfully retrieved CCR activities data',
     type: CcrActivitesResponseDto,
   })
-  async getActivities(
-    @Query() query: CcrActivitiesDto,
-  ): Promise<ApiResponseDto<CcrActivitiesItemDto[]>> {
+  async getActivities(@Query() query: CcrActivitiesDto) {
     return await this.dashboardService.getCcrActivities(query);
   }
 
@@ -523,9 +524,9 @@ export class DashboardController {
     type: LostTimeSummaryResponseDto,
   })
   async getLostTimeSummary(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
+    @Query('date_from') date_from?: string,
+    @Query('date_to') date_to?: string,
   ): Promise<LostTimeSummaryResponseDto> {
-    return await this.dashboardService.getLostTimeSummary(startDate, endDate);
+    return await this.dashboardService.getLostTimeSummary(date_from, date_to);
   }
 }

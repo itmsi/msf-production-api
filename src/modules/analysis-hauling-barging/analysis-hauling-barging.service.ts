@@ -32,8 +32,8 @@ export class AnalysisHaulingBargingService {
         mp.no_unit,
         SUM(rbdp.total_vessel) as total_vessel,
         CASE 
-          WHEN rbdp.material = 'ore-barge' AND rbdp.activity = 'barging' THEN 'ore-barge'
-          WHEN rbdp.material = 'ore' AND rbdp.activity = 'hauling' THEN 'ore'
+          WHEN rbdp.material in('ore-barge','ore') AND rbdp.activity = 'barging' THEN 'ore-barge'
+          WHEN rbdp.material = 'ore' AND rbdp.activity in ('hauling','direct') THEN 'ore'
           WHEN rbdp.material = 'ob' THEN 'ob'
           ELSE rbdp.material
         END as material_type,
@@ -46,8 +46,8 @@ export class AnalysisHaulingBargingService {
       JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
       JOIN m_population mp ON rpbdp.population_id = mp.id
       WHERE (
-        (rbdp.material = 'ore-barge' AND rbdp.activity = 'barging') OR
-        (rbdp.material = 'ore' AND rbdp.activity = 'hauling') OR
+        (rbdp.material in('ore-barge','ore') AND rbdp.activity = 'barging') OR
+        (rbdp.material = 'ore' AND rbdp.activity in ('hauling','direct')) OR
         (rbdp.material = 'ob')
       )
     `;
@@ -74,9 +74,10 @@ export class AnalysisHaulingBargingService {
 
     // Execute query
     const rawData = await this.baseDataProRepository.query(query, queryParams);
-
     // Process data sesuai spesifikasi
     const processedData = this.processAnalysisData(rawData);
+    console.log(rawData);
+    console.log(processedData);
 
     // Pagination
     const total = processedData.length;
@@ -113,7 +114,6 @@ export class AnalysisHaulingBargingService {
           tmmTonnage: 0,
         };
       }
-
       const materialType = row.material_type;
       const vessel = parseInt(row.total_vessel) || 0;
       const tonnage = parseFloat(row.tonnage) || 0;
@@ -148,20 +148,22 @@ export class AnalysisHaulingBargingService {
     });
 
     // Convert to array and format dates
-    return Object.values(groupedByDate).map((data: any) => ({
-      date: data.date,
-      bargeVessel: data.bargeVessel,
-      bargeBCM: Math.round(data.bargeBCM * 100) / 100,
-      bargeTonnage: Math.round(data.bargeTonnage * 100) / 100,
-      oreHaulingVessel: data.oreHaulingVessel,
-      oreHaulingBCM: Math.round(data.oreHaulingBCM * 100) / 100,
-      oreHaulingTonnage: Math.round(data.oreHaulingTonnage * 100) / 100,
-      obVessel: data.obVessel,
-      obBCM: Math.round(data.obBCM * 100) / 100,
-      obTonnage: Math.round(data.obTonnage * 100) / 100,
-      tmmVessel: data.tmmVessel,
-      tmmBCM: Math.round(data.tmmBCM * 100) / 100,
-      tmmTonnage: Math.round(data.tmmTonnage * 100) / 100,
-    }));
+    return Object.values(groupedByDate)
+      .map((data: any) => ({
+        date: data.date,
+        bargeVessel: data.bargeVessel,
+        bargeBCM: Math.round(data.bargeBCM * 100) / 100,
+        bargeTonnage: Math.round(data.bargeTonnage * 100) / 100,
+        oreHaulingVessel: data.oreHaulingVessel,
+        oreHaulingBCM: Math.round(data.oreHaulingBCM * 100) / 100,
+        oreHaulingTonnage: Math.round(data.oreHaulingTonnage * 100) / 100,
+        obVessel: data.obVessel,
+        obBCM: Math.round(data.obBCM * 100) / 100,
+        obTonnage: Math.round(data.obTonnage * 100) / 100,
+        tmmVessel: data.tmmVessel,
+        tmmBCM: Math.round(data.tmmBCM * 100) / 100,
+        tmmTonnage: Math.round(data.tmmTonnage * 100) / 100,
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }
 }

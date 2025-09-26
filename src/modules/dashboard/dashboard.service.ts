@@ -34,6 +34,7 @@ import { BaseDataPro } from '../base-data-production';
 import moment from 'moment';
 import { Activities } from '../activities';
 import { EffectiveWorkingHours } from '../effective-working-hours';
+import { BargeForm } from '../barge-form';
 
 @Injectable()
 export class DashboardService {
@@ -93,7 +94,7 @@ export class DashboardService {
       // 3. EWH (Effective Working Hours) - Static metric
       const ewhTarget = await this.formulaService.calculateEWHTarget(
         queryRunner,
-        start,
+        end,
       );
       const ewhActual = await this.formulaService.calculateEWHActual(
         queryRunner,
@@ -185,11 +186,13 @@ export class DashboardService {
   }
 
   async getMtdAchievement(startDate?: string, endDate?: string) {
+    const start = startDate ?? moment().startOf('month').format('YYYY-MM-DD');
+    const end = endDate ?? moment().format('YYYY-MM-DD');
     try {
       // Mendapatkan target dan actual menggunakan shared formula service
       const [targets, actuals] = await Promise.all([
-        this.productionFormulaService.getProductionTargets(startDate, endDate),
-        this.productionFormulaService.getProductionActuals(startDate, endDate),
+        this.productionFormulaService.getProductionTargets(start, end),
+        this.productionFormulaService.getProductionActuals(start, end),
       ]);
 
       return {
@@ -268,13 +271,22 @@ export class DashboardService {
       `;
 
       const actualData = await queryRunner.query(actualQuery, [start, end]);
-
       await queryRunner.release();
 
       // Create a map of actual data by date
+      // const actualMap = new Map();
+      // actualData.forEach((item) => {
+      //   actualMap.set(item.date, {
+      //     tonnage: parseFloat(item.total_tonnage) || 0,
+      //     slippery: parseFloat(item.total_slippery) || 0,
+      //     rain: parseFloat(item.total_rain) || 0,
+      //   });
+      // });
       const actualMap = new Map();
       actualData.forEach((item) => {
-        actualMap.set(item.date, {
+        // convert ke YYYY-MM-DD string
+        const key = new Date(item.date).toISOString().split('T')[0];
+        actualMap.set(key, {
           tonnage: parseFloat(item.total_tonnage) || 0,
           slippery: parseFloat(item.total_slippery) || 0,
           rain: parseFloat(item.total_rain) || 0,
@@ -283,14 +295,15 @@ export class DashboardService {
 
       // Combine target and actual data
       const result = targetData.map((item) => {
-        const date = new Date(item.plan_date);
-        const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
-
-        const actualInfo = actualMap.get(item.plan_date) || {
+        const key = new Date(item.plan_date).toISOString().split('T')[0];
+        const actualInfo = actualMap.get(key) || {
           tonnage: 0,
           slippery: 0,
           rain: 0,
         };
+
+        const date = new Date(item.plan_date);
+        const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
 
         return {
           date: formattedDate,
@@ -858,17 +871,22 @@ export class DashboardService {
       const endDateStr = endDate.toISOString().split('T')[0];
 
       // Get barge data from analysis-hauling-barging service
-      const bargeDataArray = await this.getBargeData(startDateStr, endDateStr);
+      // const bargeDataArray = await this.getBargeData(startDateStr, endDateStr);
+      const bargeDataArrayList = await this.getBargeDataList(
+        startDateStr,
+        endDateStr,
+      );
 
       // Calculate total barge and hauling tonnage
-      const totalBargeTonnage = bargeDataArray.reduce(
-        (sum, item) => sum + item.barge,
-        0,
-      );
-      const totalHaulingTonnage = bargeDataArray.reduce(
-        (sum, item) => sum + item.hauling,
-        0,
-      );
+      // const totalBargeTonnage = bargeDataArray.reduce(
+      //   (sum, item) => sum + item.barge,
+      //   0,
+      // );
+      const totalBargeTonnage = bargeDataArrayList;
+      // const totalHaulingTonnage = bargeDataArray.reduce(
+      //   (sum, item) => sum + item.hauling,
+      //   0,
+      // );
 
       // For now, we'll use the total tonnage as both target and actual
       // In a real scenario, you might want to get target values from a different source
@@ -908,15 +926,24 @@ export class DashboardService {
           list: [
             {
               variable: 'Barge',
-              target: bargeData.targetBarge,
-              actual: bargeData.actualBarge,
-              dev: bargeData.targetBarge - bargeData.actualBarge,
-              percent:
-                bargeData.actualBarge > 0 && bargeData.targetBarge > 0
-                  ? Math.round(
-                      (bargeData.actualBarge / bargeData.targetBarge) * 100,
-                    )
-                  : 0,
+              target: bargeDataArrayList.total,
+              actual: bargeDataArrayList.result.filter(
+                (item) => item.status === 'Completed',
+              ).length,
+              dev:
+                bargeDataArrayList.total -
+                bargeDataArrayList.result.filter(
+                  (item) => item.status === 'Completed',
+                ).length,
+              percent: Number(
+                (
+                  (bargeDataArrayList.result.filter(
+                    (item) => item.status === 'Completed',
+                  ).length /
+                    bargeDataArrayList.total) *
+                  100
+                ).toFixed(2),
+              ),
             },
             {
               variable: 'Tonnage',
@@ -1008,16 +1035,16 @@ export class DashboardService {
             WHEN mp.tyre_type = '6x4' THEN 
               CASE 
                 WHEN bdp.material = 'ob' THEN (SUM(bdp.total_vessel) * 26.56) / 1.6
-                WHEN bdp.material = 'ore' AND bdp.activity = 'hauling' THEN SUM(bdp.total_vessel) * 26.56
-                WHEN bdp.material = 'ore' AND bdp.activity = 'barging' THEN SUM(bdp.total_vessel) * 16.6
+                WHEN bdp.material = 'ore' AND bdp.activity in('hauling','direct') THEN SUM(bdp.total_vessel) * 26.56
+                WHEN bdp.material in('ore','ore-barge') AND bdp.activity = 'barging' THEN SUM(bdp.total_vessel) * 26.56
                 WHEN bdp.material = 'quarry' THEN SUM(bdp.total_vessel) * 16.6
                 ELSE 0
               END
             WHEN mp.tyre_type = '8x4' THEN 
               CASE 
                 WHEN bdp.material = 'ob' THEN (SUM(bdp.total_vessel) * 29.56) / 1.6
-                WHEN bdp.material = 'ore' AND bdp.activity = 'hauling' THEN SUM(bdp.total_vessel) * 29.56
-                WHEN bdp.material = 'ore' AND bdp.activity = 'barging' THEN SUM(bdp.total_vessel) * 18.26
+                WHEN bdp.material = 'ore' AND bdp.activity in('hauling','direct') THEN SUM(bdp.total_vessel) * 29.56
+                WHEN bdp.material  in('ore','ore-barge') AND bdp.activity = 'barging' THEN SUM(bdp.total_vessel) * 29.56
                 WHEN bdp.material = 'quarry' THEN SUM(bdp.total_vessel) * 18.26
                 ELSE 0
               END
@@ -1030,8 +1057,8 @@ export class DashboardService {
         AND bdp."deletedAt" IS NULL
         AND (
           (bdp.material = 'ob') OR
-          (bdp.material = 'ore' AND bdp.activity = 'hauling') OR
-          (bdp.material = 'ore' AND bdp.activity = 'barging') OR
+          (bdp.material = 'ore' AND bdp.activity in('hauling','direct')) OR
+          (bdp.material in('ore','ore-barge') AND bdp.activity = 'barging') OR
           (bdp.material = 'quarry')
         )
         GROUP BY bdp.material, bdp.activity, mp.tyre_type
@@ -1054,9 +1081,15 @@ export class DashboardService {
         const tonnage = parseFloat(row.tonnage) || 0;
         if (row.material === 'ob') {
           achievements['ob'] += tonnage;
-        } else if (row.material === 'ore' && row.activity === 'hauling') {
+        } else if (
+          row.material === 'ore' &&
+          (row.activity === 'hauling' || row.activity === 'direct')
+        ) {
           achievements['ore_hauling'] += tonnage;
-        } else if (row.material === 'ore' && row.activity === 'barging') {
+        } else if (
+          (row.material === 'ore' || row.material === 'ore-barge') &&
+          row.activity === 'barging'
+        ) {
           achievements['ore_barging'] += tonnage;
         } else if (row.material === 'quarry') {
           achievements['quarry'] += tonnage;
@@ -1802,89 +1835,103 @@ export class DashboardService {
 
   async getHaulingSummary(
     selectedDate?: string,
+    shift?: string,
   ): Promise<HaulingSummaryResponseDto> {
     try {
       const today = new Date();
-
       const defaultSelectedDate =
-        selectedDate || today.toISOString().split('T')[0];
-
-      console.log(selectedDate);
-
+        selectedDate ?? today.toISOString().split('T')[0];
+      let shiftChange = '';
+      let shiftProb = '';
+      if (shift) {
+        shiftChange = `AND rch.shift ='${shift}'`;
+        shiftProb = `AND rchp.shift ='${shift}'`;
+      }
       const query = `
-        with ore_data_hauling as (
-        select
-          rch.activity_date,
-          coalesce(sum(vessel), 0) as total_vessel,
-          coalesce(sum(total_tonnage), 0) as total_tonnage		
+        WITH ore_data_hauling AS (
+          SELECT
+            rch.activity_date,
+            COALESCE(SUM(vessel), 0) AS total_vessel,
+            COALESCE(SUM(total_tonnage), 0) AS total_tonnage
           FROM r_ccr_hauling rch
-          WHERE rch.activity_date = $1
-          group by rch.activity_date 
+          WHERE rch.activity_date::date = $1
+          AND rch."deletedAt" IS NULL
+          ${shiftChange}
+          GROUP BY rch.activity_date
         ),
-        material_data as (
-          select
+        material_data AS (
+          SELECT
             rch.activity_date,
             rch.material,
-            coalesce(sum(vessel), 0) as total_vessel,
-            coalesce(sum(total_tonnage), 0) as total_tonnage		
-            FROM r_ccr_hauling rch
-            WHERE rch.activity_date = $1
-            group by rch.activity_date, rch.material
+            COALESCE(SUM(vessel), 0) AS total_vessel,
+            COALESCE(SUM(total_tonnage), 0) AS total_tonnage
+          FROM r_ccr_hauling rch
+          WHERE rch.activity_date::date = $1
+          AND rch."deletedAt" IS NULL
+          ${shiftChange}
+          GROUP BY rch.activity_date, rch.material
         ),
-        plan_production as (
-          SELECT rpp.plan_date AS plan_date, 
-            rpp.ore_target, 
+        plan_production AS (
+          SELECT
+            rpp.plan_date,
+            rpp.ore_target,
             rpp.ore_shipment_target,
             rpp.ob_target,
             rpp.quarry
-            FROM r_plan_production rpp
-            WHERE rpp.plan_date = $1
+          FROM r_plan_production rpp
+          WHERE rpp.plan_date::date = $1
+          AND rpp."deletedAt" IS NULL
         ),
-        plan_working_hour as (
-          select 
+        plan_working_hour AS (
+          SELECT
             rpwh.plan_date,
-            coalesce(rpwh.mohh_per_month, 0) / 2 as ewh
-          from r_plan_working_hour rpwh
-          where rpwh.plan_date::date = $1
+            COALESCE(rpwh.mohh_per_month, 0) / 2 AS ewh
+          FROM r_plan_working_hour rpwh
+          WHERE rpwh.plan_date::date = $1
+          AND rpwh."deletedAt" IS NULL
         ),
-        hauling_problem as (
-          select
+        hauling_problem AS (
+          SELECT
             rchp.activity_date,
-              COALESCE(SUM(CASE WHEN ma.status in ('idle','delay') THEN rchp.duration END), 0) AS idle_duration,
-              COALESCE(SUM(CASE WHEN ma.status = 'breakdown' THEN rchp.duration END), 0) AS bd_duration
+            COALESCE(SUM(CASE WHEN ma.status IN ('idle','delay') THEN rchp.duration END), 0) AS idle_duration,
+            COALESCE(SUM(CASE WHEN ma.status = 'breakdown' THEN rchp.duration END), 0) AS bd_duration
           FROM r_ccr_hauling_problem rchp
           LEFT JOIN m_activities ma ON ma.id = rchp.activities_id
-          where rchp.activity_date = $1
-          group by rchp.activity_date
+          WHERE rchp.activity_date::date = $1
+          AND rchp."deletedAt" IS NULL
+          ${shiftProb}
+          GROUP BY rchp.activity_date
         )
-        SELECT 
-            pp.plan_date,
-            pp.ore_target,
-            pp.ore_shipment_target,
-            pp.ob_target,
-            pp.quarry,
-            coalesce(odch.total_tonnage, 0) as total_tonnage,
-            coalesce(odch.total_vessel, 0) as total_vessel,
-            coalesce(hp.idle_duration,0) as idle_duration,
-            coalesce(hp.bd_duration, 0) as bd_duration,
-            coalesce(pwh.ewh, 0) as ewh,
-            COALESCE(SUM(md.total_vessel) FILTER (WHERE md.material = 'ore'), 0) AS ore_vessel,
-            COALESCE(SUM(md.total_tonnage) FILTER (WHERE md.material = 'ore'), 0) AS ore_tonnage,
-            COALESCE(SUM(md.total_vessel) FILTER (WHERE md.material = 'quarry'), 0) AS quarry_vessel,
-            COALESCE(SUM(md.total_tonnage) FILTER (WHERE md.material = 'quarry'), 0) AS quarry_tonnage,
-            COALESCE(SUM(md.total_vessel) FILTER (WHERE md.material = 'ob'), 0) AS ob_vessel,
-            COALESCE(SUM(md.total_tonnage) FILTER (WHERE md.material = 'ob'), 0) AS ob_tonnage
-        FROM plan_production pp
-        LEFT JOIN material_data md ON md.activity_date = pp.plan_date
-        LEFT JOIN ore_data_hauling odch ON odch.activity_date = pp.plan_date
-        LEFT JOIN hauling_problem hp on hp.activity_date = odch.activity_date
-        left join plan_working_hour pwh on pwh.plan_date::date = pp.plan_date
-        GROUP BY pp.plan_date, pp.ore_target, pp.ore_shipment_target, pp.ob_target, pp.quarry,
-        pwh.ewh, odch.total_tonnage, odch.total_vessel, hp.idle_duration, hp.bd_duration;`;
+       SELECT 
+        pp.plan_date,
+        pp.ore_target,
+        pp.ore_shipment_target,
+        pp.ob_target,
+        pp.quarry,
+        COALESCE(SUM(md.total_tonnage), 0) AS total_tonnage,
+        COALESCE(SUM(md.total_vessel), 0) AS total_vessel,
+        COALESCE(MAX(hp.idle_duration), 0) AS idle_duration,
+        COALESCE(MAX(hp.bd_duration), 0) AS bd_duration,
+        COALESCE(MAX(pwh.ewh), 0) AS ewh,
+        COALESCE(SUM(md.total_vessel) FILTER (WHERE md.material = 'ore'), 0) AS ore_vessel,
+        COALESCE(SUM(md.total_tonnage) FILTER (WHERE md.material = 'ore'), 0) AS ore_tonnage,
+        COALESCE(SUM(md.total_vessel) FILTER (WHERE md.material = 'quarry'), 0) AS quarry_vessel,
+        COALESCE(SUM(md.total_tonnage) FILTER (WHERE md.material = 'quarry'), 0) AS quarry_tonnage,
+        COALESCE(SUM(md.total_vessel) FILTER (WHERE md.material = 'ob'), 0) AS ob_vessel,
+        COALESCE(SUM(md.total_tonnage) FILTER (WHERE md.material = 'ob'), 0) AS ob_tonnage
+      FROM plan_production pp
+      LEFT JOIN material_data md ON md.activity_date::date = pp.plan_date
+      LEFT JOIN hauling_problem hp ON hp.activity_date::date = pp.plan_date
+      LEFT JOIN plan_working_hour pwh ON pwh.plan_date::date = pp.plan_date
+      GROUP BY
+        pp.plan_date, pp.ore_target, pp.ore_shipment_target, pp.ob_target, pp.quarry;
+
+        `;
 
       const result = await this.dataSource.query(query, [defaultSelectedDate]);
 
       const row = result[0] ?? {};
+      const ewh = row.ewh - (row.bd_duration + row.idle_duration);
       const productionData = {
         planDate: row.plan_date ?? null,
         oreTarget: row.ore_target ?? 0,
@@ -1898,31 +1945,34 @@ export class DashboardService {
         totalObTonnage: row.ob_tonnage ?? 0,
         bdDuration: row.bd_duration ?? 0,
         idleDuration: row.idle_duration ?? 0,
-        ewh: row.average_day_ewh ?? 0,
+        ewh: ewh ?? 0,
       };
 
       const tonnagePercentage =
         productionData.oreTarget > 0
-          ? (productionData.totalTonnage / productionData.oreTarget) * 100
+          ? (productionData.totalTonnage / (productionData.oreTarget / 2)) * 100
           : 0;
       const vesselPercentage =
         productionData.oreTarget > 0
-          ? (productionData.totalVessel / productionData.oreTarget) * 100
+          ? (productionData.totalVessel / (productionData.oreTarget / 35 / 2)) *
+            100
           : 0;
       const orePercentage =
         productionData.oreTarget > 0
-          ? (productionData.totalOreTonnage / productionData.oreTarget) * 100
+          ? (productionData.totalOreTonnage / (productionData.oreTarget / 2)) *
+            100
           : 0;
       const quarryPercentage =
         productionData.quarryTarget > 0
-          ? (productionData.totalQuarryTonnage / productionData.quarryTarget) *
+          ? (productionData.totalQuarryTonnage /
+              (productionData.quarryTarget / 2)) *
             100
           : 0;
       const obPercentage =
         productionData.obTarget > 0
-          ? (productionData.totalObTonnage / productionData.obTarget) * 100
+          ? (productionData.totalObTonnage / (productionData.obTarget / 2)) *
+            100
           : 0;
-
       return {
         statusCode: 200,
         message: 'success',
@@ -1943,11 +1993,11 @@ export class DashboardService {
               meta: {
                 actual: productionData?.totalTonnage || 0,
                 target:
-                  productionData.oreTarget ||
-                  0 + productionData.oreShipmentTarget ||
-                  0 + productionData.obTarget ||
-                  +productionData.quarryTarget ||
-                  0,
+                  (productionData.oreTarget ||
+                    0 + productionData.oreShipmentTarget ||
+                    0 + productionData.obTarget ||
+                    +productionData.quarryTarget ||
+                    0) / 2,
                 percent: tonnagePercentage,
               },
             },
@@ -1955,7 +2005,7 @@ export class DashboardService {
               title: 'Vessel',
               meta: {
                 actual: productionData.totalVessel,
-                target: productionData.oreTarget / 35,
+                target: productionData.oreTarget / 35 / 2,
                 percent: vesselPercentage,
               },
             },
@@ -1963,7 +2013,7 @@ export class DashboardService {
               title: 'Ore',
               meta: {
                 actual: productionData.totalOreTonnage,
-                target: productionData.oreTarget,
+                target: productionData.oreTarget / 2,
                 percent: orePercentage,
               },
             },
@@ -1971,7 +2021,7 @@ export class DashboardService {
               title: 'Quarry',
               meta: {
                 actual: productionData.totalQuarryTonnage,
-                target: productionData.quarryTarget,
+                target: productionData.quarryTarget / 2,
                 percent: quarryPercentage,
               },
             },
@@ -1979,7 +2029,7 @@ export class DashboardService {
               title: 'OB',
               meta: {
                 actual: productionData.totalObTonnage,
-                target: productionData.obTarget,
+                target: productionData.obTarget / 2,
                 percent: obPercentage,
               },
             },
@@ -2001,10 +2051,10 @@ export class DashboardService {
   async getMockFleetStatus(
     type?: string,
     selectedDate?: string,
-  ): Promise<ApiResponse<FleetStatusResponseDto>> {
+    shift?: string,
+  ): Promise<ApiResponse<FleetStatusItemDto[]>> {
     try {
       const condition = type ?? 'hauling';
-
       const date = selectedDate ?? new Date().toISOString().split('T')[0];
 
       let result;
@@ -2012,17 +2062,67 @@ export class DashboardService {
       const fleetStatusItem: FleetStatusItemDto[] = [];
 
       if (condition === 'hauling') {
-        result = await this.haulingRepo
+        const query = this.haulingRepo
           .createQueryBuilder('rch')
           .leftJoin(Population, 'mpl', 'mpl.id = rch.unit_loading_id')
           .leftJoin(OperationPoints, 'mopl', 'mopl.id = rch.loading_point_id')
           .leftJoin(OperationPoints, 'mopd', 'mopd.id = rch.dumpingPointOp')
           .select('rch.unit_loading_id', 'unit_loading_id')
-          .addSelect('MAX(rch.time)', 'end_time')
-          .addSelect('MIN(rch.time)', 'start_time')
-          .addSelect('mopl.name', 'loading_point')
-          .addSelect('mopd.name', 'dumping_point')
+          .addSelect('mpl.id', 'unit_id')
           .addSelect('mpl.no_unit', 'no_unit')
+          .addSelect((subQuery) => {
+            return subQuery
+              .select(`rch2.time + interval '7 hour'`, 'time')
+              .from('r_ccr_hauling', 'rch2')
+              .where('rch2.unit_loading_id = rch.unit_loading_id')
+              .orderBy('rch2.time', 'ASC')
+              .limit(1);
+          }, 'start_time')
+          .addSelect((subQuery) => {
+            return subQuery
+              .select('mopl2.name')
+              .from('r_ccr_hauling', 'rch2')
+              .leftJoin(
+                'm_operation_points',
+                'mopl2',
+                'mopl2.id = rch2.loading_point_id',
+              )
+              .where('rch2.unit_loading_id = rch.unit_loading_id')
+              .orderBy(`rch2.time + interval '7 hour'`, 'DESC')
+              .limit(1);
+          }, 'loading_point')
+          .addSelect((subQuery) => {
+            return subQuery
+              .select(`rch3.time + interval '7 hour'`, 'time')
+              .from('r_ccr_hauling', 'rch3')
+              .where('rch3.unit_loading_id = rch.unit_loading_id')
+              .orderBy('rch3.time', 'DESC')
+              .limit(1);
+          }, 'end_time')
+          .addSelect(
+            `CASE 
+                WHEN rch.dumping_point_barge_id IS NOT NULL THEN (
+                  SELECT mb.name
+                  FROM m_barge mb
+                  WHERE mb.id = rch.dumping_point_barge_id
+                    AND mb."deletedAt" IS NULL
+                  LIMIT 1
+                )
+                ELSE (
+                  SELECT mopd3.name
+                  FROM r_ccr_hauling rch3
+                  LEFT JOIN m_operation_points mopd3
+                    ON mopd3.id = rch3.dumping_point_op_id
+                    AND mopd3."deletedAt" IS NULL
+                  WHERE rch3.unit_loading_id = rch.unit_loading_id
+                    AND rch3."deletedAt" IS NULL
+                  ORDER BY rch3.id DESC
+                  LIMIT 1
+                )
+              END`,
+            'dumping_point',
+          )
+
           .addSelect(
             `COALESCE(SUM(CASE WHEN rch.material IN ('ore','ob','quarry') THEN rch.vessel ELSE 0 END),0)`,
             'total_vessel',
@@ -2041,18 +2141,28 @@ export class DashboardService {
             'quarry',
           )
           .where('DATE(rch.activity_date) = :date', { date })
-          .groupBy('rch.unit_loading_id')
-          .addGroupBy('mopl.name')
-          .addGroupBy('mopd.name')
+          .groupBy(
+            'rch.unit_loading_id,dumping_point_barge_id,dumping_point_op_id',
+          )
           .addGroupBy('mpl.no_unit')
-          .limit(3)
-          .getRawMany();
+          .addGroupBy('mpl.id')
+          .limit(3);
 
+        if (shift) {
+          query.andWhere('rch.shift = :shift', { shift });
+        }
+
+        result = await query.getRawMany();
         result.map((row) => {
           const fleetStatus = new FleetStatusItemDto();
+          fleetStatus.fleet_id = row.unit_id;
           fleetStatus.fleet = row.no_unit;
-          fleetStatus.start_loading = row.start_time; // bisa juga diubah ke tipe Date jika perlu
-          fleetStatus.finish_loading = row.end_time;
+          fleetStatus.start_loading = row.start_time
+            ? moment(row.start_time).format('HH:mm')
+            : '';
+          fleetStatus.finish_loading = row.end_time
+            ? moment(row.end_time).format('HH:mm')
+            : '';
           fleetStatus.loading_point = row.loading_point ?? null;
           fleetStatus.dumping_point = row.dumping_point ?? null;
           fleetStatus.total_vessel = Number(row.total_vessel ?? 0);
@@ -2060,13 +2170,10 @@ export class DashboardService {
           fleetStatus.ore = Number(row.ore ?? 0);
           fleetStatus.ob = Number(row.ob ?? 0);
           fleetStatus.quarry = Number(row.quarry ?? 0);
-
           fleetStatusItem.push(fleetStatus);
         });
-
-        console.log('Hauling', fleetStatusItem);
       } else {
-        result = await this.bargingRepo
+        const query = this.bargingRepo
           .createQueryBuilder('rcb')
           .leftJoin(Population, 'mpl', 'mpl.id = rcb.unit_hauler_id')
           .leftJoin(Barge, 'mb', 'mb.id = rcb.barge_id')
@@ -2078,31 +2185,39 @@ export class DashboardService {
           .addSelect('COALESCE(SUM(rcb.vessel), 0)', 'total_vessel')
           .addSelect('COALESCE(SUM(rcb.total_tonnage), 0)', 'total_tonnage')
           .where('DATE(rcb.activity_date) = :date', { date })
-          .groupBy('rcb.unit_hauler_id, mpl.no_unit, mb.name')
-          .limit(3)
-          .getRawMany();
+          .groupBy('rcb.unit_hauler_id, mpl.no_unit, mpl.id, mb.name')
+          .limit(3);
+
+        if (shift) {
+          query.andWhere('rcb.shift = :shift', { shift });
+        }
+
+        result = await query.getRawMany();
 
         result.map((row) => {
           const fleetStatus = new FleetStatusItemDto();
+          fleetStatus.fleet_id = row.unit_id;
           fleetStatus.fleet = row.no_unit;
-          fleetStatus.start_loading = row.start_time ?? ''; // bisa juga diubah ke tipe Date jika perlu
-          fleetStatus.finish_loading = row.end_time ?? '';
+          fleetStatus.start_loading = row.start_time
+            ? moment(row.start_time).format('HH:mm')
+            : '';
+          fleetStatus.finish_loading = row.end_time
+            ? moment(row.end_time).format('HH:mm')
+            : '';
           fleetStatus.barge_name = row.barge_name ?? '';
           fleetStatus.loading_point = row.loading_point ?? null;
           fleetStatus.dumping_point = row.dumping_point ?? null;
           fleetStatus.total_vessel = Number(row.total_vessel ?? 0);
           fleetStatus.total_tonnage = Number(row.total_tonnage ?? 0);
-
           fleetStatusItem.push(fleetStatus);
         });
-
-        console.log('Barging', fleetStatusItem);
       }
 
+      console.log(fleetStatusItem);
       responseData.data = fleetStatusItem;
-
-      return successResponse(responseData, 'success', 200);
+      return successResponse(responseData.data, 'success', 200);
     } catch (error) {
+      console.log(error, '<<Err');
       throw new BadRequestException(`Gagal mendapatkan data`);
     }
   }
@@ -2161,8 +2276,10 @@ export class DashboardService {
   ): Promise<ApiResponse<ChartTonnageVesselResult | []>> {
     try {
       const { date: selectedDate, type, shift, unit_id } = body;
-      const dateToFilter =
-        selectedDate || new Date().toISOString().split('T')[0];
+      const dateToFilter = selectedDate
+        ? moment(selectedDate).format('YYYY-MM-DD')
+        : moment().format('YYYY-MM-DD');
+
       const typeFilter: ActivityType =
         type || ('hauling' as ActivityType.HAULING);
       const shiftFilter = shift?.toLowerCase() || 'ns';
@@ -2173,18 +2290,15 @@ export class DashboardService {
 
       if (!unit_id.length) return successResponse([], 'success', 200);
 
-      // helper: tentukan unitColumn
       const unitColumn = this.getUnitColumn(typeFilter, mainAlias);
-
-      // helper: tentukan valueColumn + alias selalu `value`
       const valueColumn = this.getValueColumn(isTonnage, mainAlias);
 
       const qb = this.dataSource
         .createQueryBuilder()
         .select([
-          `${valueColumn} AS value`,
+          `COALESCE(${valueColumn}, 0) AS value`,
           `${mainAlias}.time AS time`,
-          'mp.no_unit AS unit',
+          `mp.no_unit AS unit`,
         ])
         .from(mainTable, mainAlias)
         .leftJoin('m_population', 'mp', `${unitColumn} = mp.id`)
@@ -2193,7 +2307,6 @@ export class DashboardService {
         })
         .andWhere(`${mainAlias}.shift = :shift`, { shift: shiftFilter })
         .andWhere(`${unitColumn} IN (:...unitIds)`, { unitIds: unit_id });
-
       const allRawData = await qb.getRawMany();
 
       // helper: build chart & meta
@@ -2262,8 +2375,16 @@ export class DashboardService {
         }, 't')
         .setParameter('dateParam', dateParam);
 
-      const tonnageRaw = await qb.getRawOne();
-      const vesselRaw = await qb2.getRawOne();
+      const tonnageRaw = (await qb.getRawOne()) || {
+        actual: 0,
+        target: 0,
+        percent: 0,
+      };
+      const vesselRaw = (await qb2.getRawOne()) || {
+        actual: 0,
+        target: 0,
+        percent: 0,
+      };
 
       const tonnage = {
         actual: Number(tonnageRaw.actual),
@@ -2277,14 +2398,6 @@ export class DashboardService {
         percent: Number(vesselRaw.percent),
       };
       const construct = [
-        {
-          title: 'Tonnage',
-          meta: {
-            actual: 4000,
-            target: 8000,
-            percent: 50,
-          },
-        },
         {
           title: 'Tonnage',
           meta: tonnage,
@@ -2305,10 +2418,13 @@ export class DashboardService {
     query: CcrActivitiesDto,
   ): Promise<ApiResponse<CcrActivitiesItemDto[]>> {
     try {
-      const { date: selectedDate, type } = query;
-      const dateToFilter =
-        selectedDate || new Date().toISOString().split('T')[0];
+      const { date: selectedDate, type, shift } = query;
+      const dateToFilter = selectedDate
+        ? moment(selectedDate).format('YYYY-MM-DD')
+        : moment().format('YYYY-MM-DD');
+
       const typeFilter = type || 'hauling';
+      const shiftFilter = shift.toLowerCase();
 
       const mainTable =
         typeFilter === ActivityType.BARGING
@@ -2316,13 +2432,15 @@ export class DashboardService {
           : 'r_ccr_hauling_problem';
       const mainAlias = 'cp';
 
-      const qb = this.dataSource
+      const allProblems = await this.dataSource
         .createQueryBuilder()
         .select([
           `${mainAlias}.activities_id`,
           `${mainAlias}.duration`,
           'a.name',
           'pwd.activities_hour',
+          'pwd.plant_working_hour_id',
+          'pwh.id AS pwh_id',
         ])
         .from(mainTable, mainAlias)
         .leftJoin(
@@ -2331,22 +2449,51 @@ export class DashboardService {
           `${mainAlias}.activities_id = a.id AND a.status IN (:...statuses)`,
           { statuses: ['breakdown', 'idle', 'delay'] },
         )
+        .leftJoin('r_plan_working_hour', 'pwh', 'DATE(pwh.plan_date) = :date', {
+          date: dateToFilter,
+        })
         .leftJoin(
           'r_plan_working_hour_detail',
           'pwd',
-          `${mainAlias}.activities_id = pwd.activities_id`,
+          `pwd.plant_working_hour_id = pwh.id AND pwd.activities_id = ${mainAlias}.activities_id`,
         )
-        .where(`DATE(${mainAlias}.activity_date) = :date`, {
-          date: dateToFilter,
-        });
+        .where(
+          `DATE(${mainAlias}.activity_date) = :date AND ${mainAlias}.shift = :shift`,
+          {
+            date: dateToFilter,
+            shift: shiftFilter,
+          },
+        )
+        .getRawMany();
+      console.log(allProblems, '<<<<alllproblem');
+      // Handle duplikasi: group berdasarkan activities_id
+      const grouped = new Map<string, CcrActivitiesItemDto>();
 
-      const allProblems = await qb.getRawMany();
+      allProblems.forEach((item) => {
+        // key unik per activity_id + date + shift
+        const key = `${item.activities_id}_${dateToFilter}_${shiftFilter}`;
 
-      const result: CcrActivitiesItemDto[] = allProblems?.map((item) => ({
-        label: item?.a_name || '',
-        target: item?.pwd_activities_hour || 0,
-        actual: item?.[`${mainAlias}_duration`] || 0,
-      }));
+        if (!grouped.has(key)) {
+          grouped.set(key, {
+            label: item.a_name || '',
+            target: item.pwd_activities_hour || 0,
+            actual: item[`${mainAlias}_duration`] || 0,
+          });
+        } else {
+          const existing = grouped.get(key)!;
+          // jika target ingin ambil max, actual dijumlahkan
+          existing.target = Math.max(
+            existing.target,
+            item.pwd_activities_hour || 0,
+          );
+          existing.actual += item[`${mainAlias}_duration`] || 0;
+        }
+      });
+      grouped.forEach((value) => {
+        value.target = value.target / 2;
+      });
+
+      const result: CcrActivitiesItemDto[] = Array.from(grouped.values());
 
       return successResponse<CcrActivitiesItemDto[]>(result, 'success', 200);
     } catch (error) {
@@ -2395,10 +2542,18 @@ export class DashboardService {
         },
       };
     } catch (error) {
-      console.error('Error in getLostTimeSummary:', error);
       throw new BadRequestException('Gagal mendapatkan data lost time summary');
     }
   }
+
+  private formatMinuteToHHmmss = (minutes: number): string => {
+    if (typeof minutes !== 'number' || isNaN(minutes) || minutes < 0) {
+      return '00:00:00';
+    }
+    const calculate = Math.round(minutes * 10) / 10;
+    const totalSeconds = calculate * 60;
+    return moment.utc(totalSeconds * 1000).format('HH:mm:ss');
+  };
 
   private async calculateMohhData(startDate: string, endDate: string) {
     try {
@@ -2431,7 +2586,7 @@ export class DashboardService {
       // Hitung EWH = SUM(r_base_data_pro.totalHM) all unit
       const ewhQuery = await this.dataSource.query(
         `
-        SELECT COALESCE(SUM(rbdp.totalHM), 0) as total_ewh
+        SELECT COALESCE(SUM(rbdp.total_hm), 0) as total_ewh
         FROM r_parent_base_data_pro rpbdp
         LEFT JOIN r_base_data_pro rbdp ON rbdp.parent_base_data_pro_id = rpbdp.id
         WHERE rpbdp.activity_date BETWEEN $1 AND $2
@@ -2446,6 +2601,7 @@ export class DashboardService {
         FROM r_loss_time 
         WHERE loss_type = 'BD' 
           AND date_activity BETWEEN $1 AND $2
+          AND "deletedAt" is null
       `,
         [startDate, endDate],
       );
@@ -2477,7 +2633,6 @@ export class DashboardService {
         },
       ];
     } catch (error) {
-      console.error('Error calculating MOHH data:', error);
       return [
         { name: 'STB', value: 0, color: '#34d399' },
         { name: 'BD', value: 0, color: '#d1d5db' },
@@ -2517,10 +2672,9 @@ export class DashboardService {
 
       const result = lostTimeQuery.map((item: any) => ({
         name: item.activity_name,
-        value: Math.round(parseFloat(item.total_duration) * 10) / 10,
+        value: Math.round(parseFloat(item.duration) * 10) / 10,
         color: activityColors[item.activity_name] || '#6b7280',
       }));
-
       // Pastikan semua aktivitas yang diharapkan ada dalam response
       const expectedActivities = [
         'Rain',
@@ -2562,7 +2716,10 @@ export class DashboardService {
       const targetDataQuery = await this.dataSource.query(
         `
         SELECT 
-          COALESCE(SUM(pwh.mohh_per_month), 0) as target_mohh,
+          (SELECT COALESCE(SUM(mohh_per_month), 0)
+          FROM r_plan_working_hour
+          WHERE plan_date BETWEEN $1 AND $2
+          ) as target_mohh,
           COALESCE(SUM(
             CASE 
               WHEN a.status = 'delay' THEN COALESCE(pwhd.activities_hour, 0)
@@ -2585,7 +2742,7 @@ export class DashboardService {
         LEFT JOIN r_plan_working_hour pwh ON pwh.parent_plan_working_hour_id = ppwh.id
         LEFT JOIN r_plan_working_hour_detail pwhd ON pwhd.plant_working_hour_id = pwh.id
         LEFT JOIN m_activities a ON a.id = pwhd.activities_id
-        WHERE ppwh.plan_date BETWEEN $1 AND $2
+        WHERE pwh.plan_date BETWEEN $1 AND $2
       `,
         [startDate, endDate],
       );
@@ -2599,17 +2756,12 @@ export class DashboardService {
       const actualDataQuery = await this.dataSource.query(
         `
         SELECT 
-          COALESCE(SUM(rbdp.totalHM), 0) as total_ewh,
+          COALESCE(SUM(rbdp.total_hm), 0) as total_ewh,
           COALESCE(SUM(lt.duration), 0) as total_breakdown,
-          COALESCE(SUM(
-            CASE 
-              WHEN rpbdp.activity_date BETWEEN $1 AND $2 
-                AND rpbdp.start_shift IS NOT NULL 
-                AND rpbdp.end_shift IS NOT NULL
-              THEN EXTRACT(EPOCH FROM (rpbdp.end_shift - rpbdp.start_shift)) / 3600
-              ELSE 0 
-            END
-          ), 0) as total_mohh
+          COALESCE(
+            (((DATE '2026-01-01' - DATE '2026-01-01') + 1) * 24) * COUNT(*),
+            0
+          ) AS total_mohh
         FROM r_parent_base_data_pro rpbdp
         LEFT JOIN r_base_data_pro rbdp ON rbdp.parent_base_data_pro_id = rpbdp.id
         LEFT JOIN r_loss_time lt ON lt.population_id = rpbdp.population_id 
@@ -2700,8 +2852,8 @@ export class DashboardService {
           title: 'PA',
           data: [
             {
-              target: Math.round(paTarget * 100) / 100,
-              actual: Math.round(paActual * 100) / 100,
+              target: Math.round(paTarget * 100),
+              actual: Math.round(paActual * 100),
               percent: Math.round(paPercent * 100) / 100,
             },
           ],
@@ -2710,8 +2862,8 @@ export class DashboardService {
           title: 'MA',
           data: [
             {
-              target: Math.round(maTarget * 100) / 100,
-              actual: Math.round(maActual * 100) / 100,
+              target: Math.round(maTarget * 100),
+              actual: Math.round(maActual * 100),
               percent: Math.round(maPercent * 100) / 100,
             },
           ],
@@ -2720,8 +2872,8 @@ export class DashboardService {
           title: 'UA',
           data: [
             {
-              target: Math.round(uaTarget * 100) / 100,
-              actual: Math.round(uaActual * 100) / 100,
+              target: Math.round(uaTarget * 100),
+              actual: Math.round(uaActual * 100),
               percent: Math.round(uaPercent * 100) / 100,
             },
           ],
@@ -2730,15 +2882,14 @@ export class DashboardService {
           title: 'EU',
           data: [
             {
-              target: Math.round(euTarget * 100) / 100,
-              actual: Math.round(euActual * 100) / 100,
+              target: Math.round(euTarget * 100),
+              actual: Math.round(euActual * 100),
               percent: Math.round(euPercent * 100) / 100,
             },
           ],
         },
       ];
     } catch (error) {
-      console.error('Error calculating tables data:', error);
       return [
         { title: 'PA', data: [{ target: 0, actual: 0, percent: 0 }] },
         { title: 'MA', data: [{ target: 0, actual: 0, percent: 0 }] },
@@ -2782,6 +2933,46 @@ export class DashboardService {
     } catch (error) {
       console.error('Error getting barge data:', error);
       return [];
+    }
+  }
+  async getBargeDataList(startDate?: string, endDate?: string) {
+    try {
+      const baseQb = this.dataSource
+        .getRepository(BargeForm)
+        .createQueryBuilder('rib');
+
+      if (startDate && endDate) {
+        baseQb.where(
+          'DATE(rib.start_loading) BETWEEN :startDate AND :endDate',
+          {
+            startDate,
+            endDate,
+          },
+        );
+      } else if (startDate) {
+        baseQb.where('DATE(rib.start_loading) >= :startDate', { startDate });
+      } else if (endDate) {
+        baseQb.where('DATE(rib.start_loading) <= :endDate', { endDate });
+      }
+
+      const result = await baseQb
+        .clone()
+        .select([
+          'rib.id',
+          'rib.start_loading',
+          'rib.barge_id',
+          'rib.total_vessel',
+          'rib.status',
+        ])
+        .orderBy('rib.start_loading', 'ASC')
+        .getMany();
+
+      const total = await baseQb.clone().getCount();
+
+      return { result, total };
+    } catch (error) {
+      console.error(error);
+      return { result: [], total: 0 };
     }
   }
 
@@ -2957,22 +3148,23 @@ export class DashboardService {
       // Get EWHplan from r_plan_working_hours
       const ewhPlanQuery = await this.dataSource.query(
         `
-        SELECT COALESCE(SUM(
-          pwh.mohh_per_month - COALESCE(SUM(
-            CASE 
-              WHEN a.status = 'delay' THEN pwhd.activities_hour
-              WHEN a.status = 'idle' THEN pwhd.activities_hour
-              WHEN a.status = 'breakdown' THEN pwhd.activities_hour
-              ELSE 0
-            END
-          ), 0)
-        ), 0) as ewh_plan
+        SELECT COALESCE(SUM(pwh.mohh_per_month - sub.total_hour), 0) AS ewh_plan
         FROM r_parent_plan_working_hour ppwh
-        LEFT JOIN r_plan_working_hour pwh ON pwh.parent_plan_working_hour_id = ppwh.id
-        LEFT JOIN r_plan_working_hour_detail pwhd ON pwhd.plant_working_hour_id = pwh.id
-        LEFT JOIN m_activities a ON a.id = pwhd.activities_id
-        WHERE ppwh.plan_date BETWEEN $1 AND $2
-        GROUP BY pwh.mohh_per_month
+        LEFT JOIN r_plan_working_hour pwh 
+            ON pwh.parent_plan_working_hour_id = ppwh.id
+        LEFT JOIN (
+            SELECT pwhd.plant_working_hour_id,
+                  SUM(
+                    CASE 
+                      WHEN a.status IN ('delay','idle','breakdown') THEN pwhd.activities_hour
+                      ELSE 0
+                    END
+                  ) AS total_hour
+            FROM r_plan_working_hour_detail pwhd
+            LEFT JOIN m_activities a ON a.id = pwhd.activities_id
+            GROUP BY pwhd.plant_working_hour_id
+        ) sub ON sub.plant_working_hour_id = pwh.id
+        WHERE ppwh.plan_date BETWEEN $1 AND $2;
       `,
         [startDate, endDate],
       );
@@ -2982,12 +3174,12 @@ export class DashboardService {
       // Get EWHactual from Control Day Production
       const ewhActualQuery = await this.dataSource.query(
         `
-        SELECT COALESCE(AVG(rbdp.totalHM), 0) as ewh_actual
+        SELECT COALESCE(AVG(rbdp.total_hm), 0) as ewh_actual
         FROM r_parent_base_data_pro rpbdp
         JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
         WHERE rpbdp.activity_date BETWEEN $1 AND $2
-          AND rbdp.totalHM > 0
-          AND rbdp.deletedAt IS NULL
+          AND rbdp.total_hm > 0
+          AND rbdp."deletedAt" IS NULL
       `,
         [startDate, endDate],
       );
@@ -3037,12 +3229,12 @@ export class DashboardService {
         `
         SELECT COALESCE(AVG(unit_ewh.total_ewh), 0) as pa_actual
         FROM (
-          SELECT SUM(rbdp.totalHM) as total_ewh
+          SELECT SUM(rbdp.total_hm) as total_ewh
           FROM r_parent_base_data_pro rpbdp
           JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
           WHERE rpbdp.activity_date BETWEEN $1 AND $2
-            AND rbdp.totalHM > 0
-            AND rbdp.deletedAt IS NULL
+            AND rbdp.total_hm > 0
+            AND rbdp."deletedAt" IS NULL
           GROUP BY rpbdp.population_id
         ) as unit_ewh
       `,

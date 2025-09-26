@@ -33,8 +33,18 @@ export class HaulingListService {
 
   async create(createHaulingListDto: CreateHaulingListDto): Promise<any> {
     try {
-      // Hitung total tonnage (vessel * 35)
-      const totalTonnage = createHaulingListDto.vessel * 35;
+      let totalTonnage: number;
+      switch (createHaulingListDto.material) {
+        case 'ob':
+          totalTonnage = (createHaulingListDto.vessel * 35) / 1.6;
+          break;
+        case 'quarry':
+          totalTonnage = createHaulingListDto.vessel * 18.26;
+          break;
+        default:
+          totalTonnage = createHaulingListDto.vessel * 35;
+          break;
+      }
 
       // Mapping DTO ke entity dengan field yang benar
       const haulingList = this.haulingListRepository.create({

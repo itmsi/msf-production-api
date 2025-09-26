@@ -14,6 +14,7 @@ import {
   UploadedFile,
   UseInterceptors,
   Req,
+  StreamableFile,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -34,12 +35,15 @@ import {
   CreateEffectiveWorkingHoursDto,
   UpdateEffectiveWorkingHoursDto,
   QueryEffectiveWorkingHoursDto,
+  QueryExportEffectiveWorkingHoursDto,
 } from './dto/effective-working-hours.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { successResponse } from '../../common/helpers/response.helper';
-import { Response } from 'express';
+import { createReadStream } from 'fs';
+import { join } from 'path';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileUploadDto } from '../population';
+import { Response } from 'express';
 
 @ApiTags('Effective Working Hours')
 @ApiBearerAuth('jwt')
@@ -50,31 +54,28 @@ export class EffectiveWorkingHoursController {
     private readonly effectiveWorkingHoursService: EffectiveWorkingHoursService,
   ) {}
 
-  @UseGuards(JwtAuthGuard)
   @Get('import/template')
   @ApiOperation({
-    summary: 'Download template CSV untuk import population',
+    summary: 'Download template CSV untuk import EWH',
     description:
       'Mendownload template CSV yang berisi format kolom yang diperlukan',
   })
-  downloadTemplate(@Res() res: Response) {
+  downloadTemplate(): StreamableFile {
     try {
-      const buffer = this.effectiveWorkingHoursService.downloadTemplate();
-
-      res.set({
-        'Content-Type': 'text/csv',
-        'Content-Disposition':
-          'attachment; filename="template-population-import.csv"',
-        'Content-Length': buffer.length,
+      const file = join(
+        process.cwd(),
+        'src/modules/effective-working-hours/template-ewh-import.csv',
+      );
+      const stream = createReadStream(file);
+      return new StreamableFile(stream, {
+        type: 'text/csv',
+        disposition: 'attachment; filename="template-ewh-import.csv"',
       });
-
-      res.end(buffer);
     } catch (error) {
-      throw new InternalServerErrorException('Gagal download template CSV');
+      throw new InternalServerErrorException('Failed to download CSV template');
     }
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('import')
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
@@ -83,13 +84,24 @@ export class EffectiveWorkingHoursController {
     type: FileUploadDto,
   })
   @ApiOperation({
-    summary: 'Import data population dari CSV',
-    description:
-      'Mengimport data population dari CSV ke database setelah validasi',
+    summary: 'Import data EWH dari CSV',
+    description: 'Mengimport data EWH dari CSV ke database setelah validasi',
   })
   importData(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
     const userId = req.user?.id;
     return this.effectiveWorkingHoursService.importData(file, userId);
+  }
+
+  @Get('export')
+  @ApiOperation({
+    summary: 'Export data EWH dari CSV',
+    description: 'Mengimport data EWH dari CSV ke database setelah validasi',
+  })
+  async exportData(
+    @Query() query: QueryExportEffectiveWorkingHoursDto,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    return await this.effectiveWorkingHoursService.exportData(query, res);
   }
 
   @Post()

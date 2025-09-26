@@ -1,3 +1,8 @@
+import { Response } from 'express';
+import { Readable } from 'stream';
+import csv from 'csv-parser';
+import { Buffer } from 'buffer';
+
 export interface Pagination {
   total: number;
   page: number;
@@ -94,6 +99,83 @@ export function calculateTimeRange(
   return `${currentHour}-${nextHourStr}`;
 }
 
+export class CsvHelper {
+  static async parseCsvFile(buffer: Buffer): Promise<any[]> {
+    const rows: any[] = [];
+    return new Promise((resolve, reject) => {
+      Readable.from(buffer)
+        .pipe(csv())
+        .on('data', (row) => rows.push(row))
+        .on('end', () => resolve(rows))
+        .on('error', (err) => reject(err));
+    });
+  }
+
+  static generateErrorCsv(errorRows: any[]): Buffer {
+    if (errorRows.length === 0) {
+      return Buffer.from('No errors found', 'utf-8');
+    }
+
+    const headers = Object.keys(errorRows[0]);
+    const csvContent = [
+      headers.join(','), // header line
+      ...errorRows.map((row) =>
+        headers.map((h) => JSON.stringify(row[h] ?? '')).join(','),
+      ),
+    ].join('\n');
+
+    return Buffer.from(csvContent, 'utf-8');
+  }
+}
+export class PublicHelper {
+  /**
+   * Generate CSV stream dari baris error
+   */
+  static generateErrorCsvStream(errorRows: any[]): Readable {
+    const headers = ['row', 'error', 'data'];
+    const csvLines: string[] = [];
+
+    // Header
+    csvLines.push(headers.join(','));
+
+    // Isi
+    errorRows.forEach((err) => {
+      const row = [
+        err.row ?? '',
+        `"${(err.message ?? '').replace(/"/g, '""')}"`,
+        `"${JSON.stringify(err.data ?? {}).replace(/"/g, '""')}"`,
+      ];
+      csvLines.push(row.join(','));
+    });
+
+    // Gabungkan jadi satu string
+    const csvContent = csvLines.join('\n');
+
+    // Jadikan stream biar bisa langsung return
+    const stream = new Readable();
+    stream.push(csvContent);
+    stream.push(null);
+
+    return stream;
+  }
+}
+
 export function normalizeString(value: string): string {
   return value?.toLowerCase().trim().replace(/\s+/g, ' '); // ubah spasi berlebih jadi 1 spasi
+}
+
+export function setCsvExportHeaders(res: Response, filename: string) {
+  // Tentukan tipe file sebagai CSV
+  res.setHeader('Content-Type', 'text/csv');
+
+  // Set agar browser mendownload file, bukan ditampilkan inline
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+  // Nonaktifkan caching untuk memastikan data selalu terbaru
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
+  // Security: cegah browser men-"sniff" MIME type
+  res.setHeader('X-Content-Type-Options', 'nosniff');
 }

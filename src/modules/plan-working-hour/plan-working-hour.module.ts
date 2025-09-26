@@ -11,6 +11,7 @@ import { PlanWorkingHour } from './entities/plan-working-hour.entity';
 import { PlanWorkingHourDetail } from './entities/plan-working-hour-detail.entity';
 import { Activities } from '../activities/entities/activities.entity';
 import { ActivitiesModule } from '../activities/activities.module';
+import { S3Module } from 'src/integrations/s3/s3.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ActivitiesModule } from '../activities/activities.module';
       Activities,
     ]),
     ActivitiesModule,
+    S3Module,
   ],
   controllers: [
     PlanWorkingHourController,

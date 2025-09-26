@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsString, IsDateString, IsNumber, IsOptional, ValidateIf } from 'class-validator';
+import {
+  IsInt,
+  IsString,
+  IsDateString,
+  IsNumber,
+  IsOptional,
+  ValidateIf,
+  Min,
+} from 'class-validator';
 
 export class CreateBargeFormDto {
   @ApiProperty({
@@ -41,21 +49,27 @@ export class CreateBargeFormDto {
   end_loading?: string | null;
 
   @ApiProperty({
-    description: 'Total Vessel',
+    description: 'Total Vessel (must be > 0 if end_loading is provided)',
     example: 100.5,
     required: false,
   })
-  @IsOptional()
-  @IsNumber()
+  @ValidateIf((o) => !!o.end_loading) // validasi hanya kalau end_loading ada
+  @IsNumber({}, { message: 'Total Vessel must be a number' })
+  @Min(1, {
+    message: 'Total Vessel is required when Finish Date is provided',
+  })
   total_vessel?: number;
 
   @ApiProperty({
-    description: 'Volume by Survey',
+    description: 'Volume by Survey (must be > 0 if end_loading is provided)',
     example: 95.2,
     required: false,
   })
-  @IsOptional()
-  @IsNumber()
+  @ValidateIf((o) => !!o.end_loading)
+  @IsNumber({}, { message: 'Vol by Survey must be a number' })
+  @Min(1, {
+    message: 'Vol by Survey is required when Finish Date is provided',
+  })
   vol_by_survey?: number;
 
   @ApiProperty({

@@ -11,6 +11,12 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  StreamableFile,
+  InternalServerErrorException,
+  UseInterceptors,
+  UploadedFile,
+  Req,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,6 +26,8 @@ import {
   ApiQuery,
   ApiBearerAuth,
   ApiExtraModels,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { FuelConsumptionService } from './fuel-consumption.service';
@@ -29,6 +37,12 @@ import {
   FuelConsumptionResponseDto,
   QueryFuelConsumptionDto,
 } from './dto';
+import { createReadStream } from 'fs';
+import { join } from 'path';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { FileUploadDto } from '../population';
+import { Response } from 'express';
+import { SkipLogging } from 'src/common';
 
 @ApiTags('Fuel Consumption')
 @ApiBearerAuth('jwt')
@@ -36,13 +50,29 @@ import {
 @UseGuards(JwtAuthGuard)
 @ApiExtraModels(FuelConsumptionResponseDto)
 export class FuelConsumptionController {
-  constructor(private readonly fuelConsumptionService: FuelConsumptionService) {}
+  constructor(
+    private readonly fuelConsumptionService: FuelConsumptionService,
+  ) {}
+
+  @Get('export')
+  @ApiOperation({
+    summary: 'Export data Fuel consumption dari CSV',
+    description:
+      'Mengimport data Fuel consumption dari CSV ke database setelah validasi',
+  })
+  async exportData(
+    @Query() query: QueryFuelConsumptionDto,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    return await this.fuelConsumptionService.exportData(query, res);
+  }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Membuat data fuel consumption baru',
-    description: 'Membuat data fuel consumption baru dengan perhitungan otomatis untuk running_refueling_hm, running_refueling_km, l_per_km, l_per_hm, dan lead_time_refueling_time',
+    description:
+      'Membuat data fuel consumption baru dengan perhitungan otomatis untuk running_refueling_hm, running_refueling_km, l_per_km, l_per_hm, dan lead_time_refueling_time',
   })
   @ApiResponse({
     status: 201,
@@ -51,7 +81,10 @@ export class FuelConsumptionController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 201 },
-        message: { type: 'string', example: 'Fuel consumption created successfully' },
+        message: {
+          type: 'string',
+          example: 'Fuel consumption created successfully',
+        },
         data: { $ref: '#/components/schemas/FuelConsumptionResponseDto' },
       },
     },
@@ -83,24 +116,28 @@ export class FuelConsumptionController {
   @Get()
   @ApiOperation({
     summary: 'Mendapatkan semua data fuel consumption',
-    description: 'Mengambil semua data fuel consumption dengan filter opsional berdasarkan rentang tanggal dan pencarian keyword. Mendukung pagination dan sorting berdasarkan tanggal pembuatan.',
+    description:
+      'Mengambil semua data fuel consumption dengan filter opsional berdasarkan rentang tanggal dan pencarian keyword. Mendukung pagination dan sorting berdasarkan tanggal pembuatan.',
   })
   @ApiQuery({
     name: 'start_date',
     required: false,
-    description: 'Tanggal mulai untuk filter rentang tanggal (activity_date) - format YYYY-MM-DD',
+    description:
+      'Tanggal mulai untuk filter rentang tanggal (activity_date) - format YYYY-MM-DD',
     example: '2024-01-01',
   })
   @ApiQuery({
     name: 'end_date',
     required: false,
-    description: 'Tanggal akhir untuk filter rentang tanggal (activity_date) - format YYYY-MM-DD',
+    description:
+      'Tanggal akhir untuk filter rentang tanggal (activity_date) - format YYYY-MM-DD',
     example: '2024-01-31',
   })
   @ApiQuery({
     name: 'keyword',
     required: false,
-    description: 'Kata kunci pencarian untuk semua kolom (part_name, no_unit, site_name, unit_type, serial_number, operator_name)',
+    description:
+      'Kata kunci pencarian untuk semua kolom (part_name, no_unit, site_name, unit_type, serial_number, operator_name)',
     example: 'alpha',
   })
   @ApiQuery({
@@ -122,7 +159,10 @@ export class FuelConsumptionController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 200 },
-        message: { type: 'string', example: 'Fuel consumption data retrieved successfully' },
+        message: {
+          type: 'string',
+          example: 'Fuel consumption data retrieved successfully',
+        },
         data: {
           type: 'array',
           items: { $ref: '#/components/schemas/FuelConsumptionResponseDto' },
@@ -161,7 +201,8 @@ export class FuelConsumptionController {
   @Get(':id')
   @ApiOperation({
     summary: 'Mendapatkan data fuel consumption berdasarkan ID',
-    description: 'Mengambil data fuel consumption spesifik berdasarkan ID dengan relasi unit, operator, site, dan unit_type',
+    description:
+      'Mengambil data fuel consumption spesifik berdasarkan ID dengan relasi unit, operator, site, dan unit_type',
   })
   @ApiParam({
     name: 'id',
@@ -176,7 +217,10 @@ export class FuelConsumptionController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 200 },
-        message: { type: 'string', example: 'Fuel consumption retrieved successfully' },
+        message: {
+          type: 'string',
+          example: 'Fuel consumption retrieved successfully',
+        },
         data: { $ref: '#/components/schemas/FuelConsumptionResponseDto' },
       },
     },
@@ -208,7 +252,8 @@ export class FuelConsumptionController {
   @Patch(':id')
   @ApiOperation({
     summary: 'Memperbarui data fuel consumption',
-    description: 'Memperbarui data fuel consumption yang sudah ada dengan perhitungan ulang otomatis untuk running_refueling_hm, running_refueling_km, l_per_km, l_per_hm, dan lead_time_refueling_time',
+    description:
+      'Memperbarui data fuel consumption yang sudah ada dengan perhitungan ulang otomatis untuk running_refueling_hm, running_refueling_km, l_per_km, l_per_hm, dan lead_time_refueling_time',
   })
   @ApiParam({
     name: 'id',
@@ -223,7 +268,10 @@ export class FuelConsumptionController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 200 },
-        message: { type: 'string', example: 'Fuel consumption updated successfully' },
+        message: {
+          type: 'string',
+          example: 'Fuel consumption updated successfully',
+        },
         data: { $ref: '#/components/schemas/FuelConsumptionResponseDto' },
       },
     },
@@ -263,7 +311,8 @@ export class FuelConsumptionController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Menghapus data fuel consumption',
-    description: 'Soft delete data fuel consumption berdasarkan ID. Data tidak benar-benar dihapus dari database.',
+    description:
+      'Soft delete data fuel consumption berdasarkan ID. Data tidak benar-benar dihapus dari database.',
   })
   @ApiParam({
     name: 'id',
@@ -278,7 +327,10 @@ export class FuelConsumptionController {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 200 },
-        message: { type: 'string', example: 'Fuel consumption deleted successfully' },
+        message: {
+          type: 'string',
+          example: 'Fuel consumption deleted successfully',
+        },
         data: { type: 'null' },
       },
     },
@@ -297,5 +349,47 @@ export class FuelConsumptionController {
   })
   async remove(@Param('id', ParseIntPipe) id: number) {
     return this.fuelConsumptionService.remove(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('import/template')
+  @ApiOperation({
+    summary: 'Download template CSV untuk import Fuel Consumption Data',
+    description:
+      'Mendownload template CSV yang berisi format kolom yang diperlukan',
+  })
+  downloadTemplate(): StreamableFile {
+    try {
+      const file = join(
+        process.cwd(),
+        'src/modules/fuel-consumption/template-fuel-consumption-import.csv',
+      );
+      const stream = createReadStream(file);
+      return new StreamableFile(stream, {
+        type: 'text/csv',
+        disposition:
+          'attachment; filename="template-fuel-consumption-import.csv"',
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to download CSV template');
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'File CSV yang akan diimport',
+    type: FileUploadDto,
+  })
+  @ApiOperation({
+    summary: 'Import data fuel consumption dari CSV',
+    description:
+      'Mengimport data fuel consumption dari CSV ke database setelah validasi',
+  })
+  importData(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    const userId = req.user?.id;
+    return this.fuelConsumptionService.importData(file, userId);
   }
 }

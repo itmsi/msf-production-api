@@ -11,6 +11,12 @@ import {
   HttpStatus,
   UseGuards,
   UseInterceptors,
+  UploadedFile,
+  Req,
+  Res,
+  InternalServerErrorException,
+  StreamableFile,
+  ClassSerializerInterceptor,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -21,6 +27,7 @@ import {
   ApiBody,
   ApiExtraModels,
   ApiBearerAuth,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { ParentPlanProductionService } from './parent-plan-production.service';
 import { CreateParentPlanProductionDto } from './dto/create-parent-plan-production.dto';
@@ -29,11 +36,20 @@ import {
   ParentPlanProductionSummaryResponseDto,
   UpdateParentPlanProductionDto,
   GetRemainingStockQueryDto,
+  ExportParentPlanProductionQueryDto,
 } from './dto/parent-plan-production.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
-import { NumberFormatInterceptor } from '../../common/interceptors/number-format.interceptor';
+import {
+  NumberFormatInterceptor,
+  SkipLogging,
+} from '../../common/interceptors/number-format.interceptor';
 import { Pagination } from '../../common/helpers/public.helper';
 import { successResponse } from '../../common/helpers/response.helper';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { FileUploadDto } from '../population';
+import { createReadStream, existsSync } from 'fs';
+import { join } from 'path';
+import { Response } from 'express';
 
 @ApiTags('Parent Plan Production')
 @ApiBearerAuth('jwt')
@@ -45,6 +61,19 @@ export class ParentPlanProductionController {
   constructor(
     private readonly parentPlanProductionService: ParentPlanProductionService,
   ) {}
+
+  @Get('export')
+  @ApiOperation({
+    summary: 'Export data Barge Form dari CSV',
+    description:
+      'Mengimport data Barge Form dari CSV ke database setelah validasi',
+  })
+  async exportData(
+    @Query() query: ExportParentPlanProductionQueryDto,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    return await this.parentPlanProductionService.exportData(query, res);
+  }
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -290,7 +319,10 @@ export class ParentPlanProductionController {
     @Param('id') id: string,
     @Body() updateDto: UpdateParentPlanProductionDto,
   ) {
-    const result = await this.parentPlanProductionService.update(+id, updateDto);
+    const result = await this.parentPlanProductionService.update(
+      +id,
+      updateDto,
+    );
     return successResponse(
       result,
       'Parent plan production berhasil diupdate dan data harian berhasil di-regenerate',
@@ -496,7 +528,8 @@ export class ParentPlanProductionController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Remaining stock berhasil ditemukan atau menggunakan default value 0',
+    description:
+      'Remaining stock berhasil ditemukan atau menggunakan default value 0',
     schema: {
       example: {
         data: {
@@ -520,7 +553,8 @@ export class ParentPlanProductionController {
           plan_date: null,
           search_date: '2025-11-30',
           input_date: '2025-12-06',
-          message: 'Data remaining stock tidak ditemukan untuk tanggal 2025-11-30 (tanggal terakhir bulan sebelumnya), menggunakan default value 0',
+          message:
+            'Data remaining stock tidak ditemukan untuk tanggal 2025-11-30 (tanggal terakhir bulan sebelumnya), menggunakan default value 0',
         },
         message: 'Remaining stock berhasil ditemukan',
         statusCode: 200,
@@ -550,12 +584,11 @@ export class ParentPlanProductionController {
     },
   })
   async getRemainingStock(@Query() query: GetRemainingStockQueryDto) {
-    const result = await this.parentPlanProductionService.getRemainingStockFromPreviousMonth(query.plan_date);
-    return successResponse(
-      result,
-      'Remaining stock berhasil ditemukan',
-      200,
-    );
+    const result =
+      await this.parentPlanProductionService.getRemainingStockFromPreviousMonth(
+        query.plan_date,
+      );
+    return successResponse(result, 'Remaining stock berhasil ditemukan', 200);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -729,5 +762,49 @@ export class ParentPlanProductionController {
       'Parent plan production berhasil ditemukan berdasarkan tanggal',
       200,
     );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'File CSV yang akan diimport',
+    type: FileUploadDto,
+  })
+  @ApiOperation({
+    summary:
+      'Import data monthly production plan for generate daily csv dari CSV',
+    description:
+      'Mengimport data population dari CSV ke database setelah validasi',
+  })
+  importData(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    const userId = req.user?.id;
+    return this.parentPlanProductionService.importData(file, userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('import/template')
+  @SkipLogging()
+  @ApiOperation({
+    summary: 'Download template CSV untuk import population',
+    description:
+      'Mendownload template CSV yang berisi format kolom yang diperlukan',
+  })
+  downloadTemplate(): StreamableFile {
+    try {
+      const file = join(
+        process.cwd(),
+        'src/modules/parent-plan-production/template-monthly-plan-production-import.csv',
+      );
+      const stream = createReadStream(file);
+      return new StreamableFile(stream, {
+        type: 'text/csv',
+        disposition:
+          'attachment; filename="template-monthly-plan-production-import.csv"',
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to download CSV template');
+    }
   }
 }

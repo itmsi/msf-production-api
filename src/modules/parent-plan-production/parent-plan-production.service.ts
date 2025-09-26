@@ -2,25 +2,46 @@ import {
   Injectable,
   BadRequestException,
   ConflictException,
+  InternalServerErrorException,
+  HttpException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder, Not } from 'typeorm';
+import { Repository, SelectQueryBuilder, Not, DataSource } from 'typeorm';
 import { ParentPlanProduction } from './entities/parent-plan-production.entity';
 import { PlanProduction } from '../plan-production/entities/plan-production.entity';
 import { CreateParentPlanProductionDto } from './dto/create-parent-plan-production.dto';
 import {
+  ExportParentPlanProductionQueryDto,
   GetParentPlanProductionQueryDto,
   UpdateParentPlanProductionDto,
 } from './dto/parent-plan-production.dto';
-import { paginateResponse } from '../../common/helpers/public.helper';
+import {
+  paginateResponse,
+  setCsvExportHeaders,
+} from '../../common/helpers/public.helper';
+import { ApiResponse, successResponse } from 'src/common';
+import {
+  ImportParentPlanProductionRow,
+  ImportParentPlanProductionItemDto,
+} from './dto/import-parent-plan-production.dto';
+import { Readable } from 'stream';
+import csv from 'csv-parser';
+import { S3Service } from '../../integrations/s3/s3.service';
+import { format } from '@fast-csv/format';
+import { Response } from 'express';
+import moment from 'moment';
 
 @Injectable()
 export class ParentPlanProductionService {
+  private readonly logger = new Logger(ParentPlanProductionService.name);
   constructor(
     @InjectRepository(ParentPlanProduction)
     private parentPlanProductionRepository: Repository<ParentPlanProduction>,
     @InjectRepository(PlanProduction)
     private planProductionRepository: Repository<PlanProduction>,
+    private s3Service: S3Service,
+    private dataSource: DataSource,
   ) {}
 
   /**
@@ -282,12 +303,7 @@ export class ParentPlanProductionService {
       if (month !== null && month !== undefined && (month < 1 || month > 12)) {
         throw new BadRequestException('Bulan harus antara 1-12');
       }
-
-      const qb: SelectQueryBuilder<ParentPlanProduction> =
-        this.parentPlanProductionRepository
-          .createQueryBuilder('parent')
-          .leftJoinAndSelect('parent.planProductions', 'planProductions');
-
+      const qb = this.findAllQueryBuilder();
       // Filter by month (1-12) - akan filter data sesuai bulan tersebut walaupun tahunnya beda
       if (month) {
         qb.andWhere('EXTRACT(MONTH FROM parent.plan_date) = :month', { month });
@@ -800,5 +816,485 @@ export class ParentPlanProductionService {
       search_date: formattedDate,
       input_date: planDate,
     };
+  }
+
+  async importData(
+    file: Express.Multer.File,
+    userId?: number | null,
+  ): Promise<ApiResponse<any>> {
+    try {
+      if (!file) {
+        throw new BadRequestException('File tidak ditemukan');
+      }
+
+      if (
+        !file.mimetype.includes('csv') &&
+        !file.originalname.endsWith('.csv')
+      ) {
+        throw new BadRequestException('File harus berupa CSV');
+      }
+
+      const csvData = await this.parseCsvFile(file.buffer);
+      const importResults: ImportParentPlanProductionItemDto[] = [];
+      let successCount = 0;
+      let failedCount = 0;
+      const errorRows: any[] = [];
+      const successRows: any[] = [];
+
+      // Validasi semua data terlebih dahulu
+      for (let i = 0; i < csvData.length; i++) {
+        const row = csvData[i];
+        const rowNumber = i + 1;
+
+        try {
+          const validation = this.validateCsvRow(row);
+
+          if (validation.isValid) {
+            successRows.push({ row: rowNumber, data: row });
+            importResults.push({
+              status: 'success',
+              message: 'Data valid',
+              row: rowNumber,
+              data: row,
+            });
+          } else {
+            failedCount++;
+            errorRows.push({
+              row: rowNumber,
+              data: row,
+              errors: validation.errors,
+            });
+            importResults.push({
+              status: 'error',
+              message: validation.message,
+              row: rowNumber,
+              data: row,
+            });
+          }
+        } catch (error) {
+          failedCount++;
+          errorRows.push({
+            row: rowNumber,
+            data: row,
+            errors: [
+              {
+                field: 'general',
+                message: error.message || 'Gagal validasi data',
+              },
+            ],
+          });
+          importResults.push({
+            status: 'error',
+            message: error.message || 'Gagal validasi data',
+            row: rowNumber,
+            data: row,
+          });
+        }
+      }
+      // Jika ada error, buat file error dan return tanpa insert ke database
+      if (errorRows.length > 0) {
+        this.logger.log(
+          `Found ${errorRows.length} rows with errors, generating error CSV...`,
+        );
+
+        try {
+          const errorCsvBuffer = this.generateErrorCsv(errorRows);
+          this.logger.log('Error CSV generated successfully');
+
+          // Coba upload ke MinIO, jika gagal gunakan fallback
+          let errorFileInfo: { key: string; downloadUrl: string } | null = null;
+          let minioAvailable = false;
+
+          try {
+            // Test koneksi MinIO terlebih dahulu
+            minioAvailable = await this.s3Service.testConnection();
+
+            if (minioAvailable) {
+              errorFileInfo = await this.s3Service.uploadErrorFile(
+                `import_error_${Date.now()}.csv`,
+                errorCsvBuffer,
+                'ewh_import_error',
+              );
+
+              if (errorFileInfo) {
+                this.logger.log('Error file uploaded to MinIO successfully');
+              } else {
+                this.logger.warn(
+                  'MinIO upload failed, using fallback response',
+                );
+                minioAvailable = false;
+              }
+            } else {
+              this.logger.warn(
+                'MinIO tidak tersedia, menggunakan fallback response',
+              );
+            }
+          } catch (s3Error) {
+            this.logger.warn(
+              'MinIO error, menggunakan fallback response:',
+              s3Error.message,
+            );
+            minioAvailable = false;
+          }
+
+          const response = {
+            total: csvData.length,
+            success: 0,
+            failed: failedCount,
+            details: importResults,
+            error_file:
+              errorFileInfo && minioAvailable
+                ? {
+                    download_url: errorFileInfo.downloadUrl,
+                    message:
+                      'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
+                  }
+                : {
+                    download_url: null,
+                    message:
+                      'File error gagal diupload ke cloud storage. Silakan periksa data error di response details.',
+                  },
+          };
+
+          return successResponse(
+            response,
+            'Import dibatalkan karena ada data yang tidak valid',
+          );
+        } catch (error) {
+          this.logger.error('Error generating error CSV:', error);
+          this.logger.error('Error stack:', error.stack);
+
+          // Fallback response tanpa file error
+          const response = {
+            total: csvData.length,
+            success: 0,
+            failed: failedCount,
+            details: importResults,
+            error_file: {
+              download_url: null,
+              message:
+                'Gagal generate file error. Silakan periksa data error di response details.',
+            },
+          };
+
+          return successResponse(
+            response,
+            'Import dibatalkan karena ada data yang tidak valid',
+          );
+        }
+      }
+
+      // Jika semua data valid, lakukan import dengan transaction
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      try {
+        for (const rowData of successRows) {
+          await this.importCsvRow(rowData.data, userId);
+          successCount++;
+        }
+
+        await queryRunner.commitTransaction();
+
+        const response = {
+          total: csvData.length,
+          success: successCount,
+          failed: 0,
+          details: importResults,
+        };
+
+        return successResponse(response, 'Data berhasil diimport');
+      } catch (error) {
+        await queryRunner.rollbackTransaction();
+        if (error?.response && error?.response?.statusCode === 400) {
+          throw error;
+        }
+        throw new InternalServerErrorException(
+          `Gagal import data: ${error.message}`,
+        );
+      } finally {
+        await queryRunner.release();
+      }
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Gagal import CSV');
+    }
+  }
+
+  private async parseCsvFile(
+    buffer: Buffer,
+  ): Promise<ImportParentPlanProductionRow[]> {
+    return new Promise((resolve, reject) => {
+      const results: ImportParentPlanProductionRow[] = [];
+      const stream = Readable.from(buffer);
+
+      stream
+        .pipe(csv())
+        .on('data', (data) => {
+          results.push({
+            plan_date: data.plan_date || '',
+            total_average_month_ewh: data.total_average_month_ewh || 0,
+            total_ore_target: data.total_ore_target || 0,
+            total_ore_shipment_target: data.total_ore_shipment_target || 0,
+            total_sisa_stock: data.total_sisa_stock || 0,
+            total_ob_target: data.total_ob_target || 0,
+            total_quarry_target: data.total_quarry_target || 0,
+            total_fleet: data.total_fleet || 0,
+            total_average_day_ewh: data.total_average_day_ewh || 0,
+          });
+        })
+        .on('end', () => {
+          resolve(results);
+        })
+        .on('error', (error) => {
+          reject(error);
+        });
+    });
+  }
+
+  private isValidDate(dateString: string): boolean {
+    const date = new Date(dateString);
+    return (
+      date instanceof Date &&
+      !isNaN(date.getTime()) &&
+      !!dateString.match(/^\d{4}-\d{2}-\d{2}$/)
+    );
+  }
+
+  private validateCsvRow(row: ImportParentPlanProductionRow): {
+    isValid: boolean;
+    message: string;
+    errors: Array<{ field: string; message: string }>;
+  } {
+    const errors: Array<{ field: string; message: string }> = [];
+
+    // Validasi required fields
+    if (!row.plan_date) {
+      errors.push({
+        field: 'plan_date',
+        message: 'Tanggal Plan Aktifitas wajib diisi',
+      });
+    }
+    if (!row.total_average_month_ewh) {
+      errors.push({
+        field: 'total_average_month_ewh',
+        message: 'Total Average Month EWH wajib diisi',
+      });
+    }
+    if (!row.total_average_day_ewh) {
+      errors.push({
+        field: 'total_average_day_ewh',
+        message: 'Total Average EWH per Day wajib diisi',
+      });
+    }
+    if (!row.total_ore_target) {
+      errors.push({
+        field: 'total_ore_target',
+        message: 'Total Ore Target wajib diisi',
+      });
+    }
+    if (!row.total_ore_shipment_target) {
+      errors.push({
+        field: 'total_ore_shipment_target',
+        message: 'Total Ore Shipment target wajib diisi',
+      });
+    }
+    if (!row.total_sisa_stock) {
+      errors.push({
+        field: 'Total sisa stock',
+        message: 'Total sisa stock wajib diisi',
+      });
+    }
+    if (!row.total_ob_target) {
+      errors.push({
+        field: 'total_ob_target',
+        message: 'Total OB target wajib diisi',
+      });
+    }
+    if (!row.total_quarry_target) {
+      errors.push({
+        field: 'total_quarry_target',
+        message: 'Total Quarry Target wajib diisi',
+      });
+    }
+
+    if (!row.total_fleet) {
+      errors.push({
+        field: 'total_fleet',
+        message: 'Total Fleet wajib diisi',
+      });
+    }
+
+    // Validasi format date
+    if (row.plan_date && !this.isValidDate(row.plan_date)) {
+      errors.push({
+        field: 'activity_date',
+        message: 'Format tanggal tidak valid (yyyy-mm-dd)',
+      });
+    }
+
+    const isValid = errors.length === 0;
+
+    // Buat message yang lebih detail
+    let message = 'Data valid';
+    if (!isValid) {
+      if (errors.length === 1) {
+        const error = errors[0];
+        message = `Field "${error.field}" tidak valid: ${error.message}`;
+      } else {
+        const errorDetails = errors
+          .map((err) => `"${err.field}": ${err.message}`)
+          .join(', ');
+        message = `${errors.length} field(s) tidak valid: ${errorDetails}`;
+      }
+    }
+
+    return { isValid, message, errors };
+  }
+
+  private generateErrorCsv(errorRows: any[]): Buffer {
+    try {
+      // Header dengan kolom error
+      const headers = [
+        'row_number',
+        'error_details',
+        'plan_date',
+        'total_average_month_ewh',
+        'total_average_day_ewh',
+        'total_ore_target',
+        'total_ore_shipment_target',
+        'total_sisa_stock',
+        'total_ob_target',
+        'total_quarry_target',
+        'total_fleet',
+      ];
+
+      // Buat CSV content secara manual
+      let csvContent = headers.join(',') + '\n';
+
+      // Tambahkan data dengan error
+      errorRows.forEach((errorRow) => {
+        const rowData = errorRow.data;
+        const errors = errorRow.errors;
+        // Gabungkan semua error message
+        const errorMessages = errors
+          .map((err) => `${err.field}: ${err.message}`)
+          .join('; ');
+
+        const csvRow = [
+          errorRow.row,
+          `"${errorMessages}"`, // Wrap dalam quotes untuk menghindari masalah dengan comma
+          rowData.plan_date || '',
+          rowData.total_average_month_ewh || '',
+          rowData.total_average_day_ewh || '',
+          rowData.total_ore_target || '',
+          rowData.total_ore_shipment_target || '',
+          rowData.total_sisa_stock || '',
+          rowData.total_ob_target || '',
+          rowData.total_quarry_target || '',
+          rowData.total_fleet || '',
+        ];
+
+        csvContent += csvRow.join(',') + '\n';
+      });
+
+      return Buffer.from(csvContent, 'utf-8');
+    } catch (error) {
+      this.logger.error('Error in generateErrorCsv:', error);
+      throw error;
+    }
+  }
+
+  private async importCsvRow(
+    row: ImportParentPlanProductionRow,
+    userId?: number | null,
+  ): Promise<void> {
+    const monthlyPlanProduction: CreateParentPlanProductionDto = {
+      plan_date: row.plan_date,
+      total_average_month_ewh: row.total_average_day_ewh,
+      total_average_day_ewh: row.total_average_day_ewh,
+      total_ore_target: row.total_ore_target ?? 0,
+      total_ore_shipment_target: row.total_ore_shipment_target ?? 0,
+      total_sisa_stock: row.total_sisa_stock ?? 0,
+      total_ob_target: row.total_ob_target ?? 0,
+      total_quarry_target: row.total_quarry_target ?? 0,
+      total_fleet: row.total_fleet ?? 0,
+    };
+
+    await this.create(monthlyPlanProduction);
+  }
+
+  private findAllQueryBuilder(): SelectQueryBuilder<ParentPlanProduction> {
+    return this.parentPlanProductionRepository
+      .createQueryBuilder('parent')
+      .leftJoinAndSelect('parent.planProductions', 'planProductions');
+  }
+
+  private applyFilterExportData(
+    qb: SelectQueryBuilder<ParentPlanProduction>,
+    query: ExportParentPlanProductionQueryDto,
+  ): SelectQueryBuilder<ParentPlanProduction> {
+    const month = query?.month ? parseInt(query.month, 10) : null;
+    if (month) {
+      qb.andWhere('EXTRACT(MONTH FROM parent.plan_date) = :month', { month });
+    }
+    const validSortOrder = query?.sortOrder === 'ASC' ? 'ASC' : 'DESC';
+    qb.orderBy('parent.plan_date', validSortOrder);
+    return qb;
+  }
+
+  private mapExportDataToCsvRow(parent: any, index: number) {
+    const availableDay =
+      parent.planProductions?.filter((p) => p.is_available_day).length || 0;
+    const holidayDay =
+      parent.planProductions?.filter((p) => p.is_holiday_day).length || 0;
+
+    return {
+      No: index + 1,
+      Month: moment(parent.plan_date, 'MMMM/YYYY'),
+      'Calendar Day': availableDay + holidayDay,
+      'Available Day': availableDay,
+      'Holiday Day': holidayDay,
+      'EWH Hours/Month': parent.total_average_month_ewh,
+      'EWH Hours/Day': parent.total_average_day_ewh,
+      'OB Target (BCM)': parent.total_ob_target,
+      'Ore Target (WMT)': parent.total_ore_target,
+      Quary: parent.total_quarry_target,
+      'SR Target (BCM/WMT)': parent.total_ob_target / parent.total_ore_target,
+      'Ore Shipment Target (WMT)': parent.total_ore_shipment_target,
+      'Sisa Stock di EFO': parent.total_sisa_stock,
+    };
+  }
+
+  async exportData(query: ExportParentPlanProductionQueryDto, res: Response) {
+    try {
+      const qb = this.findAllQueryBuilder();
+      // Apply filters & sorting
+      this.applyFilterExportData(qb, query);
+
+      const data = await qb.getMany();
+      if (!data.length) {
+        res.status(200).json(successResponse([], 'Data Not Found'));
+        return;
+      }
+      // Set headers CSV
+      setCsvExportHeaders(res, `monthly_working_hour_export_${Date.now()}.csv`);
+
+      // Buat stream writer
+      const csvStream = format({ headers: true });
+      csvStream.pipe(res);
+
+      // Mapping ke row CSV
+      data.forEach((item, i) => {
+        csvStream.write(this.mapExportDataToCsvRow(item, i));
+      });
+
+      csvStream.end();
+    } catch (error) {
+      throw new InternalServerErrorException('Gagal export data');
+    }
   }
 }

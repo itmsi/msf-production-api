@@ -12,9 +12,16 @@ import {
   UpdateDetailParentPlanWorkingHourDto,
   UpdateParentPlanWorkingHourSimpleDto,
 } from './dto/parent-plan-working-hour.dto';
-import { paginateResponse } from '../../common/helpers/public.helper';
+import {
+  CsvHelper,
+  paginateResponse,
+} from '../../common/helpers/public.helper';
 import { Activities } from '../activities/entities/activities.entity';
 import { ActivityStatus } from '../activities/dto/activities.dto';
+import { validateImportFile } from 'src/common/helpers/validation.helper';
+import moment from 'moment';
+import { successResponse, throwError } from 'src/common';
+import { S3Service } from 'src/integrations/s3/s3.service';
 
 @Injectable()
 export class ParentPlanWorkingHourService {
@@ -26,6 +33,7 @@ export class ParentPlanWorkingHourService {
     @InjectRepository(PlanWorkingHourDetail)
     private planWorkingHourDetailRepository: Repository<PlanWorkingHourDetail>,
     private dataSource: DataSource,
+    private s3Service: S3Service,
   ) {}
 
   // Helper method untuk menghitung jumlah hari dalam bulan
@@ -40,7 +48,7 @@ export class ParentPlanWorkingHourService {
     const year = date.getFullYear();
     const month = date.getMonth();
     const daysInMonth = this.getDaysInMonth(date);
-    
+
     // Semua hari dihitung sebagai hari kerja (termasuk sabtu dan minggu)
     return daysInMonth;
   }
@@ -53,7 +61,7 @@ export class ParentPlanWorkingHourService {
     const year = inputDate.getFullYear();
     const month = inputDate.getMonth();
     const day = inputDate.getDate();
-    
+
     // Jika tanggal sudah tanggal pertama (01), gunakan langsung
     // Jika bukan tanggal pertama, konversi ke tanggal pertama dari bulan yang sama
     let planDate: Date;
@@ -65,99 +73,125 @@ export class ParentPlanWorkingHourService {
       // Konversi ke tanggal pertama dari bulan yang sama
       planDate = new Date(year, month, 1);
       createDto.plan_date = planDate.toLocaleDateString('en-CA');
-      console.log(`Tanggal dikonversi dari ${inputDate.toISOString()} menjadi ${createDto.plan_date}`);
+      console.log(
+        `Tanggal dikonversi dari ${inputDate.toISOString()} menjadi ${createDto.plan_date}`,
+      );
     }
-    
+
     // Validasi duplikat bulan di tahun yang sama
     const yearAfterConversion = planDate.getFullYear();
     const monthAfterConversion = planDate.getMonth();
-    
+
     // Validasi bahwa plan_date tidak boleh di masa lalu (untuk bulan yang sudah lewat)
     const today = new Date();
     const currentYear = today.getFullYear();
     const currentMonth = today.getMonth();
-    
-    if (yearAfterConversion < currentYear || (yearAfterConversion === currentYear && monthAfterConversion < currentMonth)) {
+
+    if (
+      yearAfterConversion < currentYear ||
+      (yearAfterConversion === currentYear &&
+        monthAfterConversion < currentMonth)
+    ) {
       throw new BadRequestException(
         `Tidak dapat membuat plan untuk bulan yang sudah lewat. ` +
-        `Bulan yang dipilih: ${yearAfterConversion}-${String(monthAfterConversion + 1).padStart(2, '0')}. ` +
-        `Bulan saat ini: ${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`
+          `Bulan yang dipilih: ${yearAfterConversion}-${String(monthAfterConversion + 1).padStart(2, '0')}. ` +
+          `Bulan saat ini: ${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`,
       );
     }
-    
+
     // Hitung field yang diperlukan otomatis
     const totalCalendarDay = this.getDaysInMonth(planDate);
     const totalHolidayDay = 0; // Semua hari bukan holiday, jadi 0
     const totalAvailableDay = this.getDaysInMonth(planDate); // Semua hari adalah hari kerja
-    
+
     // Validasi detail activities tidak kosong
     if (!createDto.detail || createDto.detail.length === 0) {
       throw new BadRequestException(
-        'Detail activities tidak boleh kosong. Minimal harus ada satu aktivitas.'
+        'Detail activities tidak boleh kosong. Minimal harus ada satu aktivitas.',
       );
     }
-    
+
     // Validasi activities_id unik
-    const uniqueActivitiesIds = [...new Set(createDto.detail.map(d => d.activities_id))];
+    const uniqueActivitiesIds = [
+      ...new Set(createDto.detail.map((d) => d.activities_id)),
+    ];
     if (uniqueActivitiesIds.length !== createDto.detail.length) {
       throw new BadRequestException(
-        'Activities ID harus unik. Tidak boleh ada duplikasi activities_id dalam detail.'
+        'Activities ID harus unik. Tidak boleh ada duplikasi activities_id dalam detail.',
       );
     }
-    
+
     // Validasi bahwa semua activities_id yang dikirim ada di database
-    const activities = await this.dataSource
-      .getRepository(Activities)
-      .find({
-        where: { 
-          id: In(uniqueActivitiesIds),
-          deletedAt: IsNull()
-        },
-        select: ['id']
-      });
-    
+    const activities = await this.dataSource.getRepository(Activities).find({
+      where: {
+        id: In(uniqueActivitiesIds),
+        deletedAt: IsNull(),
+      },
+      select: ['id'],
+    });
+
     if (activities.length !== uniqueActivitiesIds.length) {
-      const foundIds = activities.map(a => a.id);
-      const missingIds = uniqueActivitiesIds.filter(id => !foundIds.includes(id));
+      const foundIds = activities.map((a) => a.id);
+      const missingIds = uniqueActivitiesIds.filter(
+        (id) => !foundIds.includes(id),
+      );
       throw new BadRequestException(
-        `Activities ID berikut tidak ditemukan atau sudah dihapus: ${missingIds.join(', ')}`
+        `Activities ID berikut tidak ditemukan atau sudah dihapus: ${missingIds.join(', ')}`,
       );
     }
-    
+
     // Validasi activities_hour tidak negatif
     for (const detail of createDto.detail) {
       if (detail.activities_hour < 0) {
         throw new BadRequestException(
-          `Activities hour tidak boleh negatif. Activities ID ${detail.activities_id}: ${detail.activities_hour}`
+          `Activities hour tidak boleh negatif. Activities ID ${detail.activities_id}: ${detail.activities_hour}`,
         );
       }
     }
-    
+
     // Cek apakah sudah ada data untuk bulan yang sama di tahun yang sama
     // Menggunakan pendekatan yang kompatibel dengan berbagai database
     const startOfMonth = new Date(yearAfterConversion, monthAfterConversion, 1);
-    const endOfMonth = new Date(yearAfterConversion, monthAfterConversion + 1, 0, 23, 59, 59, 999);
-    
+    const endOfMonth = new Date(
+      yearAfterConversion,
+      monthAfterConversion + 1,
+      0,
+      23,
+      59,
+      59,
+      999,
+    );
+
     // Query untuk mencari data yang plan_date-nya berada dalam rentang bulan yang sama
     // Menggunakan BETWEEN untuk kompatibilitas yang lebih baik
     // Hanya cek data yang tidak di-soft delete
     const existingPlan = await this.parentPlanWorkingHourRepository
       .createQueryBuilder('ppwh')
-      .where('ppwh.plan_date BETWEEN :startOfMonth AND :endOfMonth', { 
-        startOfMonth, 
-        endOfMonth 
+      .where('ppwh.plan_date BETWEEN :startOfMonth AND :endOfMonth', {
+        startOfMonth,
+        endOfMonth,
       })
       .andWhere('ppwh.deletedAt IS NULL') // Hanya cek data yang tidak di-soft delete
       .getOne();
 
     if (existingPlan) {
       const monthNames = [
-        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+        'Januari',
+        'Februari',
+        'Maret',
+        'April',
+        'Mei',
+        'Juni',
+        'Juli',
+        'Agustus',
+        'September',
+        'Oktober',
+        'November',
+        'Desember',
       ];
       throw new BadRequestException(
         `Data untuk bulan ${monthNames[monthAfterConversion]} ${yearAfterConversion} sudah ada dalam sistem. ` +
-        `Silakan gunakan bulan lain atau update data yang sudah ada.`
+          `Silakan gunakan bulan lain atau update data yang sudah ada.`,
       );
     }
 
@@ -173,9 +207,12 @@ export class ParentPlanWorkingHourService {
         total_holiday_day: totalHolidayDay,
         total_available_day: totalAvailableDay,
         total_working_hour_month: createDto.total_working_hour_month,
-        total_working_day_longshift: typeof createDto.total_working_day_longshift === 'boolean' 
-          ? (createDto.total_working_day_longshift ? 1 : 0) 
-          : createDto.total_working_day_longshift,
+        total_working_day_longshift:
+          typeof createDto.total_working_day_longshift === 'boolean'
+            ? createDto.total_working_day_longshift
+              ? 1
+              : 0
+            : createDto.total_working_day_longshift,
         total_working_hour_day: createDto.total_working_hour_day,
         total_working_hour_longshift: createDto.total_working_hour_longshift,
         total_mohh_per_month: createDto.total_mohh_per_month,
@@ -203,9 +240,12 @@ export class ParentPlanWorkingHourService {
           is_holiday_day: false, // auto false semua
           is_schedule_day: true, // semua hari dihitung hari kerja jadi auto true semua
           schedule_day: 1, // default schedule_day = 1 untuk semua hari
-          working_day_longshift: typeof createDto.total_working_day_longshift === 'boolean' 
-            ? (createDto.total_working_day_longshift ? 1 : 0) 
-            : createDto.total_working_day_longshift,
+          working_day_longshift:
+            typeof createDto.total_working_day_longshift === 'boolean'
+              ? createDto.total_working_day_longshift
+                ? 1
+                : 0
+              : createDto.total_working_day_longshift,
           working_hour_longshift: 0, // Set default ke 0 sesuai permintaan
           working_hour_month: createDto.total_working_hour_month / daysInMonth,
           working_hour_day: createDto.total_working_hour_day,
@@ -216,15 +256,23 @@ export class ParentPlanWorkingHourService {
         // Update working_longshift berdasarkan total_working_day_longshift
         if (typeof createDto.total_working_day_longshift === 'boolean') {
           // Jika total_working_day_longshift adalah boolean
-          planWorkingHour.working_longshift = createDto.total_working_day_longshift;
-          planWorkingHour.working_day_longshift = createDto.total_working_day_longshift ? 1 : 0;
-          planWorkingHour.working_hour_longshift = createDto.total_working_day_longshift ? (createDto.total_working_hour_longshift || 0) : 0;
+          planWorkingHour.working_longshift =
+            createDto.total_working_day_longshift;
+          planWorkingHour.working_day_longshift =
+            createDto.total_working_day_longshift ? 1 : 0;
+          planWorkingHour.working_hour_longshift =
+            createDto.total_working_day_longshift
+              ? createDto.total_working_hour_longshift || 0
+              : 0;
         } else {
           // Jika total_working_day_longshift adalah number
           const isLongshift = createDto.total_working_day_longshift > 0;
           planWorkingHour.working_longshift = isLongshift;
-          planWorkingHour.working_day_longshift = createDto.total_working_day_longshift;
-          planWorkingHour.working_hour_longshift = isLongshift ? (createDto.total_working_hour_longshift || 0) : 0;
+          planWorkingHour.working_day_longshift =
+            createDto.total_working_day_longshift;
+          planWorkingHour.working_hour_longshift = isLongshift
+            ? createDto.total_working_hour_longshift || 0
+            : 0;
         }
 
         planWorkingHours.push(planWorkingHour);
@@ -268,34 +316,41 @@ export class ParentPlanWorkingHourService {
         // Hitung total working_hour_month dari semua record di r_plan_working_hour
         const totalWorkingHourMonth = updatedPlanWorkingHours.reduce(
           (sum, pwh) => sum + (pwh.working_hour_month || 0),
-          0
+          0,
         );
 
         // Hitung total mohh_per_month dari semua record di r_plan_working_hour
         const totalMohhPerMonth = updatedPlanWorkingHours.reduce(
           (sum, pwh) => sum + (pwh.mohh_per_month || 0),
-          0
+          0,
         );
 
         // Update parent plan dengan nilai yang dihitung untuk total_working_hour_month (dibulatkan ke 2 desimal)
-        savedParentPlan.total_working_hour_month = Math.round(totalWorkingHourMonth * 100) / 100;
-        
+        savedParentPlan.total_working_hour_month =
+          Math.round(totalWorkingHourMonth * 100) / 100;
+
         // Update total_mohh_per_month di parent plan berdasarkan jumlah dari r_plan_working_hour (dibulatkan ke 2 desimal)
-        savedParentPlan.total_mohh_per_month = Math.round(totalMohhPerMonth * 100) / 100;
-        
+        savedParentPlan.total_mohh_per_month =
+          Math.round(totalMohhPerMonth * 100) / 100;
+
         // Langsung update total_working_hour_day dari payload tanpa akumulasi dari r_plan_working_hour
         if (createDto.total_working_hour_day !== undefined) {
-          savedParentPlan.total_working_hour_day = createDto.total_working_hour_day;
+          savedParentPlan.total_working_hour_day =
+            createDto.total_working_hour_day;
         }
-        
+
         // Langsung update total_working_hour_longshift dan total_working_day_longshift dari payload
         if (createDto.total_working_hour_longshift !== undefined) {
-          savedParentPlan.total_working_hour_longshift = createDto.total_working_hour_longshift;
+          savedParentPlan.total_working_hour_longshift =
+            createDto.total_working_hour_longshift;
         }
         if (createDto.total_working_day_longshift !== undefined) {
-          savedParentPlan.total_working_day_longshift = typeof createDto.total_working_day_longshift === 'boolean' 
-            ? (createDto.total_working_day_longshift ? 1 : 0) 
-            : createDto.total_working_day_longshift;
+          savedParentPlan.total_working_day_longshift =
+            typeof createDto.total_working_day_longshift === 'boolean'
+              ? createDto.total_working_day_longshift
+                ? 1
+                : 0
+              : createDto.total_working_day_longshift;
         }
 
         await queryRunner.manager.save(ParentPlanWorkingHour, savedParentPlan);
@@ -318,27 +373,29 @@ export class ParentPlanWorkingHourService {
       return result;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      
+
       // Jika error sudah BadRequestException, throw langsung
       if (error instanceof BadRequestException) {
         throw error;
       }
-      
+
       // Jika error lain, buat message yang lebih detail
       let errorMessage = 'Gagal membuat parent plan working hour';
-      
+
       if (error.message) {
         if (error.message.includes('duplicate key')) {
-          errorMessage = 'Data dengan informasi yang sama sudah ada dalam sistem';
+          errorMessage =
+            'Data dengan informasi yang sama sudah ada dalam sistem';
         } else if (error.message.includes('violates foreign key constraint')) {
-          errorMessage = 'Data referensi tidak ditemukan (activities_id tidak valid)';
+          errorMessage =
+            'Data referensi tidak ditemukan (activities_id tidak valid)';
         } else if (error.message.includes('invalid input syntax')) {
           errorMessage = 'Format data tidak valid';
         } else {
           errorMessage += `: ${error.message}`;
         }
       }
-      
+
       throw new BadRequestException(errorMessage);
     } finally {
       await queryRunner.release();
@@ -473,7 +530,9 @@ export class ParentPlanWorkingHourService {
       const totalMohh = roundToTwoDecimals(parseFloat(result.total_mohh) || 0);
 
       // Hitung EWH
-      const ewh = roundToTwoDecimals(totalMohh - totalDelay - totalIdle - totalBreakdown);
+      const ewh = roundToTwoDecimals(
+        totalMohh - totalDelay - totalIdle - totalBreakdown,
+      );
 
       // Hitung PA
       const pa =
@@ -514,7 +573,8 @@ export class ParentPlanWorkingHourService {
         month_year: monthYear,
         schedule_day: parseInt(result.schedule_day) || 0,
         holiday_day: parseInt(result.holiday_day) || 0,
-        calendar_day: parseInt(result.schedule_day) + parseInt(result.holiday_day) || 0,
+        calendar_day:
+          parseInt(result.schedule_day) + parseInt(result.holiday_day) || 0,
         working_hour_month: roundToTwoDecimals(
           parseFloat(result.working_hour_month) || 0,
         ),
@@ -574,30 +634,37 @@ export class ParentPlanWorkingHourService {
           'pwhd.activities_id as activities_id',
           'pwhd.activities_hour as activities_hour',
           'a.name as activity_name',
-          'a.status as activity_status'
+          'a.status as activity_status',
         ])
         .from('r_plan_working_hour_detail', 'pwhd')
-        .leftJoin('r_plan_working_hour', 'pwh', 'pwh.id = pwhd.plant_working_hour_id')
+        .leftJoin(
+          'r_plan_working_hour',
+          'pwh',
+          'pwh.id = pwhd.plant_working_hour_id',
+        )
         .leftJoin('m_activities', 'a', 'a.id = pwhd.activities_id')
         .where('pwh.parent_plan_working_hour_id = :parentId', { parentId: id })
         .getRawMany();
 
-      console.log('Plan working hour details found:', planWorkingHourDetails.length);
+      console.log(
+        'Plan working hour details found:',
+        planWorkingHourDetails.length,
+      );
 
       // Kelompokkan activities berdasarkan status dengan data yang sebenarnya
       const activitiesByStatus: Record<string, any[]> = {};
-      
+
       for (const detail of planWorkingHourDetails) {
         const status = detail.activity_status || 'null';
         if (!activitiesByStatus[status]) {
           activitiesByStatus[status] = [];
         }
-        
+
         // Cek apakah activity sudah ada di grup
         const existingActivity = activitiesByStatus[status].find(
-          (act) => act.activities_id === detail.activities_id
+          (act) => act.activities_id === detail.activities_id,
         );
-        
+
         if (!existingActivity) {
           activitiesByStatus[status].push({
             activities_id: detail.activities_id,
@@ -619,7 +686,7 @@ export class ParentPlanWorkingHourService {
       const filteredActivities = Object.entries(activitiesByStatus)
         .filter(([status]) => allowedStatuses.includes(status.toLowerCase()))
         .sort(([statusA], [statusB]) => {
-          const order = { 'idle': 0, 'delay': 1, 'breakdown': 2 };
+          const order = { idle: 0, delay: 1, breakdown: 2 };
           return order[statusA.toLowerCase()] - order[statusB.toLowerCase()];
         });
 
@@ -629,7 +696,9 @@ export class ParentPlanWorkingHourService {
         group_detail: any[];
       }> = [];
       for (const status of allowedStatuses) {
-        const existingStatus = filteredActivities.find(([s]) => s.toLowerCase() === status);
+        const existingStatus = filteredActivities.find(
+          ([s]) => s.toLowerCase() === status,
+        );
         if (existingStatus) {
           finalDetails.push({
             name: status.charAt(0).toUpperCase() + status.slice(1),
@@ -699,37 +768,42 @@ export class ParentPlanWorkingHourService {
         const inputDate = new Date(updateDto.plan_date);
         const year = inputDate.getFullYear();
         const month = inputDate.getMonth();
-        
+
         // Buat tanggal pertama dari bulan yang sama
         const newPlanDate = new Date(year, month, 1);
-        
+
         // Update plan_date dengan tanggal yang sudah dikonversi
         updateDto.plan_date = newPlanDate.toLocaleDateString('en-CA');
-        
-        console.log(`Tanggal dikonversi dari ${inputDate.toISOString()} menjadi ${updateDto.plan_date}`);
-        
+
+        console.log(
+          `Tanggal dikonversi dari ${inputDate.toISOString()} menjadi ${updateDto.plan_date}`,
+        );
+
         // Validasi bahwa plan_date tidak boleh di masa lalu (untuk bulan yang sudah lewat)
         const today = new Date();
         const currentYear = today.getFullYear();
         const currentMonth = today.getMonth();
-        
-        if (year < currentYear || (year === currentYear && month < currentMonth)) {
+
+        if (
+          year < currentYear ||
+          (year === currentYear && month < currentMonth)
+        ) {
           throw new BadRequestException(
             `Tidak dapat mengupdate plan untuk bulan yang sudah lewat. ` +
-            `Bulan yang dipilih: ${year}-${String(month + 1).padStart(2, '0')}. ` +
-            `Bulan saat ini: ${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`
+              `Bulan yang dipilih: ${year}-${String(month + 1).padStart(2, '0')}. ` +
+              `Bulan saat ini: ${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`,
           );
         }
-        
+
         // Cek apakah sudah ada data untuk bulan yang sama di tahun yang sama (kecuali record yang sedang diupdate)
         const startOfMonth = new Date(year, month, 1);
         const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
-        
+
         const existingPlan = await this.parentPlanWorkingHourRepository
           .createQueryBuilder('ppwh')
-          .where('ppwh.plan_date BETWEEN :startOfMonth AND :endOfMonth', { 
-            startOfMonth, 
-            endOfMonth 
+          .where('ppwh.plan_date BETWEEN :startOfMonth AND :endOfMonth', {
+            startOfMonth,
+            endOfMonth,
           })
           .andWhere('ppwh.deletedAt IS NULL') // Hanya cek data yang tidak di-soft delete
           .andWhere('ppwh.id != :currentId', { currentId: id }) // Kecualikan record yang sedang diupdate
@@ -737,12 +811,22 @@ export class ParentPlanWorkingHourService {
 
         if (existingPlan) {
           const monthNames = [
-            'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            'Januari',
+            'Februari',
+            'Maret',
+            'April',
+            'Mei',
+            'Juni',
+            'Juli',
+            'Agustus',
+            'September',
+            'Oktober',
+            'November',
+            'Desember',
           ];
           throw new BadRequestException(
             `Data untuk bulan ${monthNames[month]} ${year} sudah ada dalam sistem. ` +
-            `Silakan gunakan bulan lain atau update data yang sudah ada.`
+              `Silakan gunakan bulan lain atau update data yang sudah ada.`,
           );
         }
       }
@@ -761,18 +845,23 @@ export class ParentPlanWorkingHourService {
         parentPlan.total_available_day = updateDto.total_available_day;
       }
       if (updateDto.total_working_hour_month !== undefined) {
-        parentPlan.total_working_hour_month = updateDto.total_working_hour_month;
+        parentPlan.total_working_hour_month =
+          updateDto.total_working_hour_month;
       }
       if (updateDto.total_working_day_longshift !== undefined) {
-        parentPlan.total_working_day_longshift = typeof updateDto.total_working_day_longshift === 'boolean' 
-          ? (updateDto.total_working_day_longshift ? 1 : 0) 
-          : updateDto.total_working_day_longshift;
+        parentPlan.total_working_day_longshift =
+          typeof updateDto.total_working_day_longshift === 'boolean'
+            ? updateDto.total_working_day_longshift
+              ? 1
+              : 0
+            : updateDto.total_working_day_longshift;
       }
       if (updateDto.total_working_hour_day !== undefined) {
         parentPlan.total_working_hour_day = updateDto.total_working_hour_day;
       }
       if (updateDto.total_working_hour_longshift !== undefined) {
-        parentPlan.total_working_hour_longshift = updateDto.total_working_hour_longshift;
+        parentPlan.total_working_hour_longshift =
+          updateDto.total_working_hour_longshift;
       }
       if (updateDto.total_mohh_per_month !== undefined) {
         parentPlan.total_mohh_per_month = updateDto.total_mohh_per_month;
@@ -796,35 +885,49 @@ export class ParentPlanWorkingHourService {
         for (const planWorkingHour of existingPlanWorkingHours) {
           if (updateDto.total_working_day_longshift !== undefined) {
             // Convert boolean to number if needed
-            const workingDayLongshift = typeof updateDto.total_working_day_longshift === 'boolean' 
-              ? (updateDto.total_working_day_longshift ? 1 : 0) 
-              : updateDto.total_working_day_longshift;
-            
+            const workingDayLongshift =
+              typeof updateDto.total_working_day_longshift === 'boolean'
+                ? updateDto.total_working_day_longshift
+                  ? 1
+                  : 0
+                : updateDto.total_working_day_longshift;
+
             // Update working_longshift berdasarkan total_working_day_longshift
             if (typeof updateDto.total_working_day_longshift === 'boolean') {
               // Jika total_working_day_longshift adalah boolean
-              planWorkingHour.working_longshift = updateDto.total_working_day_longshift;
-              planWorkingHour.working_day_longshift = updateDto.total_working_day_longshift ? 1 : 0;
-              planWorkingHour.working_hour_longshift = updateDto.total_working_day_longshift ? (updateDto.total_working_hour_longshift || 0) : 0;
+              planWorkingHour.working_longshift =
+                updateDto.total_working_day_longshift;
+              planWorkingHour.working_day_longshift =
+                updateDto.total_working_day_longshift ? 1 : 0;
+              planWorkingHour.working_hour_longshift =
+                updateDto.total_working_day_longshift
+                  ? updateDto.total_working_hour_longshift || 0
+                  : 0;
             } else {
               // Jika total_working_day_longshift adalah number
               const isLongshift = workingDayLongshift > 0;
               planWorkingHour.working_longshift = isLongshift;
               planWorkingHour.working_day_longshift = workingDayLongshift;
-              planWorkingHour.working_hour_longshift = isLongshift ? (updateDto.total_working_hour_longshift || 0) : 0;
+              planWorkingHour.working_hour_longshift = isLongshift
+                ? updateDto.total_working_hour_longshift || 0
+                : 0;
             }
           } else if (updateDto.total_working_hour_longshift !== undefined) {
             // Jika hanya total_working_hour_longshift yang diupdate
-            planWorkingHour.working_hour_longshift = updateDto.total_working_hour_longshift;
+            planWorkingHour.working_hour_longshift =
+              updateDto.total_working_hour_longshift;
           }
           if (updateDto.total_working_hour_month !== undefined) {
-            planWorkingHour.working_hour_month = updateDto.total_working_hour_month / existingPlanWorkingHours.length;
+            planWorkingHour.working_hour_month =
+              updateDto.total_working_hour_month /
+              existingPlanWorkingHours.length;
           }
           if (updateDto.total_working_hour_day !== undefined) {
             planWorkingHour.working_hour_day = updateDto.total_working_hour_day;
           }
           if (updateDto.total_mohh_per_month !== undefined) {
-            planWorkingHour.mohh_per_month = updateDto.total_mohh_per_month / existingPlanWorkingHours.length;
+            planWorkingHour.mohh_per_month =
+              updateDto.total_mohh_per_month / existingPlanWorkingHours.length;
           }
         }
 
@@ -847,21 +950,23 @@ export class ParentPlanWorkingHourService {
         // Hitung total working_hour_month dari semua record di r_plan_working_hour
         const totalWorkingHourMonth = updatedPlanWorkingHours.reduce(
           (sum, pwh) => sum + (pwh.working_hour_month || 0),
-          0
+          0,
         );
 
         // Hitung total mohh_per_month dari semua record di r_plan_working_hour
         const totalMohhPerMonth = updatedPlanWorkingHours.reduce(
           (sum, pwh) => sum + (pwh.mohh_per_month || 0),
-          0
+          0,
         );
 
         // Update parent plan dengan nilai yang dihitung untuk total_working_hour_month (dibulatkan ke 2 desimal)
-        parentPlan.total_working_hour_month = Math.round(totalWorkingHourMonth * 100) / 100;
-        
+        parentPlan.total_working_hour_month =
+          Math.round(totalWorkingHourMonth * 100) / 100;
+
         // Update total_mohh_per_month di parent plan berdasarkan jumlah dari r_plan_working_hour (dibulatkan ke 2 desimal)
-        parentPlan.total_mohh_per_month = Math.round(totalMohhPerMonth * 100) / 100;
-        
+        parentPlan.total_mohh_per_month =
+          Math.round(totalMohhPerMonth * 100) / 100;
+
         // Langsung update total_working_hour_day dari payload tanpa akumulasi dari r_plan_working_hour
         if (updateDto.total_working_hour_day !== undefined) {
           parentPlan.total_working_hour_day = updateDto.total_working_hour_day;
@@ -869,12 +974,16 @@ export class ParentPlanWorkingHourService {
 
         // Langsung update total_working_hour_longshift dan total_working_day_longshift dari payload
         if (updateDto.total_working_hour_longshift !== undefined) {
-          parentPlan.total_working_hour_longshift = updateDto.total_working_hour_longshift;
+          parentPlan.total_working_hour_longshift =
+            updateDto.total_working_hour_longshift;
         }
         if (updateDto.total_working_day_longshift !== undefined) {
-          parentPlan.total_working_day_longshift = typeof updateDto.total_working_day_longshift === 'boolean' 
-            ? (updateDto.total_working_day_longshift ? 1 : 0) 
-            : updateDto.total_working_day_longshift;
+          parentPlan.total_working_day_longshift =
+            typeof updateDto.total_working_day_longshift === 'boolean'
+              ? updateDto.total_working_day_longshift
+                ? 1
+                : 0
+              : updateDto.total_working_day_longshift;
         }
 
         await queryRunner.manager.save(ParentPlanWorkingHour, parentPlan);
@@ -944,39 +1053,42 @@ export class ParentPlanWorkingHourService {
         const newPlanDate = new Date(updateDto.plan_date);
         const year = newPlanDate.getFullYear();
         const month = newPlanDate.getMonth();
-        
+
         // Validasi bahwa plan_date adalah tanggal pertama dari bulan (01)
         const dayOfMonth = newPlanDate.getDate();
         if (dayOfMonth !== 1) {
           throw new BadRequestException(
             `plan_date harus berupa tanggal pertama dari bulan (01). ` +
-            `Tanggal yang dikirim: ${updateDto.plan_date}. ` +
-            `Gunakan format YYYY-MM-01 (contoh: 2025-09-01)`
+              `Tanggal yang dikirim: ${updateDto.plan_date}. ` +
+              `Gunakan format YYYY-MM-01 (contoh: 2025-09-01)`,
           );
         }
-        
+
         // Validasi bahwa plan_date tidak boleh di masa lalu (untuk bulan yang sudah lewat)
         const today = new Date();
         const currentYear = today.getFullYear();
         const currentMonth = today.getMonth();
-        
-        if (year < currentYear || (year === currentYear && month < currentMonth)) {
+
+        if (
+          year < currentYear ||
+          (year === currentYear && month < currentMonth)
+        ) {
           throw new BadRequestException(
             `Tidak dapat mengupdate plan untuk bulan yang sudah lewat. ` +
-            `Bulan yang dipilih: ${year}-${String(month + 1).padStart(2, '0')}. ` +
-            `Bulan saat ini: ${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`
+              `Bulan yang dipilih: ${year}-${String(month + 1).padStart(2, '0')}. ` +
+              `Bulan saat ini: ${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`,
           );
         }
-        
+
         // Cek apakah sudah ada data untuk bulan yang sama di tahun yang sama (kecuali record yang sedang diupdate)
         const startOfMonth = new Date(year, month, 1);
         const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
-        
+
         const existingPlan = await this.parentPlanWorkingHourRepository
           .createQueryBuilder('ppwh')
-          .where('ppwh.plan_date BETWEEN :startOfMonth AND :endOfMonth', { 
-            startOfMonth, 
-            endOfMonth 
+          .where('ppwh.plan_date BETWEEN :startOfMonth AND :endOfMonth', {
+            startOfMonth,
+            endOfMonth,
           })
           .andWhere('ppwh.deletedAt IS NULL') // Hanya cek data yang tidak di-soft delete
           .andWhere('ppwh.id != :currentId', { currentId: id }) // Kecualikan record yang sedang diupdate
@@ -984,15 +1096,25 @@ export class ParentPlanWorkingHourService {
 
         if (existingPlan) {
           const monthNames = [
-            'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            'Januari',
+            'Februari',
+            'Maret',
+            'April',
+            'Mei',
+            'Juni',
+            'Juli',
+            'Agustus',
+            'September',
+            'Oktober',
+            'November',
+            'Desember',
           ];
           throw new BadRequestException(
             `Data untuk bulan ${monthNames[month]} ${year} sudah ada dalam sistem. ` +
-            `Silakan gunakan bulan lain atau update data yang sudah ada.`
+              `Silakan gunakan bulan lain atau update data yang sudah ada.`,
           );
         }
-        
+
         parentPlan.plan_date = new Date(updateDto.plan_date);
         await queryRunner.manager.save(ParentPlanWorkingHour, parentPlan);
       }
@@ -1011,26 +1133,37 @@ export class ParentPlanWorkingHourService {
           // Update field yang relevan dengan field baru
           if (updateDto.working_day_longshift !== undefined) {
             // Convert boolean to number if needed
-            const workingDayLongshift = typeof updateDto.working_day_longshift === 'boolean' 
-              ? (updateDto.working_day_longshift ? 1 : 0) 
-              : updateDto.working_day_longshift;
-            
+            const workingDayLongshift =
+              typeof updateDto.working_day_longshift === 'boolean'
+                ? updateDto.working_day_longshift
+                  ? 1
+                  : 0
+                : updateDto.working_day_longshift;
+
             // Update working_longshift berdasarkan working_day_longshift
             if (typeof updateDto.working_day_longshift === 'boolean') {
               // Jika working_day_longshift adalah boolean
-              planWorkingHour.working_longshift = updateDto.working_day_longshift;
-              planWorkingHour.working_day_longshift = updateDto.working_day_longshift ? 1 : 0;
-              planWorkingHour.working_hour_longshift = updateDto.working_day_longshift ? (updateDto.working_hour_longshift || 0) : 0;
+              planWorkingHour.working_longshift =
+                updateDto.working_day_longshift;
+              planWorkingHour.working_day_longshift =
+                updateDto.working_day_longshift ? 1 : 0;
+              planWorkingHour.working_hour_longshift =
+                updateDto.working_day_longshift
+                  ? updateDto.working_hour_longshift || 0
+                  : 0;
             } else {
               // Jika working_day_longshift adalah number
               const isLongshift = workingDayLongshift > 0;
               planWorkingHour.working_longshift = isLongshift;
               planWorkingHour.working_day_longshift = workingDayLongshift;
-              planWorkingHour.working_hour_longshift = isLongshift ? (updateDto.working_hour_longshift || 0) : 0;
+              planWorkingHour.working_hour_longshift = isLongshift
+                ? updateDto.working_hour_longshift || 0
+                : 0;
             }
           } else if (updateDto.working_hour_longshift !== undefined) {
             // Jika hanya working_hour_longshift yang diupdate
-            planWorkingHour.working_hour_longshift = updateDto.working_hour_longshift;
+            planWorkingHour.working_hour_longshift =
+              updateDto.working_hour_longshift;
           }
           if (updateDto.working_hour_month !== undefined) {
             planWorkingHour.working_hour_month =
@@ -1040,11 +1173,12 @@ export class ParentPlanWorkingHourService {
             planWorkingHour.working_hour_day = updateDto.working_hour_day;
           }
           if (updateDto.mohh_per_month !== undefined) {
-            planWorkingHour.mohh_per_month = updateDto.mohh_per_month / existingPlanWorkingHours.length;
+            planWorkingHour.mohh_per_month =
+              updateDto.mohh_per_month / existingPlanWorkingHours.length;
           }
           if (updateDto.schedule_day !== undefined) {
             planWorkingHour.schedule_day = updateDto.schedule_day;
-            
+
             // Set is_schedule_day dan is_holiday_day berdasarkan schedule_day
             if (updateDto.schedule_day === 1) {
               planWorkingHour.is_schedule_day = true;
@@ -1111,21 +1245,23 @@ export class ParentPlanWorkingHourService {
         // Hitung total working_hour_month dari semua record di r_plan_working_hour
         const totalWorkingHourMonth = updatedPlanWorkingHours.reduce(
           (sum, pwh) => sum + (pwh.working_hour_month || 0),
-          0
+          0,
         );
 
         // Hitung total mohh_per_month dari semua record di r_plan_working_hour
         const totalMohhPerMonth = updatedPlanWorkingHours.reduce(
           (sum, pwh) => sum + (pwh.mohh_per_month || 0),
-          0
+          0,
         );
 
         // Update parent plan dengan nilai yang dihitung untuk total_working_hour_month (dibulatkan ke 2 desimal)
-        parentPlan.total_working_hour_month = Math.round(totalWorkingHourMonth * 100) / 100;
-        
+        parentPlan.total_working_hour_month =
+          Math.round(totalWorkingHourMonth * 100) / 100;
+
         // Update total_mohh_per_month di parent plan berdasarkan jumlah dari r_plan_working_hour (dibulatkan ke 2 desimal)
-        parentPlan.total_mohh_per_month = Math.round(totalMohhPerMonth * 100) / 100;
-        
+        parentPlan.total_mohh_per_month =
+          Math.round(totalMohhPerMonth * 100) / 100;
+
         // Langsung update total_working_hour_day dari payload tanpa akumulasi dari r_plan_working_hour
         if (updateDto.working_hour_day !== undefined) {
           parentPlan.total_working_hour_day = updateDto.working_hour_day;
@@ -1172,7 +1308,9 @@ export class ParentPlanWorkingHourService {
       // Validate date format
       const startDate = new Date(query.start_date);
       if (isNaN(startDate.getTime())) {
-        throw new BadRequestException('start_date must be a valid date format (YYYY-MM-DD)');
+        throw new BadRequestException(
+          'start_date must be a valid date format (YYYY-MM-DD)',
+        );
       }
       queryBuilder.andWhere('pwh.plan_date >= :startDate', { startDate });
     }
@@ -1181,7 +1319,9 @@ export class ParentPlanWorkingHourService {
       // Validate date format
       const endDate = new Date(query.end_date);
       if (isNaN(endDate.getTime())) {
-        throw new BadRequestException('end_date must be a valid date format (YYYY-MM-DD)');
+        throw new BadRequestException(
+          'end_date must be a valid date format (YYYY-MM-DD)',
+        );
       }
       queryBuilder.andWhere('pwh.plan_date <= :endDate', { endDate });
     }
@@ -1190,13 +1330,19 @@ export class ParentPlanWorkingHourService {
     if (query.calendar_day) {
       switch (query.calendar_day) {
         case 'available':
-          queryBuilder.andWhere('pwh.schedule_day = :scheduleDay', { scheduleDay: 1 });
+          queryBuilder.andWhere('pwh.schedule_day = :scheduleDay', {
+            scheduleDay: 1,
+          });
           break;
         case 'holiday':
-          queryBuilder.andWhere('pwh.schedule_day = :scheduleDay', { scheduleDay: 0 });
+          queryBuilder.andWhere('pwh.schedule_day = :scheduleDay', {
+            scheduleDay: 0,
+          });
           break;
         case 'one-shift':
-          queryBuilder.andWhere('pwh.schedule_day = :scheduleDay', { scheduleDay: 0.5 });
+          queryBuilder.andWhere('pwh.schedule_day = :scheduleDay', {
+            scheduleDay: 0.5,
+          });
           break;
       }
     }
@@ -1240,7 +1386,10 @@ export class ParentPlanWorkingHourService {
 
         // Hitung metrics
         const totalMohh = pwh.mohh_per_month || 0;
-        const ewh = Math.max(0, totalMohh - totalDelay - totalIdle - totalBreakdown);
+        const ewh = Math.max(
+          0,
+          totalMohh - totalDelay - totalIdle - totalBreakdown,
+        );
 
         // Hitung PA, MA, UA, EU
         const pa =
@@ -1332,7 +1481,10 @@ export class ParentPlanWorkingHourService {
     }
 
     // Debug: Log schedule_day value dari database
-    console.log(`Debug - ID: ${id}, schedule_day from DB:`, planWorkingHour.schedule_day);
+    console.log(
+      `Debug - ID: ${id}, schedule_day from DB:`,
+      planWorkingHour.schedule_day,
+    );
 
     // Hitung total berdasarkan status activities
     let totalDelay = 0;
@@ -1359,7 +1511,10 @@ export class ParentPlanWorkingHourService {
 
     // Hitung metrics
     const totalMohh = planWorkingHour.mohh_per_month || 0;
-    const ewh = Math.max(0, totalMohh - totalDelay - totalIdle - totalBreakdown);
+    const ewh = Math.max(
+      0,
+      totalMohh - totalDelay - totalIdle - totalBreakdown,
+    );
 
     // Hitung PA, MA, UA, EU
     const pa = totalMohh > 0 ? (ewh + totalDelay + totalIdle) / totalMohh : 0;
@@ -1535,12 +1690,10 @@ export class ParentPlanWorkingHourService {
     }>
   > {
     // Ambil semua activities yang aktif
-    const activities = await this.dataSource
-      .getRepository(Activities)
-      .find({
-        where: { deletedAt: IsNull() },
-        select: ['id', 'name', 'status'],
-      });
+    const activities = await this.dataSource.getRepository(Activities).find({
+      where: { deletedAt: IsNull() },
+      select: ['id', 'name', 'status'],
+    });
 
     // Kelompokkan berdasarkan status
     const groupedData: {
@@ -1571,15 +1724,17 @@ export class ParentPlanWorkingHourService {
 
     // Filter hanya status yang diinginkan: idle, delay, breakdown
     const allowedStatuses = ['idle', 'delay', 'breakdown'];
-    const filteredGroupedData = Object.entries(groupedData).filter(([status]) => 
-      allowedStatuses.includes(status.toLowerCase())
+    const filteredGroupedData = Object.entries(groupedData).filter(([status]) =>
+      allowedStatuses.includes(status.toLowerCase()),
     );
 
     // Urutkan sesuai urutan yang diinginkan: idle, delay, breakdown
-    const sortedGroupedData = filteredGroupedData.sort(([statusA], [statusB]) => {
-      const order = { 'idle': 0, 'delay': 1, 'breakdown': 2 };
-      return order[statusA.toLowerCase()] - order[statusB.toLowerCase()];
-    });
+    const sortedGroupedData = filteredGroupedData.sort(
+      ([statusA], [statusB]) => {
+        const order = { idle: 0, delay: 1, breakdown: 2 };
+        return order[statusA.toLowerCase()] - order[statusB.toLowerCase()];
+      },
+    );
 
     // Transform ke format yang diminta
     const result = sortedGroupedData.map(([status, activities]) => ({
@@ -1601,10 +1756,13 @@ export class ParentPlanWorkingHourService {
 
     try {
       // 1. Ambil plan working hour yang akan diupdate
-      const planWorkingHour = await queryRunner.manager.findOne(PlanWorkingHour, {
-        where: { id },
-        relations: ['parentPlanWorkingHour', 'details'],
-      });
+      const planWorkingHour = await queryRunner.manager.findOne(
+        PlanWorkingHour,
+        {
+          where: { id },
+          relations: ['parentPlanWorkingHour', 'details'],
+        },
+      );
 
       if (!planWorkingHour) {
         throw new BadRequestException(
@@ -1623,27 +1781,37 @@ export class ParentPlanWorkingHourService {
       // 3. Update data di r_plan_working_hour
       if (updateDto.working_day_longshift !== undefined) {
         // Convert boolean to number if needed
-        const workingDayLongshift = typeof updateDto.working_day_longshift === 'boolean' 
-          ? (updateDto.working_day_longshift ? 1 : 0) 
-          : updateDto.working_day_longshift;
+        const workingDayLongshift =
+          typeof updateDto.working_day_longshift === 'boolean'
+            ? updateDto.working_day_longshift
+              ? 1
+              : 0
+            : updateDto.working_day_longshift;
         planWorkingHour.working_day_longshift = workingDayLongshift;
-        
+
         // Update working_longshift berdasarkan working_day_longshift
         if (typeof updateDto.working_day_longshift === 'boolean') {
           // Jika working_day_longshift adalah boolean
           planWorkingHour.working_longshift = updateDto.working_day_longshift;
-          planWorkingHour.working_day_longshift = updateDto.working_day_longshift ? 1 : 0;
-          planWorkingHour.working_hour_longshift = updateDto.working_day_longshift ? (updateDto.working_hour_longshift || 0) : 0;
+          planWorkingHour.working_day_longshift =
+            updateDto.working_day_longshift ? 1 : 0;
+          planWorkingHour.working_hour_longshift =
+            updateDto.working_day_longshift
+              ? updateDto.working_hour_longshift || 0
+              : 0;
         } else {
           // Jika working_day_longshift adalah number
           const isLongshift = workingDayLongshift > 0;
           planWorkingHour.working_longshift = isLongshift;
           planWorkingHour.working_day_longshift = workingDayLongshift;
-          planWorkingHour.working_hour_longshift = isLongshift ? (updateDto.working_hour_longshift || 0) : 0;
+          planWorkingHour.working_hour_longshift = isLongshift
+            ? updateDto.working_hour_longshift || 0
+            : 0;
         }
       } else if (updateDto.working_hour_longshift !== undefined) {
         // Jika hanya working_hour_longshift yang diupdate
-        planWorkingHour.working_hour_longshift = updateDto.working_hour_longshift;
+        planWorkingHour.working_hour_longshift =
+          updateDto.working_hour_longshift;
       }
       if (updateDto.working_hour_month !== undefined) {
         planWorkingHour.working_hour_month = updateDto.working_hour_month;
@@ -1656,7 +1824,7 @@ export class ParentPlanWorkingHourService {
       }
       if (updateDto.schedule_day !== undefined) {
         planWorkingHour.schedule_day = updateDto.schedule_day;
-        
+
         // Set is_schedule_day dan is_holiday_day berdasarkan schedule_day
         if (updateDto.schedule_day === 1) {
           planWorkingHour.is_schedule_day = true;
@@ -1710,21 +1878,23 @@ export class ParentPlanWorkingHourService {
         // Hitung total working_hour_month dari semua record di r_plan_working_hour
         const totalWorkingHourMonth = updatedPlanWorkingHours.reduce(
           (sum, pwh) => sum + (pwh.working_hour_month || 0),
-          0
+          0,
         );
 
         // Hitung total mohh_per_month dari semua record di r_plan_working_hour
         const totalMohhPerMonth = updatedPlanWorkingHours.reduce(
           (sum, pwh) => sum + (pwh.mohh_per_month || 0),
-          0
+          0,
         );
 
         // Update parent plan dengan nilai yang dihitung untuk total_working_hour_month (dibulatkan ke 2 desimal)
-        parentPlan.total_working_hour_month = Math.round(totalWorkingHourMonth * 100) / 100;
-        
+        parentPlan.total_working_hour_month =
+          Math.round(totalWorkingHourMonth * 100) / 100;
+
         // Update total_mohh_per_month di parent plan berdasarkan jumlah dari r_plan_working_hour (dibulatkan ke 2 desimal)
-        parentPlan.total_mohh_per_month = Math.round(totalMohhPerMonth * 100) / 100;
-        
+        parentPlan.total_mohh_per_month =
+          Math.round(totalMohhPerMonth * 100) / 100;
+
         // Langsung update total_working_hour_day dari payload tanpa akumulasi dari r_plan_working_hour
         if (updateDto.working_hour_day !== undefined) {
           parentPlan.total_working_hour_day = updateDto.working_hour_day;
@@ -1732,12 +1902,16 @@ export class ParentPlanWorkingHourService {
 
         // Langsung update total_working_hour_longshift dan total_working_day_longshift dari payload
         if (updateDto.working_hour_longshift !== undefined) {
-          parentPlan.total_working_hour_longshift = updateDto.working_hour_longshift;
+          parentPlan.total_working_hour_longshift =
+            updateDto.working_hour_longshift;
         }
         if (updateDto.working_day_longshift !== undefined) {
-          parentPlan.total_working_day_longshift = typeof updateDto.working_day_longshift === 'boolean' 
-            ? (updateDto.working_day_longshift ? 1 : 0) 
-            : updateDto.working_day_longshift;
+          parentPlan.total_working_day_longshift =
+            typeof updateDto.working_day_longshift === 'boolean'
+              ? updateDto.working_day_longshift
+                ? 1
+                : 0
+              : updateDto.working_day_longshift;
         }
 
         await queryRunner.manager.save(ParentPlanWorkingHour, parentPlan);
@@ -1753,6 +1927,539 @@ export class ParentPlanWorkingHourService {
       throw error;
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  private async validateRowData(row: any): Promise<{
+    isValid: boolean;
+    error?: string;
+    payload?: any;
+  }> {
+    const normalizeActivityName = (name: string) =>
+      name?.trim().replace(/_/g, ' ').toLowerCase();
+
+    if (!row.year_month) {
+      return { isValid: false, error: 'year_month is required' };
+    }
+
+    if (!moment(row.year_month, 'YYYY-MM', true).isValid()) {
+      return {
+        isValid: false,
+        error: `year_month harus dalam format YYYY-MM ex:2025-01 (row: ${row.year_month})`,
+      };
+    }
+
+    const validateNumber = (
+      field: string,
+      label: string,
+      max?: number,
+    ): { ok: boolean; error?: string } => {
+      if (
+        row[field] === undefined ||
+        row[field] === null ||
+        row[field] === ''
+      ) {
+        return { ok: false, error: `${label} is required` };
+      }
+      const val = Number(row[field]);
+      if (isNaN(val)) {
+        return {
+          ok: false,
+          error: `${label} harus berupa number (row: ${row[field]})`,
+        };
+      }
+      if (val < 1) {
+        return {
+          ok: false,
+          error: `${label} tidak boleh kurang dari 1 (row: ${row[field]})`,
+        };
+      }
+      if (max !== undefined && val > max) {
+        return {
+          ok: false,
+          error: `${label} tidak boleh lebih dari ${max} (row: ${row[field]})`,
+        };
+      }
+      return { ok: true };
+    };
+
+    let res = validateNumber(
+      'total_working_hour_month',
+      'total_working_hour_month',
+    );
+    if (!res.ok) return { isValid: false, error: res.error };
+
+    res = validateNumber(
+      'total_working_hour_day',
+      'total_working_hour_day',
+      24,
+    );
+    if (!res.ok) return { isValid: false, error: res.error };
+
+    res = validateNumber('total_mohh_per_month', 'total_mohh_per_month', 744);
+    if (!res.ok) return { isValid: false, error: res.error };
+
+    const workingHour = [
+      'year_month',
+      'total_working_hour_month',
+      'total_working_hour_day',
+      'total_mohh_per_month',
+    ];
+    const activityNames = Object.keys(row).filter(
+      (key) => !workingHour.includes(key),
+    );
+
+    const findActivities = await this.dataSource
+      .getRepository(Activities)
+      .createQueryBuilder('a')
+      .where('LOWER(a.name) IN (:...names)', {
+        names: activityNames.map((n) => normalizeActivityName(n)),
+      })
+      .andWhere('a.deletedAt IS NULL')
+      .select(['a.id', 'a.name'])
+      .getMany();
+
+    const foundNames = findActivities?.map((a) => a?.name?.toLowerCase());
+    const notFound = activityNames?.filter(
+      (n) => !foundNames?.includes(normalizeActivityName(n)),
+    );
+
+    if (notFound?.length > 0) {
+      return {
+        isValid: false,
+        error: `Activities tidak ditemukan: ${notFound.join(', ')}`,
+      };
+    }
+
+    const activities = activityNames.map((name) => {
+      const normalized = normalizeActivityName(name);
+      const rawVal = row[name];
+      const numVal = rawVal ? Number(rawVal) : 0;
+
+      if (isNaN(numVal)) {
+        throw new BadRequestException(
+          `Activity "${name}" harus berupa number (row: ${row[name]})`,
+        );
+      }
+
+      if (numVal < 0) {
+        throw new BadRequestException(
+          `Activity "${name}" tidak boleh kurang dari 0 (row: ${row[name]})`,
+        );
+      }
+
+      return {
+        activities_hour: numVal,
+        id: findActivities.find((a) => a.name.toLowerCase() === normalized)?.id,
+      };
+    });
+
+    const m = moment(row.year_month, 'YYYY-MM');
+    const totalCalendarDay = m.daysInMonth();
+    const startOfMonth = m.startOf('month').format('YYYY-MM-DD');
+    const endOfMonth = m.endOf('month').format('YYYY-MM-DD');
+    const existingPlan = await this.parentPlanWorkingHourRepository
+      .createQueryBuilder('ppwh')
+      .where('ppwh.plan_date BETWEEN :startOfMonth AND :endOfMonth', {
+        startOfMonth,
+        endOfMonth,
+      })
+      .andWhere('ppwh.deletedAt IS NULL')
+      .getOne();
+
+    if (existingPlan) {
+      const monthNames = [
+        'Januari',
+        'Februari',
+        'Maret',
+        'April',
+        'Mei',
+        'Juni',
+        'Juli',
+        'Agustus',
+        'September',
+        'Oktober',
+        'November',
+        'Desember',
+      ];
+      const monthIdx = m.month();
+      const yearNum = m.year();
+
+      throw new BadRequestException(
+        `Data untuk bulan ${monthNames[monthIdx]} ${yearNum} sudah ada dalam sistem. ` +
+          `Silakan gunakan bulan lain atau update data yang sudah ada.`,
+      );
+    }
+
+    const payload = {
+      plan_date: `${row.year_month}-01`,
+      total_working_hour_month: Number(row.total_working_hour_month),
+      total_working_day_longshift: 0,
+      total_working_hour_longshift: 0,
+      total_working_hour_day: Number(row.total_working_hour_day),
+      total_mohh_per_month: Number(row.total_mohh_per_month),
+      total_calendar_day: totalCalendarDay,
+      total_available_day: totalCalendarDay,
+      total_holiday_day: 0,
+      year: m.year(),
+      month: m.month() + 1,
+      startOfMonth,
+      endOfMonth,
+      activities,
+    };
+
+    return { isValid: true, payload };
+  }
+
+  private async processImportData(csvData: any[]): Promise<{
+    results: any[];
+    failedRows: any[];
+    successCount: number;
+    failedCount: number;
+    payload: any[];
+  }> {
+    const results: any[] = [];
+    const failedRows: any[] = [];
+    let successCount = 0;
+    let failedCount = 0;
+    const payload: any[] = [];
+
+    const validations = await Promise.all(
+      csvData.map(async (row: any, idx: number) => {
+        const rowNumber = idx + 1;
+        try {
+          const validationResult = await this.validateRowData(row);
+          if (!validationResult.isValid) {
+            failedCount++;
+            failedRows.push({
+              rowNumber,
+              ...row,
+              error: validationResult.error,
+            });
+            return {
+              row: rowNumber,
+              status: 'error',
+              message: validationResult.error,
+              data: row,
+            };
+          }
+
+          successCount++;
+          if (validationResult.payload) payload.push(validationResult.payload);
+          return {
+            row: rowNumber,
+            status: 'success',
+            message: 'Data valid',
+            data: row,
+          };
+        } catch (err) {
+          failedCount++;
+          failedRows.push({ rowNumber, ...row, error: err.message });
+          return {
+            row: rowNumber,
+            status: 'error',
+            message: err.message || 'Validasi gagal',
+            data: row,
+          };
+        }
+      }),
+    );
+
+    results.push(...validations);
+
+    return {
+      results,
+      failedRows,
+      successCount,
+      failedCount,
+      payload,
+    };
+  }
+
+  async bulkCreate(payloads: any[]): Promise<any> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // simpan semua parent sekaligus
+      const parentPlans = payloads.map((p) => {
+        const planDate = moment(p.plan_date, 'YYYY-MM-DD', true);
+        if (!planDate.isValid()) {
+          throw new BadRequestException(
+            `plan_date tidak valid: ${p.plan_date} (harus format YYYY-MM-DD)`,
+          );
+        }
+
+        return this.parentPlanWorkingHourRepository.create({
+          plan_date: planDate.toDate(),
+          total_calendar_day: p.total_calendar_day,
+          total_holiday_day: p.total_holiday_day,
+          total_available_day: p.total_available_day,
+          total_working_hour_month: p.total_working_hour_month,
+          total_working_day_longshift: p.total_working_day_longshift,
+          total_working_hour_day: p.total_working_hour_day,
+          total_working_hour_longshift: p.total_working_hour_longshift,
+          total_mohh_per_month: p.total_mohh_per_month,
+        });
+      });
+
+      const savedParentPlans = await queryRunner.manager.save(
+        ParentPlanWorkingHour,
+        parentPlans,
+      );
+
+      const allPlanWorkingHours: PlanWorkingHour[] = [];
+
+      // generate r_plan_working_hour untuk tiap parent plan
+      savedParentPlans.forEach((savedParentPlan, idx) => {
+        const p = payloads[idx];
+        const year = Number(p.year);
+        const month = Number(p.month); // 1-based
+        const daysInMonth = new Date(year, month, 0).getDate();
+
+        for (let day = 1; day <= daysInMonth; day++) {
+          const currentDate = moment({ year, month: month - 1, day }).toDate();
+
+          const planWorkingHour = this.planWorkingHourRepository.create({
+            plan_date: currentDate,
+            is_calender_day: true,
+            is_holiday_day: false,
+            is_schedule_day: true,
+            schedule_day: 1,
+            working_day_longshift: p.total_working_day_longshift,
+            working_hour_longshift: 0,
+            working_hour_month: p.total_working_hour_month / daysInMonth,
+            working_hour_day: p.total_working_hour_day,
+            mohh_per_month: p.total_mohh_per_month / daysInMonth,
+            parent_plan_working_hour_id: savedParentPlan.id,
+            working_longshift: p.total_working_day_longshift > 0,
+          });
+
+          // set ulang longshift hour/day
+          if (p.total_working_day_longshift > 0) {
+            planWorkingHour.working_hour_longshift =
+              p.total_working_hour_longshift || 0;
+          }
+
+          allPlanWorkingHours.push(planWorkingHour);
+        }
+      });
+
+      const savedPlanWorkingHours = await queryRunner.manager.save(
+        PlanWorkingHour,
+        allPlanWorkingHours,
+      );
+
+      const planWorkingHourDetails: PlanWorkingHourDetail[] = [];
+
+      savedParentPlans.forEach((savedParentPlan, idx) => {
+        const p = payloads[idx];
+
+        const relatedPlanWorkingHours = savedPlanWorkingHours.filter(
+          (pwh) => pwh.parent_plan_working_hour_id === savedParentPlan.id,
+        );
+
+        for (const planWorkingHour of relatedPlanWorkingHours) {
+          for (const activityDetail of p.activities) {
+            planWorkingHourDetails.push(
+              this.planWorkingHourDetailRepository.create({
+                plant_working_hour_id: planWorkingHour.id,
+                activities_id: activityDetail.id,
+                activities_hour: activityDetail.activities_hour,
+              }),
+            );
+          }
+        }
+      });
+
+      await queryRunner.manager.save(
+        PlanWorkingHourDetail,
+        planWorkingHourDetails,
+      );
+
+      for (const savedParentPlan of savedParentPlans) {
+        const updatedPlanWorkingHours = savedPlanWorkingHours.filter(
+          (pwh) => pwh.parent_plan_working_hour_id === savedParentPlan.id,
+        );
+
+        if (updatedPlanWorkingHours.length > 0) {
+          const totalWorkingHourMonth = updatedPlanWorkingHours.reduce(
+            (sum, pwh) => sum + (pwh.working_hour_month || 0),
+            0,
+          );
+          const totalMohhPerMonth = updatedPlanWorkingHours.reduce(
+            (sum, pwh) => sum + (pwh.mohh_per_month || 0),
+            0,
+          );
+
+          savedParentPlan.total_working_hour_month =
+            Math.round(totalWorkingHourMonth * 100) / 100;
+          savedParentPlan.total_mohh_per_month =
+            Math.round(totalMohhPerMonth * 100) / 100;
+
+          await queryRunner.manager.save(
+            ParentPlanWorkingHour,
+            savedParentPlan,
+          );
+        }
+      }
+
+      await queryRunner.commitTransaction();
+      return savedParentPlans;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throwError('Failed to import Parent Plan Working Hour', 500);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  private createErrorCsvContent(failedRows: any[]): string {
+    if (failedRows.length === 0) return '';
+
+    const dynamicKeys = new Set<string>();
+    failedRows.forEach((row) => {
+      Object.keys(row).forEach((key) => {
+        if (key !== 'error' && key !== 'rowNumber') {
+          dynamicKeys.add(key);
+        }
+      });
+    });
+
+    const workingHour = [
+      'year_month',
+      'total_working_hour_month',
+      'total_working_hour_day',
+      'total_mohh_per_month',
+    ];
+    const activityKeys = [...dynamicKeys].filter(
+      (k) => !workingHour.includes(k),
+    );
+
+    const csvHeaders = [
+      ...workingHour,
+      ...activityKeys,
+      'error_message  (Please delete this column before importing again)',
+    ];
+
+    const csvRows = failedRows.map((row) =>
+      csvHeaders
+        .map((header) => {
+          if (header === 'error_message') return `"${row.error || ''}"`;
+          return `"${row[header] ?? ''}"`;
+        })
+        .join(','),
+    );
+
+    return [csvHeaders.join(','), ...csvRows].join('\n');
+  }
+
+  private async generateErrorCsv(failedRows: any[]): Promise<{
+    error_file: { download_url: string; file_name: string } | null;
+  }> {
+    if (failedRows.length === 0) {
+      return {
+        error_file: null,
+      };
+    }
+
+    try {
+      const csvContent = this.createErrorCsvContent(failedRows);
+      const csvBuffer = Buffer.from(csvContent, 'utf8');
+      const filename = `import-barge-errors-${Date.now()}.csv`;
+
+      const result = await this.s3Service.uploadErrorFile(
+        filename,
+        csvBuffer,
+        'parent_plan_working_hour_import_error',
+      );
+      return {
+        error_file: result
+          ? {
+              download_url: result.downloadUrl,
+              file_name: filename,
+            }
+          : null,
+      };
+    } catch (error) {
+      return {
+        error_file: null,
+      };
+    }
+  }
+
+  private buildImportResponse(
+    total: number,
+    successCount: number,
+    failedCount: number,
+    errorFileInfo: {
+      error_file: { download_url: string; file_name: string } | null;
+    },
+  ) {
+    return successResponse(
+      {
+        total,
+        success: successCount,
+        failed: failedCount,
+        error_file: errorFileInfo.error_file,
+        hasErrorFile: failedCount > 0,
+      },
+      failedCount > 0
+        ? `Import selesai dengan ${failedCount} error. ${
+            errorFileInfo.error_file
+              ? 'Download error CSV untuk detail.'
+              : 'Gagal generate error file.'
+          }`
+        : 'Semua data valid',
+    );
+  }
+  async importData(file: Express.Multer.File) {
+    try {
+      validateImportFile(file);
+      const csvData = await CsvHelper.parseCsvFile(file.buffer);
+      const validationResult = await this.processImportData(csvData);
+      if (
+        validationResult?.payload?.length > 0 &&
+        validationResult.successCount > 0
+      ) {
+        await this.bulkCreate(validationResult.payload);
+      }
+
+      const errorFileInfo = await this.generateErrorCsv(
+        validationResult.failedRows,
+      );
+
+      return this.buildImportResponse(
+        csvData.length,
+        validationResult.successCount,
+        validationResult.failedCount,
+        errorFileInfo,
+      );
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throwError(error, 400);
+      }
+
+      if (error.message?.includes('CSV') || error.message?.includes('parse')) {
+        throwError(
+          'Format CSV tidak valid. Pastikan file CSV memiliki format yang benar.',
+          400,
+        );
+      }
+
+      if (error.code === '23503') {
+        throwError(
+          'Data referensi tidak ditemukan. Pastikan semua ID referensi valid.',
+          400,
+        );
+      }
+
+      console.error('Unexpected error in importData:', error.stack);
+      throwError(
+        'Terjadi kesalahan saat memproses file import. Silakan coba lagi atau hubungi administrator.',
+        400,
+      );
     }
   }
 }

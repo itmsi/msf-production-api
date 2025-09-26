@@ -47,6 +47,9 @@ export class RolesService {
       const response: any = {
         id: result.id,
         position_name: result.position_name,
+        role_code: result?.role_code || '',
+        role_parent: result?.role_parent || '',
+        sites_id: result?.sites_id || null,
       };
       return successResponse(response);
     } catch (error) {

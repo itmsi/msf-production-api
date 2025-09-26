@@ -27,10 +27,19 @@ export class LoggerInterceptor implements NestInterceptor {
       tap((res) => {
         const duration = Date.now() - now;
         this.logger.log(` ${method} ${url} [${duration}ms]`);
-        if (process.env.DEBUG == 'yes')
+        if (process.env.DEBUG == 'yes') {
+          const safeResponse =
+            res && typeof res === 'object' && 'data' in res ? res.data : res;
+
           this.logger.debug(
-            `${JSON.stringify({ method: method, url: url, body: sanitizedBody, response: res.data })}`,
+            JSON.stringify({
+              method,
+              url,
+              body: sanitizedBody,
+              response: safeResponse,
+            }),
           );
+        }
       }),
       catchError((error) => {
         const duration = Date.now() - now;

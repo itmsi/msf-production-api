@@ -142,7 +142,7 @@ export class PopulationService {
         : undefined;
       const unitTypeName = query.unit_type_name;
       const isDt = query.is_dt;
-      
+
       // Log query parameters untuk debugging
       console.log('Query parameters received:', {
         page,
@@ -153,9 +153,9 @@ export class PopulationService {
         unitTypeName,
         isDt,
         typeOfIsDt: typeof isDt,
-        activitiesId: query.activities_id
+        activitiesId: query.activities_id,
       });
-      
+
       const activitiesId = query.activities_id
         ? parseInt(query.activities_id, 10)
         : undefined;
@@ -196,8 +196,8 @@ export class PopulationService {
 
       // Filter by unit_type_name (case-insensitive)
       if (unitTypeName) {
-        qb.andWhere('LOWER(unitType.unit_name) = LOWER(:unitTypeName)', {
-          unitTypeName,
+        qb.andWhere('unitType.unit_name ILIKE :unitTypeName', {
+          unitTypeName: `%${unitTypeName}%`,
         });
       }
 

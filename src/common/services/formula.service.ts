@@ -68,7 +68,7 @@ export class FormulaService {
         JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
         JOIN m_population mp ON rpbdp.population_id = mp.id
         WHERE rbdp.material = 'ore'
-          AND rbdp.activity = 'hauling'
+          AND rbdp.activity in ('hauling','direct')
           AND rpbdp.activity_date BETWEEN $1 AND $2
           AND rbdp."deletedAt" IS NULL
       `,
@@ -278,13 +278,7 @@ export class FormulaService {
       if (!planDate) {
         planDate = new Date();
       }
-
       // selalu reset ke 00:00:00
-      planDate.setHours(0, 0, 0, 0);
-
-      // format ke 'YYYY-MM-DD 00:00:00'
-      const formattedDate = planDate.toISOString().slice(0, 10) + ' 00:00:00';
-
       const result = await queryRunner.query(
         `
       SELECT 
@@ -292,14 +286,13 @@ export class FormulaService {
       FROM r_plan_working_hour_detail rpwhd
       LEFT JOIN r_plan_working_hour rpwh 
         ON rpwh.id = rpwhd.plant_working_hour_id
-      WHERE rpwh.plan_date = $1
+      WHERE rpwh.plan_date::date = $1
         AND rpwh."deletedAt" IS NULL
       GROUP BY rpwh.mohh_per_month
       `,
-        [formattedDate],
+        [planDate],
       );
-      console.log(formattedDate);
-      console.log('--------->', result[0]);
+
       return parseFloat(result[0]?.target || '0');
     } catch (error) {
       console.error('Error calculating EWH target:', error);
