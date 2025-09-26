@@ -1,27 +1,40 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, In, IsNull, Between } from 'typeorm';
+import {
+  Repository,
+  DataSource,
+  In,
+  IsNull,
+  Between,
+  SelectQueryBuilder,
+} from 'typeorm';
 import { ParentPlanWorkingHour } from './entities/parent-plan-working-hour.entity';
 import { PlanWorkingHour } from './entities/plan-working-hour.entity';
 import { PlanWorkingHourDetail } from './entities/plan-working-hour-detail.entity';
 import {
   CreateParentPlanWorkingHourDto,
-  ActivityDetailDto,
   GetParentPlanWorkingHourQueryDto,
   GetParentPlanWorkingHourDetailQueryDto,
   UpdateDetailParentPlanWorkingHourDto,
   UpdateParentPlanWorkingHourSimpleDto,
+  ExportParentPlanWorkingHourQueryDto,
 } from './dto/parent-plan-working-hour.dto';
 import {
   CsvHelper,
   paginateResponse,
+  setCsvExportHeaders,
 } from '../../common/helpers/public.helper';
 import { Activities } from '../activities/entities/activities.entity';
-import { ActivityStatus } from '../activities/dto/activities.dto';
 import { validateImportFile } from 'src/common/helpers/validation.helper';
 import moment from 'moment';
 import { successResponse, throwError } from 'src/common';
 import { S3Service } from 'src/integrations/s3/s3.service';
+import { Response } from 'express';
+import { format } from '@fast-csv/format';
 
 @Injectable()
 export class ParentPlanWorkingHourService {
@@ -432,41 +445,7 @@ export class ParentPlanWorkingHourService {
     const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
     const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
-    const queryBuilder = this.dataSource
-      .createQueryBuilder()
-      .select([
-        'ppwh.id as parent_id',
-        'ppwh.plan_date as plan_date',
-        'ppwh.createdAt as createdAt',
-        'ppwh.updatedAt as updatedAt',
-        'COUNT(DISTINCT CASE WHEN pwh.is_schedule_day = true THEN pwh.plan_date END) as schedule_day',
-        'COUNT(DISTINCT CASE WHEN pwh.is_holiday_day = true THEN pwh.plan_date END) as holiday_day',
-        'ppwh.total_working_hour_month as working_hour_month',
-        'ppwh.total_working_hour_day as working_hour_day',
-        'ppwh.total_working_hour_longshift as working_hour_longshift',
-        'ppwh.total_working_day_longshift as working_day_longshift',
-        'ppwh.total_mohh_per_month as total_mohh',
-        'SUM(CASE WHEN a.status = :delayStatus THEN COALESCE(pwhd.activities_hour, 0) ELSE 0 END) as total_delay',
-        'SUM(CASE WHEN a.status = :idleStatus THEN COALESCE(pwhd.activities_hour, 0) ELSE 0 END) as total_idle',
-        'SUM(CASE WHEN a.status = :breakdownStatus THEN COALESCE(pwhd.activities_hour, 0) ELSE 0 END) as total_breakdown',
-      ])
-      .from('r_parent_plan_working_hour', 'ppwh')
-      .leftJoin(
-        'r_plan_working_hour',
-        'pwh',
-        'pwh.parent_plan_working_hour_id = ppwh.id',
-      )
-      .leftJoin(
-        'r_plan_working_hour_detail',
-        'pwhd',
-        'pwhd.plant_working_hour_id = pwh.id',
-      )
-      .leftJoin('m_activities', 'a', 'a.id = pwhd.activities_id')
-      .setParameters({
-        delayStatus: 'delay',
-        idleStatus: 'idle',
-        breakdownStatus: 'breakdown',
-      });
+    const queryBuilder = this.findAllQueryBuilder();
 
     // Filter by month
     if (month) {
@@ -2460,6 +2439,153 @@ export class ParentPlanWorkingHourService {
         'Terjadi kesalahan saat memproses file import. Silakan coba lagi atau hubungi administrator.',
         400,
       );
+    }
+  }
+
+  private findAllQueryBuilder(): SelectQueryBuilder<any> {
+    return this.dataSource
+      .createQueryBuilder()
+      .select([
+        'ppwh.id as parent_id',
+        'ppwh.plan_date as plan_date',
+        'ppwh.createdAt as createdAt',
+        'ppwh.updatedAt as updatedAt',
+        'COUNT(DISTINCT CASE WHEN pwh.is_schedule_day = true THEN pwh.plan_date END) as schedule_day',
+        'COUNT(DISTINCT CASE WHEN pwh.is_holiday_day = true THEN pwh.plan_date END) as holiday_day',
+        'ppwh.total_working_hour_month as working_hour_month',
+        'ppwh.total_working_hour_day as working_hour_day',
+        'ppwh.total_working_hour_longshift as working_hour_longshift',
+        'ppwh.total_working_day_longshift as working_day_longshift',
+        'ppwh.total_mohh_per_month as total_mohh',
+        'SUM(CASE WHEN a.status = :delayStatus THEN COALESCE(pwhd.activities_hour, 0) ELSE 0 END) as total_delay',
+        'SUM(CASE WHEN a.status = :idleStatus THEN COALESCE(pwhd.activities_hour, 0) ELSE 0 END) as total_idle',
+        'SUM(CASE WHEN a.status = :breakdownStatus THEN COALESCE(pwhd.activities_hour, 0) ELSE 0 END) as total_breakdown',
+      ])
+      .from('r_parent_plan_working_hour', 'ppwh')
+      .leftJoin(
+        'r_plan_working_hour',
+        'pwh',
+        'pwh.parent_plan_working_hour_id = ppwh.id',
+      )
+      .leftJoin(
+        'r_plan_working_hour_detail',
+        'pwhd',
+        'pwhd.plant_working_hour_id = pwh.id',
+      )
+      .leftJoin('m_activities', 'a', 'a.id = pwhd.activities_id')
+      .setParameters({
+        delayStatus: 'delay',
+        idleStatus: 'idle',
+        breakdownStatus: 'breakdown',
+      });
+  }
+
+  private applyFilterExportData(
+    qb: SelectQueryBuilder<any>,
+    query: ExportParentPlanWorkingHourQueryDto,
+  ): SelectQueryBuilder<any> {
+    const { month, sortOrder } = query;
+    const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+    if (month) {
+      qb.andWhere('EXTRACT(MONTH FROM ppwh.plan_date) = :month', {
+        month: month,
+      });
+    } else {
+      qb.orderBy('ppwh.id', validSortOrder).limit(10);
+    }
+    qb.groupBy('ppwh.id');
+    return qb;
+  }
+
+  private mapExportDataToCsvRow(item: any, index: number) {
+    const roundToTwoDecimals = (value: number): number => {
+      return Math.round(value * 100) / 100;
+    };
+    const totalDelay = roundToTwoDecimals(parseFloat(item.total_delay) || 0);
+    const totalIdle = roundToTwoDecimals(parseFloat(item.total_idle) || 0);
+    const totalBreakdown = roundToTwoDecimals(
+      parseFloat(item.total_breakdown) || 0,
+    );
+    const totalMohh = roundToTwoDecimals(parseFloat(item.total_mohh) || 0);
+    const ewh = roundToTwoDecimals(
+      totalMohh - totalDelay - totalIdle - totalBreakdown,
+    );
+    const pa =
+      totalMohh > 0
+        ? roundToTwoDecimals((ewh + totalDelay + totalIdle) / totalMohh)
+        : 0;
+    const ma =
+      ewh + totalBreakdown > 0
+        ? roundToTwoDecimals(ewh / (ewh + totalBreakdown))
+        : 0;
+
+    const ua =
+      ewh + totalDelay + totalIdle > 0
+        ? roundToTwoDecimals(ewh / (ewh + totalDelay + totalIdle))
+        : 0;
+
+    const eu =
+      ewh + totalDelay + totalIdle + totalBreakdown > 0
+        ? roundToTwoDecimals(
+            ewh / (ewh + totalDelay + totalIdle + totalBreakdown),
+          )
+        : 0;
+    return {
+      No: index + 1,
+      Month: moment(item.plan_date).format('MMMM/YYYY'),
+      'Calendar Day': Number(item.schedule_day) + Number(item.holiday_day) || 0,
+      'Schedule Day': item?.schedule_day || 0,
+      'Holiday Day': item?.holiday_day || 0,
+      'EWH Hour/Month': roundToTwoDecimals(
+        parseFloat(item.working_hour_month) || 0,
+      ),
+      'EWH Hour/Day': roundToTwoDecimals(
+        parseFloat(item.working_hour_day) || 0,
+      ),
+      'Working Longshift (Day)': roundToTwoDecimals(
+        parseFloat(item.working_day_longshift) || 0,
+      ),
+      'Working Hours Longshift': roundToTwoDecimals(
+        parseFloat(item.working_hour_longshift) || 0,
+      ),
+      'Total MOHH': totalMohh,
+      'Total Delay': totalDelay,
+      'Total Idle': totalIdle,
+      'Total Repair': totalBreakdown,
+      EWH: Math.max(0, ewh),
+      PA: Math.max(0, pa),
+      MA: Math.max(0, ma),
+      UA: Math.max(0, ua),
+      EU: Math.max(0, eu),
+    };
+  }
+
+  async exportData(query: ExportParentPlanWorkingHourQueryDto, res: Response) {
+    try {
+      const qb = this.findAllQueryBuilder();
+
+      this.applyFilterExportData(qb, query);
+
+      const data = await qb.getRawMany();
+
+      if (!data.length) {
+        res.status(200).json(successResponse([], 'Data Not Found'));
+        return;
+      }
+      // // Set headers CSV
+      setCsvExportHeaders(
+        res,
+        `parent_plan_working_hour_export_${Date.now()}.csv`,
+      );
+      // // Buat stream writer
+      const csvStream = format({ headers: true });
+      csvStream.pipe(res);
+      data.forEach((item, i) => {
+        csvStream.write(this.mapExportDataToCsvRow(item, i));
+      });
+      csvStream.end();
+    } catch (error) {
+      throw new InternalServerErrorException('Gagal export data');
     }
   }
 }

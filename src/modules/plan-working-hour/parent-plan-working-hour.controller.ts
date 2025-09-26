@@ -31,13 +31,10 @@ import {
 import { ParentPlanWorkingHourService } from './parent-plan-working-hour.service';
 import {
   CreateParentPlanWorkingHourDto,
-  ParentPlanWorkingHourResponseDto,
-  ParentPlanWorkingHourSummaryResponseDto,
+  ExportParentPlanWorkingHourQueryDto,
   GetParentPlanWorkingHourQueryDto,
-  GetParentPlanWorkingHourDetailQueryDto,
   UpdateDetailParentPlanWorkingHourDto,
   UpdateParentPlanWorkingHourSimpleDto,
-  ExportParentPlanWorkingHourQueryDto,
 } from './dto/parent-plan-working-hour.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { successResponse } from '../../common/helpers/response.helper';
@@ -55,18 +52,18 @@ export class ParentPlanWorkingHourController {
     private readonly parentPlanWorkingHourService: ParentPlanWorkingHourService,
   ) {}
 
-  // @Get('export')
-  // @ApiOperation({
-  //   summary: 'Export data Barge Form dari CSV',
-  //   description:
-  //     'Mengimport data Barge Form dari CSV ke database setelah validasi',
-  // })
-  // async exportData(
-  //   @Query() query: ExportParentPlanWorkingHourQueryDto,
-  //   @Res({ passthrough: false }) res: Response,
-  // ) {
-  //   return await this.parentPlanWorkingHourService.exportData(query, res);
-  // }
+  @Get('export')
+  @ApiOperation({
+    summary: 'Export data Barge Form dari CSV',
+    description:
+      'Mengimport data Barge Form dari CSV ke database setelah validasi',
+  })
+  async exportData(
+    @Query() query: ExportParentPlanWorkingHourQueryDto,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    return await this.parentPlanWorkingHourService.exportData(query, res);
+  }
 
   @Get('import/template')
   @ApiOperation({
@@ -78,12 +75,13 @@ export class ParentPlanWorkingHourController {
     try {
       const file = join(
         process.cwd(),
-        'src/modules/barge-form/template-barge-import.csv',
+        'src/modules/plan-working-hour/template-parent-plan-working-hour.csv',
       );
       const stream = createReadStream(file);
       return new StreamableFile(stream, {
         type: 'text/csv',
-        disposition: 'attachment; filename="template-barge-import.csv"',
+        disposition:
+          'attachment; filename="template-parent-plan-working-hour.csv"',
       });
     } catch (error) {
       throw new InternalServerErrorException('Failed to download CSV template');
