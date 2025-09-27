@@ -1232,10 +1232,13 @@ export class HaulingListService {
 
   private mapExportDataToCsvRow(item: HaulingList, index: number) {
     const timeRange = calculateTimeRange(item.time);
+    const dumpingPoint = !item.dumpingPointOp
+      ? item.dumpingPointBarge.name
+      : item.dumpingPointOp?.name;
 
     return {
       No: index + 1,
-      'Activity Date': item.activityDate,
+      'Activity Date': new Date(item.activityDate).toISOString().split('T')[0],
       Shift: item.shift.toUpperCase(),
       Time:
         item.time instanceof Date
@@ -1246,9 +1249,7 @@ export class HaulingListService {
       'Unit Hauler Name': item.unitHauler?.no_unit ?? '',
       Material: item.material ?? '',
       'Loading Point': item.loadingPoint?.name ?? '',
-      'Dumping Point': !item.loadingPointId
-        ? item.dumpingPointOp?.name
-        : item.dumpingPointBarge?.name,
+      'Dumping Point': dumpingPoint,
       Vessel: item.vessel ?? 0,
       'Total Tonnage': item.totalTonnage ?? 0,
     };
