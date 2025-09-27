@@ -1,12 +1,4 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsInt,
-  IsBoolean,
-  IsEnum,
-  IsArray,
-} from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsInt, IsBoolean, IsEnum, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { MenuStatus, MenuModuleType } from '../entities/menu.entity';
 
@@ -99,8 +91,7 @@ export class CreateMenuDto {
   module?: MenuModuleType;
 
   @ApiPropertyOptional({
-    description:
-      'ID user yang membuat (akan diisi otomatis jika tidak disediakan)',
+    description: 'ID user yang membuat (akan diisi otomatis jika tidak disediakan)',
     example: 1,
     minimum: 1,
   })
@@ -109,8 +100,7 @@ export class CreateMenuDto {
   createdBy?: number;
 
   @ApiPropertyOptional({
-    description:
-      'Array permission IDs untuk menu ini (opsional). Permission ID harus ada di database',
+    description: 'Array permission IDs untuk menu ini (opsional). Permission ID harus ada di database',
     type: [Number],
     example: [1, 2, 3],
     isArray: true,

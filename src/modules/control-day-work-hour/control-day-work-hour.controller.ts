@@ -1,27 +1,15 @@
-import {
-  Controller,
-  Get,
-  Query,
-  UseGuards,
-  HttpStatus,
-  HttpCode,
-} from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, HttpStatus, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { ControlDayWorkHourService } from './control-day-work-hour.service';
-import {
-  GetControlDayWorkHourDto,
-  ControlDayWorkHourListResponseDto,
-} from './dto/control-day-work-hour.dto';
+import { GetControlDayWorkHourDto, ControlDayWorkHourListResponseDto } from './dto/control-day-work-hour.dto';
 
 @ApiTags('Control Day Work Hour')
 @Controller('control-day-work-hour')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth('jwt')
 export class ControlDayWorkHourController {
-  constructor(
-    private readonly controlDayWorkHourService: ControlDayWorkHourService,
-  ) {}
+  constructor(private readonly controlDayWorkHourService: ControlDayWorkHourService) {}
 
   @Get()
   @HttpCode(HttpStatus.OK)
@@ -69,10 +57,7 @@ export class ControlDayWorkHourController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Bad Request - Parameter tidak valid',
   })
-  async getControlDayWorkHour(
-    @Query() query: GetControlDayWorkHourDto,
-  ): Promise<ControlDayWorkHourListResponseDto> {
+  async getControlDayWorkHour(@Query() query: GetControlDayWorkHourDto): Promise<ControlDayWorkHourListResponseDto> {
     return this.controlDayWorkHourService.getControlDayWorkHour(query);
   }
-
 }

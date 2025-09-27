@@ -206,10 +206,7 @@ export class MenuHasPermissionSeeder {
 
     for (const menuPermission of menuPermissionData) {
       // Get menu ID
-      const menu = await this.dataSource.query(
-        'SELECT id FROM m_menu WHERE menu_code = $1',
-        [menuPermission.menuCode],
-      );
+      const menu = await this.dataSource.query('SELECT id FROM m_menu WHERE menu_code = $1', [menuPermission.menuCode]);
 
       if (menu.length === 0) {
         console.log(`❌ Menu not found: ${menuPermission.menuCode}`);
@@ -220,10 +217,7 @@ export class MenuHasPermissionSeeder {
 
       for (const permissionCode of menuPermission.permissions) {
         // Get permission ID
-        const permission = await this.dataSource.query(
-          'SELECT id FROM m_permission WHERE permission_code = $1',
-          [permissionCode],
-        );
+        const permission = await this.dataSource.query('SELECT id FROM m_permission WHERE permission_code = $1', [permissionCode]);
 
         if (permission.length === 0) {
           console.log(`❌ Permission not found: ${permissionCode}`);
@@ -245,14 +239,10 @@ export class MenuHasPermissionSeeder {
             [menuId, permissionId],
           );
           createdCount++;
-          console.log(
-            `✅ Menu-permission relationship created: ${menuPermission.menuCode} -> ${permissionCode}`,
-          );
+          console.log(`✅ Menu-permission relationship created: ${menuPermission.menuCode} -> ${permissionCode}`);
         } else {
           skippedCount++;
-          console.log(
-            `⏭️  Menu-permission relationship already exists: ${menuPermission.menuCode} -> ${permissionCode}`,
-          );
+          console.log(`⏭️  Menu-permission relationship already exists: ${menuPermission.menuCode} -> ${permissionCode}`);
         }
       }
     }

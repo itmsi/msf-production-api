@@ -20,12 +20,18 @@ export class QueryHaulingListDto {
   @IsDateString()
   activity_date?: string;
 
-  @ApiPropertyOptional({ description: 'Filter berdasarkan tanggal mulai aktivitas (YYYY-MM-DD)', example: '2024-01-01' })
+  @ApiPropertyOptional({
+    description: 'Filter berdasarkan tanggal mulai aktivitas (YYYY-MM-DD)',
+    example: '2024-01-01',
+  })
   @IsOptional()
   @IsDateString()
   start_date?: string;
 
-  @ApiPropertyOptional({ description: 'Filter berdasarkan tanggal akhir aktivitas (YYYY-MM-DD)', example: '2024-01-31' })
+  @ApiPropertyOptional({
+    description: 'Filter berdasarkan tanggal akhir aktivitas (YYYY-MM-DD)',
+    example: '2024-01-31',
+  })
   @IsOptional()
   @IsDateString()
   end_date?: string;

@@ -1,6 +1,6 @@
 /**
  * Test Script untuk Generate Data Harian
- * 
+ *
  * Script ini digunakan untuk testing manual generate data harian
  * tanpa perlu menjalankan aplikasi NestJS
  */
@@ -21,7 +21,8 @@ function getSundaysInMonth(date) {
 
   for (let day = 1; day <= daysInMonth; day++) {
     const currentDate = new Date(year, month, day);
-    if (currentDate.getDay() === 0) { // 0 = Sunday
+    if (currentDate.getDay() === 0) {
+      // 0 = Sunday
       sundayCount++;
     }
   }
@@ -151,17 +152,21 @@ testCases.forEach((testCase, index) => {
   const actualAvailableDays = actualDays - actualSundays;
 
   console.log(`📊 Hasil Perhitungan:`);
-  console.log(`   Expected Days: ${testCase.expectedDays} | Actual: ${actualDays} | ✅ ${actualDays === testCase.expectedDays ? 'PASS' : 'FAIL'}`);
-  console.log(`   Expected Sundays: ${testCase.expectedSundays} | Actual: ${actualSundays} | ✅ ${actualSundays === testCase.expectedSundays ? 'PASS' : 'FAIL'}`);
+  console.log(
+    `   Expected Days: ${testCase.expectedDays} | Actual: ${actualDays} | ✅ ${actualDays === testCase.expectedDays ? 'PASS' : 'FAIL'}`,
+  );
+  console.log(
+    `   Expected Sundays: ${testCase.expectedSundays} | Actual: ${actualSundays} | ✅ ${actualSundays === testCase.expectedSundays ? 'PASS' : 'FAIL'}`,
+  );
   console.log(`   Available Days: ${actualAvailableDays}`);
 
   // Generate data harian
   const dailyData = generateDailyData(testCase.date, totalValues);
-  
+
   console.log(`\n📋 Data Harian yang Di-Generate (${dailyData.length} records):`);
   console.log(`   Tanggal 1: ${dailyData[0].tanggal} (${dailyData[0].hari})`);
   console.log(`   Tanggal ${actualDays}: ${dailyData[actualDays - 1].tanggal} (${dailyData[actualDays - 1].hari})`);
-  
+
   // Tampilkan beberapa contoh data
   console.log(`\n🔍 Contoh Data Harian:`);
   dailyData.slice(0, 3).forEach((record, idx) => {

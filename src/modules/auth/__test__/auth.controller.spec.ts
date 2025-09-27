@@ -50,10 +50,7 @@ describe('AuthController', () => {
       const body: LoginDto = { username: 'superadmin', password: 'Qwer1234!' };
       const result = await authController.login(body);
 
-      expect(authService.validateUser).toHaveBeenCalledWith(
-        body.username,
-        body.password,
-      );
+      expect(authService.validateUser).toHaveBeenCalledWith(body.username, body.password);
       expect(authService.login).toHaveBeenCalledWith(mockUser);
       expect(result).toEqual(successResponse(mockJwt, 'Login succesfully!'));
     });
@@ -65,9 +62,7 @@ describe('AuthController', () => {
       const result = await authController.getProfile(mockRequest);
 
       expect(authService.getProfileWithRole).toHaveBeenCalledWith(1);
-      expect(result).toEqual(
-        successResponse(mockProfile, 'Get profile successfully!'),
-      );
+      expect(result).toEqual(successResponse(mockProfile, 'Get profile successfully!'));
     });
   });
 
@@ -76,12 +71,8 @@ describe('AuthController', () => {
       const body: ForgotPasswordDto = { email: 'admin@mail.com' };
       const result = await authController.forgotPassword(body);
 
-      expect(authService.sendResetPasswordEmail).toHaveBeenCalledWith(
-        body.email,
-      );
-      expect(result).toEqual(
-        successResponse(mockForgot, 'Reset link sent to email'),
-      );
+      expect(authService.sendResetPasswordEmail).toHaveBeenCalledWith(body.email);
+      expect(result).toEqual(successResponse(mockForgot, 'Reset link sent to email'));
     });
   });
 
@@ -95,9 +86,7 @@ describe('AuthController', () => {
       const result = await authController.resetPassword(body);
 
       expect(authService.resetPassword).toHaveBeenCalledWith(body);
-      expect(result).toEqual(
-        successResponse(mockReset, 'Password has been reset successfully!'),
-      );
+      expect(result).toEqual(successResponse(mockReset, 'Password has been reset successfully!'));
     });
   });
 
@@ -111,9 +100,7 @@ describe('AuthController', () => {
       const result = await authController.cekTokenReset(body);
 
       expect(authService.cekTokenReset).toHaveBeenCalledWith(body);
-      expect(result).toEqual(
-        successResponse(mockCheckToken, 'Token is Valid!'),
-      );
+      expect(result).toEqual(successResponse(mockCheckToken, 'Token is Valid!'));
     });
   });
 });

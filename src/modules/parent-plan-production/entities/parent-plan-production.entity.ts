@@ -1,12 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  DeleteDateColumn,
-  OneToMany,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, OneToMany } from 'typeorm';
 import { PlanProduction } from '../../plan-production/entities/plan-production.entity';
 
 @Entity('r_parent_plan_production')
@@ -88,9 +80,6 @@ export class ParentPlanProduction {
   deleted_at: Date;
 
   // Relationship with PlanProduction
-  @OneToMany(
-    () => PlanProduction,
-    (planProduction) => planProduction.parentPlanProduction,
-  )
+  @OneToMany(() => PlanProduction, (planProduction) => planProduction.parentPlanProduction)
   planProductions: PlanProduction[];
 }

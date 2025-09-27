@@ -1,24 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  Put,
-  Delete,
-  UseGuards,
-  ParseIntPipe,
-  Request,
-  Query,
-} from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Param, Body, Put, Delete, UseGuards, ParseIntPipe, Request, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { RoleHasPermissionService } from './role-has-permission.service';
 import {
   CreateRoleHasPermissionDto,
@@ -35,16 +16,13 @@ import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 @ApiBearerAuth('jwt')
 @Controller('role-has-permissions')
 export class RoleHasPermissionController {
-  constructor(
-    private readonly roleHasPermissionService: RoleHasPermissionService,
-  ) {}
+  constructor(private readonly roleHasPermissionService: RoleHasPermissionService) {}
 
   @UseGuards(JwtAuthGuard)
   @Post()
   @ApiOperation({
     summary: 'Membuat role has permission baru',
-    description:
-      'Memberikan permission kepada role untuk menu tertentu. Kombinasi role_id, mhp_id, dan permission_id harus unik.',
+    description: 'Memberikan permission kepada role untuk menu tertentu. Kombinasi role_id, mhp_id, dan permission_id harus unik.',
   })
   @ApiResponse({
     status: 201,
@@ -115,10 +93,7 @@ export class RoleHasPermissionController {
       },
     },
   })
-  create(
-    @Body() createRoleHasPermissionDto: CreateRoleHasPermissionDto,
-    @Request() req: any,
-  ) {
+  create(@Body() createRoleHasPermissionDto: CreateRoleHasPermissionDto, @Request() req: any) {
     if (!createRoleHasPermissionDto.createdBy) {
       createRoleHasPermissionDto.createdBy = req.user?.id;
     }
@@ -128,8 +103,7 @@ export class RoleHasPermissionController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary:
-      'Mendapatkan semua data role has permissions dengan pagination, filtering, dan sorting',
+    summary: 'Mendapatkan semua data role has permissions dengan pagination, filtering, dan sorting',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -339,8 +313,7 @@ export class RoleHasPermissionController {
   })
   @ApiResponse({
     status: 200,
-    description:
-      'Data role has permissions berdasarkan permission ID berhasil diambil',
+    description: 'Data role has permissions berdasarkan permission ID berhasil diambil',
     type: [RoleHasPermissionResponseDto],
     schema: {
       example: {
@@ -382,9 +355,7 @@ export class RoleHasPermissionController {
     status: 500,
     description: 'Internal Server Error - Terjadi kesalahan pada server',
   })
-  findByPermissionId(
-    @Param('permissionId', ParseIntPipe) permissionId: number,
-  ) {
+  findByPermissionId(@Param('permissionId', ParseIntPipe) permissionId: number) {
     return this.roleHasPermissionService.findByPermissionId(permissionId);
   }
 
@@ -392,8 +363,7 @@ export class RoleHasPermissionController {
   @Get('by-menu-has-permission/:mhpId')
   @ApiOperation({
     summary: 'Mendapatkan semua roles berdasarkan menu has permission ID',
-    description:
-      'Mengambil semua roles yang memiliki permission untuk menu tertentu',
+    description: 'Mengambil semua roles yang memiliki permission untuk menu tertentu',
   })
   @ApiParam({
     name: 'mhpId',
@@ -403,8 +373,7 @@ export class RoleHasPermissionController {
   })
   @ApiResponse({
     status: 200,
-    description:
-      'Data role has permissions berdasarkan menu has permission ID berhasil diambil',
+    description: 'Data role has permissions berdasarkan menu has permission ID berhasil diambil',
     type: [RoleHasPermissionResponseDto],
     schema: {
       example: {
@@ -453,8 +422,7 @@ export class RoleHasPermissionController {
   @Get(':id')
   @ApiOperation({
     summary: 'Mendapatkan data role has permission berdasarkan ID',
-    description:
-      'Mengambil data role has permission berdasarkan ID yang diberikan',
+    description: 'Mengambil data role has permission berdasarkan ID yang diberikan',
   })
   @ApiParam({
     name: 'id',
@@ -534,8 +502,7 @@ export class RoleHasPermissionController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data role has permission berdasarkan ID',
-    description:
-      'Mengupdate data role has permission dengan validasi duplikasi kombinasi role_id, mhp_id, dan permission_id',
+    description: 'Mengupdate data role has permission dengan validasi duplikasi kombinasi role_id, mhp_id, dan permission_id',
   })
   @ApiParam({
     name: 'id',
@@ -584,11 +551,7 @@ export class RoleHasPermissionController {
     status: 500,
     description: 'Internal Server Error - Terjadi kesalahan pada server',
   })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateRoleHasPermissionDto: UpdateRoleHasPermissionDto,
-    @Request() req: any,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateRoleHasPermissionDto: UpdateRoleHasPermissionDto, @Request() req: any) {
     if (!updateRoleHasPermissionDto.updatedBy) {
       updateRoleHasPermissionDto.updatedBy = req.user?.id;
     }
@@ -599,8 +562,7 @@ export class RoleHasPermissionController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Menghapus data role has permission berdasarkan ID',
-    description:
-      'Menghapus data role has permission secara permanen dari database',
+    description: 'Menghapus data role has permission secara permanen dari database',
   })
   @ApiParam({
     name: 'id',

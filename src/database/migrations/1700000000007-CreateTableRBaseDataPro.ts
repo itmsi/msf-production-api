@@ -1,13 +1,6 @@
-import {
-  MigrationInterface,
-  QueryRunner,
-  Table,
-  TableForeignKey,
-} from 'typeorm';
+import { MigrationInterface, QueryRunner, Table, TableForeignKey } from 'typeorm';
 
-export class CreateTableRBaseDataPro1700000000007
-  implements MigrationInterface
-{
+export class CreateTableRBaseDataPro1700000000007 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Buat ENUM types terlebih dahulu
     await queryRunner.query(`

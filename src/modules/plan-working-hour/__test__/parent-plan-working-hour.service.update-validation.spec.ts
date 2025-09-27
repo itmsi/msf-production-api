@@ -72,15 +72,9 @@ describe('ParentPlanWorkingHourService - Update Validation Tests', () => {
     }).compile();
 
     service = module.get<ParentPlanWorkingHourService>(ParentPlanWorkingHourService);
-    parentPlanWorkingHourRepository = module.get<Repository<ParentPlanWorkingHour>>(
-      getRepositoryToken(ParentPlanWorkingHour),
-    );
-    planWorkingHourRepository = module.get<Repository<PlanWorkingHour>>(
-      getRepositoryToken(PlanWorkingHour),
-    );
-    planWorkingHourDetailRepository = module.get<Repository<PlanWorkingHourDetail>>(
-      getRepositoryToken(PlanWorkingHourDetail),
-    );
+    parentPlanWorkingHourRepository = module.get<Repository<ParentPlanWorkingHour>>(getRepositoryToken(ParentPlanWorkingHour));
+    planWorkingHourRepository = module.get<Repository<PlanWorkingHour>>(getRepositoryToken(PlanWorkingHour));
+    planWorkingHourDetailRepository = module.get<Repository<PlanWorkingHourDetail>>(getRepositoryToken(PlanWorkingHourDetail));
     dataSource = module.get<DataSource>(DataSource);
   });
 
@@ -132,19 +126,15 @@ describe('ParentPlanWorkingHourService - Update Validation Tests', () => {
         writable: true,
       });
 
-      await expect(service.update(13, invalidDto)).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.update(13, invalidDto)).rejects.toThrow(
-        'plan_date harus berupa tanggal pertama dari bulan (01)',
-      );
+      await expect(service.update(13, invalidDto)).rejects.toThrow(BadRequestException);
+      await expect(service.update(13, invalidDto)).rejects.toThrow('plan_date harus berupa tanggal pertama dari bulan (01)');
     });
 
     it('should throw error when updating plan_date to past month', async () => {
       const pastDate = new Date();
       pastDate.setMonth(pastDate.getMonth() - 2);
       const pastDateString = pastDate.toISOString().slice(0, 7) + '-01';
-      
+
       const invalidDto = { ...validUpdateDto, plan_date: pastDateString };
 
       // Mock findOneEntity
@@ -164,12 +154,8 @@ describe('ParentPlanWorkingHourService - Update Validation Tests', () => {
         writable: true,
       });
 
-      await expect(service.update(13, invalidDto)).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.update(13, invalidDto)).rejects.toThrow(
-        'Tidak dapat mengupdate plan untuk bulan yang sudah lewat',
-      );
+      await expect(service.update(13, invalidDto)).rejects.toThrow(BadRequestException);
+      await expect(service.update(13, invalidDto)).rejects.toThrow('Tidak dapat mengupdate plan untuk bulan yang sudah lewat');
     });
 
     it('should throw error when updating plan_date to duplicate month', async () => {
@@ -199,16 +185,10 @@ describe('ParentPlanWorkingHourService - Update Validation Tests', () => {
         getOne: jest.fn().mockResolvedValue({ id: 1, plan_date: '2025-08-01' }),
       };
 
-      jest.spyOn(parentPlanWorkingHourRepository, 'createQueryBuilder').mockReturnValue(
-        mockQueryBuilder as any,
-      );
+      jest.spyOn(parentPlanWorkingHourRepository, 'createQueryBuilder').mockReturnValue(mockQueryBuilder as any);
 
-      await expect(service.update(13, invalidDto)).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.update(13, invalidDto)).rejects.toThrow(
-        'Data untuk bulan Agustus 2025 sudah ada dalam sistem',
-      );
+      await expect(service.update(13, invalidDto)).rejects.toThrow(BadRequestException);
+      await expect(service.update(13, invalidDto)).rejects.toThrow('Data untuk bulan Agustus 2025 sudah ada dalam sistem');
     });
 
     it('should pass validation when updating plan_date to valid month', async () => {
@@ -238,9 +218,7 @@ describe('ParentPlanWorkingHourService - Update Validation Tests', () => {
         getOne: jest.fn().mockResolvedValue(null),
       };
 
-      jest.spyOn(parentPlanWorkingHourRepository, 'createQueryBuilder').mockReturnValue(
-        mockQueryBuilder as any,
-      );
+      jest.spyOn(parentPlanWorkingHourRepository, 'createQueryBuilder').mockReturnValue(mockQueryBuilder as any);
 
       // Mock successful update
       const mockQueryRunner = {
@@ -274,7 +252,7 @@ describe('ParentPlanWorkingHourService - Update Validation Tests', () => {
     });
 
     it('should pass validation when not updating plan_date', async () => {
-      const validDto = { 
+      const validDto = {
         total_working_hour_month: 200,
         total_working_day_longshift: 10,
       }; // No plan_date update

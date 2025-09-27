@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner, Table } from 'typeorm';
 
-export class CreateTableRParentPlanWorkingHour1700000000043
-  implements MigrationInterface
-{
+export class CreateTableRParentPlanWorkingHour1700000000043 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({

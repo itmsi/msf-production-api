@@ -50,22 +50,16 @@ import { Response } from 'express';
 @Controller('effective-working-hours')
 @UseGuards(JwtAuthGuard)
 export class EffectiveWorkingHoursController {
-  constructor(
-    private readonly effectiveWorkingHoursService: EffectiveWorkingHoursService,
-  ) {}
+  constructor(private readonly effectiveWorkingHoursService: EffectiveWorkingHoursService) {}
 
   @Get('import/template')
   @ApiOperation({
     summary: 'Download template CSV untuk import EWH',
-    description:
-      'Mendownload template CSV yang berisi format kolom yang diperlukan',
+    description: 'Mendownload template CSV yang berisi format kolom yang diperlukan',
   })
   downloadTemplate(): StreamableFile {
     try {
-      const file = join(
-        process.cwd(),
-        'src/modules/effective-working-hours/template-ewh-import.csv',
-      );
+      const file = join(process.cwd(), 'src/modules/effective-working-hours/template-ewh-import.csv');
       const stream = createReadStream(file);
       return new StreamableFile(stream, {
         type: 'text/csv',
@@ -97,18 +91,14 @@ export class EffectiveWorkingHoursController {
     summary: 'Export data EWH dari CSV',
     description: 'Mengimport data EWH dari CSV ke database setelah validasi',
   })
-  async exportData(
-    @Query() query: QueryExportEffectiveWorkingHoursDto,
-    @Res({ passthrough: false }) res: Response,
-  ) {
+  async exportData(@Query() query: QueryExportEffectiveWorkingHoursDto, @Res({ passthrough: false }) res: Response) {
     return await this.effectiveWorkingHoursService.exportData(query, res);
   }
 
   @Post()
   @ApiOperation({
     summary: 'Create new effective working hours',
-    description:
-      'Create a new effective working hours record with automatic duration calculation',
+    description: 'Create a new effective working hours record with automatic duration calculation',
   })
   @ApiBody({
     type: CreateEffectiveWorkingHoursDto,
@@ -217,17 +207,13 @@ export class EffectiveWorkingHoursController {
   })
   async create(@Body() createDto: CreateEffectiveWorkingHoursDto) {
     const result = await this.effectiveWorkingHoursService.create(createDto);
-    return successResponse(
-      result,
-      'Effective working hours created successfully',
-    );
+    return successResponse(result, 'Effective working hours created successfully');
   }
 
   @Get()
   @ApiOperation({
     summary: 'Get all effective working hours',
-    description:
-      'Retrieve all effective working hours with filtering, searching, and pagination',
+    description: 'Retrieve all effective working hours with filtering, searching, and pagination',
   })
   @ApiQuery({
     name: 'startDate',
@@ -251,8 +237,7 @@ export class EffectiveWorkingHoursController {
   @ApiQuery({
     name: 'keyword',
     required: false,
-    description:
-      'Search keyword for description, activity name, unit name, type name, or model name',
+    description: 'Search keyword for description, activity name, unit name, type name, or model name',
     example: 'standby',
   })
   @ApiQuery({
@@ -442,17 +427,13 @@ export class EffectiveWorkingHoursController {
   })
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const result = await this.effectiveWorkingHoursService.findOne(id);
-    return successResponse(
-      result,
-      'Effective working hours retrieved successfully',
-    );
+    return successResponse(result, 'Effective working hours retrieved successfully');
   }
 
   @Patch(':id')
   @ApiOperation({
     summary: 'Update effective working hours',
-    description:
-      'Update an existing effective working hours record. Duration will be recalculated if start/end times are provided.',
+    description: 'Update an existing effective working hours record. Duration will be recalculated if start/end times are provided.',
   })
   @ApiParam({
     name: 'id',
@@ -475,8 +456,7 @@ export class EffectiveWorkingHoursController {
       },
       fullUpdate: {
         summary: 'Full Update Example',
-        description:
-          'Example for updating multiple fields (matches curl request)',
+        description: 'Example for updating multiple fields (matches curl request)',
         value: {
           dateActivity: '2024-01-15',
           lossType: 'STB',
@@ -574,25 +554,15 @@ export class EffectiveWorkingHoursController {
       },
     },
   })
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateDto: UpdateEffectiveWorkingHoursDto,
-  ) {
-    const result = await this.effectiveWorkingHoursService.update(
-      id,
-      updateDto,
-    );
-    return successResponse(
-      result,
-      'Effective working hours updated successfully',
-    );
+  async update(@Param('id', ParseIntPipe) id: number, @Body() updateDto: UpdateEffectiveWorkingHoursDto) {
+    const result = await this.effectiveWorkingHoursService.update(id, updateDto);
+    return successResponse(result, 'Effective working hours updated successfully');
   }
 
   @Delete(':id')
   @ApiOperation({
     summary: 'Delete effective working hours',
-    description:
-      'Soft delete an effective working hours record. The record will be marked as deleted but not removed from the database.',
+    description: 'Soft delete an effective working hours record. The record will be marked as deleted but not removed from the database.',
   })
   @ApiParam({
     name: 'id',
@@ -654,9 +624,6 @@ export class EffectiveWorkingHoursController {
   })
   async remove(@Param('id', ParseIntPipe) id: number) {
     await this.effectiveWorkingHoursService.remove(id);
-    return successResponse(
-      null,
-      'Effective working hours deleted successfully',
-    );
+    return successResponse(null, 'Effective working hours deleted successfully');
   }
 }

@@ -8,10 +8,7 @@ import { Population } from '../population/entities/population.entity';
 import { Activities } from '../activities/entities/activities.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([EffectiveWorkingHours, Population, Activities]),
-    S3Module,
-  ],
+  imports: [TypeOrmModule.forFeature([EffectiveWorkingHours, Population, Activities]), S3Module],
   controllers: [EffectiveWorkingHoursController],
   providers: [EffectiveWorkingHoursService],
   exports: [EffectiveWorkingHoursService],

@@ -1,25 +1,7 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  Put,
-  Delete,
-  UseGuards,
-  Query,
-  ParseIntPipe,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Put, Delete, UseGuards, Query, ParseIntPipe } from '@nestjs/common';
 import { UnitTypeService } from './unit-type.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiOperation,
-  ApiResponse as SwaggerApiResponse,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse as SwaggerApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import {
   CreateUnitTypeDto,
   GetUnitTypesQueryDto,
@@ -39,8 +21,7 @@ export class UnitTypeController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary:
-      'Mendapatkan semua data unit type dengan pagination, filtering, sorting, dan grouping',
+    summary: 'Mendapatkan semua data unit type dengan pagination, filtering, sorting, dan grouping',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -163,16 +144,16 @@ export class UnitTypeController {
             data: [
               {
                 id: 1,
-                unit_name: 'Excavator'
+                unit_name: 'Excavator',
               },
               {
                 id: 2,
-                unit_name: 'Dump Truck'
+                unit_name: 'Dump Truck',
               },
               {
                 id: 3,
-                unit_name: 'Loader'
-              }
+                unit_name: 'Loader',
+              },
             ],
             meta: {
               total: 3,
@@ -376,8 +357,7 @@ export class UnitTypeController {
     schema: {
       example: {
         statusCode: 409,
-        message:
-          'Unit type dengan kombinasi brand, unit, type, dan model yang sama sudah terdaftar',
+        message: 'Unit type dengan kombinasi brand, unit, type, dan model yang sama sudah terdaftar',
         error: true,
         timestamp: '2024-01-01T00:00:00.000Z',
       },
@@ -478,13 +458,11 @@ export class UnitTypeController {
   })
   @SwaggerApiResponse({
     status: 409,
-    description:
-      'Unit type dengan kombinasi yang sama sudah digunakan oleh unit type lain',
+    description: 'Unit type dengan kombinasi yang sama sudah digunakan oleh unit type lain',
     schema: {
       example: {
         statusCode: 409,
-        message:
-          'Unit type dengan kombinasi brand, unit, type, dan model yang sama sudah digunakan oleh unit type lain',
+        message: 'Unit type dengan kombinasi brand, unit, type, dan model yang sama sudah digunakan oleh unit type lain',
         error: true,
         timestamp: '2024-01-01T00:00:00.000Z',
       },
@@ -502,10 +480,7 @@ export class UnitTypeController {
       },
     },
   })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateUnitTypeDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUnitTypeDto) {
     return this.unitTypeService.update(id, dto);
   }
 

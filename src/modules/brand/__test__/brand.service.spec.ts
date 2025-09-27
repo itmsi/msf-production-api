@@ -68,9 +68,7 @@ describe('BrandService', () => {
 
       mockRepository.findOne.mockResolvedValue(existingBrand);
 
-      await expect(service.create(createBrandDto)).rejects.toThrow(
-        'Brand name sudah terdaftar',
-      );
+      await expect(service.create(createBrandDto)).rejects.toThrow('Brand name sudah terdaftar');
     });
   });
 
@@ -116,9 +114,7 @@ describe('BrandService', () => {
 
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findById(id)).rejects.toThrow(
-        'Brand tidak ditemukan',
-      );
+      await expect(service.findById(id)).rejects.toThrow('Brand tidak ditemukan');
     });
   });
 
@@ -148,9 +144,7 @@ describe('BrandService', () => {
 
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.update(id, updateBrandDto)).rejects.toThrow(
-        'Brand tidak ditemukan',
-      );
+      await expect(service.update(id, updateBrandDto)).rejects.toThrow('Brand tidak ditemukan');
     });
   });
 

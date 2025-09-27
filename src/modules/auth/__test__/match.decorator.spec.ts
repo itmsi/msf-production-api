@@ -26,9 +26,7 @@ describe('Match decorator', () => {
     const errors = await validate(dto);
     expect(errors.length).toBe(1);
     expect(errors[0].constraints).toHaveProperty('Match');
-    expect(errors[0].constraints?.Match).toBe(
-      'Confirm password must match password',
-    );
+    expect(errors[0].constraints?.Match).toBe('Confirm password must match password');
   });
 
   it('should use default error message when no custom message provided', async () => {
@@ -46,8 +44,6 @@ describe('Match decorator', () => {
     const errors = await validate(dto);
     expect(errors.length).toBe(1);
     expect(errors[0].constraints).toHaveProperty('Match');
-    expect(errors[0].constraints?.Match).toBe(
-      'confirmPassword must match password',
-    );
+    expect(errors[0].constraints?.Match).toBe('confirmPassword must match password');
   });
 });

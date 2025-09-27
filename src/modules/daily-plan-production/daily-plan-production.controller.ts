@@ -1,24 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBody,
-  ApiParam,
-  ApiQuery,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, UseInterceptors } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { DailyPlanProductionService } from './daily-plan-production.service';
 import {
   CreateDailyPlanProductionDto,
@@ -34,17 +15,14 @@ import { NumberFormatInterceptor } from '../../common/interceptors/number-format
 @ApiBearerAuth('jwt')
 @Controller('daily-plan-production')
 export class DailyPlanProductionController {
-  constructor(
-    private readonly dailyPlanProductionService: DailyPlanProductionService,
-  ) {}
+  constructor(private readonly dailyPlanProductionService: DailyPlanProductionService) {}
 
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(NumberFormatInterceptor)
   @Post()
   @ApiOperation({
     summary: 'Create Daily Plan Production',
-    description:
-      'Membuat rencana produksi harian baru dengan validasi dan perhitungan otomatis',
+    description: 'Membuat rencana produksi harian baru dengan validasi dan perhitungan otomatis',
   })
   @ApiBody({
     type: CreateDailyPlanProductionDto,
@@ -99,8 +77,7 @@ export class DailyPlanProductionController {
   @Get()
   @ApiOperation({
     summary: 'Get All Daily Plan Production',
-    description:
-      'Mengambil semua data rencana produksi dengan pagination, filter, pencarian, dan sorting',
+    description: 'Mengambil semua data rencana produksi dengan pagination, filter, pencarian, dan sorting',
   })
   @ApiQuery({
     name: 'start_date',
@@ -125,14 +102,7 @@ export class DailyPlanProductionController {
     required: false,
     description: 'Field untuk sorting',
     example: 'plan_date',
-    enum: [
-      'id',
-      'plan_date',
-      'ob_target',
-      'ore_target',
-      'total_fleet',
-      'createdAt',
-    ],
+    enum: ['id', 'plan_date', 'ob_target', 'ore_target', 'total_fleet', 'createdAt'],
   })
   @ApiQuery({
     name: 'sortOrder',
@@ -253,8 +223,7 @@ export class DailyPlanProductionController {
   })
   @ApiBody({
     type: UpdateDailyPlanProductionDto,
-    description:
-      'Data untuk update daily plan production. Semua field bersifat opsional.',
+    description: 'Data untuk update daily plan production. Semua field bersifat opsional.',
     examples: {
       example1: {
         summary: 'Update lengkap dengan semua field',
@@ -328,10 +297,7 @@ export class DailyPlanProductionController {
     status: 401,
     description: 'Unauthorized - JWT token tidak valid',
   })
-  update(
-    @Param('id') id: string,
-    @Body() updateDto: UpdateDailyPlanProductionDto,
-  ) {
+  update(@Param('id') id: string, @Body() updateDto: UpdateDailyPlanProductionDto) {
     return this.dailyPlanProductionService.update(+id, updateDto);
   }
 

@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
 import { PlanWorkingHourDetailService } from './plan-working-hour-detail.service';
 import {
   CreatePlanWorkingHourDetailDto,
@@ -20,9 +10,7 @@ import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 @Controller('plan-working-hour-detail')
 @UseGuards(JwtAuthGuard)
 export class PlanWorkingHourDetailController {
-  constructor(
-    private readonly planWorkingHourDetailService: PlanWorkingHourDetailService,
-  ) {}
+  constructor(private readonly planWorkingHourDetailService: PlanWorkingHourDetailService) {}
 
   @Post()
   create(@Body() createDto: CreatePlanWorkingHourDetailDto) {
@@ -55,10 +43,7 @@ export class PlanWorkingHourDetailController {
   }
 
   @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateDto: UpdatePlanWorkingHourDetailDto,
-  ) {
+  update(@Param('id') id: string, @Body() updateDto: UpdatePlanWorkingHourDetailDto) {
     return this.planWorkingHourDetailService.update(+id, updateDto);
   }
 

@@ -1,25 +1,7 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  Put,
-  Delete,
-  UseGuards,
-  Query,
-  ParseIntPipe,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Put, Delete, UseGuards, Query, ParseIntPipe } from '@nestjs/common';
 import { SitesService } from './sites.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiOperation,
-  ApiResponse as SwaggerApiResponse,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse as SwaggerApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import {
   CreateSitesDto,
   GetSitesQueryDto,
@@ -39,8 +21,7 @@ export class SitesController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary:
-      'Mendapatkan semua data sites dengan pagination, filtering, dan sorting',
+    summary: 'Mendapatkan semua data sites dengan pagination, filtering, dan sorting',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -175,8 +156,7 @@ export class SitesController {
   @Get(':id')
   @ApiOperation({
     summary: 'Mendapatkan data site berdasarkan ID',
-    description:
-      'Mengambil data site berdasarkan ID yang diberikan beserta operator points',
+    description: 'Mengambil data site berdasarkan ID yang diberikan beserta operator points',
   })
   @ApiParam({
     name: 'id',
@@ -446,8 +426,7 @@ export class SitesController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Menghapus data site berdasarkan ID (soft delete)',
-    description:
-      'Melakukan soft delete pada site (data tidak benar-benar dihapus dari database)',
+    description: 'Melakukan soft delete pada site (data tidak benar-benar dihapus dari database)',
   })
   @ApiParam({
     name: 'id',

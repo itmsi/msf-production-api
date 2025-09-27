@@ -1,24 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  ParseIntPipe,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiQuery,
-  ApiBearerAuth,
-  ApiBody,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { HaulingListService } from './hauling-list.service';
 import {
   CreateHaulingListDto,
@@ -44,8 +25,7 @@ export class HaulingListController {
     examples: {
       'hauling-list-ore': {
         summary: 'Contoh data hauling list untuk material ore',
-        description:
-          'Data lengkap untuk membuat hauling list dengan material ore',
+        description: 'Data lengkap untuk membuat hauling list dengan material ore',
         value: {
           activity_date: '2024-01-15T00:00:00Z',
           shift: 'ds',
@@ -61,8 +41,7 @@ export class HaulingListController {
       },
       'hauling-list-biomas': {
         summary: 'Contoh data hauling list untuk material biomas',
-        description:
-          'Data lengkap untuk membuat hauling list dengan material biomas',
+        description: 'Data lengkap untuk membuat hauling list dengan material biomas',
         value: {
           activity_date: '2024-01-16T00:00:00Z',
           shift: 'ns',
@@ -95,8 +74,7 @@ export class HaulingListController {
   })
   @ApiResponse({
     status: 400,
-    description:
-      'Bad Request - validasi error atau foreign key constraint violation',
+    description: 'Bad Request - validasi error atau foreign key constraint violation',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized - token tidak valid' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
@@ -198,8 +176,7 @@ export class HaulingListController {
 
   @Get('activities')
   @ApiOperation({
-    summary:
-      'Mengambil data activities (operation points) dengan pagination dan filter',
+    summary: 'Mengambil data activities (operation points) dengan pagination dan filter',
   })
   @ApiQuery({
     name: 'page',
@@ -366,8 +343,7 @@ export class HaulingListController {
       },
       'update-material-vessel': {
         summary: 'Update material dan vessel',
-        description:
-          'Contoh update material dan vessel (total_tonnage akan dihitung otomatis)',
+        description: 'Contoh update material dan vessel (total_tonnage akan dihitung otomatis)',
         value: {
           material: 'boulder',
           vessel: 8,
@@ -408,16 +384,14 @@ export class HaulingListController {
   })
   @ApiResponse({
     status: 400,
-    description:
-      'Bad Request - validasi error atau foreign key constraint violation',
+    description: 'Bad Request - validasi error atau foreign key constraint violation',
     schema: {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 400 },
         message: {
           type: 'string',
-          example:
-            'Foreign key constraint violation: Unit loading dengan ID 999 tidak ditemukan di tabel m_population',
+          example: 'Foreign key constraint violation: Unit loading dengan ID 999 tidak ditemukan di tabel m_population',
         },
         error: { type: 'string', example: 'Bad Request' },
       },
@@ -439,10 +413,7 @@ export class HaulingListController {
     },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateHaulingListDto: UpdateHaulingListDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateHaulingListDto: UpdateHaulingListDto) {
     return this.haulingListService.update(id, updateHaulingListDto);
   }
 

@@ -1,12 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsNumberString,
-  MinLength,
-  MaxLength,
-} from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsNumberString, MinLength, MaxLength } from 'class-validator';
 import { IsNotEmptyString } from '../../../common/validators';
 
 export class CreateBrandDto {

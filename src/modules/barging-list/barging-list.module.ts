@@ -7,9 +7,7 @@ import { Population } from '../population/entities/population.entity';
 import { Barge } from '../barge/entities/barge.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([BargingList, Population, Barge]),
-  ],
+  imports: [TypeOrmModule.forFeature([BargingList, Population, Barge])],
   controllers: [BargingListController],
   providers: [BargingListService],
   exports: [BargingListService],

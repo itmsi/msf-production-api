@@ -2,17 +2,8 @@ import { Injectable, NotFoundException, InternalServerErrorException } from '@ne
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Department } from './entities/department.entity';
-import {
-  CreateDepartmentDto,
-  UpdateDepartmentDto,
-  DepartmentResponseDto,
-  GetDepartmentsQueryDto,
-} from './dto';
-import {
-  successResponse,
-  emptyDataResponse,
-  throwError,
-} from '../../common/helpers/response.helper';
+import { CreateDepartmentDto, UpdateDepartmentDto, DepartmentResponseDto, GetDepartmentsQueryDto } from './dto';
+import { successResponse, emptyDataResponse, throwError } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import { HttpException } from '@nestjs/common';
 
@@ -95,9 +86,7 @@ export class DepartmentService {
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
-      qb.orderBy(`department.${validSortBy}`, validSortOrder)
-        .skip(skip)
-        .take(limit);
+      qb.orderBy(`department.${validSortBy}`, validSortOrder).skip(skip).take(limit);
 
       const [result, total] = await qb.getManyAndCount();
 
@@ -108,13 +97,7 @@ export class DepartmentService {
         updatedAt: department.updatedAt,
       }));
 
-      return paginateResponse(
-        transformedResult,
-        total,
-        page,
-        limit,
-        'Data department berhasil diambil',
-      );
+      return paginateResponse(transformedResult, total, page, limit, 'Data department berhasil diambil');
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Gagal mengambil data department');
@@ -166,7 +149,7 @@ export class DepartmentService {
       }
 
       await this.departmentRepository.update(id, updateDepartmentDto);
-      
+
       const updatedDepartment = await this.departmentRepository.findOne({
         where: { id },
       });

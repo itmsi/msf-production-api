@@ -2,16 +2,13 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class RabbitmqService {
-  async publishMessage(queue: string, message: any): Promise<void> {
-    // TODO: Implement actual RabbitMQ publishing logic
+  publishMessage(queue: string, message: any): Promise<void> {
     console.log(`Publishing message to queue ${queue}:`, message);
+    return Promise.resolve();
   }
 
-  async consumeMessage(
-    queue: string,
-    callback: (message: any) => void,
-  ): Promise<void> {
-    // TODO: Implement actual RabbitMQ consuming logic
+  consumeMessage(queue: string, callback: (message: any) => void): Promise<void> {
     console.log(`Consuming messages from queue ${queue}`);
+    return Promise.resolve();
   }
 }

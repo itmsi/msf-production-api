@@ -1,14 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsOptional,
-  IsString,
-  IsEnum,
-  IsDateString,
-  IsInt,
-  IsIn,
-  IsNotEmpty,
-  IsBoolean,
-} from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsDateString, IsInt, IsIn, IsNotEmpty, IsBoolean } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CreatePopulationDto {
@@ -494,8 +485,7 @@ export class GetPopulationsQueryDto {
   unit_type_name?: string;
 
   @ApiProperty({
-    description:
-      'Filter untuk Dump Truck (true: hanya dump truck, false: selain dump truck, null: semua)',
+    description: 'Filter untuk Dump Truck (true: hanya dump truck, false: selain dump truck, null: semua)',
     example: 'true',
     required: false,
     type: Boolean,
@@ -834,8 +824,7 @@ export class ImportPopulationErrorFileDto {
 
   @ApiProperty({
     description: 'Pesan informasi file error',
-    example:
-      'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
+    example: 'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
   })
   message: string;
 }

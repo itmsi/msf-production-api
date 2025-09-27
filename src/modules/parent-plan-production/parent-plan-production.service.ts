@@ -1,11 +1,4 @@
-import {
-  Injectable,
-  BadRequestException,
-  ConflictException,
-  InternalServerErrorException,
-  HttpException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException, InternalServerErrorException, HttpException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder, Not, DataSource } from 'typeorm';
 import { ParentPlanProduction } from './entities/parent-plan-production.entity';
@@ -16,15 +9,9 @@ import {
   GetParentPlanProductionQueryDto,
   UpdateParentPlanProductionDto,
 } from './dto/parent-plan-production.dto';
-import {
-  paginateResponse,
-  setCsvExportHeaders,
-} from '../../common/helpers/public.helper';
+import { paginateResponse, setCsvExportHeaders } from '../../common/helpers/public.helper';
 import { ApiResponse, successResponse } from 'src/common';
-import {
-  ImportParentPlanProductionRow,
-  ImportParentPlanProductionItemDto,
-} from './dto/import-parent-plan-production.dto';
+import { ImportParentPlanProductionRow, ImportParentPlanProductionItemDto } from './dto/import-parent-plan-production.dto';
 import { Readable } from 'stream';
 import csv from 'csv-parser';
 import { S3Service } from '../../integrations/s3/s3.service';
@@ -66,15 +53,11 @@ export class ParentPlanProductionService {
       }
 
       if (createDto.total_ob_target < 0) {
-        throw new BadRequestException(
-          'total_ob_target tidak boleh kurang dari 0',
-        );
+        throw new BadRequestException('total_ob_target tidak boleh kurang dari 0');
       }
 
       if (createDto.total_quarry_target < 0) {
-        throw new BadRequestException(
-          'total_quarry_target tidak boleh kurang dari 0',
-        );
+        throw new BadRequestException('total_quarry_target tidak boleh kurang dari 0');
       }
       // Hitung jumlah hari dalam bulan
       const totalCalendarDays = this.getDaysInMonth(planDate);
@@ -99,20 +82,14 @@ export class ParentPlanProductionService {
         total_fleet: createDto.total_fleet,
       });
 
-      const savedParent =
-        await this.parentPlanProductionRepository.save(parentPlanProduction);
+      const savedParent = await this.parentPlanProductionRepository.save(parentPlanProduction);
 
       // Generate data plan production harian
-      const generatedDailyData = await this.generateDailyPlanProductions(
-        savedParent,
-        createDto,
-      );
+      const generatedDailyData = await this.generateDailyPlanProductions(savedParent, createDto);
 
       // Log hasil generate
       console.log(`Parent Plan Production created with ID: ${savedParent.id}`);
-      console.log(
-        `Generated ${generatedDailyData.length} daily plan productions`,
-      );
+      console.log(`Generated ${generatedDailyData.length} daily plan productions`);
 
       return savedParent;
     } catch (error) {
@@ -124,10 +101,7 @@ export class ParentPlanProductionService {
   /**
    * Generate data plan production harian berdasarkan parent
    */
-  private async generateDailyPlanProductions(
-    parentPlanProduction: ParentPlanProduction,
-    createDto: CreateParentPlanProductionDto,
-  ) {
+  private async generateDailyPlanProductions(parentPlanProduction: ParentPlanProduction, createDto: CreateParentPlanProductionDto) {
     try {
       const planDate = parentPlanProduction.plan_date;
       const totalDays = parentPlanProduction.total_calender_day;
@@ -148,11 +122,7 @@ export class ParentPlanProductionService {
       // Generate data untuk setiap hari dalam bulan (dari tanggal 1 sampai akhir bulan)
       for (let day = 1; day <= totalDays; day++) {
         // Buat tanggal untuk hari tertentu dalam bulan
-        const currentDate = new Date(
-          planDate.getFullYear(),
-          planDate.getMonth(),
-          day,
-        );
+        const currentDate = new Date(planDate.getFullYear(), planDate.getMonth(), day);
 
         // Hitung nilai-nilai berdasarkan logika yang diminta
         const dailyOldStock = oldStockGlobal;
@@ -161,8 +131,7 @@ export class ParentPlanProductionService {
         const shiftQuarry = quarry / 2;
 
         // Validasi untuk mencegah division by zero
-        const shiftSrTarget =
-          shiftOreTarget > 0 ? shiftObTarget / shiftOreTarget : 0;
+        const shiftSrTarget = shiftOreTarget > 0 ? shiftObTarget / shiftOreTarget : 0;
         const remainingStock = oldStockGlobal - oreShipmentTarget + oreTarget;
 
         const planProduction: Partial<PlanProduction> = {
@@ -195,16 +164,11 @@ export class ParentPlanProductionService {
       console.log(
         `Generating ${planProductions.length} daily plan productions for month ${planDate.getMonth() + 1}/${planDate.getFullYear()}`,
       );
-      console.log(
-        `Date range: ${planProductions[0]?.plan_date} to ${planProductions[planProductions.length - 1]?.plan_date}`,
-      );
+      console.log(`Date range: ${planProductions[0]?.plan_date} to ${planProductions[planProductions.length - 1]?.plan_date}`);
 
       // Simpan semua plan production
-      const savedPlanProductions =
-        await this.planProductionRepository.save(planProductions);
-      console.log(
-        `Successfully saved ${savedPlanProductions.length} daily plan productions`,
-      );
+      const savedPlanProductions = await this.planProductionRepository.save(planProductions);
+      console.log(`Successfully saved ${savedPlanProductions.length} daily plan productions`);
 
       return savedPlanProductions;
     } catch (error) {
@@ -311,13 +275,10 @@ export class ParentPlanProductionService {
 
       // Filter by date range
       if (dateFrom && dateTo) {
-        qb.andWhere(
-          'parent.plan_date >= :dateFrom AND parent.plan_date <= :dateTo',
-          {
-            dateFrom: new Date(dateFrom),
-            dateTo: new Date(dateTo),
-          },
-        );
+        qb.andWhere('parent.plan_date >= :dateFrom AND parent.plan_date <= :dateTo', {
+          dateFrom: new Date(dateFrom),
+          dateTo: new Date(dateTo),
+        });
       } else if (dateFrom) {
         qb.andWhere('parent.plan_date >= :dateFrom', {
           dateFrom: new Date(dateFrom),
@@ -348,14 +309,10 @@ export class ParentPlanProductionService {
         'created_at',
         'updated_at',
       ];
-      const validSortBy = allowedSortFields.includes(sortBy)
-        ? sortBy
-        : 'plan_date';
+      const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'plan_date';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
-      qb.orderBy(`parent.${validSortBy}`, validSortOrder)
-        .skip(skip)
-        .take(limit);
+      qb.orderBy(`parent.${validSortBy}`, validSortOrder).skip(skip).take(limit);
 
       const [result, total] = await qb.getManyAndCount();
 
@@ -369,25 +326,15 @@ export class ParentPlanProductionService {
         const planYear = planDate.getFullYear();
 
         // Hitung jumlah hari tersedia dan libur dari planProductions
-        const availableDay =
-          parent.planProductions?.filter((p) => p.is_available_day).length || 0;
-        const holidayDay =
-          parent.planProductions?.filter((p) => p.is_holiday_day).length || 0;
+        const availableDay = parent.planProductions?.filter((p) => p.is_available_day).length || 0;
+        const holidayDay = parent.planProductions?.filter((p) => p.is_holiday_day).length || 0;
 
         // Logic untuk is_available_to_edit dan is_available_to_delete
-        let isAvailableToEdit =
-          process.env.DEFAULT_AVAIL_TO_EDIT_PRODUCTION_PLAN === 'true';
+        let isAvailableToEdit = process.env.DEFAULT_AVAIL_TO_EDIT_PRODUCTION_PLAN === 'true';
         let isAvailableToDelete = false;
 
-        if (
-          parent.plan_date &&
-          parent.plan_date.toString() !== '0' &&
-          parent.plan_date.toString() !== ''
-        ) {
-          if (
-            planYear > currentYear ||
-            (planYear === currentYear && planMonth > currentMonth)
-          ) {
+        if (parent.plan_date && parent.plan_date.toString() !== '0' && parent.plan_date.toString() !== '') {
+          if (planYear > currentYear || (planYear === currentYear && planMonth > currentMonth)) {
             isAvailableToEdit = true;
             isAvailableToDelete = true;
           } else if (planYear === currentYear && planMonth === currentMonth) {
@@ -420,18 +367,10 @@ export class ParentPlanProductionService {
         };
       });
 
-      return paginateResponse(
-        transformedResult,
-        total,
-        page,
-        limit,
-        'Data parent plan production berhasil diambil',
-      );
+      return paginateResponse(transformedResult, total, page, limit, 'Data parent plan production berhasil diambil');
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
-      throw new BadRequestException(
-        'Gagal mengambil data parent plan production',
-      );
+      throw new BadRequestException('Gagal mengambil data parent plan production');
     }
   }
 
@@ -439,11 +378,10 @@ export class ParentPlanProductionService {
    * Mendapatkan parent plan production by ID
    */
   async findOne(id: number) {
-    const parentPlanProduction =
-      await this.parentPlanProductionRepository.findOne({
-        where: { id },
-        relations: ['planProductions'],
-      });
+    const parentPlanProduction = await this.parentPlanProductionRepository.findOne({
+      where: { id },
+      relations: ['planProductions'],
+    });
 
     if (!parentPlanProduction) {
       throw new BadRequestException('Parent plan production tidak ditemukan');
@@ -457,16 +395,13 @@ export class ParentPlanProductionService {
    */
   async findByDate(planDate: string) {
     const date = new Date(planDate);
-    const parentPlanProduction =
-      await this.parentPlanProductionRepository.findOne({
-        where: { plan_date: date },
-        relations: ['planProductions'],
-      });
+    const parentPlanProduction = await this.parentPlanProductionRepository.findOne({
+      where: { plan_date: date },
+      relations: ['planProductions'],
+    });
 
     if (!parentPlanProduction) {
-      throw new BadRequestException(
-        'Parent plan production tidak ditemukan untuk tanggal tersebut',
-      );
+      throw new BadRequestException('Parent plan production tidak ditemukan untuk tanggal tersebut');
     }
 
     return parentPlanProduction;
@@ -489,10 +424,9 @@ export class ParentPlanProductionService {
     // Jika plan_date diupdate, validasi apakah tanggal baru sudah ada
     if (updateDto.plan_date) {
       const newPlanDate = new Date(updateDto.plan_date);
-      const existingWithNewDate =
-        await this.parentPlanProductionRepository.findOne({
-          where: { plan_date: newPlanDate, id: Not(id) },
-        });
+      const existingWithNewDate = await this.parentPlanProductionRepository.findOne({
+        where: { plan_date: newPlanDate, id: Not(id) },
+      });
 
       if (existingWithNewDate) {
         throw new ConflictException('Plan date baru sudah ada dalam sistem');
@@ -500,9 +434,7 @@ export class ParentPlanProductionService {
     }
 
     // Update parent plan production
-    const planDate = updateDto.plan_date
-      ? new Date(updateDto.plan_date)
-      : existingParent.plan_date;
+    const planDate = updateDto.plan_date ? new Date(updateDto.plan_date) : existingParent.plan_date;
 
     // Hitung ulang jumlah hari dalam bulan jika plan_date berubah
     let totalCalendarDays = existingParent.total_calender_day;
@@ -522,45 +454,24 @@ export class ParentPlanProductionService {
       total_calender_day: totalCalendarDays,
       total_holiday_day: totalHolidayDays,
       total_available_day: totalAvailableDays,
-      total_average_day_ewh:
-        updateDto.total_average_day_ewh ?? existingParent.total_average_day_ewh,
-      total_average_month_ewh:
-        updateDto.total_average_month_ewh ??
-        existingParent.total_average_month_ewh,
-      total_ob_target:
-        updateDto.total_ob_target ?? existingParent.total_ob_target,
-      total_ore_target:
-        updateDto.total_ore_target ?? existingParent.total_ore_target,
-      total_quarry_target:
-        updateDto.total_quarry_target ?? existingParent.total_quarry_target,
-      total_sr_target:
-        updateDto.total_sr_target ?? existingParent.total_sr_target,
-      total_ore_shipment_target:
-        updateDto.total_ore_shipment_target ??
-        existingParent.total_ore_shipment_target,
-      total_remaining_stock:
-        updateDto.total_remaining_stock ?? existingParent.total_remaining_stock,
-      total_sisa_stock:
-        updateDto.total_sisa_stock ?? existingParent.total_sisa_stock,
+      total_average_day_ewh: updateDto.total_average_day_ewh ?? existingParent.total_average_day_ewh,
+      total_average_month_ewh: updateDto.total_average_month_ewh ?? existingParent.total_average_month_ewh,
+      total_ob_target: updateDto.total_ob_target ?? existingParent.total_ob_target,
+      total_ore_target: updateDto.total_ore_target ?? existingParent.total_ore_target,
+      total_quarry_target: updateDto.total_quarry_target ?? existingParent.total_quarry_target,
+      total_sr_target: updateDto.total_sr_target ?? existingParent.total_sr_target,
+      total_ore_shipment_target: updateDto.total_ore_shipment_target ?? existingParent.total_ore_shipment_target,
+      total_remaining_stock: updateDto.total_remaining_stock ?? existingParent.total_remaining_stock,
+      total_sisa_stock: updateDto.total_sisa_stock ?? existingParent.total_sisa_stock,
       total_fleet: updateDto.total_fleet ?? existingParent.total_fleet,
     };
 
-    const savedParent =
-      await this.parentPlanProductionRepository.save(updatedParent);
+    const savedParent = await this.parentPlanProductionRepository.save(updatedParent);
 
     // Update data plan production harian yang sudah ada (bukan delete dan insert ulang)
-    if (
-      existingParent.planProductions &&
-      existingParent.planProductions.length > 0
-    ) {
-      await this.updateDailyPlanProductions(
-        existingParent.planProductions,
-        savedParent,
-        updateDto,
-      );
-      console.log(
-        `Updated ${existingParent.planProductions.length} existing daily plan productions`,
-      );
+    if (existingParent.planProductions && existingParent.planProductions.length > 0) {
+      await this.updateDailyPlanProductions(existingParent.planProductions, savedParent, updateDto);
+      console.log(`Updated ${existingParent.planProductions.length} existing daily plan productions`);
     } else {
       // Jika tidak ada data harian, generate baru
       const createDto = {
@@ -577,13 +488,8 @@ export class ParentPlanProductionService {
         total_fleet: savedParent.total_fleet,
       };
 
-      const generatedDailyData = await this.generateDailyPlanProductions(
-        savedParent,
-        createDto,
-      );
-      console.log(
-        `Generated ${generatedDailyData.length} new daily plan productions`,
-      );
+      const generatedDailyData = await this.generateDailyPlanProductions(savedParent, createDto);
+      console.log(`Generated ${generatedDailyData.length} new daily plan productions`);
     }
 
     // Log hasil update
@@ -604,23 +510,12 @@ export class ParentPlanProductionService {
     const totalDays = parentPlanProduction.total_calender_day;
 
     // Hitung nilai per hari
-    const averageDayEwh =
-      updateDto.total_average_day_ewh ??
-      parentPlanProduction.total_average_day_ewh;
-    const averageMonthEwh =
-      (updateDto.total_average_month_ewh ??
-        parentPlanProduction.total_average_month_ewh) / totalDays;
-    const obTarget =
-      (updateDto.total_ob_target ?? parentPlanProduction.total_ob_target) /
-      totalDays;
-    const oreTarget =
-      (updateDto.total_ore_target ?? parentPlanProduction.total_ore_target) /
-      totalDays;
-    const quarry =
-      updateDto.total_quarry_target ?? parentPlanProduction.total_quarry_target; // Diambil langsung dari body request, tidak dibagi jumlah hari
-    const oreShipmentTarget =
-      (updateDto.total_ore_shipment_target ??
-        parentPlanProduction.total_ore_shipment_target) / totalDays;
+    const averageDayEwh = updateDto.total_average_day_ewh ?? parentPlanProduction.total_average_day_ewh;
+    const averageMonthEwh = (updateDto.total_average_month_ewh ?? parentPlanProduction.total_average_month_ewh) / totalDays;
+    const obTarget = (updateDto.total_ob_target ?? parentPlanProduction.total_ob_target) / totalDays;
+    const oreTarget = (updateDto.total_ore_target ?? parentPlanProduction.total_ore_target) / totalDays;
+    const quarry = updateDto.total_quarry_target ?? parentPlanProduction.total_quarry_target; // Diambil langsung dari body request, tidak dibagi jumlah hari
+    const oreShipmentTarget = (updateDto.total_ore_shipment_target ?? parentPlanProduction.total_ore_shipment_target) / totalDays;
 
     // Ambil old stock global
     const oldStockGlobal = await this.getOldStockGlobal(planDate);
@@ -631,11 +526,7 @@ export class ParentPlanProductionService {
       const day = i + 1;
 
       // Buat tanggal untuk hari tertentu dalam bulan
-      const currentDate = new Date(
-        planDate.getFullYear(),
-        planDate.getMonth(),
-        day,
-      );
+      const currentDate = new Date(planDate.getFullYear(), planDate.getMonth(), day);
 
       // Hitung nilai-nilai berdasarkan logika yang diminta
       const dailyOldStock = oldStockGlobal;
@@ -644,8 +535,7 @@ export class ParentPlanProductionService {
       const shiftQuarry = quarry / 2;
 
       // Validasi untuk mencegah division by zero
-      const shiftSrTarget =
-        shiftOreTarget > 0 ? shiftObTarget / shiftOreTarget : 0;
+      const shiftSrTarget = shiftOreTarget > 0 ? shiftObTarget / shiftOreTarget : 0;
       const remainingStock = oldStockGlobal - oreShipmentTarget + oreTarget;
 
       // Update fields pada data yang sudah ada
@@ -660,8 +550,7 @@ export class ParentPlanProductionService {
       existingPlan.quarry = quarry;
       existingPlan.sr_target = oreTarget > 0 ? obTarget / oreTarget : 0; // Sesuai rumus yang diminta
       existingPlan.ore_shipment_target = oreShipmentTarget;
-      existingPlan.total_fleet =
-        updateDto.total_fleet ?? parentPlanProduction.total_fleet;
+      existingPlan.total_fleet = updateDto.total_fleet ?? parentPlanProduction.total_fleet;
       existingPlan.daily_old_stock = dailyOldStock;
       existingPlan.shift_ob_target = shiftObTarget;
       existingPlan.shift_ore_target = shiftOreTarget;
@@ -701,10 +590,7 @@ export class ParentPlanProductionService {
     let isAvailableToDelete = false;
 
     if (planDate && planDate.toString() !== '0' && planDate.toString() !== '') {
-      if (
-        planYear > currentYear ||
-        (planYear === currentYear && planMonth > currentMonth)
-      ) {
+      if (planYear > currentYear || (planYear === currentYear && planMonth > currentMonth)) {
         isAvailableToDelete = true;
       } else if (planYear === currentYear && planMonth === currentMonth) {
         // Jika bulan sama, cek apakah tanggal lebih dari hari ini
@@ -717,22 +603,13 @@ export class ParentPlanProductionService {
     }
 
     if (!isAvailableToDelete) {
-      throw new BadRequestException(
-        'Data tidak dapat dihapus karena tanggal sudah lewat atau hari ini',
-      );
+      throw new BadRequestException('Data tidak dapat dihapus karena tanggal sudah lewat atau hari ini');
     }
 
     // Hapus semua plan production harian terlebih dahulu
-    if (
-      existingParent.planProductions &&
-      existingParent.planProductions.length > 0
-    ) {
-      await this.planProductionRepository.remove(
-        existingParent.planProductions,
-      );
-      console.log(
-        `Deleted ${existingParent.planProductions.length} daily plan productions`,
-      );
+    if (existingParent.planProductions && existingParent.planProductions.length > 0) {
+      await this.planProductionRepository.remove(existingParent.planProductions);
+      console.log(`Deleted ${existingParent.planProductions.length} daily plan productions`);
     }
 
     // Hapus parent plan production
@@ -754,9 +631,7 @@ export class ParentPlanProductionService {
     // Validasi input date
     const inputDate = new Date(planDate);
     if (isNaN(inputDate.getTime())) {
-      throw new BadRequestException(
-        'Format tanggal tidak valid. Gunakan format YYYY-MM-DD',
-      );
+      throw new BadRequestException('Format tanggal tidak valid. Gunakan format YYYY-MM-DD');
     }
 
     // Hitung tanggal terakhir bulan sebelumnya
@@ -773,16 +648,8 @@ export class ParentPlanProductionService {
     }
 
     // Hitung tanggal terakhir bulan sebelumnya
-    const lastDayOfPreviousMonth = new Date(
-      previousYear,
-      previousMonth + 1,
-      0,
-    ).getDate();
-    const previousMonthDate = new Date(
-      previousYear,
-      previousMonth,
-      lastDayOfPreviousMonth,
-    );
+    const lastDayOfPreviousMonth = new Date(previousYear, previousMonth + 1, 0).getDate();
+    const previousMonthDate = new Date(previousYear, previousMonth, lastDayOfPreviousMonth);
 
     // Format tanggal untuk query
     const formattedDate = previousMonthDate.toLocaleDateString('en-CA');
@@ -818,19 +685,13 @@ export class ParentPlanProductionService {
     };
   }
 
-  async importData(
-    file: Express.Multer.File,
-    userId?: number | null,
-  ): Promise<ApiResponse<any>> {
+  async importData(file: Express.Multer.File, userId?: number | null): Promise<ApiResponse<any>> {
     try {
       if (!file) {
         throw new BadRequestException('File tidak ditemukan');
       }
 
-      if (
-        !file.mimetype.includes('csv') &&
-        !file.originalname.endsWith('.csv')
-      ) {
+      if (!file.mimetype.includes('csv') && !file.originalname.endsWith('.csv')) {
         throw new BadRequestException('File harus berupa CSV');
       }
 
@@ -893,9 +754,7 @@ export class ParentPlanProductionService {
       }
       // Jika ada error, buat file error dan return tanpa insert ke database
       if (errorRows.length > 0) {
-        this.logger.log(
-          `Found ${errorRows.length} rows with errors, generating error CSV...`,
-        );
+        this.logger.log(`Found ${errorRows.length} rows with errors, generating error CSV...`);
 
         try {
           const errorCsvBuffer = this.generateErrorCsv(errorRows);
@@ -910,30 +769,19 @@ export class ParentPlanProductionService {
             minioAvailable = await this.s3Service.testConnection();
 
             if (minioAvailable) {
-              errorFileInfo = await this.s3Service.uploadErrorFile(
-                `import_error_${Date.now()}.csv`,
-                errorCsvBuffer,
-                'ewh_import_error',
-              );
+              errorFileInfo = await this.s3Service.uploadErrorFile(`import_error_${Date.now()}.csv`, errorCsvBuffer, 'ewh_import_error');
 
               if (errorFileInfo) {
                 this.logger.log('Error file uploaded to MinIO successfully');
               } else {
-                this.logger.warn(
-                  'MinIO upload failed, using fallback response',
-                );
+                this.logger.warn('MinIO upload failed, using fallback response');
                 minioAvailable = false;
               }
             } else {
-              this.logger.warn(
-                'MinIO tidak tersedia, menggunakan fallback response',
-              );
+              this.logger.warn('MinIO tidak tersedia, menggunakan fallback response');
             }
           } catch (s3Error) {
-            this.logger.warn(
-              'MinIO error, menggunakan fallback response:',
-              s3Error.message,
-            );
+            this.logger.warn('MinIO error, menggunakan fallback response:', s3Error.message);
             minioAvailable = false;
           }
 
@@ -946,20 +794,15 @@ export class ParentPlanProductionService {
               errorFileInfo && minioAvailable
                 ? {
                     download_url: errorFileInfo.downloadUrl,
-                    message:
-                      'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
+                    message: 'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
                   }
                 : {
                     download_url: null,
-                    message:
-                      'File error gagal diupload ke cloud storage. Silakan periksa data error di response details.',
+                    message: 'File error gagal diupload ke cloud storage. Silakan periksa data error di response details.',
                   },
           };
 
-          return successResponse(
-            response,
-            'Import dibatalkan karena ada data yang tidak valid',
-          );
+          return successResponse(response, 'Import dibatalkan karena ada data yang tidak valid');
         } catch (error) {
           this.logger.error('Error generating error CSV:', error);
           this.logger.error('Error stack:', error.stack);
@@ -972,15 +815,11 @@ export class ParentPlanProductionService {
             details: importResults,
             error_file: {
               download_url: null,
-              message:
-                'Gagal generate file error. Silakan periksa data error di response details.',
+              message: 'Gagal generate file error. Silakan periksa data error di response details.',
             },
           };
 
-          return successResponse(
-            response,
-            'Import dibatalkan karena ada data yang tidak valid',
-          );
+          return successResponse(response, 'Import dibatalkan karena ada data yang tidak valid');
         }
       }
 
@@ -1010,9 +849,7 @@ export class ParentPlanProductionService {
         if (error?.response && error?.response?.statusCode === 400) {
           throw error;
         }
-        throw new InternalServerErrorException(
-          `Gagal import data: ${error.message}`,
-        );
+        throw new InternalServerErrorException(`Gagal import data: ${error.message}`);
       } finally {
         await queryRunner.release();
       }
@@ -1024,9 +861,7 @@ export class ParentPlanProductionService {
     }
   }
 
-  private async parseCsvFile(
-    buffer: Buffer,
-  ): Promise<ImportParentPlanProductionRow[]> {
+  private async parseCsvFile(buffer: Buffer): Promise<ImportParentPlanProductionRow[]> {
     return new Promise((resolve, reject) => {
       const results: ImportParentPlanProductionRow[] = [];
       const stream = Readable.from(buffer);
@@ -1057,11 +892,7 @@ export class ParentPlanProductionService {
 
   private isValidDate(dateString: string): boolean {
     const date = new Date(dateString);
-    return (
-      date instanceof Date &&
-      !isNaN(date.getTime()) &&
-      !!dateString.match(/^\d{4}-\d{2}-\d{2}$/)
-    );
+    return date instanceof Date && !isNaN(date.getTime()) && !!dateString.match(/^\d{4}-\d{2}-\d{2}$/);
   }
 
   private validateCsvRow(row: ImportParentPlanProductionRow): {
@@ -1145,9 +976,7 @@ export class ParentPlanProductionService {
         const error = errors[0];
         message = `Field "${error.field}" tidak valid: ${error.message}`;
       } else {
-        const errorDetails = errors
-          .map((err) => `"${err.field}": ${err.message}`)
-          .join(', ');
+        const errorDetails = errors.map((err) => `"${err.field}": ${err.message}`).join(', ');
         message = `${errors.length} field(s) tidak valid: ${errorDetails}`;
       }
     }
@@ -1180,9 +1009,7 @@ export class ParentPlanProductionService {
         const rowData = errorRow.data;
         const errors = errorRow.errors;
         // Gabungkan semua error message
-        const errorMessages = errors
-          .map((err) => `${err.field}: ${err.message}`)
-          .join('; ');
+        const errorMessages = errors.map((err) => `${err.field}: ${err.message}`).join('; ');
 
         const csvRow = [
           errorRow.row,
@@ -1208,10 +1035,7 @@ export class ParentPlanProductionService {
     }
   }
 
-  private async importCsvRow(
-    row: ImportParentPlanProductionRow,
-    userId?: number | null,
-  ): Promise<void> {
+  private async importCsvRow(row: ImportParentPlanProductionRow, userId?: number | null): Promise<void> {
     const monthlyPlanProduction: CreateParentPlanProductionDto = {
       plan_date: row.plan_date,
       total_average_month_ewh: row.total_average_day_ewh,
@@ -1228,9 +1052,7 @@ export class ParentPlanProductionService {
   }
 
   private findAllQueryBuilder(): SelectQueryBuilder<ParentPlanProduction> {
-    return this.parentPlanProductionRepository
-      .createQueryBuilder('parent')
-      .leftJoinAndSelect('parent.planProductions', 'planProductions');
+    return this.parentPlanProductionRepository.createQueryBuilder('parent').leftJoinAndSelect('parent.planProductions', 'planProductions');
   }
 
   private applyFilterExportData(
@@ -1247,10 +1069,8 @@ export class ParentPlanProductionService {
   }
 
   private mapExportDataToCsvRow(parent: any, index: number) {
-    const availableDay =
-      parent.planProductions?.filter((p) => p.is_available_day).length || 0;
-    const holidayDay =
-      parent.planProductions?.filter((p) => p.is_holiday_day).length || 0;
+    const availableDay = parent.planProductions?.filter((p) => p.is_available_day).length || 0;
+    const holidayDay = parent.planProductions?.filter((p) => p.is_holiday_day).length || 0;
 
     return {
       No: index + 1,

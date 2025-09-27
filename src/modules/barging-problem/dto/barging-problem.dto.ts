@@ -1,14 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsNumber,
-  IsDateString,
-  IsEnum,
-  Min,
-  Max,
-} from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsNumber, IsDateString, IsEnum, Min, Max } from 'class-validator';
 import { IsNotEmptyString } from '../../../common/validators';
 
 export class CreateBargingProblemDto {

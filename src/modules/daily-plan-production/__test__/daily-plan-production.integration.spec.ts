@@ -13,12 +13,8 @@ describe('DailyPlanProduction Integration', () => {
       imports: [DailyPlanProductionModule],
     }).compile();
 
-    service = module.get<DailyPlanProductionService>(
-      DailyPlanProductionService,
-    );
-    controller = module.get<DailyPlanProductionController>(
-      DailyPlanProductionController,
-    );
+    service = module.get<DailyPlanProductionService>(DailyPlanProductionService);
+    controller = module.get<DailyPlanProductionController>(DailyPlanProductionController);
   });
 
   afterAll(async () => {

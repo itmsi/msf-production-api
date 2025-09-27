@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class MailService {
-  async sendMail(to: string, subject: string, content: string): Promise<void> {
-    // TODO: Implement actual email sending logic
+  sendMail(to: string, subject: string, content: string): Promise<void> {
     console.log(`Sending email to ${to}: ${subject}`);
     console.log(`Content: ${content}`);
+    return Promise.resolve();
   }
 
   async sendPasswordResetEmail(to: string, token: string): Promise<void> {

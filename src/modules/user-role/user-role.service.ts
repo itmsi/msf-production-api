@@ -1,22 +1,9 @@
-import {
-  Injectable,
-  HttpException,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, HttpException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { UserRole } from './entities/user-role.entity';
-import {
-  CreateUserRoleDto,
-  UpdateUserRoleDto,
-  GetUserRolesQueryDto,
-} from './dto/user-role.dto';
-import {
-  ApiResponse,
-  successResponse,
-  throwError,
-  emptyDataResponse,
-} from '../../common/helpers/response.helper';
+import { CreateUserRoleDto, UpdateUserRoleDto, GetUserRolesQueryDto } from './dto/user-role.dto';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 
 @Injectable()
@@ -26,9 +13,7 @@ export class UserRoleService {
     private userRoleRepository: Repository<UserRole>,
   ) {}
 
-  async create(
-    createUserRoleDto: CreateUserRoleDto,
-  ): Promise<ApiResponse<UserRole>> {
+  async create(createUserRoleDto: CreateUserRoleDto): Promise<ApiResponse<UserRole>> {
     try {
       // Check if combination already exists
       const existing = await this.userRoleRepository.findOne({
@@ -52,9 +37,7 @@ export class UserRoleService {
     }
   }
 
-  async findAll(
-    query?: GetUserRolesQueryDto,
-  ): Promise<ApiResponse<UserRole[]>> {
+  async findAll(query?: GetUserRolesQueryDto): Promise<ApiResponse<UserRole[]>> {
     try {
       if (!query) {
         // Fallback untuk kompatibilitas backward
@@ -94,29 +77,15 @@ export class UserRoleService {
       }
 
       // Validate sortBy field to prevent SQL injection
-      const allowedSortFields = [
-        'id',
-        'user_id',
-        'role_id',
-        'createdAt',
-        'updatedAt',
-      ];
+      const allowedSortFields = ['id', 'user_id', 'role_id', 'createdAt', 'updatedAt'];
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
-      qb.orderBy(`userRole.${validSortBy}`, validSortOrder)
-        .skip(skip)
-        .take(limit);
+      qb.orderBy(`userRole.${validSortBy}`, validSortOrder).skip(skip).take(limit);
 
       const [result, total] = await qb.getManyAndCount();
 
-      return paginateResponse(
-        result,
-        total,
-        page,
-        limit,
-        'Get user roles successfully',
-      );
+      return paginateResponse(result, total, page, limit, 'Get user roles successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch user roles');
@@ -141,10 +110,7 @@ export class UserRoleService {
     }
   }
 
-  async update(
-    id: number,
-    updateUserRoleDto: UpdateUserRoleDto,
-  ): Promise<ApiResponse<UserRole | null>> {
+  async update(id: number, updateUserRoleDto: UpdateUserRoleDto): Promise<ApiResponse<UserRole | null>> {
     try {
       const userRole = await this.userRoleRepository.findOne({
         where: { id },
@@ -210,9 +176,7 @@ export class UserRoleService {
       return successResponse(result, 'Get user roles by user ID successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to fetch user roles by user ID',
-      );
+      throw new InternalServerErrorException('Failed to fetch user roles by user ID');
     }
   }
 
@@ -226,17 +190,11 @@ export class UserRoleService {
       return successResponse(result, 'Get user roles by role ID successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to fetch user roles by role ID',
-      );
+      throw new InternalServerErrorException('Failed to fetch user roles by role ID');
     }
   }
 
-  async assignRoleToUser(
-    userId: number,
-    roleId: number,
-    createdBy: number,
-  ): Promise<ApiResponse<UserRole>> {
+  async assignRoleToUser(userId: number, roleId: number, createdBy: number): Promise<ApiResponse<UserRole>> {
     const createUserRoleDto: CreateUserRoleDto = {
       user_id: userId,
       role_id: roleId,
@@ -245,10 +203,7 @@ export class UserRoleService {
     return this.create(createUserRoleDto);
   }
 
-  async removeRoleFromUser(
-    userId: number,
-    roleId: number,
-  ): Promise<ApiResponse<null>> {
+  async removeRoleFromUser(userId: number, roleId: number): Promise<ApiResponse<null>> {
     try {
       const userRole = await this.userRoleRepository.findOne({
         where: { user_id: userId, role_id: roleId },

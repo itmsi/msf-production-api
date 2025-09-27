@@ -4,11 +4,7 @@ import { Repository, Timestamp, DataSource } from 'typeorm';
 import { Users } from '../entities/users.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { MailService } from '../../../integrations/mail/mail.service';
-import {
-  CreateUserDto,
-  UpdateUserDto,
-  GetUsersQueryDto,
-} from '../dto/user.dto';
+import { CreateUserDto, UpdateUserDto, GetUsersQueryDto } from '../dto/user.dto';
 import { HttpException, InternalServerErrorException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 
@@ -190,9 +186,7 @@ describe('UsersService', () => {
           }) as any,
       );
 
-      await expect(service.findAll({ page: '1', limit: '10' })).rejects.toThrow(
-        InternalServerErrorException,
-      );
+      await expect(service.findAll({ page: '1', limit: '10' })).rejects.toThrow(InternalServerErrorException);
     });
   });
 
@@ -233,9 +227,7 @@ describe('UsersService', () => {
       repository.save.mockRejectedValueOnce(new Error('DB error'));
       // jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashedpassword');
 
-      await expect(service.create(dto)).rejects.toThrow(
-        InternalServerErrorException,
-      );
+      await expect(service.create(dto)).rejects.toThrow(InternalServerErrorException);
     });
   });
 
@@ -263,9 +255,7 @@ describe('UsersService', () => {
       repository.merge.mockReturnValueOnce({ ...mockUser, ...dto });
       repository.save.mockRejectedValueOnce(new Error('DB error'));
 
-      await expect(service.update(1, dto)).rejects.toThrow(
-        InternalServerErrorException,
-      );
+      await expect(service.update(1, dto)).rejects.toThrow(InternalServerErrorException);
     });
   });
 
@@ -286,9 +276,7 @@ describe('UsersService', () => {
     it('should throw InternalServerErrorException on error', async () => {
       repository.findOne.mockResolvedValueOnce(mockUser);
       repository.softRemove.mockRejectedValueOnce(new Error('fail'));
-      await expect(service.remove(1)).rejects.toThrow(
-        InternalServerErrorException,
-      );
+      await expect(service.remove(1)).rejects.toThrow(InternalServerErrorException);
     });
   });
 });

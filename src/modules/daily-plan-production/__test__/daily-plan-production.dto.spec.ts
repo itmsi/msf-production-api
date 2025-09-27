@@ -1,10 +1,6 @@
 import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
-import {
-  CreateDailyPlanProductionDto,
-  UpdateDailyPlanProductionDto,
-  QueryDailyPlanProductionDto,
-} from '../dto/daily-plan-production.dto';
+import { CreateDailyPlanProductionDto, UpdateDailyPlanProductionDto, QueryDailyPlanProductionDto } from '../dto/daily-plan-production.dto';
 
 describe('DailyPlanProduction DTOs', () => {
   describe('CreateDailyPlanProductionDto', () => {

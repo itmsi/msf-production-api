@@ -1,23 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  Put,
-  Delete,
-  UseGuards,
-  ParseIntPipe,
-  Query,
-} from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Param, Body, Put, Delete, UseGuards, ParseIntPipe, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { EmployeeService } from './employee.service';
 import {
   CreateEmployeeDto,
@@ -40,8 +22,7 @@ export class EmployeeController {
   @Post()
   @ApiOperation({
     summary: 'Membuat employee baru',
-    description:
-      'Membuat employee baru dengan validasi duplikasi NIP. NIP harus unik dalam sistem.',
+    description: 'Membuat employee baru dengan validasi duplikasi NIP. NIP harus unik dalam sistem.',
   })
   @ApiResponse({
     status: 201,
@@ -122,8 +103,7 @@ export class EmployeeController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary:
-      'Mendapatkan semua data employee dengan pagination, filtering, dan sorting',
+    summary: 'Mendapatkan semua data employee dengan pagination, filtering, dan sorting',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -149,8 +129,7 @@ export class EmployeeController {
     name: 'search',
     required: false,
     type: String,
-    description:
-      'Pencarian umum di field firstName, lastName, department, position',
+    description: 'Pencarian umum di field firstName, lastName, department, position',
   })
   @ApiQuery({
     name: 'department',
@@ -452,8 +431,7 @@ export class EmployeeController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data employee berdasarkan ID',
-    description:
-      'Mengupdate data employee dengan validasi duplikasi NIP. Hanya field yang dikirim yang akan diupdate.',
+    description: 'Mengupdate data employee dengan validasi duplikasi NIP. Hanya field yang dikirim yang akan diupdate.',
   })
   @ApiParam({
     name: 'id',
@@ -545,10 +523,7 @@ export class EmployeeController {
       },
     },
   })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateEmployeeDto: UpdateEmployeeDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateEmployeeDto: UpdateEmployeeDto) {
     return this.employeeService.update(id, updateEmployeeDto);
   }
 

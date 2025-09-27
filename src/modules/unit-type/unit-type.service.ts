@@ -1,24 +1,10 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  HttpException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException, HttpException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UnitType } from './entities/unit-type.entity';
 import { Repository, Not } from 'typeorm';
-import {
-  ApiResponse,
-  successResponse,
-  throwError,
-  emptyDataResponse,
-} from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
-import {
-  CreateUnitTypeDto,
-  UnitTypeResponseDto,
-  GetUnitTypesQueryDto,
-  UpdateUnitTypeDto,
-} from './dto/unit-type.dto';
+import { CreateUnitTypeDto, UnitTypeResponseDto, GetUnitTypesQueryDto, UpdateUnitTypeDto } from './dto/unit-type.dto';
 
 @Injectable()
 export class UnitTypeService {
@@ -63,9 +49,7 @@ export class UnitTypeService {
     }
   }
 
-  async findAll(
-    query: GetUnitTypesQueryDto,
-  ): Promise<ApiResponse<UnitTypeResponseDto[]>> {
+  async findAll(query: GetUnitTypesQueryDto): Promise<ApiResponse<UnitTypeResponseDto[]>> {
     try {
       const page = parseInt(query.page ?? '1', 10);
       const limit = parseInt(query.limit ?? '10', 10);
@@ -124,15 +108,7 @@ export class UnitTypeService {
       }
 
       // Validate sortBy field to prevent SQL injection
-      const allowedSortFields = [
-        'id',
-        'brand_id',
-        'unit_name',
-        'type_name',
-        'model_name',
-        'createdAt',
-        'updatedAt',
-      ];
+      const allowedSortFields = ['id', 'brand_id', 'unit_name', 'type_name', 'model_name', 'createdAt', 'updatedAt'];
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
@@ -177,12 +153,10 @@ export class UnitTypeService {
         }
 
         // Group by unit_name and get distinct values
-        groupQuery
-          .groupBy('unitType.unit_name')
-          .orderBy('unitType.unit_name', 'ASC');
+        groupQuery.groupBy('unitType.unit_name').orderBy('unitType.unit_name', 'ASC');
 
         const groupedResult = await groupQuery.getRawMany();
-        
+
         // Apply pagination to grouped results
         const startIndex = (page - 1) * limit;
         const endIndex = startIndex + limit;
@@ -190,22 +164,20 @@ export class UnitTypeService {
         total = groupedResult.length;
       } else {
         // Normal query with all fields
-        qb.orderBy(`unitType.${validSortBy}`, validSortOrder)
-          .skip(skip)
-          .take(limit);
+        qb.orderBy(`unitType.${validSortBy}`, validSortOrder).skip(skip).take(limit);
 
         [result, total] = await qb.getManyAndCount();
       }
 
       // Transform result to DTO format
       let transformedResult;
-      let finalTotal = total;
-      
+      const finalTotal = total;
+
       if (isGroup) {
         // Transform grouped result (hanya id dan unit_name)
         transformedResult = result.map((item) => ({
           unit_name: item.unit_name,
-          id: item.id
+          id: item.id,
         }));
       } else {
         transformedResult = result.map((unitType) => ({
@@ -225,22 +197,14 @@ export class UnitTypeService {
         }));
       }
 
-      return paginateResponse(
-        transformedResult,
-        finalTotal,
-        page,
-        limit,
-        'Data unit type berhasil diambil',
-      );
+      return paginateResponse(transformedResult, finalTotal, page, limit, 'Data unit type berhasil diambil');
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Gagal mengambil data unit type');
     }
   }
 
-  async create(
-    data: CreateUnitTypeDto,
-  ): Promise<ApiResponse<UnitTypeResponseDto>> {
+  async create(data: CreateUnitTypeDto): Promise<ApiResponse<UnitTypeResponseDto>> {
     try {
       // Check if combination already exists
       const existing = await this.unitTypeRepository.findOne({
@@ -253,10 +217,7 @@ export class UnitTypeService {
       });
 
       if (existing) {
-        throwError(
-          'Unit type dengan kombinasi brand, unit, type, dan model yang sama sudah terdaftar',
-          409,
-        );
+        throwError('Unit type dengan kombinasi brand, unit, type, dan model yang sama sudah terdaftar', 409);
       }
 
       const newUnitType = this.unitTypeRepository.create(data);
@@ -293,10 +254,7 @@ export class UnitTypeService {
     }
   }
 
-  async update(
-    id: number,
-    updateDto: UpdateUnitTypeDto,
-  ): Promise<ApiResponse<UnitTypeResponseDto | null>> {
+  async update(id: number, updateDto: UpdateUnitTypeDto): Promise<ApiResponse<UnitTypeResponseDto | null>> {
     try {
       const unitType = await this.unitTypeRepository.findOne({
         where: { id },
@@ -308,12 +266,7 @@ export class UnitTypeService {
       }
 
       // Check if combination already exists for other unit types
-      if (
-        updateDto.brand_id ||
-        updateDto.unit_name ||
-        updateDto.type_name ||
-        updateDto.model_name
-      ) {
+      if (updateDto.brand_id || updateDto.unit_name || updateDto.type_name || updateDto.model_name) {
         const existingUnitType = await this.unitTypeRepository.findOne({
           where: {
             brand_id: updateDto.brand_id ?? unitType.brand_id,
@@ -325,17 +278,11 @@ export class UnitTypeService {
         });
 
         if (existingUnitType) {
-          throwError(
-            'Unit type dengan kombinasi brand, unit, type, dan model yang sama sudah digunakan oleh unit type lain',
-            409,
-          );
+          throwError('Unit type dengan kombinasi brand, unit, type, dan model yang sama sudah digunakan oleh unit type lain', 409);
         }
       }
 
-      const updatedUnitType = this.unitTypeRepository.merge(
-        unitType,
-        updateDto,
-      );
+      const updatedUnitType = this.unitTypeRepository.merge(unitType, updateDto);
       const result = await this.unitTypeRepository.save(updatedUnitType);
 
       // Fetch updated data with brand relation

@@ -1,24 +1,11 @@
-import {
-  Injectable,
-  HttpException,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, HttpException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder, IsNull } from 'typeorm';
 import { RoleHasPermission } from './entities/role-has-permission.entity';
 import { Menu } from '../menu/entities/menu.entity';
 import { MenuHasPermission } from '../menu-has-permission/entities/menu-has-permission.entity';
-import {
-  CreateRoleHasPermissionDto,
-  UpdateRoleHasPermissionDto,
-  GetRoleHasPermissionsQueryDto,
-} from './dto/role-has-permission.dto';
-import {
-  ApiResponse,
-  successResponse,
-  throwError,
-  emptyDataResponse,
-} from '../../common/helpers/response.helper';
+import { CreateRoleHasPermissionDto, UpdateRoleHasPermissionDto, GetRoleHasPermissionsQueryDto } from './dto/role-has-permission.dto';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 
 @Injectable()
@@ -32,9 +19,7 @@ export class RoleHasPermissionService {
     private menuHasPermissionRepository: Repository<MenuHasPermission>,
   ) {}
 
-  async create(
-    createRoleHasPermissionDto: CreateRoleHasPermissionDto,
-  ): Promise<ApiResponse<RoleHasPermission>> {
+  async create(createRoleHasPermissionDto: CreateRoleHasPermissionDto): Promise<ApiResponse<RoleHasPermission>> {
     try {
       // Check if combination already exists
       const existing = await this.roleHasPermissionRepository.findOne({
@@ -49,28 +34,17 @@ export class RoleHasPermissionService {
         throwError('Role permission combination already exists', 409);
       }
 
-      const roleHasPermission = this.roleHasPermissionRepository.create(
-        createRoleHasPermissionDto,
-      );
-      const result =
-        await this.roleHasPermissionRepository.save(roleHasPermission);
+      const roleHasPermission = this.roleHasPermissionRepository.create(createRoleHasPermissionDto);
+      const result = await this.roleHasPermissionRepository.save(roleHasPermission);
 
-      return successResponse(
-        result,
-        'Role permission created successfully',
-        201,
-      );
+      return successResponse(result, 'Role permission created successfully', 201);
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to create role permission',
-      );
+      throw new InternalServerErrorException('Failed to create role permission');
     }
   }
 
-  async findAll(
-    query?: GetRoleHasPermissionsQueryDto,
-  ): Promise<ApiResponse<RoleHasPermission[]>> {
+  async findAll(query?: GetRoleHasPermissionsQueryDto): Promise<ApiResponse<RoleHasPermission[]>> {
     try {
       if (!query) {
         // Fallback untuk kompatibilitas backward
@@ -86,9 +60,7 @@ export class RoleHasPermissionService {
       const skip = (page - 1) * limit;
       const role_id = query.role_id ? parseInt(query.role_id, 10) : null;
       const mhp_id = query.mhp_id ? parseInt(query.mhp_id, 10) : null;
-      const permission_id = query.permission_id
-        ? parseInt(query.permission_id, 10)
-        : null;
+      const permission_id = query.permission_id ? parseInt(query.permission_id, 10) : null;
       const sortBy = query.sortBy ?? 'id';
       const sortOrder = query.sortOrder ?? 'DESC';
 
@@ -97,12 +69,11 @@ export class RoleHasPermissionService {
         throwError('Limit tidak boleh lebih dari 100', 400);
       }
 
-      const qb: SelectQueryBuilder<RoleHasPermission> =
-        this.roleHasPermissionRepository
-          .createQueryBuilder('rhp')
-          .leftJoinAndSelect('rhp.role', 'role')
-          .leftJoinAndSelect('rhp.menuHasPermission', 'menuHasPermission')
-          .leftJoinAndSelect('rhp.permission', 'permission');
+      const qb: SelectQueryBuilder<RoleHasPermission> = this.roleHasPermissionRepository
+        .createQueryBuilder('rhp')
+        .leftJoinAndSelect('rhp.role', 'role')
+        .leftJoinAndSelect('rhp.menuHasPermission', 'menuHasPermission')
+        .leftJoinAndSelect('rhp.permission', 'permission');
 
       // Filter by role_id
       if (role_id) {
@@ -120,14 +91,7 @@ export class RoleHasPermissionService {
       }
 
       // Validate sortBy field to prevent SQL injection
-      const allowedSortFields = [
-        'id',
-        'role_id',
-        'mhp_id',
-        'permission_id',
-        'createdAt',
-        'updatedAt',
-      ];
+      const allowedSortFields = ['id', 'role_id', 'mhp_id', 'permission_id', 'createdAt', 'updatedAt'];
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
@@ -135,18 +99,10 @@ export class RoleHasPermissionService {
 
       const [result, total] = await qb.getManyAndCount();
 
-      return paginateResponse(
-        result,
-        total,
-        page,
-        limit,
-        'Get role permissions successfully',
-      );
+      return paginateResponse(result, total, page, limit, 'Get role permissions successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to fetch role permissions',
-      );
+      throw new InternalServerErrorException('Failed to fetch role permissions');
     }
   }
 
@@ -161,20 +117,14 @@ export class RoleHasPermissionService {
         return emptyDataResponse('Role permission not found', null);
       }
 
-      return successResponse(
-        roleHasPermission,
-        'Get role permission successfully',
-      );
+      return successResponse(roleHasPermission, 'Get role permission successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch role permission');
     }
   }
 
-  async update(
-    id: number,
-    updateRoleHasPermissionDto: UpdateRoleHasPermissionDto,
-  ): Promise<ApiResponse<RoleHasPermission | null>> {
+  async update(id: number, updateRoleHasPermissionDto: UpdateRoleHasPermissionDto): Promise<ApiResponse<RoleHasPermission | null>> {
     try {
       const roleHasPermission = await this.roleHasPermissionRepository.findOne({
         where: { id },
@@ -185,18 +135,10 @@ export class RoleHasPermissionService {
       }
 
       // Check if new combination already exists (if being updated)
-      if (
-        updateRoleHasPermissionDto.role_id ||
-        updateRoleHasPermissionDto.mhp_id ||
-        updateRoleHasPermissionDto.permission_id
-      ) {
-        const newRoleId =
-          updateRoleHasPermissionDto.role_id || roleHasPermission.role_id;
-        const newMhpId =
-          updateRoleHasPermissionDto.mhp_id || roleHasPermission.mhp_id;
-        const newPermissionId =
-          updateRoleHasPermissionDto.permission_id ||
-          roleHasPermission.permission_id;
+      if (updateRoleHasPermissionDto.role_id || updateRoleHasPermissionDto.mhp_id || updateRoleHasPermissionDto.permission_id) {
+        const newRoleId = updateRoleHasPermissionDto.role_id || roleHasPermission.role_id;
+        const newMhpId = updateRoleHasPermissionDto.mhp_id || roleHasPermission.mhp_id;
+        const newPermissionId = updateRoleHasPermissionDto.permission_id || roleHasPermission.permission_id;
 
         const existing = await this.roleHasPermissionRepository.findOne({
           where: {
@@ -212,15 +154,12 @@ export class RoleHasPermissionService {
       }
 
       Object.assign(roleHasPermission, updateRoleHasPermissionDto);
-      const result =
-        await this.roleHasPermissionRepository.save(roleHasPermission);
+      const result = await this.roleHasPermissionRepository.save(roleHasPermission);
 
       return successResponse(result, 'Role permission updated successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to update role permission',
-      );
+      throw new InternalServerErrorException('Failed to update role permission');
     }
   }
 
@@ -239,9 +178,7 @@ export class RoleHasPermissionService {
       return successResponse(null, 'Role permission deleted successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to delete role permission',
-      );
+      throw new InternalServerErrorException('Failed to delete role permission');
     }
   }
 
@@ -266,7 +203,7 @@ export class RoleHasPermissionService {
         const key = `${rhp.permission_id}-${rhp.mhp_id}`;
         rolePermissionMap.set(key, {
           hasPermission: true,
-          roleHasPermissionId: rhp.id
+          roleHasPermissionId: rhp.id,
         });
       });
 
@@ -274,18 +211,17 @@ export class RoleHasPermissionService {
       const responseData = await Promise.all(
         allMenus.map(async (menu) => {
           // Ambil menu has permissions yang benar-benar ada untuk menu ini
-          const menuHasPermissions =
-            await this.menuHasPermissionRepository.find({
-              where: { menu_id: menu.id },
-              relations: ['permission'],
-              order: { permission_id: 'ASC' },
-            });
+          const menuHasPermissions = await this.menuHasPermissionRepository.find({
+            where: { menu_id: menu.id },
+            relations: ['permission'],
+            order: { permission_id: 'ASC' },
+          });
 
           // Buat array permissions yang hanya berisi permission yang di-assign ke menu
           const menuPermissions = menuHasPermissions.map((mhp) => {
             const key = `${mhp.permission_id}-${mhp.id}`;
             const rolePermissionData = rolePermissionMap.get(key);
-            
+
             return {
               permission_id: mhp.permission_id,
               permission_name: mhp.permission.permission_name,
@@ -308,51 +244,35 @@ export class RoleHasPermissionService {
       return successResponse(responseData, 'Get menu permissions successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to fetch role permissions by role ID',
-      );
+      throw new InternalServerErrorException('Failed to fetch role permissions by role ID');
     }
   }
 
-  async findByPermissionId(
-    permissionId: number,
-  ): Promise<ApiResponse<RoleHasPermission[]>> {
+  async findByPermissionId(permissionId: number): Promise<ApiResponse<RoleHasPermission[]>> {
     try {
       const result = await this.roleHasPermissionRepository.find({
         where: { permission_id: permissionId },
         relations: ['role', 'menuHasPermission'],
       });
 
-      return successResponse(
-        result,
-        'Get role permissions by permission ID successfully',
-      );
+      return successResponse(result, 'Get role permissions by permission ID successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to fetch role permissions by permission ID',
-      );
+      throw new InternalServerErrorException('Failed to fetch role permissions by permission ID');
     }
   }
 
-  async findByMenuHasPermissionId(
-    mhpId: number,
-  ): Promise<ApiResponse<RoleHasPermission[]>> {
+  async findByMenuHasPermissionId(mhpId: number): Promise<ApiResponse<RoleHasPermission[]>> {
     try {
       const result = await this.roleHasPermissionRepository.find({
         where: { mhp_id: mhpId },
         relations: ['role', 'permission'],
       });
 
-      return successResponse(
-        result,
-        'Get role permissions by menu has permission ID successfully',
-      );
+      return successResponse(result, 'Get role permissions by menu has permission ID successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to fetch role permissions by menu has permission ID',
-      );
+      throw new InternalServerErrorException('Failed to fetch role permissions by menu has permission ID');
     }
   }
 }

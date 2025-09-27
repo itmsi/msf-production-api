@@ -16,14 +16,8 @@ export class PopulationSeeder {
     const activities = await activitiesRepository.find();
     const sites = await sitesRepository.find();
 
-    if (
-      unitTypes.length === 0 ||
-      activities.length === 0 ||
-      sites.length === 0
-    ) {
-      console.log(
-        '⚠️  Related data not found. Please run other seeders first.',
-      );
+    if (unitTypes.length === 0 || activities.length === 0 || sites.length === 0) {
+      console.log('⚠️  Related data not found. Please run other seeders first.');
       return;
     }
 
