@@ -9,6 +9,12 @@ import {
   Query,
   ParseIntPipe,
   UseGuards,
+  StreamableFile,
+  InternalServerErrorException,
+  UseInterceptors,
+  UploadedFile,
+  Req,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,6 +24,7 @@ import {
   ApiQuery,
   ApiBearerAuth,
   ApiBody,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { HaulingListService } from './hauling-list.service';
 import {
@@ -29,6 +36,11 @@ import {
   ActivitiesResponseDto,
 } from './dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
+import { createReadStream } from 'fs';
+import { join } from 'path';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { FileUploadDto } from '../population';
+import { Response } from 'express';
 
 @ApiTags('Hauling List')
 @ApiBearerAuth('jwt')
@@ -36,6 +48,19 @@ import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 @UseGuards(JwtAuthGuard)
 export class HaulingListController {
   constructor(private readonly haulingListService: HaulingListService) {}
+
+  @Get('export')
+  @ApiOperation({
+    summary: 'Export data Hauling List dari CSV',
+    description:
+      'Mengexport data Hauling List dari database ke CSV setelah validasi',
+  })
+  async exportData(
+    @Query() query: QueryHaulingListDto,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    return await this.haulingListService.exportData(query, res);
+  }
 
   @Post()
   @ApiOperation({ summary: 'Membuat data hauling list baru' })
@@ -487,5 +512,46 @@ export class HaulingListController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.haulingListService.remove(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('import/template')
+  @ApiOperation({
+    summary: 'Download template CSV untuk import Fuel Consumption Data',
+    description:
+      'Mendownload template CSV yang berisi format kolom yang diperlukan',
+  })
+  downloadTemplate(): StreamableFile {
+    try {
+      const file = join(
+        process.cwd(),
+        'src/modules/hauling-list/template-hauling-list-import.csv',
+      );
+      const stream = createReadStream(file);
+      return new StreamableFile(stream, {
+        type: 'text/csv',
+        disposition: 'attachment; filename="template-hauling-list-import.csv"',
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to download CSV template');
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'File CSV yang akan diimport',
+    type: FileUploadDto,
+  })
+  @ApiOperation({
+    summary: 'Import data Hauling CCR  dari CSV',
+    description:
+      'Mengimport data Hauling CCR dari CSV ke database setelah validasi',
+  })
+  importData(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    const userId = req.user?.id;
+    return this.haulingListService.importData(file, userId);
   }
 }

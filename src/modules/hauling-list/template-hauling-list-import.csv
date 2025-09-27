@@ -1,0 +1,4 @@
+activity_date,shift,time,loading_unit,hauler_unit,material,loading_point_name,dumping_point_name,vessel,activity_type
+2026-01-01,ds,2026-01-01 12:00,EX-0025,DT-0129,ore,ETO 1,GOLDEN WAY 3328,1,direct
+2026-01-01,ds,2026-01-01 13:00,EX-0025,DT-0129,ore,ETO 1,GOLDEN WAY 3328,1,direct
+2026-01-01,ns,2026-01-01 14:00,EX-0025,DT-0129,ore,ETO 1,EFO 1,1,hauling

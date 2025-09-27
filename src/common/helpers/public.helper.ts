@@ -179,3 +179,39 @@ export function setCsvExportHeaders(res: Response, filename: string) {
   // Security: cegah browser men-"sniff" MIME type
   res.setHeader('X-Content-Type-Options', 'nosniff');
 }
+
+export function isValidDate(dateString: string): boolean {
+  const date = new Date(dateString);
+  return (
+    date instanceof Date &&
+    !isNaN(date.getTime()) &&
+    !!dateString.match(/^\d{4}-\d{2}-\d{2}$/)
+  );
+}
+
+export function isValidDateTime(dateTimeStr: string): boolean {
+  // format: yyyy-mm-dd HH:mm
+  const regex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/;
+  if (!regex.test(dateTimeStr)) return false;
+
+  const date = new Date(dateTimeStr.replace(' ', 'T'));
+  return !isNaN(date.getTime());
+}
+
+/**
+ * Convert date string dari format dd/MM/yyyy ke yyyy-MM-dd
+ * @param input string tanggal (contoh: "01/05/2025")
+ * @returns string dalam format yyyy-MM-dd (contoh: "2025-05-01")
+ */
+export function convertDateToIso(input: string): string {
+  if (!input) return '';
+
+  const [day, month, year] = input.split('/');
+
+  // Validasi sederhana
+  if (!day || !month || !year) {
+    throw new Error('Format tanggal tidak valid, gunakan dd/MM/yyyy');
+  }
+
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+}
