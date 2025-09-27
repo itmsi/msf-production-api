@@ -6,6 +6,7 @@ import { PlanWorkingHourDetail } from './entities/plan-working-hour-detail.entit
 import { Activities } from '../activities/entities/activities.entity';
 import { CreatePlanWorkingHourDto, UpdatePlanWorkingHourDto, QueryPlanWorkingHourDto } from './dto/plan-working-hour.dto';
 import { paginateResponse } from '../../common/helpers/public.helper';
+import { ActivityStatus } from '../activities';
 
 @Injectable()
 export class PlanWorkingHourService {
@@ -164,11 +165,11 @@ export class PlanWorkingHourService {
 
       if (plan.details && plan.details.length > 0) {
         plan.details.forEach((detail) => {
-          if (detail.activities && detail.activities.status === 'delay') {
+          if (detail.activities && detail.activities.status === ActivityStatus.DELAY) {
             total_delay += detail.activities_hour || 0;
-          } else if (detail.activities && detail.activities.status === 'idle') {
+          } else if (detail.activities && detail.activities.status === ActivityStatus.IDLE) {
             total_idle += detail.activities_hour || 0;
-          } else if (detail.activities && detail.activities.status === 'breakdown') {
+          } else if (detail.activities && detail.activities.status === ActivityStatus.BREAKDOWN) {
             total_repair += detail.activities_hour || 0;
           }
         });

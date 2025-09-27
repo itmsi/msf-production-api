@@ -40,8 +40,6 @@ export class ActivitiesService {
 
   async findAll(query: GetActivitiesQueryDto): Promise<ApiResponse<ActivitiesResponseDto[]>> {
     try {
-      console.log('ActivitiesService.findAll - Query:', query);
-
       const page = parseInt(query.page ?? '1', 10);
       const limit = parseInt(query.limit ?? '10', 10);
       const skip = (page - 1) * limit;
@@ -51,18 +49,6 @@ export class ActivitiesService {
       const statusMultiple = query.status_multiple || [];
       const sortBy = query.sortBy ?? 'id';
       const sortOrder = query.sortOrder ?? 'DESC';
-
-      console.log('ActivitiesService.findAll - Parsed params:', {
-        page,
-        limit,
-        skip,
-        search,
-        name,
-        status,
-        statusMultiple,
-        sortBy,
-        sortOrder,
-      });
 
       // Validate limit
       if (limit > 100) {
@@ -87,7 +73,6 @@ export class ActivitiesService {
 
       // Filter by status
       if (status) {
-        console.log('ActivitiesService.findAll - Adding status filter:', status);
         qb.andWhere('activities.status = :status', {
           status: status,
         });
@@ -95,7 +80,6 @@ export class ActivitiesService {
 
       // Filter by multiple status
       if (statusMultiple && statusMultiple.length > 0) {
-        console.log('ActivitiesService.findAll - Adding status_multiple filter:', statusMultiple);
         qb.andWhere('activities.status IN (:...statusMultiple)', {
           statusMultiple: statusMultiple,
         });
@@ -108,23 +92,7 @@ export class ActivitiesService {
 
       qb.orderBy(`activities.${validSortBy}`, validSortOrder).skip(skip).take(limit);
 
-      console.log('ActivitiesService.findAll - Query builder:', qb.getQuery());
-      console.log('ActivitiesService.findAll - Query parameters:', qb.getParameters());
-
       const [result, total] = await qb.getManyAndCount();
-
-      console.log('ActivitiesService.findAll - Result count:', result.length);
-      console.log('ActivitiesService.findAll - Total count:', total);
-
-      // Log sample data untuk debugging
-      if (result.length > 0) {
-        console.log('ActivitiesService.findAll - Sample result:', {
-          id: result[0].id,
-          name: result[0].name,
-          status: result[0].status,
-          type: typeof result[0].status,
-        });
-      }
 
       // Transform result to DTO format without using plainToInstance
       const transformedResult = result.map((activity) => ({

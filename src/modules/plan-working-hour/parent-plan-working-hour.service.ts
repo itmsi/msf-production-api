@@ -63,12 +63,10 @@ export class ParentPlanWorkingHourService {
     if (day === 1) {
       // Tanggal sudah tanggal pertama, gunakan langsung
       planDate = inputDate;
-      console.log(`Tanggal sudah tanggal pertama: ${createDto.plan_date}`);
     } else {
       // Konversi ke tanggal pertama dari bulan yang sama
       planDate = new Date(year, month, 1);
       createDto.plan_date = planDate.toLocaleDateString('en-CA');
-      console.log(`Tanggal dikonversi dari ${inputDate.toISOString()} menjadi ${createDto.plan_date}`);
     }
 
     // Validasi duplikat bulan di tahun yang sama
@@ -495,14 +493,10 @@ export class ParentPlanWorkingHourService {
 
   async findOne(id: number): Promise<any> {
     try {
-      console.log('Starting findOne with ID:', id);
-
       // Ambil parent plan tanpa relations yang kompleks
       const parentPlan = await this.parentPlanWorkingHourRepository.findOne({
         where: { id },
       });
-
-      console.log('Parent plan found:', parentPlan);
 
       if (!parentPlan) {
         throw new BadRequestException(`Parent plan working hour dengan ID ${id} tidak ditemukan`);
@@ -522,8 +516,6 @@ export class ParentPlanWorkingHourService {
         .leftJoin('m_activities', 'a', 'a.id = pwhd.activities_id')
         .where('pwh.parent_plan_working_hour_id = :parentId', { parentId: id })
         .getRawMany();
-
-      console.log('Plan working hour details found:', planWorkingHourDetails.length);
 
       // Kelompokkan activities berdasarkan status dengan data yang sebenarnya
       const activitiesByStatus: Record<string, any[]> = {};
@@ -547,8 +539,6 @@ export class ParentPlanWorkingHourService {
           });
         }
       }
-
-      console.log('Activities grouped by status:', Object.keys(activitiesByStatus));
 
       // Buat response dengan format yang diinginkan - selalu tampilkan idle, delay, breakdown
       const allowedStatuses = ['idle', 'delay', 'breakdown'];
@@ -591,7 +581,6 @@ export class ParentPlanWorkingHourService {
         details: finalDetails,
       };
 
-      console.log('Response created successfully:', response);
       return response;
     } catch (error) {
       console.error('Error in findOne:', error);
@@ -634,8 +623,6 @@ export class ParentPlanWorkingHourService {
 
         // Update plan_date dengan tanggal yang sudah dikonversi
         updateDto.plan_date = newPlanDate.toLocaleDateString('en-CA');
-
-        console.log(`Tanggal dikonversi dari ${inputDate.toISOString()} menjadi ${updateDto.plan_date}`);
 
         // Validasi bahwa plan_date tidak boleh di masa lalu (untuk bulan yang sudah lewat)
         const today = new Date();
@@ -1228,9 +1215,6 @@ export class ParentPlanWorkingHourService {
     if (!planWorkingHour) {
       throw new BadRequestException(`Plan working hour dengan ID ${id} tidak ditemukan`);
     }
-
-    // Debug: Log schedule_day value dari database
-    console.log(`Debug - ID: ${id}, schedule_day from DB:`, planWorkingHour.schedule_day);
 
     // Hitung total berdasarkan status activities
     let totalDelay = 0;

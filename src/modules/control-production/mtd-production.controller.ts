@@ -239,7 +239,7 @@ export class MtdProductionController {
       },
     },
   })
-  async getControlDayWorkHour(@Query() query: MtdProductionQueryDto) {
-    return await this.controlMtdProductionService.getDayWorkHour(query);
+  getControlDayWorkHour(@Query() query: MtdProductionQueryDto) {
+    return this.controlMtdProductionService.getDayWorkHour(query);
   }
 }

@@ -82,56 +82,47 @@ export class FuelConsumptionService {
     }
   }
 
-  private validateFuelConsumptionUpdate(id: number, updateData: UpdateFuelConsumptionDto): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const existingData = await this.fuelConsumptionRepository.findOne({
-          where: { id },
-        });
-
-        if (!existingData) {
-          reject(new Error('Fuel consumption not found'));
-          return;
-        }
-
-        // For update, we need to compare with existing data if the field is not provided in update
-        const dataToValidate = {
-          last_refueling_hm: updateData.last_refueling_hm !== undefined ? updateData.last_refueling_hm : existingData.last_refueling_hm,
-          now_refueling_hm: updateData.now_refueling_hm !== undefined ? updateData.now_refueling_hm : existingData.now_refueling_hm,
-          last_refueling_km: updateData.last_refueling_km !== undefined ? updateData.last_refueling_km : existingData.last_refueling_km,
-          now_refueling_km: updateData.now_refueling_km !== undefined ? updateData.now_refueling_km : existingData.now_refueling_km,
-          start_refueling_time: updateData.start_refueling_time || existingData.start_refueling_time,
-          end_refueling_time: updateData.end_refueling_time || existingData.end_refueling_time,
-        };
-
-        // Validate now_refueling_hm vs last_refueling_hm
-        if (dataToValidate.now_refueling_hm !== undefined && dataToValidate.last_refueling_hm !== undefined) {
-          if (dataToValidate.now_refueling_hm <= dataToValidate.last_refueling_hm) {
-            throwError('now_refueling_hm tidak boleh kurang dari atau sama dengan last_refueling_hm', 400);
-          }
-        }
-
-        // Validate now_refueling_km vs last_refueling_km
-        if (dataToValidate.now_refueling_km !== undefined && dataToValidate.last_refueling_km !== undefined) {
-          if (dataToValidate.now_refueling_km <= dataToValidate.last_refueling_km) {
-            throwError('now_refueling_km tidak boleh kurang dari atau sama dengan last_refueling_km', 400);
-          }
-        }
-
-        // Validate end_refueling_time vs start_refueling_time
-        if (dataToValidate.end_refueling_time && dataToValidate.start_refueling_time) {
-          const startTime = new Date(dataToValidate.start_refueling_time);
-          const endTime = new Date(dataToValidate.end_refueling_time);
-          if (endTime <= startTime) {
-            throwError('end_refueling_time tidak boleh kurang dari atau sama dengan start_refueling_time', 400);
-          }
-        }
-
-        resolve();
-      } catch (error) {
-        reject(error);
-      }
+  private async validateFuelConsumptionUpdate(id: number, updateData: UpdateFuelConsumptionDto): Promise<void> {
+    const existingData = await this.fuelConsumptionRepository.findOne({
+      where: { id },
     });
+
+    if (!existingData) {
+      throw new Error('Fuel consumption not found');
+    }
+
+    const dataToValidate = {
+      last_refueling_hm: updateData.last_refueling_hm ?? existingData.last_refueling_hm,
+      now_refueling_hm: updateData.now_refueling_hm ?? existingData.now_refueling_hm,
+      last_refueling_km: updateData.last_refueling_km ?? existingData.last_refueling_km,
+      now_refueling_km: updateData.now_refueling_km ?? existingData.now_refueling_km,
+      start_refueling_time: updateData.start_refueling_time || existingData.start_refueling_time,
+      end_refueling_time: updateData.end_refueling_time || existingData.end_refueling_time,
+    };
+
+    if (
+      dataToValidate.now_refueling_hm !== undefined &&
+      dataToValidate.last_refueling_hm !== undefined &&
+      dataToValidate.now_refueling_hm <= dataToValidate.last_refueling_hm
+    ) {
+      throwError('now_refueling_hm tidak boleh kurang dari atau sama dengan last_refueling_hm', 400);
+    }
+
+    if (
+      dataToValidate.now_refueling_km !== undefined &&
+      dataToValidate.last_refueling_km !== undefined &&
+      dataToValidate.now_refueling_km <= dataToValidate.last_refueling_km
+    ) {
+      throwError('now_refueling_km tidak boleh kurang dari atau sama dengan last_refueling_km', 400);
+    }
+
+    if (dataToValidate.end_refueling_time && dataToValidate.start_refueling_time) {
+      const startTime = new Date(dataToValidate.start_refueling_time);
+      const endTime = new Date(dataToValidate.end_refueling_time);
+      if (endTime <= startTime) {
+        throwError('end_refueling_time tidak boleh kurang dari atau sama dengan start_refueling_time', 400);
+      }
+    }
   }
 
   async create(createFuelConsumptionDto: CreateFuelConsumptionDto): Promise<any> {
