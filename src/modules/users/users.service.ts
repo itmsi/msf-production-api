@@ -94,7 +94,6 @@ export class UsersService {
 
       return paginateResponse(transformedResult, total, page, limit, 'Get users successfully');
     } catch (error) {
-      console.log(error, '<<<<<');
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch users');
     }
