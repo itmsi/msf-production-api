@@ -18,6 +18,7 @@ import {
   ActivitiesResponseDto,
 } from './dto';
 import {
+  convertStringDateYYYYMMDD,
   isValidDate,
   isValidDateTime,
   normalizeString,
@@ -842,11 +843,15 @@ export class HaulingListService {
       });
     }
 
-    if (row.activity_date && !isValidDate(row.activity_date)) {
-      errors.push({
-        field: 'activity_date',
-        message: 'Format tanggal tidak valid (yyyy-mm-dd)',
-      });
+    if (row.activity_date) {
+      const date = convertStringDateYYYYMMDD(row.activity_date);
+
+      if (date === 'Invalid date') {
+        errors.push({
+          field: 'activity_date',
+          message: 'Format tanggal tidak valid (yyyy-mm-dd)',
+        });
+      }
     }
 
     if (!row.shift) {
@@ -1238,7 +1243,7 @@ export class HaulingListService {
 
     return {
       No: index + 1,
-      'Activity Date': new Date(item.activityDate).toISOString().split('T')[0],
+      'Activity Date': moment(item.activityDate).format('YYYY/MM/DD'),
       Shift: item.shift.toUpperCase(),
       Time:
         item.time instanceof Date

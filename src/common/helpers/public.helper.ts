@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { Readable } from 'stream';
 import csv from 'csv-parser';
 import { Buffer } from 'buffer';
+import moment from 'moment';
 
 export interface Pagination {
   total: number;
@@ -198,20 +199,7 @@ export function isValidDateTime(dateTimeStr: string): boolean {
   return !isNaN(date.getTime());
 }
 
-/**
- * Convert date string dari format dd/MM/yyyy ke yyyy-MM-dd
- * @param input string tanggal (contoh: "01/05/2025")
- * @returns string dalam format yyyy-MM-dd (contoh: "2025-05-01")
- */
-export function convertDateToIso(input: string): string {
-  if (!input) return '';
-
-  const [day, month, year] = input.split('/');
-
-  // Validasi sederhana
-  if (!day || !month || !year) {
-    throw new Error('Format tanggal tidak valid, gunakan dd/MM/yyyy');
-  }
-
-  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+export function convertStringDateYYYYMMDD(input: string) {
+  const date = moment(input).format('YYYY-MM-DD');
+  return date;
 }

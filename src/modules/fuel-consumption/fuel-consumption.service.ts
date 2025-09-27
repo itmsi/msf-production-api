@@ -21,6 +21,7 @@ import {
   ApiResponse,
 } from '../../common/helpers/response.helper';
 import {
+  convertStringDateYYYYMMDD,
   normalizeString,
   paginateResponse,
   setCsvExportHeaders,
@@ -826,7 +827,7 @@ export class FuelConsumptionService {
               errorFileInfo = await this.s3Service.uploadErrorFile(
                 `import_error_${Date.now()}.csv`,
                 errorCsvBuffer,
-                'ewh_import_error',
+                'fuel_consumption_import_error',
               );
 
               if (errorFileInfo) {
@@ -1041,11 +1042,15 @@ export class FuelConsumptionService {
     }
 
     // Validasi format date
-    if (row.activity_date && !this.isValidDate(row.activity_date)) {
-      errors.push({
-        field: 'activity_date',
-        message: 'Format tanggal tidak valid (yyyy-mm-dd)',
-      });
+    if (row.activity_date) {
+      const date = convertStringDateYYYYMMDD(row.activity_date);
+
+      if (date === 'Invalid date') {
+        errors.push({
+          field: 'activity_date',
+          message: 'Format tanggal tidak valid (yyyy-mm-dd)',
+        });
+      }
     }
 
     if (
@@ -1156,7 +1161,7 @@ export class FuelConsumptionService {
     }
 
     const fuelConsumptionData: CreateFuelConsumptionDto = {
-      activity_date: row.activity_date,
+      activity_date: moment(row.activity_date).format('YYYY-MM-DD'),
       unit_id: population.id,
       shift: row.shift.toUpperCase() as Shift,
       part_name: row.part_name,
