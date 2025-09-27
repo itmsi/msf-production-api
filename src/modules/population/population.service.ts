@@ -122,19 +122,6 @@ export class PopulationService {
       const unitTypeName = query.unit_type_name;
       const isDt = query.is_dt;
 
-      // Log query parameters untuk debugging
-      console.log('Query parameters received:', {
-        page,
-        limit,
-        search,
-        status,
-        unitTypeId,
-        unitTypeName,
-        isDt,
-        typeOfIsDt: typeof isDt,
-        activitiesId: query.activities_id,
-      });
-
       const activitiesId = query.activities_id ? parseInt(query.activities_id, 10) : undefined;
       const siteId = query.site_id ? parseInt(query.site_id, 10) : undefined;
       const engineBrand = query.engine_brand;
@@ -177,15 +164,6 @@ export class PopulationService {
           unitTypeName: `%${unitTypeName}%`,
         });
       }
-
-      // Filter by is_dt (Dump Truck)
-      console.log('=== DEBUG is_dt FILTER ===');
-      console.log('Raw isDt value:', isDt);
-      console.log('Type of isDt:', typeof isDt);
-      console.log('isDt === true:', isDt === true);
-      console.log('isDt === false:', isDt === false);
-      console.log('isDt !== null:', isDt !== null);
-      console.log('isDt !== undefined:', isDt !== undefined);
 
       if (isDt !== null && isDt !== undefined) {
         try {
@@ -752,7 +730,7 @@ export class PopulationService {
         this.logger.log(`Found ${errorRows.length} rows with errors, generating error CSV...`);
 
         try {
-          const errorCsvBuffer = await this.generateErrorCsv(errorRows, csvData);
+          const errorCsvBuffer = this.generateErrorCsv(errorRows, csvData);
           this.logger.log('Error CSV generated successfully');
 
           // Coba upload ke MinIO, jika gagal gunakan fallback
@@ -1193,7 +1171,7 @@ export class PopulationService {
     return date instanceof Date && !isNaN(date.getTime()) && !!dateString.match(/^\d{4}-\d{2}-\d{2}$/);
   }
 
-  private async generateErrorCsv(errorRows: any[], originalData: ImportPopulationCsvRowDto[]): Promise<Buffer> {
+  private generateErrorCsv(errorRows: any[], originalData: ImportPopulationCsvRowDto[]): Buffer {
     try {
       // Header dengan kolom error
       const headers = [

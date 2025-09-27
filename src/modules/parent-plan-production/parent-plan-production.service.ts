@@ -87,10 +87,6 @@ export class ParentPlanProductionService {
       // Generate data plan production harian
       const generatedDailyData = await this.generateDailyPlanProductions(savedParent, createDto);
 
-      // Log hasil generate
-      console.log(`Parent Plan Production created with ID: ${savedParent.id}`);
-      console.log(`Generated ${generatedDailyData.length} daily plan productions`);
-
       return savedParent;
     } catch (error) {
       console.error('Error creating parent plan production:', error);
@@ -159,16 +155,8 @@ export class ParentPlanProductionService {
 
         planProductions.push(planProduction);
       }
-
-      // Log untuk debugging
-      console.log(
-        `Generating ${planProductions.length} daily plan productions for month ${planDate.getMonth() + 1}/${planDate.getFullYear()}`,
-      );
-      console.log(`Date range: ${planProductions[0]?.plan_date} to ${planProductions[planProductions.length - 1]?.plan_date}`);
-
       // Simpan semua plan production
       const savedPlanProductions = await this.planProductionRepository.save(planProductions);
-      console.log(`Successfully saved ${savedPlanProductions.length} daily plan productions`);
 
       return savedPlanProductions;
     } catch (error) {
@@ -217,8 +205,6 @@ export class ParentPlanProductionService {
     const month = date.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    console.log(`Month: ${month + 1}, Year: ${year}, Days: ${daysInMonth}`);
-
     return daysInMonth;
   }
 
@@ -238,8 +224,6 @@ export class ParentPlanProductionService {
         sundayCount++;
       }
     }
-
-    console.log(`Sundays in month ${month + 1}/${year}: ${sundayCount}`);
 
     return sundayCount;
   }
@@ -471,7 +455,6 @@ export class ParentPlanProductionService {
     // Update data plan production harian yang sudah ada (bukan delete dan insert ulang)
     if (existingParent.planProductions && existingParent.planProductions.length > 0) {
       await this.updateDailyPlanProductions(existingParent.planProductions, savedParent, updateDto);
-      console.log(`Updated ${existingParent.planProductions.length} existing daily plan productions`);
     } else {
       // Jika tidak ada data harian, generate baru
       const createDto = {
@@ -488,12 +471,8 @@ export class ParentPlanProductionService {
         total_fleet: savedParent.total_fleet,
       };
 
-      const generatedDailyData = await this.generateDailyPlanProductions(savedParent, createDto);
-      console.log(`Generated ${generatedDailyData.length} new daily plan productions`);
+      await this.generateDailyPlanProductions(savedParent, createDto);
     }
-
-    // Log hasil update
-    console.log(`Parent Plan Production updated with ID: ${savedParent.id}`);
 
     return savedParent;
   }
@@ -609,13 +588,10 @@ export class ParentPlanProductionService {
     // Hapus semua plan production harian terlebih dahulu
     if (existingParent.planProductions && existingParent.planProductions.length > 0) {
       await this.planProductionRepository.remove(existingParent.planProductions);
-      console.log(`Deleted ${existingParent.planProductions.length} daily plan productions`);
     }
 
     // Hapus parent plan production
     await this.parentPlanProductionRepository.remove(existingParent);
-    console.log(`Deleted parent plan production with ID: ${id}`);
-
     return {
       message: 'Parent plan production dan data harian berhasil dihapus',
       deletedId: id,
@@ -653,10 +629,6 @@ export class ParentPlanProductionService {
 
     // Format tanggal untuk query
     const formattedDate = previousMonthDate.toLocaleDateString('en-CA');
-
-    console.log(`Input date: ${planDate}`);
-    console.log(`Previous month date: ${formattedDate}`);
-    console.log(`Searching for date: ${previousMonthDate}`);
 
     // Cari data di tabel r_plan_production untuk tanggal terakhir bulan sebelumnya
     const planProduction = await this.planProductionRepository.findOne({

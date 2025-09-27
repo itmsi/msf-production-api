@@ -1067,7 +1067,6 @@ export class BaseDataProductionService {
 
       csvStream.end();
     } catch (error) {
-      console.log(error);
       throw new InternalServerErrorException('Gagal export data');
     }
   }

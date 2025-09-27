@@ -119,19 +119,14 @@ export class BargingListService {
 
   async create(createDto: CreateBargingListDto): Promise<ApiResponse<BargingListResponseDto>> {
     try {
-      console.log('Creating barging list with data:', createDto);
-
       // Validasi unit_hauler_id
       await this.validateUnitHaulerId(createDto.unit_hauler_id);
-      console.log('Unit hauler validation passed');
 
       // Validasi barge_id
       await this.validateBargeId(createDto.barge_id);
-      console.log('Barge validation passed');
 
       // Hitung total_tonnage (vessel * 40)
       const totalTonnage = createDto.vessel * 40;
-      console.log('Calculated total tonnage:', totalTonnage);
 
       // Buat entity baru
       const newBargingList = this.bargingListRepository.create({
@@ -144,10 +139,7 @@ export class BargingListService {
         totalTonnage,
       });
 
-      console.log('Created entity:', newBargingList);
-
       const result = await this.bargingListRepository.save(newBargingList);
-      console.log('Saved result:', result);
 
       // Ambil data lengkap dengan relasi
       const savedBargingList = await this.bargingListRepository.findOne({
@@ -155,14 +147,11 @@ export class BargingListService {
         relations: ['unitHauler', 'barge'],
       });
 
-      console.log('Retrieved saved data:', savedBargingList);
-
       if (!savedBargingList) {
         throwError('Gagal mengambil data barging list yang baru dibuat', 500);
       }
 
       const response = this.transformResponse(savedBargingList!);
-      console.log('Transformed response:', response);
 
       return successResponse(response, 'Barging list berhasil dibuat', 201);
     } catch (error) {
