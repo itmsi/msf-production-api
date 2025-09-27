@@ -1,17 +1,8 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  HttpException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException, HttpException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Activities } from './entities/activities.entity';
 import { Repository, Not } from 'typeorm';
-import {
-  ApiResponse,
-  successResponse,
-  throwError,
-  emptyDataResponse,
-} from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import {
   CreateActivitiesDto,
@@ -28,9 +19,7 @@ export class ActivitiesService {
     private activitiesRepository: Repository<Activities>,
   ) {}
 
-  async findById(
-    id: number,
-  ): Promise<ApiResponse<ActivitiesResponseDto | null>> {
+  async findById(id: number): Promise<ApiResponse<ActivitiesResponseDto | null>> {
     try {
       const result = await this.activitiesRepository.findOne({
         where: { id },
@@ -49,9 +38,7 @@ export class ActivitiesService {
     }
   }
 
-  async findAll(
-    query: GetActivitiesQueryDto,
-  ): Promise<ApiResponse<ActivitiesResponseDto[]>> {
+  async findAll(query: GetActivitiesQueryDto): Promise<ApiResponse<ActivitiesResponseDto[]>> {
     try {
       console.log('ActivitiesService.findAll - Query:', query);
 
@@ -82,18 +69,13 @@ export class ActivitiesService {
         throwError('Limit tidak boleh lebih dari 100', 400);
       }
 
-      const qb = this.activitiesRepository
-        .createQueryBuilder('activities')
-        .where('activities.deletedAt IS NULL'); // Exclude soft deleted records
+      const qb = this.activitiesRepository.createQueryBuilder('activities').where('activities.deletedAt IS NULL'); // Exclude soft deleted records
 
       // Search filter (mencari di semua field yang relevan)
       if (search) {
-        qb.andWhere(
-          '(activities.name ILIKE :search OR activities.status = :search)',
-          {
-            search: `%${search}%`,
-          },
-        );
+        qb.andWhere('(activities.name ILIKE :search OR activities.status = :search)', {
+          search: `%${search}%`,
+        });
       }
 
       // Filter by name (exact match atau partial match)
@@ -105,10 +87,7 @@ export class ActivitiesService {
 
       // Filter by status
       if (status) {
-        console.log(
-          'ActivitiesService.findAll - Adding status filter:',
-          status,
-        );
+        console.log('ActivitiesService.findAll - Adding status filter:', status);
         qb.andWhere('activities.status = :status', {
           status: status,
         });
@@ -116,35 +95,21 @@ export class ActivitiesService {
 
       // Filter by multiple status
       if (statusMultiple && statusMultiple.length > 0) {
-        console.log(
-          'ActivitiesService.findAll - Adding status_multiple filter:',
-          statusMultiple,
-        );
+        console.log('ActivitiesService.findAll - Adding status_multiple filter:', statusMultiple);
         qb.andWhere('activities.status IN (:...statusMultiple)', {
           statusMultiple: statusMultiple,
         });
       }
 
       // Validate sortBy field to prevent SQL injection
-      const allowedSortFields = [
-        'id',
-        'name',
-        'status',
-        'createdAt',
-        'updatedAt',
-      ];
+      const allowedSortFields = ['id', 'name', 'status', 'createdAt', 'updatedAt'];
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
-      qb.orderBy(`activities.${validSortBy}`, validSortOrder)
-        .skip(skip)
-        .take(limit);
+      qb.orderBy(`activities.${validSortBy}`, validSortOrder).skip(skip).take(limit);
 
       console.log('ActivitiesService.findAll - Query builder:', qb.getQuery());
-      console.log(
-        'ActivitiesService.findAll - Query parameters:',
-        qb.getParameters(),
-      );
+      console.log('ActivitiesService.findAll - Query parameters:', qb.getParameters());
 
       const [result, total] = await qb.getManyAndCount();
 
@@ -170,22 +135,14 @@ export class ActivitiesService {
         updatedAt: activity.updatedAt,
       }));
 
-      return paginateResponse(
-        transformedResult,
-        total,
-        page,
-        limit,
-        'Data aktivitas berhasil diambil',
-      );
+      return paginateResponse(transformedResult, total, page, limit, 'Data aktivitas berhasil diambil');
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Gagal mengambil data aktivitas');
     }
   }
 
-  async create(
-    data: CreateActivitiesDto,
-  ): Promise<ApiResponse<ActivitiesResponseDto>> {
+  async create(data: CreateActivitiesDto): Promise<ApiResponse<ActivitiesResponseDto>> {
     try {
       // Set default status if not provided
       if (!data.status) {
@@ -225,10 +182,7 @@ export class ActivitiesService {
     }
   }
 
-  async update(
-    id: number,
-    updateDto: UpdateActivitiesDto,
-  ): Promise<ApiResponse<ActivitiesResponseDto | null>> {
+  async update(id: number, updateDto: UpdateActivitiesDto): Promise<ApiResponse<ActivitiesResponseDto | null>> {
     try {
       const activity = await this.activitiesRepository.findOne({
         where: { id },
@@ -248,17 +202,11 @@ export class ActivitiesService {
         });
 
         if (existingActivity) {
-          throwError(
-            `Nama aktivitas ${updateDto.name} sudah digunakan oleh aktivitas lain`,
-            409,
-          );
+          throwError(`Nama aktivitas ${updateDto.name} sudah digunakan oleh aktivitas lain`, 409);
         }
       }
 
-      const updatedActivity = this.activitiesRepository.merge(
-        activity,
-        updateDto,
-      );
+      const updatedActivity = this.activitiesRepository.merge(activity, updateDto);
       const result = await this.activitiesRepository.save(updatedActivity);
 
       // Transform to DTO format

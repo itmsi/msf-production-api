@@ -14,9 +14,7 @@ export class ControlDayWorkHourService {
     private readonly effectiveWorkingHoursRepository: Repository<EffectiveWorkingHours>,
   ) {}
 
-  async getControlDayWorkHour(
-    query: GetControlDayWorkHourDto,
-  ): Promise<ControlDayWorkHourListResponseDto> {
+  async getControlDayWorkHour(query: GetControlDayWorkHourDto): Promise<ControlDayWorkHourListResponseDto> {
     const { startDate, endDate, unit, shift, page = 1, limit = 10 } = query;
 
     // Tentukan tanggal filter - jika ada startDate dan endDate, gunakan endDate saja
@@ -28,9 +26,7 @@ export class ControlDayWorkHourService {
     console.log('Filter date:', filterDate);
 
     // Query untuk mengambil data unit dari m_population
-    let populationQuery = this.populationRepository
-      .createQueryBuilder('pop')
-      .where('pop.status = :status', { status: 'active' });
+    const populationQuery = this.populationRepository.createQueryBuilder('pop').where('pop.status = :status', { status: 'active' });
 
     // Filter berdasarkan unit jika ada
     if (unit) {
@@ -40,7 +36,10 @@ export class ControlDayWorkHourService {
 
     let populations = await populationQuery.getMany();
     console.log('Found populations:', populations.length);
-    console.log('Population data:', populations.map(p => ({ id: p.id, no_unit: p.no_unit })));
+    console.log(
+      'Population data:',
+      populations.map((p) => ({ id: p.id, no_unit: p.no_unit })),
+    );
 
     // Jika tidak ada population yang ditemukan dengan exact match, coba dengan LIKE
     if (populations.length === 0 && unit) {
@@ -49,10 +48,13 @@ export class ControlDayWorkHourService {
         .createQueryBuilder('pop')
         .where('pop.status = :status', { status: 'active' })
         .andWhere('pop.no_unit LIKE :unit', { unit: `%${unit}%` });
-      
+
       populations = await likeQuery.getMany();
       console.log('Found populations with LIKE:', populations.length);
-      console.log('Population data with LIKE:', populations.map(p => ({ id: p.id, no_unit: p.no_unit })));
+      console.log(
+        'Population data with LIKE:',
+        populations.map((p) => ({ id: p.id, no_unit: p.no_unit })),
+      );
     }
 
     // Debug: Periksa apakah ada data di r_loss_time untuk tanggal ini
@@ -65,18 +67,18 @@ export class ControlDayWorkHourService {
     // Jika tidak ada data untuk tanggal ini, coba tanggal kemarin dan beberapa hari sebelumnya
     if (totalLossTimeData === 0 && !startDate && !endDate) {
       console.log(`No data for date ${filterDate}, trying previous dates...`);
-      
+
       for (let i = 1; i <= 7; i++) {
         const previousDate = new Date();
         previousDate.setDate(previousDate.getDate() - i);
         const previousDateStr = previousDate.toISOString().split('T')[0];
-        
+
         const previousData = await this.effectiveWorkingHoursRepository
           .createQueryBuilder('ewh')
           .where('ewh.date_activity = :previousDate', { previousDate: previousDateStr })
           .getCount();
         console.log(`Total r_loss_time data for ${i} days ago ${previousDateStr}:`, previousData);
-        
+
         if (previousData > 0) {
           console.log(`Using date ${previousDateStr} instead of ${filterDate}`);
           filterDate = previousDateStr;
@@ -102,7 +104,7 @@ export class ControlDayWorkHourService {
     // Loop untuk setiap population/unit
     for (const population of populations) {
       console.log(`\nProcessing population ID: ${population.id}, no_unit: ${population.no_unit}`);
-      
+
       // Query untuk mengambil data shift dari r_loss_time untuk unit ini
       const shiftQuery = this.effectiveWorkingHoursRepository
         .createQueryBuilder('ewh')
@@ -125,7 +127,7 @@ export class ControlDayWorkHourService {
         // Query untuk mengambil data duration berdasarkan problem type
         const problemTypes = [
           'P5M',
-          'Pergantian Shift', 
+          'Pergantian Shift',
           'Rest Time',
           'GST',
           'Travelling',
@@ -136,13 +138,13 @@ export class ControlDayWorkHourService {
           'Travelling Equipment',
           'Fogging',
           'Safety Talk',
-          'P2H'
+          'P2H',
         ];
 
         const problemData = {};
-        
+
         console.log(`\nProcessing shift: ${currentShift} for population ${population.id}`);
-        
+
         // Ambil data untuk setiap problem type
         for (const problemType of problemTypes) {
           const durationQuery = this.effectiveWorkingHoursRepository
@@ -155,7 +157,7 @@ export class ControlDayWorkHourService {
 
           const durationResult = await durationQuery.getRawOne();
           console.log(`Problem type "${problemType}":`, durationResult);
-          
+
           // Jika tidak ada data dengan exact match, coba dengan LIKE
           if (!durationResult?.totalDuration) {
             const likeQuery = this.effectiveWorkingHoursRepository
@@ -168,12 +170,12 @@ export class ControlDayWorkHourService {
 
             const likeResult = await likeQuery.getRawOne();
             console.log(`Problem type "${problemType}" with LIKE:`, likeResult);
-            
-            problemData[this.mapProblemTypeToField(problemType)] = 
-              likeResult?.totalDuration ? parseFloat(likeResult.totalDuration) : null;
+
+            problemData[this.mapProblemTypeToField(problemType)] = likeResult?.totalDuration ? parseFloat(likeResult.totalDuration) : null;
           } else {
-            problemData[this.mapProblemTypeToField(problemType)] = 
-              durationResult?.totalDuration ? parseFloat(durationResult.totalDuration) : null;
+            problemData[this.mapProblemTypeToField(problemType)] = durationResult?.totalDuration
+              ? parseFloat(durationResult.totalDuration)
+              : null;
           }
         }
 
@@ -182,7 +184,7 @@ export class ControlDayWorkHourService {
           unit: population.no_unit,
           shift: currentShift,
           filterDate: filterDate,
-          ...problemData
+          ...problemData,
         };
 
         console.log(`Control data created:`, controlData);
@@ -221,22 +223,21 @@ export class ControlDayWorkHourService {
 
   private mapProblemTypeToField(problemType: string): string {
     const mapping = {
-      'P5M': 'p5m',
+      P5M: 'p5m',
       'Pergantian Shift': 'pergShift',
       'Rest Time': 'restTime',
-      'GST': 'gst',
-      'Travelling': 'travelling',
+      GST: 'gst',
+      Travelling: 'travelling',
       'Perbaikan Front Loading': 'perbaikanFrontLoading',
       'Cek Elevasi': 'cekElevasi',
-      'Refuelling': 'refuelling',
-      'Slippery': 'slippery',
+      Refuelling: 'refuelling',
+      Slippery: 'slippery',
       'Travelling Equipment': 'travellingEquipment',
-      'Fogging': 'fogging',
+      Fogging: 'fogging',
       'Safety Talk': 'safetyTalk',
-      'P2H': 'p2h'
+      P2H: 'p2h',
     };
-    
+
     return mapping[problemType] || problemType.toLowerCase().replace(/\s+/g, '');
   }
-
 }

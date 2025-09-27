@@ -1,24 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  Put,
-  Delete,
-  UseGuards,
-  ParseIntPipe,
-  Request,
-  Query,
-} from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Param, Body, Put, Delete, UseGuards, ParseIntPipe, Request, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { UserRoleService } from './user-role.service';
 import {
   CreateUserRoleDto,
@@ -42,8 +23,7 @@ export class UserRoleController {
   @Post()
   @ApiOperation({
     summary: 'Membuat user role baru',
-    description:
-      'Memberikan role kepada user. Kombinasi user_id dan role_id harus unik.',
+    description: 'Memberikan role kepada user. Kombinasi user_id dan role_id harus unik.',
   })
   @ApiResponse({
     status: 201,
@@ -136,8 +116,7 @@ export class UserRoleController {
   @Post('assign')
   @ApiOperation({
     summary: 'Memberikan role kepada user',
-    description:
-      'Endpoint khusus untuk memberikan role kepada user. Alternative dari POST /user-roles.',
+    description: 'Endpoint khusus untuk memberikan role kepada user. Alternative dari POST /user-roles.',
   })
   @ApiResponse({
     status: 201,
@@ -177,11 +156,7 @@ export class UserRoleController {
   })
   assignRoleToUser(@Body() body: AssignRoleDto, @Request() req: any) {
     const createdBy = req.user?.id;
-    return this.userRoleService.assignRoleToUser(
-      body.user_id,
-      body.role_id,
-      createdBy,
-    );
+    return this.userRoleService.assignRoleToUser(body.user_id, body.role_id, createdBy);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -232,8 +207,7 @@ export class UserRoleController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary:
-      'Mendapatkan semua data user roles dengan pagination, filtering, dan sorting',
+    summary: 'Mendapatkan semua data user roles dengan pagination, filtering, dan sorting',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -513,8 +487,7 @@ export class UserRoleController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data user role berdasarkan ID',
-    description:
-      'Mengupdate data user role dengan validasi duplikasi kombinasi user_id dan role_id',
+    description: 'Mengupdate data user role dengan validasi duplikasi kombinasi user_id dan role_id',
   })
   @ApiParam({
     name: 'id',
@@ -562,11 +535,7 @@ export class UserRoleController {
     status: 500,
     description: 'Internal Server Error - Terjadi kesalahan pada server',
   })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateUserRoleDto: UpdateUserRoleDto,
-    @Request() req: any,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateUserRoleDto: UpdateUserRoleDto, @Request() req: any) {
     if (!updateUserRoleDto.updatedBy) {
       updateUserRoleDto.updatedBy = req.user?.id;
     }

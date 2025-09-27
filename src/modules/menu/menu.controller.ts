@@ -1,24 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  Put,
-  Delete,
-  UseGuards,
-  ParseIntPipe,
-  Request,
-  Query,
-} from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiQuery,
-  ApiOperation,
-  ApiResponse,
-  ApiBody,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Param, Body, Put, Delete, UseGuards, ParseIntPipe, Request, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags, ApiQuery, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { MenuService } from './menu.service';
 import {
   CreateMenuDto,
@@ -40,8 +21,7 @@ export class MenuController {
   @Post()
   @ApiOperation({
     summary: 'Create new menu',
-    description:
-      'Create a new menu item with optional permissions. ⚠️ Penting: Gunakan parent_id: null untuk menu root, jangan gunakan 0',
+    description: 'Create a new menu item with optional permissions. ⚠️ Penting: Gunakan parent_id: null untuk menu root, jangan gunakan 0',
   })
   @ApiBody({
     type: CreateMenuDto,
@@ -629,11 +609,7 @@ export class MenuController {
     status: 500,
     description: 'Internal Server Error - Terjadi kesalahan pada server',
   })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateMenuDto: UpdateMenuDto,
-    @Request() req: any,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateMenuDto: UpdateMenuDto, @Request() req: any) {
     if (!updateMenuDto.updatedBy) {
       updateMenuDto.updatedBy = req.user?.id;
     }
@@ -644,8 +620,7 @@ export class MenuController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Delete menu',
-    description:
-      'Soft delete a menu by ID (marks as deleted but keeps in database)',
+    description: 'Soft delete a menu by ID (marks as deleted but keeps in database)',
   })
   @ApiResponse({
     status: 200,

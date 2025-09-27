@@ -1,24 +1,10 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  HttpException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException, HttpException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Barge } from './entities/barge.entity';
 import { Repository, Not } from 'typeorm';
-import {
-  ApiResponse,
-  successResponse,
-  throwError,
-  emptyDataResponse,
-} from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
-import {
-  CreateBargeDto,
-  BargeDataMasterResponseDto,
-  GetBargesQueryDto,
-  UpdateBargeDto,
-} from './dto/barge.dto';
+import { CreateBargeDto, BargeDataMasterResponseDto, GetBargesQueryDto, UpdateBargeDto } from './dto/barge.dto';
 
 @Injectable()
 export class BargeService {
@@ -27,9 +13,7 @@ export class BargeService {
     private bargeRepository: Repository<Barge>,
   ) {}
 
-  async findById(
-    id: number,
-  ): Promise<ApiResponse<BargeDataMasterResponseDto | null>> {
+  async findById(id: number): Promise<ApiResponse<BargeDataMasterResponseDto | null>> {
     try {
       const result = await this.bargeRepository.findOne({
         where: { id },
@@ -48,9 +32,7 @@ export class BargeService {
     }
   }
 
-  async findAll(
-    query: GetBargesQueryDto,
-  ): Promise<ApiResponse<BargeDataMasterResponseDto[]>> {
+  async findAll(query: GetBargesQueryDto): Promise<ApiResponse<BargeDataMasterResponseDto[]>> {
     try {
       const page = parseInt(query.page ?? '1', 10);
       const limit = parseInt(query.limit ?? '10', 10);
@@ -58,12 +40,8 @@ export class BargeService {
       const search = query.search?.toLowerCase() ?? '';
 
       const name = query.name?.toLowerCase() ?? '';
-      const minCapacity = query.minCapacity
-        ? parseInt(query.minCapacity, 10)
-        : null;
-      const maxCapacity = query.maxCapacity
-        ? parseInt(query.maxCapacity, 10)
-        : null;
+      const minCapacity = query.minCapacity ? parseInt(query.minCapacity, 10) : null;
+      const maxCapacity = query.maxCapacity ? parseInt(query.maxCapacity, 10) : null;
       const sortBy = query.sortBy ?? 'id';
       const sortOrder = query.sortOrder ?? 'DESC';
 
@@ -72,16 +50,11 @@ export class BargeService {
         throwError('Limit tidak boleh lebih dari 100', 400);
       }
 
-      const qb = this.bargeRepository
-        .createQueryBuilder('barge')
-        .where('barge.deletedAt IS NULL'); // Exclude soft deleted records
+      const qb = this.bargeRepository.createQueryBuilder('barge').where('barge.deletedAt IS NULL'); // Exclude soft deleted records
 
       // Search filter (mencari di semua field yang relevan)
       if (search) {
-        qb.andWhere(
-          '(barge.name ILIKE :search OR barge.remarks ILIKE :search)',
-          { search: `%${search}%` },
-        );
+        qb.andWhere('(barge.name ILIKE :search OR barge.remarks ILIKE :search)', { search: `%${search}%` });
       }
 
       // Filter by name
@@ -101,13 +74,7 @@ export class BargeService {
       }
 
       // Validate sortBy field to prevent SQL injection
-      const allowedSortFields = [
-        'id',
-        'name',
-        'capacity',
-        'createdAt',
-        'updatedAt',
-      ];
+      const allowedSortFields = ['id', 'name', 'capacity', 'createdAt', 'updatedAt'];
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
@@ -127,13 +94,7 @@ export class BargeService {
         updatedBy: barge.updatedBy,
       }));
 
-      return paginateResponse(
-        transformedResult,
-        total,
-        page,
-        limit,
-        'Barge data retrieved successfully',
-      );
+      return paginateResponse(transformedResult, total, page, limit, 'Barge data retrieved successfully');
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -142,10 +103,7 @@ export class BargeService {
     }
   }
 
-  async create(
-    createBargeDto: CreateBargeDto,
-    userId: number,
-  ): Promise<ApiResponse<BargeDataMasterResponseDto>> {
+  async create(createBargeDto: CreateBargeDto, userId: number): Promise<ApiResponse<BargeDataMasterResponseDto>> {
     try {
       const barge = this.bargeRepository.create({
         ...createBargeDto,
@@ -155,10 +113,7 @@ export class BargeService {
 
       const result = await this.bargeRepository.save(barge);
 
-      return successResponse(
-        result as BargeDataMasterResponseDto,
-        'Barge berhasil dibuat',
-      );
+      return successResponse(result as BargeDataMasterResponseDto, 'Barge berhasil dibuat');
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -167,11 +122,7 @@ export class BargeService {
     }
   }
 
-  async update(
-    id: number,
-    updateBargeDto: UpdateBargeDto,
-    userId: number,
-  ): Promise<ApiResponse<BargeDataMasterResponseDto>> {
+  async update(id: number, updateBargeDto: UpdateBargeDto, userId: number): Promise<ApiResponse<BargeDataMasterResponseDto>> {
     try {
       const barge = await this.bargeRepository.findOne({
         where: { id, deletedAt: undefined },
@@ -187,10 +138,7 @@ export class BargeService {
 
       const result = await this.bargeRepository.save(barge!);
 
-      return successResponse(
-        result as BargeDataMasterResponseDto,
-        'Barge berhasil diupdate',
-      );
+      return successResponse(result as BargeDataMasterResponseDto, 'Barge berhasil diupdate');
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -224,20 +172,14 @@ export class BargeService {
     }
   }
 
-  async restore(
-    id: number,
-    userId: number,
-  ): Promise<ApiResponse<BargeDataMasterResponseDto>> {
+  async restore(id: number, userId: number): Promise<ApiResponse<BargeDataMasterResponseDto>> {
     try {
       const barge = await this.bargeRepository.findOne({
         where: { id, deletedAt: Not(undefined) as any },
       });
 
       if (!barge) {
-        throwError(
-          'Barge tidak ditemukan atau tidak dalam status deleted',
-          404,
-        );
+        throwError('Barge tidak ditemukan atau tidak dalam status deleted', 404);
       }
 
       // Restore soft deleted barge
@@ -247,10 +189,7 @@ export class BargeService {
 
       const result = await this.bargeRepository.save(barge!);
 
-      return successResponse(
-        result as BargeDataMasterResponseDto,
-        'Barge berhasil dipulihkan',
-      );
+      return successResponse(result as BargeDataMasterResponseDto, 'Barge berhasil dipulihkan');
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

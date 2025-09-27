@@ -10,15 +10,7 @@ import { Barge } from '../barge/entities/barge.entity';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      HaulingList,
-      Population,
-      Sites,
-      OperationPoints,
-      Barge,
-    ]),
-  ],
+  imports: [TypeOrmModule.forFeature([HaulingList, Population, Sites, OperationPoints, Barge])],
   controllers: [HaulingListController],
   providers: [HaulingListService, JwtAuthGuard],
   exports: [HaulingListService],

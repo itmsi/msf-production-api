@@ -3,11 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PlanProduction } from '../../modules/plan-production/entities/plan-production.entity';
 import { ParentPlanProduction } from '../../modules/parent-plan-production/entities/parent-plan-production.entity';
-import {
-  BaseDataPro,
-  MaterialType,
-  ActivityType,
-} from '../../modules/base-data-production/entities/base-data-pro.entity';
+import { BaseDataPro, MaterialType, ActivityType } from '../../modules/base-data-production/entities/base-data-pro.entity';
 
 export interface ProductionTargets {
   oreTarget: number;
@@ -44,10 +40,7 @@ export class ProductionFormulaService {
   /**
    * Mendapatkan target produksi dari TB_R_Plan_Production berdasarkan rentang tanggal
    */
-  async getProductionTargets(
-    startDate?: string,
-    endDate?: string,
-  ): Promise<ProductionTargets> {
+  async getProductionTargets(startDate?: string, endDate?: string): Promise<ProductionTargets> {
     let query = this.planProductionRepository
       .createQueryBuilder('pp')
       .select([
@@ -82,9 +75,7 @@ export class ProductionFormulaService {
   /**
    * Mendapatkan target produksi untuk tanggal tertentu (bukan SUM)
    */
-  async getProductionTargetsForDate(
-    selectedDate: string,
-  ): Promise<ProductionTargets> {
+  async getProductionTargetsForDate(selectedDate: string): Promise<ProductionTargets> {
     const query = `
       SELECT 
         ore_target as "oreTarget",
@@ -96,9 +87,7 @@ export class ProductionFormulaService {
       LIMIT 1
     `;
 
-    const result = await this.planProductionRepository.query(query, [
-      selectedDate,
-    ]);
+    const result = await this.planProductionRepository.query(query, [selectedDate]);
 
     return {
       oreTarget: parseFloat(result[0]?.oreTarget) || 0,
@@ -112,10 +101,7 @@ export class ProductionFormulaService {
    * Mendapatkan actual produksi dari Analysis Hauling and Barging
    * Formula: SUM [Ore Hauling Tonnage] sesuai rentang tanggal
    */
-  async getOreHaulingTonnage(
-    startDate?: string,
-    endDate?: string,
-  ): Promise<number> {
+  async getOreHaulingTonnage(startDate?: string, endDate?: string): Promise<number> {
     const today = new Date();
 
     if (!startDate) {
@@ -144,11 +130,7 @@ export class ProductionFormulaService {
   ), 0)`,
         'total_tonnage',
       )
-      .leftJoin(
-        'r_parent_base_data_pro',
-        'rpbdp',
-        'rpbdp.id = rbdp.parent_base_data_pro_id',
-      )
+      .leftJoin('r_parent_base_data_pro', 'rpbdp', 'rpbdp.id = rbdp.parent_base_data_pro_id')
       .leftJoin('m_population', 'mp', 'mp.id = rpbdp.population_id')
       .where('DATE(rpbdp.activity_date) BETWEEN :startDate AND :endDate', {
         startDate,
@@ -206,10 +188,7 @@ export class ProductionFormulaService {
     const result = await this.baseDataProRepository.query(query, queryParams);
 
     // Convert tonnage to BCM (divide by 1.6)
-    const totalTonnage = result.reduce(
-      (total: number, row: any) => total + parseFloat(row.tonnage),
-      0,
-    );
+    const totalTonnage = result.reduce((total: number, row: any) => total + parseFloat(row.tonnage), 0);
     return totalTonnage / 1.6;
   }
 
@@ -230,11 +209,7 @@ export class ProductionFormulaService {
     `,
         'tonnage',
       )
-      .innerJoin(
-        'r_parent_base_data_pro',
-        'rpbdp',
-        'rpbdp.id = rbdp.parent_base_data_pro_id',
-      )
+      .innerJoin('r_parent_base_data_pro', 'rpbdp', 'rpbdp.id = rbdp.parent_base_data_pro_id')
       .innerJoin('m_population', 'mp', 'mp.id = rpbdp.population_id')
       .where('rbdp.material IN (:...materials)', {
         materials: [MaterialType.ORE, MaterialType.ORE_BARGE],
@@ -256,20 +231,14 @@ export class ProductionFormulaService {
     const result = await qb.getRawMany();
 
     // jumlahkan tonnage dari semua tyre_type
-    return result.reduce(
-      (total: number, row: any) => total + parseFloat(row.tonnage),
-      0,
-    );
+    return result.reduce((total: number, row: any) => total + parseFloat(row.tonnage), 0);
   }
 
   /**
    * Mendapatkan data barge dan hauling harian untuk dashboard
    * Formula terpusat yang sama dengan analysis-hauling-barging
    */
-  async getDailyBargeHaulingData(
-    startDate?: string,
-    endDate?: string,
-  ): Promise<any[]> {
+  async getDailyBargeHaulingData(startDate?: string, endDate?: string): Promise<any[]> {
     let query = `
       SELECT 
         rpbdp.activity_date as date,
@@ -379,10 +348,7 @@ export class ProductionFormulaService {
    * Formula: SUM[QUARRY Tonnage] sesuai rentang tanggal
    * Menggunakan faktor yang sama dengan Control MTD Production: 6x4=16.6, 8x4=18.26
    */
-  async getQuarryTonnage(
-    startDate?: string,
-    endDate?: string,
-  ): Promise<number> {
+  async getQuarryTonnage(startDate?: string, endDate?: string): Promise<number> {
     let query = `
       SELECT 
         CASE 
@@ -415,26 +381,19 @@ export class ProductionFormulaService {
 
     const result = await this.baseDataProRepository.query(query, queryParams);
 
-    return result.reduce(
-      (total: number, row: any) => total + parseFloat(row.tonnage),
-      0,
-    );
+    return result.reduce((total: number, row: any) => total + parseFloat(row.tonnage), 0);
   }
 
   /**
    * Mendapatkan semua data actual produksi sekaligus
    */
-  async getProductionActuals(
-    startDate?: string,
-    endDate?: string,
-  ): Promise<ProductionActuals> {
-    const [oreHaulingTonnage, obBCM, bargeTonnage, quarryTonnage] =
-      await Promise.all([
-        this.getOreHaulingTonnage(startDate, endDate),
-        this.getObBCM(startDate, endDate),
-        this.getBargeTonnage(startDate, endDate),
-        this.getQuarryTonnage(startDate, endDate),
-      ]);
+  async getProductionActuals(startDate?: string, endDate?: string): Promise<ProductionActuals> {
+    const [oreHaulingTonnage, obBCM, bargeTonnage, quarryTonnage] = await Promise.all([
+      this.getOreHaulingTonnage(startDate, endDate),
+      this.getObBCM(startDate, endDate),
+      this.getBargeTonnage(startDate, endDate),
+      this.getQuarryTonnage(startDate, endDate),
+    ]);
 
     return {
       oreHaulingTonnage,
@@ -447,27 +406,11 @@ export class ProductionFormulaService {
   /**
    * Mendapatkan actual produksi berdasarkan shift (DS/NS)
    */
-  async getActualByShift(
-    startDate?: string,
-    endDate?: string,
-    shift?: string,
-  ): Promise<ProductionActuals> {
-    const oreHaulingTonnage = await this.getOreHaulingTonnageByShift(
-      startDate,
-      endDate,
-      shift,
-    );
+  async getActualByShift(startDate?: string, endDate?: string, shift?: string): Promise<ProductionActuals> {
+    const oreHaulingTonnage = await this.getOreHaulingTonnageByShift(startDate, endDate, shift);
     const obBCM = await this.getObBCMByShift(startDate, endDate, shift);
-    const bargeTonnage = await this.getBargeTonnageByShift(
-      startDate,
-      endDate,
-      shift,
-    );
-    const quarryTonnage = await this.getQuarryTonnageByShift(
-      startDate,
-      endDate,
-      shift,
-    );
+    const bargeTonnage = await this.getBargeTonnageByShift(startDate, endDate, shift);
+    const quarryTonnage = await this.getQuarryTonnageByShift(startDate, endDate, shift);
 
     return {
       oreHaulingTonnage,
@@ -480,11 +423,7 @@ export class ProductionFormulaService {
   /**
    * Mendapatkan actual Ore Hauling berdasarkan shift
    */
-  async getOreHaulingTonnageByShift(
-    startDate?: string,
-    endDate?: string,
-    shift?: string,
-  ): Promise<number> {
+  async getOreHaulingTonnageByShift(startDate?: string, endDate?: string, shift?: string): Promise<number> {
     let query = `
       SELECT 
         CASE 
@@ -523,20 +462,13 @@ export class ProductionFormulaService {
 
     const result = await this.baseDataProRepository.query(query, queryParams);
 
-    return result.reduce(
-      (total: number, row: any) => total + parseFloat(row.tonnage),
-      0,
-    );
+    return result.reduce((total: number, row: any) => total + parseFloat(row.tonnage), 0);
   }
 
   /**
    * Mendapatkan actual OB berdasarkan shift
    */
-  async getObBCMByShift(
-    startDate?: string,
-    endDate?: string,
-    shift?: string,
-  ): Promise<number> {
+  async getObBCMByShift(startDate?: string, endDate?: string, shift?: string): Promise<number> {
     let query = `
       SELECT 
         CASE 
@@ -576,21 +508,14 @@ export class ProductionFormulaService {
     const result = await this.baseDataProRepository.query(query, queryParams);
 
     // Convert tonnage to BCM (divide by 1.6)
-    const totalTonnage = result.reduce(
-      (total: number, row: any) => total + parseFloat(row.tonnage),
-      0,
-    );
+    const totalTonnage = result.reduce((total: number, row: any) => total + parseFloat(row.tonnage), 0);
     return totalTonnage / 1.6;
   }
 
   /**
    * Mendapatkan actual Barge berdasarkan shift
    */
-  async getBargeTonnageByShift(
-    startDate?: string,
-    endDate?: string,
-    shift?: string,
-  ): Promise<number> {
+  async getBargeTonnageByShift(startDate?: string, endDate?: string, shift?: string): Promise<number> {
     let query = `
       SELECT 
         CASE 
@@ -629,21 +554,14 @@ export class ProductionFormulaService {
 
     const result = await this.baseDataProRepository.query(query, queryParams);
 
-    return result.reduce(
-      (total: number, row: any) => total + parseFloat(row.tonnage),
-      0,
-    );
+    return result.reduce((total: number, row: any) => total + parseFloat(row.tonnage), 0);
   }
 
   /**
    * Mendapatkan actual Quarry berdasarkan shift
    * Menggunakan faktor yang sama dengan Control MTD Production: 6x4=16.6, 8x4=18.26
    */
-  async getQuarryTonnageByShift(
-    startDate?: string,
-    endDate?: string,
-    shift?: string,
-  ): Promise<number> {
+  async getQuarryTonnageByShift(startDate?: string, endDate?: string, shift?: string): Promise<number> {
     let query = `
       SELECT 
         CASE 
@@ -682,10 +600,7 @@ export class ProductionFormulaService {
 
     const result = await this.baseDataProRepository.query(query, queryParams);
 
-    return result.reduce(
-      (total: number, row: any) => total + parseFloat(row.tonnage),
-      0,
-    );
+    return result.reduce((total: number, row: any) => total + parseFloat(row.tonnage), 0);
   }
 
   /**
@@ -801,10 +716,7 @@ export class ProductionFormulaService {
   //     quarryTonnage: parseFloat(data.quarry_tonnage) || 0,
   //   };
   // }
-  async getActualFromControlDayProduction(
-    selectedDate?: string,
-    shift?: string,
-  ) {
+  async getActualFromControlDayProduction(selectedDate?: string, shift?: string) {
     const dateToUse = selectedDate || new Date().toISOString().split('T')[0];
     const shifts = shift ? [shift] : ['ds', 'ns'];
 
@@ -877,20 +789,13 @@ export class ProductionFormulaService {
     const targets = await this.getProductionTargetsForDate(dateToUse);
 
     // Jika shift tidak ditentukan, ambil data untuk semua shift (daily)
-    const dailyActuals =
-      await this.getActualFromControlDayProduction(dateToUse);
+    const dailyActuals = await this.getActualFromControlDayProduction(dateToUse);
 
     // Ambil actual untuk Day Shift (ds)
-    const dayShiftActuals = await this.getActualFromControlDayProduction(
-      dateToUse,
-      'ds',
-    );
+    const dayShiftActuals = await this.getActualFromControlDayProduction(dateToUse, 'ds');
 
     // Ambil actual untuk Night Shift (ns)
-    const nightShiftActuals = await this.getActualFromControlDayProduction(
-      dateToUse,
-      'ns',
-    );
+    const nightShiftActuals = await this.getActualFromControlDayProduction(dateToUse, 'ns');
 
     // Jika shift ditentukan, sesuaikan data yang dikembalikan
     if (shift && shift.toLowerCase() === 'ds') {

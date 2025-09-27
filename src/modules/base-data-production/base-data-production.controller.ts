@@ -16,14 +16,7 @@ import {
   StreamableFile,
   InternalServerErrorException,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiConsumes,
-  ApiBody,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { BaseDataProductionService } from './base-data-production.service';
 import {
   CreateBaseDataProductionDto,
@@ -43,18 +36,13 @@ import { createReadStream } from 'fs';
 @ApiBearerAuth('jwt')
 @Controller('base-data-production')
 export class BaseDataProductionController {
-  constructor(
-    private readonly baseDataProductionService: BaseDataProductionService,
-  ) {}
+  constructor(private readonly baseDataProductionService: BaseDataProductionService) {}
 
   @Get('export')
   @ApiOperation({
     summary: 'Export data production dari CSV',
   })
-  async exportData(
-    @Query() queryDto: QueryExportBaseDataProductionDto,
-    @Res({ passthrough: false }) res: Response,
-  ) {
+  async exportData(@Query() queryDto: QueryExportBaseDataProductionDto, @Res({ passthrough: false }) res: Response) {
     return await this.baseDataProductionService.exportData(queryDto, res);
   }
 
@@ -68,14 +56,8 @@ export class BaseDataProductionController {
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  create(
-    @Body() createBaseDataProductionDto: CreateBaseDataProductionDto,
-    @Request() req: any,
-  ) {
-    return this.baseDataProductionService.create(
-      createBaseDataProductionDto,
-      req.user.id,
-    );
+  create(@Body() createBaseDataProductionDto: CreateBaseDataProductionDto, @Request() req: any) {
+    return this.baseDataProductionService.create(createBaseDataProductionDto, req.user.id);
   }
 
   @Get()
@@ -121,16 +103,8 @@ export class BaseDataProductionController {
   @ApiResponse({ status: 404, description: 'Base data production not found' })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  update(
-    @Param('id') id: string,
-    @Body() updateBaseDataProductionDto: UpdateBaseDataProductionDto,
-    @Request() req: any,
-  ) {
-    return this.baseDataProductionService.update(
-      +id,
-      updateBaseDataProductionDto,
-      req.user.id,
-    );
+  update(@Param('id') id: string, @Body() updateBaseDataProductionDto: UpdateBaseDataProductionDto, @Request() req: any) {
+    return this.baseDataProductionService.update(+id, updateBaseDataProductionDto, req.user.id);
   }
 
   @Delete(':id')
@@ -149,15 +123,11 @@ export class BaseDataProductionController {
   @Get('import/template')
   @ApiOperation({
     summary: 'Download template CSV untuk import Base Data Pro',
-    description:
-      'Mendownload template CSV yang berisi format kolom yang diperlukan',
+    description: 'Mendownload template CSV yang berisi format kolom yang diperlukan',
   })
   downloadTemplate(): StreamableFile {
     try {
-      const file = join(
-        process.cwd(),
-        'src/modules/base-data-production/template-production-import.csv',
-      );
+      const file = join(process.cwd(), 'src/modules/base-data-production/template-production-import.csv');
       const stream = createReadStream(file);
       return new StreamableFile(stream, {
         type: 'text/csv',

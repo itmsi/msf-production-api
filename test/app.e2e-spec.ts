@@ -21,12 +21,10 @@ describe('AuthController (e2e)', () => {
   });
 
   it('/auth/login (POST) should return JWT token with valid credentials', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/auth/login')
-      .send({
-        username: 'admin',
-        password: 'admin123',
-      });
+    const response = await request(app.getHttpServer()).post('/auth/login').send({
+      username: 'admin',
+      password: 'admin123',
+    });
 
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty('access_token');
@@ -34,12 +32,10 @@ describe('AuthController (e2e)', () => {
   });
 
   it('/auth/login (POST) should fail with invalid credentials', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/auth/login')
-      .send({
-        username: 'admin',
-        password: 'salahpassword',
-      });
+    const response = await request(app.getHttpServer()).post('/auth/login').send({
+      username: 'admin',
+      password: 'salahpassword',
+    });
 
     expect(response.status).toBe(401); // Unauthorized
   });

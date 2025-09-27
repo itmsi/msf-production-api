@@ -9,6 +9,7 @@ Modul ini menangani manajemen brand dalam sistem MSF Production. Brand adalah me
 Mendapatkan semua data brand dengan pagination, filtering, dan sorting.
 
 **Query Parameters:**
+
 - `page` (optional): Nomor halaman (default: 1)
 - `limit` (optional): Jumlah data per halaman (default: 10, max: 100)
 - `search` (optional): Pencarian umum di field brand_name
@@ -17,11 +18,13 @@ Mendapatkan semua data brand dengan pagination, filtering, dan sorting.
 - `sortOrder` (optional): Urutan sorting (ASC atau DESC)
 
 **Contoh Request:**
+
 ```bash
 GET /api/brands?page=1&limit=10&search=toyota&sortBy=brand_name&sortOrder=ASC
 ```
 
 **Response Success (200):**
+
 ```json
 {
   "statusCode": 200,
@@ -53,14 +56,17 @@ GET /api/brands?page=1&limit=10&search=toyota&sortBy=brand_name&sortOrder=ASC
 Mendapatkan data brand berdasarkan ID.
 
 **Path Parameters:**
+
 - `id`: ID brand (number)
 
 **Contoh Request:**
+
 ```bash
 GET /api/brands/1
 ```
 
 **Response Success (200):**
+
 ```json
 {
   "statusCode": 200,
@@ -79,6 +85,7 @@ GET /api/brands/1
 Membuat brand baru dengan validasi duplikasi brand_name.
 
 **Request Body:**
+
 ```json
 {
   "brand_name": "Toyota"
@@ -86,9 +93,11 @@ Membuat brand baru dengan validasi duplikasi brand_name.
 ```
 
 **Field Validation:**
+
 - `brand_name`: String, required, min: 1, max: 100 karakter
 
 **Response Success (201):**
+
 ```json
 {
   "statusCode": 201,
@@ -107,9 +116,11 @@ Membuat brand baru dengan validasi duplikasi brand_name.
 Mengupdate data brand berdasarkan ID.
 
 **Path Parameters:**
+
 - `id`: ID brand yang akan diupdate (number)
 
 **Request Body:**
+
 ```json
 {
   "brand_name": "Toyota Motor"
@@ -117,6 +128,7 @@ Mengupdate data brand berdasarkan ID.
 ```
 
 **Response Success (200):**
+
 ```json
 {
   "statusCode": 200,
@@ -135,14 +147,17 @@ Mengupdate data brand berdasarkan ID.
 Menghapus data brand berdasarkan ID (soft delete).
 
 **Path Parameters:**
+
 - `id`: ID brand yang akan dihapus (number)
 
 **Contoh Request:**
+
 ```bash
 DELETE /api/brands/1
 ```
 
 **Response Success (200):**
+
 ```json
 {
   "statusCode": 200,
@@ -154,6 +169,7 @@ DELETE /api/brands/1
 ## Error Responses
 
 ### Bad Request (400)
+
 ```json
 {
   "statusCode": 400,
@@ -164,6 +180,7 @@ DELETE /api/brands/1
 ```
 
 ### Unauthorized (401)
+
 ```json
 {
   "statusCode": 401,
@@ -174,6 +191,7 @@ DELETE /api/brands/1
 ```
 
 ### Not Found (404)
+
 ```json
 {
   "statusCode": 404,
@@ -184,6 +202,7 @@ DELETE /api/brands/1
 ```
 
 ### Conflict (409)
+
 ```json
 {
   "statusCode": 409,
@@ -194,6 +213,7 @@ DELETE /api/brands/1
 ```
 
 ### Internal Server Error (500)
+
 ```json
 {
   "statusCode": 500,
@@ -214,13 +234,14 @@ Authorization: Bearer <jwt_token>
 ## Data Model
 
 ### Brand Entity
+
 ```typescript
 {
-  id: number;           // Primary key, auto increment
-  brand_name: string;   // Nama brand (max 100 karakter)
-  createdAt: Date;      // Timestamp pembuatan
-  updatedAt: Date;      // Timestamp update terakhir
-  deletedAt: Date;      // Timestamp soft delete (nullable)
+  id: number; // Primary key, auto increment
+  brand_name: string; // Nama brand (max 100 karakter)
+  createdAt: Date; // Timestamp pembuatan
+  updatedAt: Date; // Timestamp update terakhir
+  deletedAt: Date; // Timestamp soft delete (nullable)
 }
 ```
 
@@ -276,6 +297,7 @@ curl -X PUT http://localhost:3000/api/brands/1 \
 ## Testing
 
 Untuk testing endpoint ini, gunakan file test yang tersedia:
+
 - `brand.controller.spec.ts`
 - `brand.service.spec.ts`
 

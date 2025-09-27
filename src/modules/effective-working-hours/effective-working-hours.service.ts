@@ -1,18 +1,7 @@
-import {
-  BadRequestException,
-  HttpException,
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, DataSource, SelectQueryBuilder } from 'typeorm';
-import {
-  EffectiveWorkingHours,
-  LossType,
-  Shift,
-} from './entities/effective-working-hours.entity';
+import { EffectiveWorkingHours, LossType, Shift } from './entities/effective-working-hours.entity';
 import {
   CreateEffectiveWorkingHoursDto,
   UpdateEffectiveWorkingHoursDto,
@@ -21,11 +10,7 @@ import {
   ImportEwhItemDto,
   QueryExportEffectiveWorkingHoursDto,
 } from './dto/effective-working-hours.dto';
-import {
-  normalizeString,
-  paginateResponse,
-  setCsvExportHeaders,
-} from '../../common/helpers/public.helper';
+import { normalizeString, paginateResponse, setCsvExportHeaders } from '../../common/helpers/public.helper';
 import { ApiResponse, successResponse } from 'src/common';
 import { Readable } from 'stream';
 import csv from 'csv-parser';
@@ -52,11 +37,7 @@ export class EffectiveWorkingHoursService {
 
   private isValidDate(dateString: string): boolean {
     const date = new Date(dateString);
-    return (
-      date instanceof Date &&
-      !isNaN(date.getTime()) &&
-      !!dateString.match(/^\d{4}-\d{2}-\d{2}$/)
-    );
+    return date instanceof Date && !isNaN(date.getTime()) && !!dateString.match(/^\d{4}-\d{2}-\d{2}$/);
   }
 
   private isValidDateTime(dateTimeStr: string): boolean {
@@ -221,9 +202,7 @@ export class EffectiveWorkingHoursService {
         const error = errors[0];
         message = `Field "${error.field}" tidak valid: ${error.message}`;
       } else {
-        const errorDetails = errors
-          .map((err) => `"${err.field}": ${err.message}`)
-          .join(', ');
+        const errorDetails = errors.map((err) => `"${err.field}": ${err.message}`).join(', ');
         message = `${errors.length} field(s) tidak valid: ${errorDetails}`;
       }
     }
@@ -256,9 +235,7 @@ export class EffectiveWorkingHoursService {
         const rowData = errorRow.data;
         const errors = errorRow.errors;
         // Gabungkan semua error message
-        const errorMessages = errors
-          .map((err) => `${err.field}: ${err.message}`)
-          .join('; ');
+        const errorMessages = errors.map((err) => `${err.field}: ${err.message}`).join('; ');
 
         const csvRow = [
           errorRow.row,
@@ -284,10 +261,7 @@ export class EffectiveWorkingHoursService {
     }
   }
 
-  private async importCsvRow(
-    row: ImportEwhCsvRowDto,
-    userId?: number | null,
-  ): Promise<void> {
+  private async importCsvRow(row: ImportEwhCsvRowDto, userId?: number | null): Promise<void> {
     const [population, activities] = await Promise.all([
       this.populationRepository
         .createQueryBuilder('p')
@@ -312,8 +286,7 @@ export class EffectiveWorkingHoursService {
     }
     const startTime = new Date(row.start_time);
     const stopTime = new Date(row.stop_time);
-    const durationInMinutes =
-      (stopTime.getTime() - startTime.getTime()) / (1000 * 60);
+    const durationInMinutes = (stopTime.getTime() - startTime.getTime()) / (1000 * 60);
 
     const ewhData: CreateEffectiveWorkingHoursDto = {
       dateActivity: row.activity_date,
@@ -335,19 +308,13 @@ export class EffectiveWorkingHoursService {
     await this.effectiveWorkingHoursRepository.save(newEwh);
   }
 
-  async importData(
-    file: Express.Multer.File,
-    userId?: number | null,
-  ): Promise<ApiResponse<any>> {
+  async importData(file: Express.Multer.File, userId?: number | null): Promise<ApiResponse<any>> {
     try {
       if (!file) {
         throw new BadRequestException('File tidak ditemukan');
       }
 
-      if (
-        !file.mimetype.includes('csv') &&
-        !file.originalname.endsWith('.csv')
-      ) {
+      if (!file.mimetype.includes('csv') && !file.originalname.endsWith('.csv')) {
         throw new BadRequestException('File harus berupa CSV');
       }
 
@@ -410,9 +377,7 @@ export class EffectiveWorkingHoursService {
       }
       // Jika ada error, buat file error dan return tanpa insert ke database
       if (errorRows.length > 0) {
-        this.logger.log(
-          `Found ${errorRows.length} rows with errors, generating error CSV...`,
-        );
+        this.logger.log(`Found ${errorRows.length} rows with errors, generating error CSV...`);
 
         try {
           const errorCsvBuffer = this.generateErrorCsv(errorRows);
@@ -427,30 +392,19 @@ export class EffectiveWorkingHoursService {
             minioAvailable = await this.s3Service.testConnection();
 
             if (minioAvailable) {
-              errorFileInfo = await this.s3Service.uploadErrorFile(
-                `import_error_${Date.now()}.csv`,
-                errorCsvBuffer,
-                'ewh_import_error',
-              );
+              errorFileInfo = await this.s3Service.uploadErrorFile(`import_error_${Date.now()}.csv`, errorCsvBuffer, 'ewh_import_error');
 
               if (errorFileInfo) {
                 this.logger.log('Error file uploaded to MinIO successfully');
               } else {
-                this.logger.warn(
-                  'MinIO upload failed, using fallback response',
-                );
+                this.logger.warn('MinIO upload failed, using fallback response');
                 minioAvailable = false;
               }
             } else {
-              this.logger.warn(
-                'MinIO tidak tersedia, menggunakan fallback response',
-              );
+              this.logger.warn('MinIO tidak tersedia, menggunakan fallback response');
             }
           } catch (s3Error) {
-            this.logger.warn(
-              'MinIO error, menggunakan fallback response:',
-              s3Error.message,
-            );
+            this.logger.warn('MinIO error, menggunakan fallback response:', s3Error.message);
             minioAvailable = false;
           }
 
@@ -463,20 +417,15 @@ export class EffectiveWorkingHoursService {
               errorFileInfo && minioAvailable
                 ? {
                     download_url: errorFileInfo.downloadUrl,
-                    message:
-                      'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
+                    message: 'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
                   }
                 : {
                     download_url: null,
-                    message:
-                      'File error gagal diupload ke cloud storage. Silakan periksa data error di response details.',
+                    message: 'File error gagal diupload ke cloud storage. Silakan periksa data error di response details.',
                   },
           };
 
-          return successResponse(
-            response,
-            'Import dibatalkan karena ada data yang tidak valid',
-          );
+          return successResponse(response, 'Import dibatalkan karena ada data yang tidak valid');
         } catch (error) {
           this.logger.error('Error generating error CSV:', error);
           this.logger.error('Error stack:', error.stack);
@@ -489,15 +438,11 @@ export class EffectiveWorkingHoursService {
             details: importResults,
             error_file: {
               download_url: null,
-              message:
-                'Gagal generate file error. Silakan periksa data error di response details.',
+              message: 'Gagal generate file error. Silakan periksa data error di response details.',
             },
           };
 
-          return successResponse(
-            response,
-            'Import dibatalkan karena ada data yang tidak valid',
-          );
+          return successResponse(response, 'Import dibatalkan karena ada data yang tidak valid');
         }
       }
 
@@ -527,9 +472,7 @@ export class EffectiveWorkingHoursService {
         if (error?.response && error?.response?.statusCode === 400) {
           throw error;
         }
-        throw new InternalServerErrorException(
-          `Gagal import data: ${error.message}`,
-        );
+        throw new InternalServerErrorException(`Gagal import data: ${error.message}`);
       } finally {
         await queryRunner.release();
       }
@@ -582,14 +525,8 @@ export class EffectiveWorkingHoursService {
       Category: this.mapLossType(item.lossType),
       Problem: item.activities?.name || '',
       Site: item.population?.site?.name || '',
-      Start:
-        item.start instanceof Date
-          ? moment(item.start).format('YYYY-MM-DD HH:mm')
-          : item.start || '',
-      Stop:
-        item.stop instanceof Date
-          ? moment(item.stop).format('YYYY-MM-DD HH:mm')
-          : item.stop || '',
+      Start: item.start instanceof Date ? moment(item.start).format('YYYY-MM-DD HH:mm') : item.start || '',
+      Stop: item.stop instanceof Date ? moment(item.stop).format('YYYY-MM-DD HH:mm') : item.stop || '',
       Duration: item.duration || 0,
       Remarks: item.remarks || '-',
       Description: item.description || '-',
@@ -632,35 +569,22 @@ export class EffectiveWorkingHoursService {
     }
   }
 
-  async create(
-    createDto: CreateEffectiveWorkingHoursDto,
-  ): Promise<EffectiveWorkingHours> {
-    const effectiveWorkingHours =
-      this.effectiveWorkingHoursRepository.create(createDto);
+  async create(createDto: CreateEffectiveWorkingHoursDto): Promise<EffectiveWorkingHours> {
+    const effectiveWorkingHours = this.effectiveWorkingHoursRepository.create(createDto);
 
     // Calculate duration if start and stop are provided
     if (createDto.start && createDto.stop) {
       const startTime = new Date(createDto.start);
       const stopTime = new Date(createDto.stop);
-      const durationInMinutes =
-        (stopTime.getTime() - startTime.getTime()) / (1000 * 60);
+      const durationInMinutes = (stopTime.getTime() - startTime.getTime()) / (1000 * 60);
       effectiveWorkingHours.duration = durationInMinutes;
     }
 
-    return await this.effectiveWorkingHoursRepository.save(
-      effectiveWorkingHours,
-    );
+    return await this.effectiveWorkingHoursRepository.save(effectiveWorkingHours);
   }
 
   async findAll(query: QueryEffectiveWorkingHoursDto) {
-    const {
-      startDate,
-      endDate,
-      lossType,
-      keyword,
-      page = 1,
-      limit = 10,
-    } = query;
+    const { startDate, endDate, lossType, keyword, page = 1, limit = 10 } = query;
     const skip = (page - 1) * limit;
 
     // Build where conditions
@@ -680,12 +604,7 @@ export class EffectiveWorkingHoursService {
     // Get data with relations
     const results = await this.effectiveWorkingHoursRepository.find({
       where: whereConditions,
-      relations: [
-        'population',
-        'population.unitType',
-        'population.site',
-        'activities',
-      ],
+      relations: ['population', 'population.unitType', 'population.site', 'activities'],
       skip,
       take: limit,
     });
@@ -699,14 +618,8 @@ export class EffectiveWorkingHoursService {
       unit: result?.population?.no_unit,
       activity: result.activities?.name || '',
       description: result.description || '',
-      start:
-        result.start instanceof Date
-          ? result.start.toISOString()
-          : result.start || '',
-      end:
-        result.stop instanceof Date
-          ? result.stop.toISOString()
-          : result.stop || '',
+      start: result.start instanceof Date ? result.start.toISOString() : result.start || '',
+      end: result.stop instanceof Date ? result.stop.toISOString() : result.stop || '',
       duration: result.duration || 0,
       remarks: result.remarks || '',
       type: result.population?.unitType?.unit_name || '',
@@ -725,55 +638,35 @@ export class EffectiveWorkingHoursService {
       );
     }
 
-    return paginateResponse(
-      filteredData,
-      total,
-      page,
-      limit,
-      'Data retrieved successfully',
-    );
+    return paginateResponse(filteredData, total, page, limit, 'Data retrieved successfully');
   }
 
   async findOne(id: number): Promise<EffectiveWorkingHours> {
-    const effectiveWorkingHours =
-      await this.effectiveWorkingHoursRepository.findOne({
-        where: { id },
-        relations: [
-          'population',
-          'population.unitType',
-          'population.site',
-          'activities',
-        ],
-      });
+    const effectiveWorkingHours = await this.effectiveWorkingHoursRepository.findOne({
+      where: { id },
+      relations: ['population', 'population.unitType', 'population.site', 'activities'],
+    });
 
     if (!effectiveWorkingHours) {
-      throw new NotFoundException(
-        `Effective working hours with ID ${id} not found`,
-      );
+      throw new NotFoundException(`Effective working hours with ID ${id} not found`);
     }
 
     return effectiveWorkingHours;
   }
 
-  async update(
-    id: number,
-    updateDto: UpdateEffectiveWorkingHoursDto,
-  ): Promise<EffectiveWorkingHours> {
+  async update(id: number, updateDto: UpdateEffectiveWorkingHoursDto): Promise<EffectiveWorkingHours> {
     const effectiveWorkingHours = await this.findOne(id);
 
     // Calculate duration if start and stop are provided
     if (updateDto.start && updateDto.stop) {
       const startTime = new Date(updateDto.start);
       const stopTime = new Date(updateDto.stop);
-      const durationInMinutes =
-        (stopTime.getTime() - startTime.getTime()) / (1000 * 60);
+      const durationInMinutes = (stopTime.getTime() - startTime.getTime()) / (1000 * 60);
       updateDto['duration'] = durationInMinutes;
     }
 
     Object.assign(effectiveWorkingHours, updateDto);
-    return await this.effectiveWorkingHoursRepository.save(
-      effectiveWorkingHours,
-    );
+    return await this.effectiveWorkingHoursRepository.save(effectiveWorkingHours);
   }
 
   async remove(id: number): Promise<void> {

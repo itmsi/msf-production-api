@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreatePlanProductionIndexes1700000000037
-  implements MigrationInterface
-{
+export class CreatePlanProductionIndexes1700000000037 implements MigrationInterface {
   name = 'CreatePlanProductionIndexes1700000000037';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

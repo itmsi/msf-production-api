@@ -51,8 +51,7 @@ export class CustomRolesUsersSeeder {
     await ensureRole('CCR', 'CCR');
 
     // Ensure users
-    const employeeIdFor = (index: number) =>
-      employees[index] ? employees[index].id : employees[0].id;
+    const employeeIdFor = (index: number) => (employees[index] ? employees[index].id : employees[0].id);
 
     const ensureUser = async (username: string, email: string) => {
       const existing = await usersRepository.findOne({ where: { username } });
@@ -62,9 +61,7 @@ export class CustomRolesUsersSeeder {
           username,
           email,
           password: passwordHash,
-          employee_id: employeeIdFor(
-            Math.floor(Math.random() * Math.min(3, employees.length)),
-          ),
+          employee_id: employeeIdFor(Math.floor(Math.random() * Math.min(3, employees.length))),
           isActive: true,
         });
         await usersRepository.save(user);
@@ -79,10 +76,7 @@ export class CustomRolesUsersSeeder {
     await ensureUser('ccr', 'ccr@msf.com');
 
     // Map role permissions based on requested access lists
-    const roleAccessMap: Record<
-      string,
-      Array<{ menuCode: string; permissions: string[] }>
-    > = {
+    const roleAccessMap: Record<string, Array<{ menuCode: string; permissions: string[] }>> = {
       PRODUCTION_ADMIN: [
         // Dashboard and children
         { menuCode: 'DASHBOARD', permissions: ['READ'] },
@@ -207,137 +201,53 @@ export class CustomRolesUsersSeeder {
         { menuCode: 'WORK_PLAN', permissions: ['READ'] },
         {
           menuCode: 'DAILY_WORKING_HOUR_PLAN_LIST',
-          permissions: [
-            'CREATE',
-            'READ',
-            'UPDATE',
-            'DELETE',
-            'EXPORT',
-            'IMPORT',
-          ],
+          permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'],
         },
         {
           menuCode: 'SETTINGS_DAILY_WORKING_HOUR_PLAN',
-          permissions: [
-            'CREATE',
-            'READ',
-            'UPDATE',
-            'DELETE',
-            'EXPORT',
-            'IMPORT',
-          ],
+          permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'],
         },
         {
           menuCode: 'DAILY_PRODUCTION_PLAN_LIST',
-          permissions: [
-            'CREATE',
-            'READ',
-            'UPDATE',
-            'DELETE',
-            'EXPORT',
-            'IMPORT',
-          ],
+          permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'],
         },
         {
           menuCode: 'SETTINGS_DAILY_PRODUCTION_PLAN',
-          permissions: [
-            'CREATE',
-            'READ',
-            'UPDATE',
-            'DELETE',
-            'EXPORT',
-            'IMPORT',
-          ],
+          permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'],
         },
         { menuCode: 'MTD_PRODUCTION', permissions: ['READ'] },
         {
           menuCode: 'PRODUCTION_LIST',
-          permissions: [
-            'CREATE',
-            'READ',
-            'UPDATE',
-            'DELETE',
-            'EXPORT',
-            'IMPORT',
-          ],
+          permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'],
         },
         {
           menuCode: 'LOSS_TIME_LIST',
-          permissions: [
-            'CREATE',
-            'READ',
-            'UPDATE',
-            'DELETE',
-            'EXPORT',
-            'IMPORT',
-          ],
+          permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'],
         },
         {
           menuCode: 'BARGE_LIST',
-          permissions: [
-            'CREATE',
-            'READ',
-            'UPDATE',
-            'DELETE',
-            'EXPORT',
-            'IMPORT',
-          ],
+          permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'],
         },
         {
           menuCode: 'FUEL_CONSUMPTION_LIST',
-          permissions: [
-            'CREATE',
-            'READ',
-            'UPDATE',
-            'DELETE',
-            'EXPORT',
-            'IMPORT',
-          ],
+          permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'],
         },
         { menuCode: 'CCR_HOURLY_ENTRY', permissions: ['READ'] },
         {
           menuCode: 'CCR_HAULING_LIST',
-          permissions: [
-            'CREATE',
-            'READ',
-            'UPDATE',
-            'DELETE',
-            'EXPORT',
-            'IMPORT',
-          ],
+          permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'],
         },
         {
           menuCode: 'CCR_BARGING_LIST',
-          permissions: [
-            'CREATE',
-            'READ',
-            'UPDATE',
-            'DELETE',
-            'EXPORT',
-            'IMPORT',
-          ],
+          permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'],
         },
         {
           menuCode: 'CCR_PROBLEM_HAULING_LIST',
-          permissions: [
-            'CREATE',
-            'READ',
-            'UPDATE',
-            'DELETE',
-            'EXPORT',
-            'IMPORT',
-          ],
+          permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'],
         },
         {
           menuCode: 'CCR_PROBLEM_BARGING_LIST',
-          permissions: [
-            'CREATE',
-            'READ',
-            'UPDATE',
-            'DELETE',
-            'EXPORT',
-            'IMPORT',
-          ],
+          permissions: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT', 'IMPORT'],
         },
         { menuCode: 'MASTER_DATA_PAGE', permissions: ['READ'] },
         {
@@ -373,15 +283,9 @@ export class CustomRolesUsersSeeder {
     };
 
     // Build helpers
-    const perms = await this.dataSource.query(
-      'SELECT id, permission_code FROM m_permission',
-    );
-    const permCodeToId = new Map(
-      perms.map((p: any) => [p.permission_code, p.id]),
-    );
-    const menus = await this.dataSource.query(
-      'SELECT id, menu_code FROM m_menu',
-    );
+    const perms = await this.dataSource.query('SELECT id, permission_code FROM m_permission');
+    const permCodeToId = new Map(perms.map((p: any) => [p.permission_code, p.id]));
+    const menus = await this.dataSource.query('SELECT id, menu_code FROM m_menu');
     const menuCodeToId = new Map(menus.map((m: any) => [m.menu_code, m.id]));
 
     const ensureRolePermissions = async (roleCode: string) => {
@@ -405,14 +309,12 @@ export class CustomRolesUsersSeeder {
             console.log(`⚠️ Permission not found: ${pc}`);
             continue;
           }
-          const mhp = await this.dataSource.query(
-            'SELECT id FROM r_menu_has_permission WHERE menu_id = $1 AND permission_id = $2',
-            [menuId, permissionId],
-          );
+          const mhp = await this.dataSource.query('SELECT id FROM r_menu_has_permission WHERE menu_id = $1 AND permission_id = $2', [
+            menuId,
+            permissionId,
+          ]);
           if (mhp.length === 0) {
-            console.log(
-              `⚠️ Menu-permission combo not found, skip: ${map.menuCode} -> ${pc}`,
-            );
+            console.log(`⚠️ Menu-permission combo not found, skip: ${map.menuCode} -> ${pc}`);
             continue;
           }
           const mhpId = mhp[0].id;
@@ -431,9 +333,7 @@ export class CustomRolesUsersSeeder {
           }
         }
       }
-      console.log(
-        `✅ Role ${roleCode} permissions set. Created: ${created}, Skipped: ${skipped}`,
-      );
+      console.log(`✅ Role ${roleCode} permissions set. Created: ${created}, Skipped: ${skipped}`);
     };
 
     await ensureRolePermissions('PRODUCTION_ADMIN');
@@ -442,31 +342,20 @@ export class CustomRolesUsersSeeder {
 
     // Assign user-role
     const assignUserRole = async (username: string, roleCode: string) => {
-      const userRows = await this.dataSource.query(
-        'SELECT id FROM m_user WHERE username = $1',
-        [username],
-      );
-      const roleRows = await this.dataSource.query(
-        'SELECT id FROM m_role WHERE role_code = $1',
-        [roleCode],
-      );
+      const userRows = await this.dataSource.query('SELECT id FROM m_user WHERE username = $1', [username]);
+      const roleRows = await this.dataSource.query('SELECT id FROM m_role WHERE role_code = $1', [roleCode]);
       if (userRows.length === 0 || roleRows.length === 0) {
-        console.log(
-          `⚠️ Cannot assign role. Missing user or role: ${username} -> ${roleCode}`,
-        );
+        console.log(`⚠️ Cannot assign role. Missing user or role: ${username} -> ${roleCode}`);
         return;
       }
       const userId = userRows[0].id;
       const roleId = roleRows[0].id;
-      const exists = await this.dataSource.query(
-        'SELECT 1 FROM r_user_role WHERE user_id = $1 AND role_id = $2',
-        [userId, roleId],
-      );
+      const exists = await this.dataSource.query('SELECT 1 FROM r_user_role WHERE user_id = $1 AND role_id = $2', [userId, roleId]);
       if (exists.length === 0) {
-        await this.dataSource.query(
-          'INSERT INTO r_user_role (user_id, role_id, "createdAt", "updatedAt") VALUES ($1, $2, NOW(), NOW())',
-          [userId, roleId],
-        );
+        await this.dataSource.query('INSERT INTO r_user_role (user_id, role_id, "createdAt", "updatedAt") VALUES ($1, $2, NOW(), NOW())', [
+          userId,
+          roleId,
+        ]);
         console.log(`✅ Assigned ${username} -> ${roleCode}`);
       } else {
         console.log(`⏭️  Assignment exists ${username} -> ${roleCode}`);
@@ -477,8 +366,6 @@ export class CustomRolesUsersSeeder {
     await assignUserRole('management', 'MANAGEMENT');
     await assignUserRole('ccr', 'CCR');
 
-    console.log(
-      '🎉 Custom roles, users, and access mappings seeding completed.',
-    );
+    console.log('🎉 Custom roles, users, and access mappings seeding completed.');
   }
 }

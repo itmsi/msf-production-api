@@ -1,25 +1,7 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  Put,
-  Delete,
-  UseGuards,
-  Query,
-  ParseIntPipe,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Put, Delete, UseGuards, Query, ParseIntPipe } from '@nestjs/common';
 import { ActivitiesService } from './activities.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiOperation,
-  ApiResponse as SwaggerApiResponse,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse as SwaggerApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import {
   CreateActivitiesDto,
   GetActivitiesQueryDto,
@@ -39,8 +21,7 @@ export class ActivitiesController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary:
-      'Mendapatkan semua data aktivitas dengan pagination, filtering, dan sorting',
+    summary: 'Mendapatkan semua data aktivitas dengan pagination, filtering, dan sorting',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -258,8 +239,7 @@ export class ActivitiesController {
   @Post()
   @ApiOperation({
     summary: 'Membuat aktivitas baru',
-    description:
-      'Membuat aktivitas baru dengan validasi duplikasi name. Status default adalah active.',
+    description: 'Membuat aktivitas baru dengan validasi duplikasi name. Status default adalah active.',
   })
   @SwaggerApiResponse({
     status: 201,
@@ -336,8 +316,7 @@ export class ActivitiesController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data aktivitas berdasarkan ID',
-    description:
-      'Mengupdate data aktivitas dengan validasi duplikasi name. Hanya field yang dikirim yang akan diupdate.',
+    description: 'Mengupdate data aktivitas dengan validasi duplikasi name. Hanya field yang dikirim yang akan diupdate.',
   })
   @ApiParam({
     name: 'id',
@@ -405,8 +384,7 @@ export class ActivitiesController {
     schema: {
       example: {
         statusCode: 409,
-        message:
-          'Nama aktivitas Loading Barge Updated sudah digunakan oleh aktivitas lain',
+        message: 'Nama aktivitas Loading Barge Updated sudah digunakan oleh aktivitas lain',
         error: true,
         timestamp: '2024-01-01T00:00:00.000Z',
       },
@@ -424,10 +402,7 @@ export class ActivitiesController {
       },
     },
   })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateActivitiesDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateActivitiesDto) {
     return this.activitiesService.update(id, dto);
   }
 

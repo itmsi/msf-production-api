@@ -5,6 +5,7 @@ Dokumentasi ini menjelaskan semua file migrasi database yang telah dibuat berdas
 ## Daftar Migrasi
 
 ### Migrasi Dasar (1700000000000 - 1700000000019)
+
 - **1700000000000-CreateTableMSites.ts** - Tabel master sites
 - **1700000000000-CreateTableTBMRole.ts** - Tabel master role
 - **1700000000001-CreateTableTBMEmployee.ts** - Tabel master employee
@@ -27,6 +28,7 @@ Dokumentasi ini menjelaskan semua file migrasi database yang telah dibuat berdas
 - **1700000000019-CreateTableTB_R_CCR_Barging_Problem.ts** - Tabel relasi CCR barging problem
 
 ### Migrasi Sistem RBAC (1700000000020 - 1700000000024)
+
 - **1700000000020-CreateTableTB_R_User_Role.ts** - Tabel junction user-role (many-to-many)
 - **1700000000021-CreateTableTB_M_Permission.ts** - Tabel master permission
 - **1700000000022-CreateTableTB_M_Menu.ts** - Tabel master menu dengan hierarchical structure
@@ -34,12 +36,14 @@ Dokumentasi ini menjelaskan semua file migrasi database yang telah dibuat berdas
 - **1700000000024-CreateTableTB_R_Role_Has_Permission.ts** - Tabel junction role-menu-permission
 
 ### Migrasi Update (1700000000025 - 1700000000028)
+
 - **1700000000025-UpdateTableTBMUserRemoveRoleId.ts** - Update tabel user: hapus kolom roleId
 - **1700000000026-AddModuleColumnToMenu.ts** - Tambah kolom module ke tabel menu
 - **1700000000027-AddSparePartMenus.ts** - Tambah menu spare part
 - **1700000000028-UpdateTableRPlanWorkingHour.ts** - Update tabel plan working hour sesuai skema baru
 
 ### Migrasi Tambahan (1700000000026)
+
 - **1700000000026-CreateTableTB_R_Barge_Loading.ts** - Tabel relasi barge loading
 
 ## Struktur RBAC (Role-Based Access Control)
@@ -98,7 +102,7 @@ npm run migration:create -- -n NamaMigrasi
 
 Migrasi harus dijalankan sesuai urutan timestamp untuk memastikan foreign key constraints dapat dibuat dengan benar:
 
-1. Tabel master (m_*) harus dibuat terlebih dahulu
-2. Tabel relasi (r_*) dibuat setelah tabel master
+1. Tabel master (m\_\*) harus dibuat terlebih dahulu
+2. Tabel relasi (r\_\*) dibuat setelah tabel master
 3. Tabel junction untuk RBAC dibuat setelah semua tabel master
 4. Update/alter table dilakukan terakhir

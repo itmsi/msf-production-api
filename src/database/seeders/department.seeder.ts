@@ -50,13 +50,9 @@ export class DepartmentSeeder {
       if (!existingDepartment) {
         const department = departmentRepository.create(departmentData);
         await departmentRepository.save(department);
-        console.log(
-          `✅ Department "${departmentData.name}" created`,
-        );
+        console.log(`✅ Department "${departmentData.name}" created`);
       } else {
-        console.log(
-          `⏭️  Department "${departmentData.name}" already exists`,
-        );
+        console.log(`⏭️  Department "${departmentData.name}" already exists`);
       }
     }
   }

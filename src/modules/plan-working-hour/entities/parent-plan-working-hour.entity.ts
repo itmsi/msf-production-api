@@ -1,12 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  DeleteDateColumn,
-  OneToMany,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, OneToMany } from 'typeorm';
 import { PlanWorkingHour } from './plan-working-hour.entity';
 
 @Entity('r_parent_plan_working_hour')
@@ -51,9 +43,6 @@ export class ParentPlanWorkingHour {
   deletedAt: Date;
 
   // Relations
-  @OneToMany(
-    () => PlanWorkingHour,
-    (planWorkingHour) => planWorkingHour.parentPlanWorkingHour,
-  )
+  @OneToMany(() => PlanWorkingHour, (planWorkingHour) => planWorkingHour.parentPlanWorkingHour)
   planWorkingHours: PlanWorkingHour[];
 }

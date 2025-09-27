@@ -11,11 +11,7 @@ export interface ApiResponse<T = any> {
   };
 }
 
-export function successResponse<T = any>(
-  data: T,
-  message = 'Retrieve data success',
-  statusCode = 200,
-): ApiResponse<T> {
+export function successResponse<T = any>(data: T, message = 'Retrieve data success', statusCode = 200): ApiResponse<T> {
   return {
     statusCode,
     message,
@@ -41,10 +37,7 @@ export function successResponseWithMeta<T = any>(
   };
 }
 
-export function emptyDataResponse<T = any>(
-  message = 'Data not found',
-  data: T = null as T,
-): ApiResponse<T> {
+export function emptyDataResponse<T = any>(message = 'Data not found', data: T = null as T): ApiResponse<T> {
   return {
     statusCode: 200,
     message,
@@ -52,12 +45,7 @@ export function emptyDataResponse<T = any>(
   };
 }
 
-export function errorResponse(
-  message = 'Error',
-  statusCode = 400,
-  error = true,
-  extra?: Record<string, any>,
-) {
+export function errorResponse(message = 'Error', statusCode = 400, error = true, extra?: Record<string, any>) {
   return {
     statusCode,
     message,
@@ -67,12 +55,6 @@ export function errorResponse(
   };
 }
 
-export const throwError = (
-  message: string | object = 'Bad Request',
-  statusCode: HttpStatus = HttpStatus.BAD_REQUEST,
-): never => {
-  throw new HttpException(
-    typeof message === 'string' ? { message } : message,
-    statusCode,
-  );
+export const throwError = (message: string | object = 'Bad Request', statusCode: HttpStatus = HttpStatus.BAD_REQUEST): never => {
+  throw new HttpException(typeof message === 'string' ? { message } : message, statusCode);
 };

@@ -1,6 +1,6 @@
 /**
  * Test Script Khusus untuk Bulan November
- * 
+ *
  * Script ini untuk memverifikasi generate data harian bulan November
  */
 
@@ -20,7 +20,8 @@ function getSundaysInMonth(date) {
 
   for (let day = 1; day <= daysInMonth; day++) {
     const currentDate = new Date(year, month, day);
-    if (currentDate.getDay() === 0) { // 0 = Sunday
+    if (currentDate.getDay() === 0) {
+      // 0 = Sunday
       sundayCount++;
     }
   }
@@ -121,8 +122,8 @@ dailyData.forEach((record, index) => {
 console.log(`📊 Ringkasan Generate Data November 2025:`);
 console.log(`   ✅ Total Records: ${dailyData.length}`);
 console.log(`   📅 Range Tanggal: ${dailyData[0].tanggal} - ${dailyData[dailyData.length - 1].tanggal}`);
-console.log(`   🏖️  Hari Libur: ${dailyData.filter(r => r.is_holiday_day).length} hari`);
-console.log(`   ✅ Hari Tersedia: ${dailyData.filter(r => r.is_available_day).length} hari`);
+console.log(`   🏖️  Hari Libur: ${dailyData.filter((r) => r.is_holiday_day).length} hari`);
+console.log(`   ✅ Hari Tersedia: ${dailyData.filter((r) => r.is_available_day).length} hari`);
 
 // Verifikasi perhitungan
 console.log(`\n🧮 Verifikasi Perhitungan:`);

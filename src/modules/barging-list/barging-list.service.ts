@@ -1,28 +1,12 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  HttpException,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException, HttpException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, Like, SelectQueryBuilder } from 'typeorm';
 import { BargingList } from './entities/barging-list.entity';
 import { Population } from '../population/entities/population.entity';
 import { Barge } from '../barge/entities/barge.entity';
-import {
-  ApiResponse,
-  successResponse,
-  throwError,
-  emptyDataResponse,
-} from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
-import {
-  CreateBargingListDto,
-  UpdateBargingListDto,
-  BargingListResponseDto,
-  GetBargingListQueryDto,
-} from './dto';
+import { CreateBargingListDto, UpdateBargingListDto, BargingListResponseDto, GetBargingListQueryDto } from './dto';
 import { calculateTimeRange } from '../../common/helpers/public.helper';
 
 @Injectable()
@@ -45,10 +29,7 @@ export class BargingListService {
     });
 
     if (!population) {
-      throwError(
-        `Unit hauler dengan ID ${unitHaulerId} tidak ditemukan di tabel m_population`,
-        400,
-      );
+      throwError(`Unit hauler dengan ID ${unitHaulerId} tidak ditemukan di tabel m_population`, 400);
     }
   }
 
@@ -61,10 +42,7 @@ export class BargingListService {
     });
 
     if (!barge) {
-      throwError(
-        `Barge dengan ID ${bargeId} tidak ditemukan di tabel m_barge`,
-        400,
-      );
+      throwError(`Barge dengan ID ${bargeId} tidak ditemukan di tabel m_barge`, 400);
     }
   }
 
@@ -78,10 +56,7 @@ export class BargingListService {
         ? bargingList.activityDate.toLocaleDateString('en-CA')
         : new Date(bargingList.activityDate).toLocaleDateString('en-CA');
 
-    const time =
-      bargingList.time instanceof Date
-        ? bargingList.time.toISOString()
-        : new Date(bargingList.time).toISOString();
+    const time = bargingList.time instanceof Date ? bargingList.time.toISOString() : new Date(bargingList.time).toISOString();
 
     // Hitung time range dari time
     const timeRange = calculateTimeRange(bargingList.time);
@@ -138,15 +113,11 @@ export class BargingListService {
       };
     } catch (error) {
       console.error('Error in testData method:', error);
-      throw new InternalServerErrorException(
-        `Gagal mengambil data test: ${error.message}`,
-      );
+      throw new InternalServerErrorException(`Gagal mengambil data test: ${error.message}`);
     }
   }
 
-  async create(
-    createDto: CreateBargingListDto,
-  ): Promise<ApiResponse<BargingListResponseDto>> {
+  async create(createDto: CreateBargingListDto): Promise<ApiResponse<BargingListResponseDto>> {
     try {
       console.log('Creating barging list with data:', createDto);
 
@@ -199,15 +170,11 @@ export class BargingListService {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        `Gagal membuat barging list: ${error.message}`,
-      );
+      throw new InternalServerErrorException(`Gagal membuat barging list: ${error.message}`);
     }
   }
 
-  async findAll(
-    query: GetBargingListQueryDto,
-  ): Promise<ApiResponse<BargingListResponseDto[]>> {
+  async findAll(query: GetBargingListQueryDto): Promise<ApiResponse<BargingListResponseDto[]>> {
     try {
       const page = parseInt(query.page?.toString() ?? '1', 10);
       const limit = parseInt(query.limit?.toString() ?? '10', 10);
@@ -225,10 +192,9 @@ export class BargingListService {
 
       // Filter berdasarkan search
       if (search) {
-        qb.andWhere(
-          '(LOWER(unitHauler.no_unit) LIKE :search OR LOWER(barge.name) LIKE :search)',
-          { search: `%${search}%` },
-        );
+        qb.andWhere('(LOWER(unitHauler.no_unit) LIKE :search OR LOWER(barge.name) LIKE :search)', {
+          search: `%${search}%`,
+        });
       }
 
       // Filter berdasarkan shift
@@ -268,26 +234,16 @@ export class BargingListService {
       // Transform response
       const transformedData = data.map((item) => this.transformResponse(item));
 
-      return paginateResponse(
-        transformedData,
-        total,
-        page,
-        limit,
-        'Data barging list berhasil diambil',
-      );
+      return paginateResponse(transformedData, total, page, limit, 'Data barging list berhasil diambil');
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        'Gagal mengambil data barging list',
-      );
+      throw new InternalServerErrorException('Gagal mengambil data barging list');
     }
   }
 
-  async findOne(
-    id: number,
-  ): Promise<ApiResponse<BargingListResponseDto | null>> {
+  async findOne(id: number): Promise<ApiResponse<BargingListResponseDto | null>> {
     try {
       const bargingList = await this.bargingListRepository.findOne({
         where: { id, deletedAt: undefined },
@@ -298,24 +254,16 @@ export class BargingListService {
         return emptyDataResponse('Barging list tidak ditemukan');
       }
 
-      return successResponse(
-        this.transformResponse(bargingList),
-        'Data barging list berhasil diambil',
-      );
+      return successResponse(this.transformResponse(bargingList), 'Data barging list berhasil diambil');
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        'Gagal mengambil data barging list',
-      );
+      throw new InternalServerErrorException('Gagal mengambil data barging list');
     }
   }
 
-  async update(
-    id: number,
-    updateDto: UpdateBargingListDto,
-  ): Promise<ApiResponse<BargingListResponseDto | null>> {
+  async update(id: number, updateDto: UpdateBargingListDto): Promise<ApiResponse<BargingListResponseDto | null>> {
     try {
       // Cek apakah data exists
       const existingBargingList = await this.bargingListRepository.findOne({
@@ -374,16 +322,10 @@ export class BargingListService {
       });
 
       if (!updatedBargingList) {
-        throwError(
-          'Gagal mengambil data barging list yang sudah diupdate',
-          500,
-        );
+        throwError('Gagal mengambil data barging list yang sudah diupdate', 500);
       }
 
-      return successResponse(
-        this.transformResponse(updatedBargingList!),
-        'Barging list berhasil diupdate',
-      );
+      return successResponse(this.transformResponse(updatedBargingList!), 'Barging list berhasil diupdate');
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

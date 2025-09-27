@@ -1,14 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsNotEmpty,
-  IsDateString,
-  IsNumber,
-  IsOptional,
-  IsNumberString,
-  Min,
-  Max,
-  IsString,
-} from 'class-validator';
+import { IsNotEmpty, IsDateString, IsNumber, IsOptional, IsNumberString, Min, Max, IsString } from 'class-validator';
 
 export class CreateParentPlanProductionDto {
   @ApiProperty({
@@ -365,8 +356,7 @@ export class ParentPlanProductionResponseDto {
 
 export class GetParentPlanProductionQueryDto {
   @ApiProperty({
-    description:
-      'Filter bulan (1-12) untuk menampilkan data sesuai bulan tersebut',
+    description: 'Filter bulan (1-12) untuk menampilkan data sesuai bulan tersebut',
     example: '8',
     required: false,
     minimum: 1,
@@ -538,8 +528,7 @@ export class GetRemainingStockQueryDto {
 
 export class ExportParentPlanProductionQueryDto {
   @ApiProperty({
-    description:
-      'Filter bulan (1-12) untuk menampilkan data sesuai bulan tersebut',
+    description: 'Filter bulan (1-12) untuk menampilkan data sesuai bulan tersebut',
     example: '8',
     required: false,
     minimum: 1,

@@ -1,18 +1,9 @@
-import {
-  Injectable,
-  HttpException,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, HttpException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder, Not } from 'typeorm';
 import { Users } from './entities/users.entity';
 import { CreateUserDto, UpdateUserDto, UserResponseDto } from './dto/user.dto';
-import {
-  ApiResponse,
-  successResponse,
-  throwError,
-  emptyDataResponse,
-} from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import { plainToInstance } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
@@ -69,16 +60,8 @@ export class UsersService {
       }
 
       // Validate sortBy field to prevent SQL injection
-      const allowedSortFields = [
-        'id',
-        'username',
-        'email',
-        'createdAt',
-        'updatedAt',
-      ];
-      const validSortBy = allowedSortFields.includes(sortBy || '')
-        ? sortBy
-        : 'id';
+      const allowedSortFields = ['id', 'username', 'email', 'createdAt', 'updatedAt'];
+      const validSortBy = allowedSortFields.includes(sortBy || '') ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
       qb.orderBy(`user.${validSortBy}`, validSortOrder).skip(skip).take(limit);
@@ -109,13 +92,7 @@ export class UsersService {
           : undefined,
       }));
 
-      return paginateResponse(
-        transformedResult,
-        total,
-        page,
-        limit,
-        'Get users successfully',
-      );
+      return paginateResponse(transformedResult, total, page, limit, 'Get users successfully');
     } catch (error) {
       console.log(error, '<<<<<');
       if (error instanceof HttpException) throw error;
@@ -176,10 +153,7 @@ export class UsersService {
     }
   }
 
-  async update(
-    id: number,
-    updateDto: UpdateUserDto,
-  ): Promise<ApiResponse<Users | null>> {
+  async update(id: number, updateDto: UpdateUserDto): Promise<ApiResponse<Users | null>> {
     try {
       const user = await this.userRepository.findOne({ where: { id } });
 
@@ -199,10 +173,7 @@ export class UsersService {
           },
         });
         if (existingVin) {
-          throwError(
-            `Email ${updateDto.email} already in use by another user`,
-            409,
-          );
+          throwError(`Email ${updateDto.email} already in use by another user`, 409);
         }
       }
 

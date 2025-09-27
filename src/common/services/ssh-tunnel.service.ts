@@ -2,6 +2,7 @@ import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/commo
 import { Client } from 'ssh2';
 import { ConfigService } from '@nestjs/config';
 import { createServer } from 'net';
+import { execSync } from 'child_process';
 
 @Injectable()
 export class SshTunnelService implements OnModuleInit, OnModuleDestroy {
@@ -16,20 +17,20 @@ export class SshTunnelService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     this.logger.log('🚀 SSH Tunnel Service initializing...');
-    
+
     // Check if we should use server database or local database
     const dbHitServer = this.configService.get<string>('DB_HIT_SERVER', 'OFF').toUpperCase();
-    
+
     if (dbHitServer === 'OFF') {
       this.logger.log('🏠 Using LOCAL database configuration');
       this.logger.log('SSH tunnel will be skipped');
       this.isTunnelActive = false;
       return;
     }
-    
+
     this.logger.log('🌐 Using SERVER database configuration');
     this.logger.log('Setting up SSH tunnel...');
-    
+
     const sshHost = this.configService.get<string>('SSH_HOST', '162.11.0.232');
     const sshPort = this.configService.get<number>('SSH_PORT', 22);
     const sshUsername = this.configService.get<string>('SSH_USERNAME', 'msiserver');
@@ -50,7 +51,7 @@ export class SshTunnelService implements OnModuleInit, OnModuleDestroy {
 
       // Create SSH client
       this.sshClient = new Client();
-      
+
       // Create tunnel server
       this.tunnelServer = createServer((localConnection) => {
         this.sshClient.forwardOut(
@@ -64,9 +65,9 @@ export class SshTunnelService implements OnModuleInit, OnModuleDestroy {
               localConnection.end();
               return;
             }
-            
+
             localConnection.pipe(sshStream).pipe(localConnection);
-          }
+          },
         );
       });
 
@@ -74,17 +75,17 @@ export class SshTunnelService implements OnModuleInit, OnModuleDestroy {
       await new Promise((resolve, reject) => {
         this.sshClient.on('ready', () => {
           this.logger.log('SSH connection established');
-          
+
           // Start tunnel server
           this.tunnelServer.listen(localPort, '127.0.0.1', () => {
             this.logger.log('✅ SSH tunnel established successfully');
             this.logger.log(`Database accessible at: localhost:${localPort}`);
             this.isTunnelActive = true;
-            
+
             // Update environment variables
             process.env.POSTGRES_HOST = '127.0.0.1';
             process.env.POSTGRES_PORT = localPort.toString();
-            
+
             resolve(true);
           });
         });
@@ -92,7 +93,7 @@ export class SshTunnelService implements OnModuleInit, OnModuleDestroy {
         this.sshClient.on('error', (err) => {
           this.logger.error('SSH connection error:', err.message);
           this.logger.error('SSH error details:', err);
-          reject(err);
+          reject(new Error(err.message ?? String(err)));
         });
 
         this.sshClient.on('close', () => {
@@ -115,16 +116,15 @@ export class SshTunnelService implements OnModuleInit, OnModuleDestroy {
             kex: ['diffie-hellman-group1-sha1', 'diffie-hellman-group14-sha1'],
             cipher: ['aes128-ctr', 'aes192-ctr', 'aes256-ctr'],
             hmac: ['hmac-sha2-256', 'hmac-sha1'],
-            compress: ['none']
-          }
+            compress: ['none'],
+          },
         });
       });
-
     } catch (error) {
       this.logger.error('Failed to establish SSH tunnel:', error.message);
       this.logger.warn('Application will continue without SSH tunnel');
       this.logger.warn('Make sure database is accessible directly');
-      
+
       // Fallback: try to use manual tunnel if available
       this.logger.log('Checking for existing manual tunnel...');
       if (this.checkManualTunnel(localPort)) {
@@ -136,7 +136,7 @@ export class SshTunnelService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async onModuleDestroy() {
+  onModuleDestroy() {
     this.logger.log('🛑 SSH Tunnel Service destroying...');
     if (this.isTunnelActive) {
       try {
@@ -144,12 +144,12 @@ export class SshTunnelService implements OnModuleInit, OnModuleDestroy {
           this.tunnelServer.close();
           this.logger.log('Tunnel server closed');
         }
-        
+
         if (this.sshClient) {
           this.sshClient.end();
           this.logger.log('SSH connection closed');
         }
-        
+
         this.isTunnelActive = false;
       } catch (error) {
         this.logger.error('Error closing SSH tunnel:', error.message);
@@ -165,13 +165,12 @@ export class SshTunnelService implements OnModuleInit, OnModuleDestroy {
     const localPort = this.configService.get<number>('LOCAL_TUNNEL_PORT', 6543);
     return {
       localPort,
-      isActive: this.isTunnelActive
+      isActive: this.isTunnelActive,
     };
   }
 
   private checkManualTunnel(port: number): boolean {
     try {
-      const { execSync } = require('child_process');
       const result = execSync(`lsof -i :${port}`, { encoding: 'utf8' });
       return result.includes('ssh');
     } catch (error) {

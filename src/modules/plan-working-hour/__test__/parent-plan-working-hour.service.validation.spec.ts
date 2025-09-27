@@ -74,15 +74,9 @@ describe('ParentPlanWorkingHourService - Validation Tests', () => {
     }).compile();
 
     service = module.get<ParentPlanWorkingHourService>(ParentPlanWorkingHourService);
-    parentPlanWorkingHourRepository = module.get<Repository<ParentPlanWorkingHour>>(
-      getRepositoryToken(ParentPlanWorkingHour),
-    );
-    planWorkingHourRepository = module.get<Repository<PlanWorkingHour>>(
-      getRepositoryToken(PlanWorkingHour),
-    );
-    planWorkingHourDetailRepository = module.get<Repository<PlanWorkingHourDetail>>(
-      getRepositoryToken(PlanWorkingHourDetail),
-    );
+    parentPlanWorkingHourRepository = module.get<Repository<ParentPlanWorkingHour>>(getRepositoryToken(ParentPlanWorkingHour));
+    planWorkingHourRepository = module.get<Repository<PlanWorkingHour>>(getRepositoryToken(PlanWorkingHour));
+    planWorkingHourDetailRepository = module.get<Repository<PlanWorkingHourDetail>>(getRepositoryToken(PlanWorkingHourDetail));
     dataSource = module.get<DataSource>(DataSource);
   });
 
@@ -111,37 +105,25 @@ describe('ParentPlanWorkingHourService - Validation Tests', () => {
     it('should throw error when plan_date is not first day of month', async () => {
       const invalidDto = { ...validCreateDto, plan_date: '2025-08-15' };
 
-      await expect(service.create(invalidDto)).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.create(invalidDto)).rejects.toThrow(
-        'plan_date harus berupa tanggal pertama dari bulan (01)',
-      );
+      await expect(service.create(invalidDto)).rejects.toThrow(BadRequestException);
+      await expect(service.create(invalidDto)).rejects.toThrow('plan_date harus berupa tanggal pertama dari bulan (01)');
     });
 
     it('should throw error when plan_date is in the past', async () => {
       const pastDate = new Date();
       pastDate.setMonth(pastDate.getMonth() - 2);
       const pastDateString = pastDate.toISOString().slice(0, 7) + '-01';
-      
+
       const invalidDto = { ...validCreateDto, plan_date: pastDateString };
 
-      await expect(service.create(invalidDto)).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.create(invalidDto)).rejects.toThrow(
-        'Tidak dapat membuat plan untuk bulan yang sudah lewat',
-      );
+      await expect(service.create(invalidDto)).rejects.toThrow(BadRequestException);
+      await expect(service.create(invalidDto)).rejects.toThrow('Tidak dapat membuat plan untuk bulan yang sudah lewat');
     });
-
-
 
     it('should throw error when total_available_day + total_holiday_day != total_calendar_day', async () => {
       const invalidDto = { ...validCreateDto, total_available_day: 20 }; // 20 + 8 != 31
 
-      await expect(service.create(invalidDto)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(service.create(invalidDto)).rejects.toThrow(BadRequestException);
       await expect(service.create(invalidDto)).rejects.toThrow(
         'Total hari tersedia + total hari libur harus sama dengan total hari kalender',
       );
@@ -150,23 +132,15 @@ describe('ParentPlanWorkingHourService - Validation Tests', () => {
     it('should throw error when detail is empty', async () => {
       const invalidDto = { ...validCreateDto, detail: [] };
 
-      await expect(service.create(invalidDto)).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.create(invalidDto)).rejects.toThrow(
-        'Detail activities tidak boleh kosong',
-      );
+      await expect(service.create(invalidDto)).rejects.toThrow(BadRequestException);
+      await expect(service.create(invalidDto)).rejects.toThrow('Detail activities tidak boleh kosong');
     });
 
     it('should throw error when detail is empty array', async () => {
       const invalidDto = { ...validCreateDto, detail: [] };
 
-      await expect(service.create(invalidDto)).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.create(invalidDto)).rejects.toThrow(
-        'Detail activities tidak boleh kosong',
-      );
+      await expect(service.create(invalidDto)).rejects.toThrow(BadRequestException);
+      await expect(service.create(invalidDto)).rejects.toThrow('Detail activities tidak boleh kosong');
     });
 
     it('should throw error when activities_id is duplicated', async () => {
@@ -179,12 +153,8 @@ describe('ParentPlanWorkingHourService - Validation Tests', () => {
         ],
       };
 
-      await expect(service.create(invalidDto)).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.create(invalidDto)).rejects.toThrow(
-        'Activities ID harus unik',
-      );
+      await expect(service.create(invalidDto)).rejects.toThrow(BadRequestException);
+      await expect(service.create(invalidDto)).rejects.toThrow('Activities ID harus unik');
     });
 
     it('should throw error when activities_hour is negative', async () => {
@@ -199,17 +169,11 @@ describe('ParentPlanWorkingHourService - Validation Tests', () => {
 
       // Mock activities repository untuk test ini
       jest.spyOn(dataSource, 'getRepository').mockReturnValue({
-        find: jest.fn().mockResolvedValue([
-          { id: 6 }, { id: 2 }, { id: 3 }
-        ]),
+        find: jest.fn().mockResolvedValue([{ id: 6 }, { id: 2 }, { id: 3 }]),
       } as any);
 
-      await expect(service.create(invalidDto)).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.create(invalidDto)).rejects.toThrow(
-        'Activities hour tidak boleh negatif',
-      );
+      await expect(service.create(invalidDto)).rejects.toThrow(BadRequestException);
+      await expect(service.create(invalidDto)).rejects.toThrow('Activities hour tidak boleh negatif');
     });
 
     it('should throw error when duplicate month exists in same year', async () => {
@@ -220,25 +184,15 @@ describe('ParentPlanWorkingHourService - Validation Tests', () => {
         getOne: jest.fn().mockResolvedValue({ id: 1, plan_date: '2025-08-01' }),
       };
 
-      jest.spyOn(parentPlanWorkingHourRepository, 'createQueryBuilder').mockReturnValue(
-        mockQueryBuilder as any,
-      );
+      jest.spyOn(parentPlanWorkingHourRepository, 'createQueryBuilder').mockReturnValue(mockQueryBuilder as any);
 
       // Mock activities repository
       jest.spyOn(dataSource, 'getRepository').mockReturnValue({
-        find: jest.fn().mockResolvedValue([
-          { id: 6 }, { id: 2 }, { id: 3 }
-        ]),
+        find: jest.fn().mockResolvedValue([{ id: 6 }, { id: 2 }, { id: 3 }]),
       } as any);
 
-      await expect(service.create(validCreateDto)).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.create(validCreateDto)).rejects.toThrow(
-        'Data untuk bulan Agustus 2025 sudah ada dalam sistem',
-      );
+      await expect(service.create(validCreateDto)).rejects.toThrow(BadRequestException);
+      await expect(service.create(validCreateDto)).rejects.toThrow('Data untuk bulan Agustus 2025 sudah ada dalam sistem');
     });
-
-
   });
 });

@@ -8,29 +8,20 @@ export class RoleHasPermissionSeeder {
 
     try {
       // Get Super Admin role ID
-      const superAdminRole = await this.dataSource.query(
-        'SELECT id FROM m_role WHERE role_code = $1',
-        ['SUPER_ADMIN'],
-      );
+      const superAdminRole = await this.dataSource.query('SELECT id FROM m_role WHERE role_code = $1', ['SUPER_ADMIN']);
 
       if (superAdminRole.length === 0) {
-        console.log(
-          '❌ Super Admin role not found. Please run role seeder first.',
-        );
+        console.log('❌ Super Admin role not found. Please run role seeder first.');
         return;
       }
 
       const roleId = superAdminRole[0].id;
 
       // Get all menu-permission relationships
-      const allMenuPermissions = await this.dataSource.query(
-        'SELECT id, permission_id FROM r_menu_has_permission',
-      );
+      const allMenuPermissions = await this.dataSource.query('SELECT id, permission_id FROM r_menu_has_permission');
 
       if (allMenuPermissions.length === 0) {
-        console.log(
-          '❌ No menu-permission relationships found. Please run menu-has-permission seeder first.',
-        );
+        console.log('❌ No menu-permission relationships found. Please run menu-has-permission seeder first.');
         return;
       }
 
@@ -64,9 +55,7 @@ export class RoleHasPermissionSeeder {
       console.log(`\n📊 Role-Permission Seeding Summary:`);
       console.log(`   • Created: ${createdCount} relationships`);
       console.log(`   • Skipped: ${skippedCount} existing relationships`);
-      console.log(
-        `   • Total menu-permission combinations assigned to Super Admin: ${allMenuPermissions.length}`,
-      );
+      console.log(`   • Total menu-permission combinations assigned to Super Admin: ${allMenuPermissions.length}`);
     } catch (error) {
       console.error('❌ Error during Role-Permission seeding:', error);
       throw error;

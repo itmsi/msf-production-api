@@ -1,24 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  UseGuards,
-  ParseIntPipe,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-  ApiQuery,
-  ApiBody,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { BargingProblemService } from './barging-problem.service';
 import {
   CreateBargingProblemDto,
@@ -359,7 +340,8 @@ export class BargingProblemController {
   @Patch(':id')
   @ApiOperation({
     summary: 'Update data barging problem',
-    description: 'Endpoint untuk mengupdate data barging problem berdasarkan ID dengan validasi FK ke tabel m_barge, m_activities, dan m_sites',
+    description:
+      'Endpoint untuk mengupdate data barging problem berdasarkan ID dengan validasi FK ke tabel m_barge, m_activities, dan m_sites',
   })
   @ApiParam({
     name: 'id',
@@ -487,10 +469,7 @@ export class BargingProblemController {
       },
     },
   })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateBargingProblemDto: UpdateBargingProblemDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateBargingProblemDto: UpdateBargingProblemDto) {
     return this.bargingProblemService.update(id, updateBargingProblemDto);
   }
 

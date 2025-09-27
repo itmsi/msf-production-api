@@ -137,6 +137,7 @@ ALTER TABLE sppb ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMPTZ;
 Endpoint `POST /api/pda-outbound/relocation` sekarang menggunakan body request yang berbeda:
 
 **Body Request Baru:**
+
 ```json
 {
   "barcode_inbound": "abc123def456",
@@ -145,11 +146,13 @@ Endpoint `POST /api/pda-outbound/relocation` sekarang menggunakan body request y
 ```
 
 **Perubahan:**
+
 - Quantity tidak lagi diambil dari body request
 - Quantity sekarang diambil otomatis dari tabel `batch_outbound` berdasarkan `batch_outbound_id`
 - Menambahkan validasi untuk memastikan `batch_outbound_id` ada di database
 
 **Proses yang dijalankan:**
+
 1. Validasi `barcode_inbound` ada di tabel `batch_inbound`
 2. Validasi `batch_outbound_id` ada di tabel `batch_outbound`
 3. Ambil `quantity` dari `batch_outbound`
@@ -160,6 +163,7 @@ Endpoint `POST /api/pda-outbound/relocation` sekarang menggunakan body request y
 Endpoint `POST /api/pda-outbound/scan-destination` sekarang menggunakan body request yang berbeda:
 
 **Body Request Baru:**
+
 ```json
 {
   "batch_in_barcode": "abc123def456",
@@ -170,6 +174,7 @@ Endpoint `POST /api/pda-outbound/scan-destination` sekarang menggunakan body req
 ```
 
 **Proses yang dijalankan:**
+
 1. Mencari batch_inbound berdasarkan `batch_in_barcode`
 2. Mencari relocation dengan `batch_in_id` yang sesuai dan `reloc_type = 'outbound'`
 3. Validasi `inbound_outbound_area_id` ada di tabel `inbound_outbound_area`
@@ -187,6 +192,7 @@ Endpoint `POST /api/pda-outbound/scan-destination` sekarang menggunakan body req
        - `status` = 'waiting'
 
 **Response:**
+
 ```json
 {
   "id": 1,

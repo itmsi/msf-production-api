@@ -1,10 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  S3Client,
-  PutObjectCommand,
-  GetObjectCommand,
-} from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
@@ -15,20 +11,13 @@ export class S3Service {
   private readonly region: string;
 
   constructor(private configService: ConfigService) {
-    this.bucketName =
-      this.configService.get<string>('MINIO_BUCKET_NAME') || 'msf-production';
+    this.bucketName = this.configService.get<string>('MINIO_BUCKET_NAME') || 'msf-production';
     this.region = this.configService.get<string>('MINIO_REGION') || 'us-east-1';
-    const endpoint =
-      this.configService.get<string>('MINIO_ENDPOINT') ||
-      'http://localhost:9000';
-    const accessKey =
-      this.configService.get<string>('MINIO_ACCESS_KEY_ID') || 'minioadmin';
-    const secretKey =
-      this.configService.get<string>('MINIO_SECRET_ACCESS_KEY') || 'minioadmin';
+    const endpoint = this.configService.get<string>('MINIO_ENDPOINT') || 'http://localhost:9000';
+    const accessKey = this.configService.get<string>('MINIO_ACCESS_KEY_ID') || 'minioadmin';
+    const secretKey = this.configService.get<string>('MINIO_SECRET_ACCESS_KEY') || 'minioadmin';
 
-    this.logger.log(
-      `Initializing S3Service with endpoint: ${endpoint}, bucket: ${this.bucketName}, region: ${this.region}`,
-    );
+    this.logger.log(`Initializing S3Service with endpoint: ${endpoint}, bucket: ${this.bucketName}, region: ${this.region}`);
 
     this.s3Client = new S3Client({
       region: this.region,
@@ -41,11 +30,7 @@ export class S3Service {
     });
   }
 
-  async uploadFile(
-    key: string,
-    fileBuffer: Buffer,
-    contentType: string = 'text/csv',
-  ): Promise<string> {
+  async uploadFile(key: string, fileBuffer: Buffer, contentType: string = 'text/csv'): Promise<string> {
     try {
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
@@ -64,10 +49,7 @@ export class S3Service {
     }
   }
 
-  async generateDownloadUrl(
-    key: string,
-    expiresIn: number = 3600,
-  ): Promise<string> {
+  async generateDownloadUrl(key: string, expiresIn: number = 3600): Promise<string> {
     try {
       const command = new GetObjectCommand({
         Bucket: this.bucketName,
