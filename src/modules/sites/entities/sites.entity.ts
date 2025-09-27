@@ -1,13 +1,5 @@
 import { Expose, Exclude } from 'class-transformer';
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  DeleteDateColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  OneToMany,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, DeleteDateColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { OperationPoints } from '../../operation-points/entities/operation-points.entity';
 import { Roles } from '../../roles/entities/roles.entity';
 

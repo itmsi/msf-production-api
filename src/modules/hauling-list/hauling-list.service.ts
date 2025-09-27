@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, QueryFailedError } from 'typeorm';
 import { HaulingList } from './entities/hauling-list.entity';
@@ -61,15 +57,10 @@ export class HaulingListService {
         totalTonnage,
       });
 
-      const savedHaulingList =
-        await this.haulingListRepository.save(haulingList);
+      const savedHaulingList = await this.haulingListRepository.save(haulingList);
       const responseData = this.mapToResponseDto(savedHaulingList);
 
-      return successResponse(
-        responseData,
-        'Data hauling list berhasil dibuat',
-        201,
-      );
+      return successResponse(responseData, 'Data hauling list berhasil dibuat', 201);
     } catch (error) {
       if (error instanceof QueryFailedError) {
         // Handle foreign key constraint violation
@@ -77,25 +68,13 @@ export class HaulingListService {
           // Cek constraint name dari error message
           let errorMessage = 'Foreign key constraint violation: ';
 
-          if (
-            error.message.includes('unit_loading_id') ||
-            error.message.includes('FK_051101fec7de6360d38ad097376')
-          ) {
+          if (error.message.includes('unit_loading_id') || error.message.includes('FK_051101fec7de6360d38ad097376')) {
             errorMessage += `Unit loading dengan ID ${createHaulingListDto.unit_loading_id} tidak ditemukan di tabel m_population`;
-          } else if (
-            error.message.includes('unit_hauler_id') ||
-            error.message.includes('FK_b304210148a3d9e3a3c368989a9')
-          ) {
+          } else if (error.message.includes('unit_hauler_id') || error.message.includes('FK_b304210148a3d9e3a3c368989a9')) {
             errorMessage += `Unit hauler dengan ID ${createHaulingListDto.unit_hauler_id} tidak ditemukan di tabel m_population`;
-          } else if (
-            error.message.includes('loading_point_id') ||
-            error.message.includes('FK_b2d534020f293f5784f7d2ae181')
-          ) {
+          } else if (error.message.includes('loading_point_id') || error.message.includes('FK_b2d534020f293f5784f7d2ae181')) {
             errorMessage += `Loading point dengan ID ${createHaulingListDto.loading_point_id} tidak ditemukan di tabel m_operation_points`;
-          } else if (
-            error.message.includes('dumping_point_op_id') ||
-            error.message.includes('fk_r_ccr_hauling_dumping_point_op_id')
-          ) {
+          } else if (error.message.includes('dumping_point_op_id') || error.message.includes('fk_r_ccr_hauling_dumping_point_op_id')) {
             errorMessage += `Dumping point operation dengan ID ${createHaulingListDto.dumping_point_op_id} tidak ditemukan di tabel m_operation_points`;
           } else if (
             error.message.includes('dumping_point_barge_id') ||
@@ -105,26 +84,13 @@ export class HaulingListService {
           } else {
             // Fallback: cek berdasarkan field yang dikirim
             const missingFields: string[] = [];
-            if (createHaulingListDto.unit_loading_id)
-              missingFields.push(
-                `unit_loading_id: ${createHaulingListDto.unit_loading_id}`,
-              );
-            if (createHaulingListDto.unit_hauler_id)
-              missingFields.push(
-                `unit_hauler_id: ${createHaulingListDto.unit_hauler_id}`,
-              );
-            if (createHaulingListDto.loading_point_id)
-              missingFields.push(
-                `loading_point_id: ${createHaulingListDto.loading_point_id}`,
-              );
+            if (createHaulingListDto.unit_loading_id) missingFields.push(`unit_loading_id: ${createHaulingListDto.unit_loading_id}`);
+            if (createHaulingListDto.unit_hauler_id) missingFields.push(`unit_hauler_id: ${createHaulingListDto.unit_hauler_id}`);
+            if (createHaulingListDto.loading_point_id) missingFields.push(`loading_point_id: ${createHaulingListDto.loading_point_id}`);
             if (createHaulingListDto.dumping_point_op_id)
-              missingFields.push(
-                `dumping_point_op_id: ${createHaulingListDto.dumping_point_op_id}`,
-              );
+              missingFields.push(`dumping_point_op_id: ${createHaulingListDto.dumping_point_op_id}`);
             if (createHaulingListDto.dumping_point_barge_id)
-              missingFields.push(
-                `dumping_point_barge_id: ${createHaulingListDto.dumping_point_barge_id}`,
-              );
+              missingFields.push(`dumping_point_barge_id: ${createHaulingListDto.dumping_point_barge_id}`);
 
             errorMessage += `Referensi data tidak valid. Field yang bermasalah: ${missingFields.join(', ')}. Silakan periksa ID yang dikirim`;
           }
@@ -134,9 +100,7 @@ export class HaulingListService {
 
         // Handle other database errors
         if (error.message.includes('duplicate key')) {
-          throw new BadRequestException(
-            'Data dengan informasi yang sama sudah ada',
-          );
+          throw new BadRequestException('Data dengan informasi yang sama sudah ada');
         }
 
         throw new BadRequestException(`Database error: ${error.message}`);
@@ -167,20 +131,14 @@ export class HaulingListService {
 
     // Apply date range filters
     if (filters.start_date && filters.end_date) {
-      queryBuilder.andWhere(
-        'CAST(hauling.activityDate AS DATE) BETWEEN :start_date AND :end_date',
-        {
-          start_date: filters.start_date,
-          end_date: filters.end_date,
-        },
-      );
+      queryBuilder.andWhere('CAST(hauling.activityDate AS DATE) BETWEEN :start_date AND :end_date', {
+        start_date: filters.start_date,
+        end_date: filters.end_date,
+      });
     } else if (filters.start_date) {
-      queryBuilder.andWhere(
-        'CAST(hauling.activityDate AS DATE) >= :start_date',
-        {
-          start_date: filters.start_date,
-        },
-      );
+      queryBuilder.andWhere('CAST(hauling.activityDate AS DATE) >= :start_date', {
+        start_date: filters.start_date,
+      });
     } else if (filters.end_date) {
       queryBuilder.andWhere('CAST(hauling.activityDate AS DATE) <= :end_date', {
         end_date: filters.end_date,
@@ -224,31 +182,17 @@ export class HaulingListService {
     // Map to response DTOs
     const mappedData = data.map((item) => this.mapToResponseDto(item));
 
-    return paginateResponse(
-      mappedData,
-      total,
-      page,
-      limit,
-      'Data hauling list berhasil diambil',
-    );
+    return paginateResponse(mappedData, total, page, limit, 'Data hauling list berhasil diambil');
   }
 
   async findOne(id: number): Promise<any> {
     const haulingList = await this.haulingListRepository.findOne({
       where: { id },
-      relations: [
-        'unitLoading',
-        'unitHauler',
-        'loadingPoint',
-        'dumpingPointOp',
-        'dumpingPointBarge',
-      ],
+      relations: ['unitLoading', 'unitHauler', 'loadingPoint', 'dumpingPointOp', 'dumpingPointBarge'],
     });
 
     if (!haulingList) {
-      throw new NotFoundException(
-        `Hauling list dengan ID ${id} tidak ditemukan`,
-      );
+      throw new NotFoundException(`Hauling list dengan ID ${id} tidak ditemukan`);
     }
 
     const responseData = this.mapToResponseDto(haulingList);
@@ -256,19 +200,14 @@ export class HaulingListService {
     return successResponse(responseData, 'Data hauling list berhasil diambil');
   }
 
-  async update(
-    id: number,
-    updateHaulingListDto: UpdateHaulingListDto,
-  ): Promise<any> {
+  async update(id: number, updateHaulingListDto: UpdateHaulingListDto): Promise<any> {
     try {
       const haulingList = await this.haulingListRepository.findOne({
         where: { id },
       });
 
       if (!haulingList) {
-        throw new NotFoundException(
-          `Hauling list dengan ID ${id} tidak ditemukan`,
-        );
+        throw new NotFoundException(`Hauling list dengan ID ${id} tidak ditemukan`);
       }
 
       // Mapping DTO ke entity dengan field yang benar
@@ -307,8 +246,7 @@ export class HaulingListService {
       }
 
       if (updateHaulingListDto.dumping_point_barge_id !== undefined) {
-        updateData.dumpingPointBargeId =
-          updateHaulingListDto.dumping_point_barge_id;
+        updateData.dumpingPointBargeId = updateHaulingListDto.dumping_point_barge_id;
       }
 
       if (updateHaulingListDto.vessel !== undefined) {
@@ -322,27 +260,16 @@ export class HaulingListService {
 
       const updatedHaulingList = await this.haulingListRepository.findOne({
         where: { id },
-        relations: [
-          'unitLoading',
-          'unitHauler',
-          'loadingPoint',
-          'dumpingPointOp',
-          'dumpingPointBarge',
-        ],
+        relations: ['unitLoading', 'unitHauler', 'loadingPoint', 'dumpingPointOp', 'dumpingPointBarge'],
       });
 
       if (!updatedHaulingList) {
-        throw new NotFoundException(
-          `Hauling list dengan ID ${id} tidak ditemukan setelah update`,
-        );
+        throw new NotFoundException(`Hauling list dengan ID ${id} tidak ditemukan setelah update`);
       }
 
       const responseData = this.mapToResponseDto(updatedHaulingList);
 
-      return successResponse(
-        responseData,
-        'Data hauling list berhasil diupdate',
-      );
+      return successResponse(responseData, 'Data hauling list berhasil diupdate');
     } catch (error) {
       if (error instanceof QueryFailedError) {
         // Handle foreign key constraint violation
@@ -350,25 +277,13 @@ export class HaulingListService {
           // Cek constraint name dari error message
           let errorMessage = 'Foreign key constraint violation: ';
 
-          if (
-            error.message.includes('unit_loading_id') ||
-            error.message.includes('FK_051101fec7de6360d38ad097376')
-          ) {
+          if (error.message.includes('unit_loading_id') || error.message.includes('FK_051101fec7de6360d38ad097376')) {
             errorMessage += `Unit loading dengan ID ${updateHaulingListDto.unit_loading_id} tidak ditemukan di tabel m_population`;
-          } else if (
-            error.message.includes('unit_hauler_id') ||
-            error.message.includes('FK_b304210148a3d9e3a3c368989a9')
-          ) {
+          } else if (error.message.includes('unit_hauler_id') || error.message.includes('FK_b304210148a3d9e3a3c368989a9')) {
             errorMessage += `Unit hauler dengan ID ${updateHaulingListDto.unit_hauler_id} tidak ditemukan di tabel m_population`;
-          } else if (
-            error.message.includes('loading_point_id') ||
-            error.message.includes('FK_b2d534020f293f5784f7d2ae181')
-          ) {
+          } else if (error.message.includes('loading_point_id') || error.message.includes('FK_b2d534020f293f5784f7d2ae181')) {
             errorMessage += `Loading point dengan ID ${updateHaulingListDto.loading_point_id} tidak ditemukan di tabel m_operation_points`;
-          } else if (
-            error.message.includes('dumping_point_op_id') ||
-            error.message.includes('fk_r_ccr_hauling_dumping_point_op_id')
-          ) {
+          } else if (error.message.includes('dumping_point_op_id') || error.message.includes('fk_r_ccr_hauling_dumping_point_op_id')) {
             errorMessage += `Dumping point operation dengan ID ${updateHaulingListDto.dumping_point_op_id} tidak ditemukan di tabel m_operation_points`;
           } else if (
             error.message.includes('dumping_point_barge_id') ||
@@ -378,26 +293,13 @@ export class HaulingListService {
           } else {
             // Fallback: cek berdasarkan field yang dikirim
             const missingFields: string[] = [];
-            if (updateHaulingListDto.unit_loading_id)
-              missingFields.push(
-                `unit_loading_id: ${updateHaulingListDto.unit_loading_id}`,
-              );
-            if (updateHaulingListDto.unit_hauler_id)
-              missingFields.push(
-                `unit_hauler_id: ${updateHaulingListDto.unit_hauler_id}`,
-              );
-            if (updateHaulingListDto.loading_point_id)
-              missingFields.push(
-                `loading_point_id: ${updateHaulingListDto.loading_point_id}`,
-              );
+            if (updateHaulingListDto.unit_loading_id) missingFields.push(`unit_loading_id: ${updateHaulingListDto.unit_loading_id}`);
+            if (updateHaulingListDto.unit_hauler_id) missingFields.push(`unit_hauler_id: ${updateHaulingListDto.unit_hauler_id}`);
+            if (updateHaulingListDto.loading_point_id) missingFields.push(`loading_point_id: ${updateHaulingListDto.loading_point_id}`);
             if (updateHaulingListDto.dumping_point_op_id)
-              missingFields.push(
-                `dumping_point_op_id: ${updateHaulingListDto.dumping_point_op_id}`,
-              );
+              missingFields.push(`dumping_point_op_id: ${updateHaulingListDto.dumping_point_op_id}`);
             if (updateHaulingListDto.dumping_point_barge_id)
-              missingFields.push(
-                `dumping_point_barge_id: ${updateHaulingListDto.dumping_point_barge_id}`,
-              );
+              missingFields.push(`dumping_point_barge_id: ${updateHaulingListDto.dumping_point_barge_id}`);
 
             errorMessage += `Referensi data tidak valid. Field yang bermasalah: ${missingFields.join(', ')}. Silakan periksa ID yang dikirim`;
           }
@@ -419,9 +321,7 @@ export class HaulingListService {
     });
 
     if (!haulingList) {
-      throw new NotFoundException(
-        `Hauling list dengan ID ${id} tidak ditemukan`,
-      );
+      throw new NotFoundException(`Hauling list dengan ID ${id} tidak ditemukan`);
     }
 
     await this.haulingListRepository.remove(haulingList);
@@ -430,15 +330,7 @@ export class HaulingListService {
   }
 
   async getActivities(queryDto: QueryActivitiesDto): Promise<any> {
-    const {
-      page = 1,
-      limit = 10,
-      name,
-      type,
-      site_name,
-      orderBy = 'id',
-      orderDirection = 'ASC',
-    } = queryDto;
+    const { page = 1, limit = 10, name, type, site_name, orderBy = 'id', orderDirection = 'ASC' } = queryDto;
 
     const queryBuilder = this.operationPointsRepository
       .createQueryBuilder('op')
@@ -495,13 +387,7 @@ export class HaulingListService {
       latitude: item.op_latitude,
     }));
 
-    return paginateResponse(
-      mappedData,
-      total,
-      page,
-      limit,
-      'Data activities berhasil diambil',
-    );
+    return paginateResponse(mappedData, total, page, limit, 'Data activities berhasil diambil');
   }
 
   private mapToResponseDto(haulingList: HaulingList): HaulingListResponseDto {

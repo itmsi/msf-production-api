@@ -8,14 +8,7 @@ import { Activities } from '../activities/entities/activities.entity';
 import { Sites } from '../sites/entities/sites.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      BargingProblem,
-      Barge,
-      Activities,
-      Sites,
-    ]),
-  ],
+  imports: [TypeOrmModule.forFeature([BargingProblem, Barge, Activities, Sites])],
   controllers: [BargingProblemController],
   providers: [BargingProblemService],
   exports: [TypeOrmModule, BargingProblemService],

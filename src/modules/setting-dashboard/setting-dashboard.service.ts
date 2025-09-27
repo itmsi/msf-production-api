@@ -2,10 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SettingDashboard } from './entities/setting-dashboard.entity';
-import {
-  CreateSettingDashboardDto,
-  UpdateSettingDashboardDto,
-} from './dto/setting-dashboard.dto';
+import { CreateSettingDashboardDto, UpdateSettingDashboardDto } from './dto/setting-dashboard.dto';
 import { successResponse, emptyDataResponse, successResponseWithMeta } from '../../common/helpers/response.helper';
 
 @Injectable()
@@ -16,16 +13,14 @@ export class SettingDashboardService {
   ) {}
 
   async create(createSettingDashboardDto: CreateSettingDashboardDto) {
-    const settingDashboard = this.settingDashboardRepository.create(
-      createSettingDashboardDto,
-    );
+    const settingDashboard = this.settingDashboardRepository.create(createSettingDashboardDto);
     const result = await this.settingDashboardRepository.save(settingDashboard);
     return successResponse(result, 'Setting dashboard berhasil dibuat', 201);
   }
 
   async findAll(page = 1, limit = 10) {
     const skip = (page - 1) * limit;
-    
+
     const [data, total] = await this.settingDashboardRepository.findAndCount({
       skip,
       take: limit,
@@ -36,12 +31,7 @@ export class SettingDashboardService {
       return emptyDataResponse('Data setting dashboard tidak ditemukan', []);
     }
 
-    return successResponseWithMeta(
-      data,
-      'Data setting dashboard berhasil diambil',
-      200,
-      { total, page, limit },
-    );
+    return successResponseWithMeta(data, 'Data setting dashboard berhasil diambil', 200, { total, page, limit });
   }
 
   async findOne(id: number) {

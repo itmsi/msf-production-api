@@ -40,9 +40,7 @@ describe('PopulationService', () => {
     }).compile();
 
     service = module.get<PopulationService>(PopulationService);
-    repository = module.get<Repository<Population>>(
-      getRepositoryToken(Population),
-    );
+    repository = module.get<Repository<Population>>(getRepositoryToken(Population));
   });
 
   it('should be defined', () => {
@@ -107,9 +105,7 @@ describe('PopulationService', () => {
     it('should throw error when population not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findById(999)).rejects.toThrow(
-        'Population tidak ditemukan',
-      );
+      await expect(service.findById(999)).rejects.toThrow('Population tidak ditemukan');
     });
   });
 
@@ -182,9 +178,7 @@ describe('PopulationService', () => {
 
       mockRepository.findOne.mockResolvedValue({ id: 1 }); // Existing VIN
 
-      await expect(service.create(createDto)).rejects.toThrow(
-        'VIN number sudah terdaftar',
-      );
+      await expect(service.create(createDto)).rejects.toThrow('VIN number sudah terdaftar');
     });
   });
 
@@ -222,18 +216,13 @@ describe('PopulationService', () => {
       const result = await service.update(1, updateDto);
 
       expect(result.message).toBe('Population berhasil diupdate');
-      expect(mockRepository.merge).toHaveBeenCalledWith(
-        existingPopulation,
-        updateDto,
-      );
+      expect(mockRepository.merge).toHaveBeenCalledWith(existingPopulation, updateDto);
     });
 
     it('should throw error when population not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.update(999, {})).rejects.toThrow(
-        'Population tidak ditemukan',
-      );
+      await expect(service.update(999, {})).rejects.toThrow('Population tidak ditemukan');
     });
   });
 
@@ -253,9 +242,7 @@ describe('PopulationService', () => {
     it('should throw error when population not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.remove(999)).rejects.toThrow(
-        'Population tidak ditemukan',
-      );
+      await expect(service.remove(999)).rejects.toThrow('Population tidak ditemukan');
     });
   });
 });

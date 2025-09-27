@@ -9,9 +9,7 @@ import { AnalysisHaulingBargingFilterDto, AnalysisHaulingBargingResponseDto } fr
 @UseGuards(JwtAuthGuard)
 @Controller('analysis-hauling-barging')
 export class AnalysisHaulingBargingController {
-  constructor(
-    private readonly analysisHaulingBargingService: AnalysisHaulingBargingService,
-  ) {}
+  constructor(private readonly analysisHaulingBargingService: AnalysisHaulingBargingService) {}
 
   @Get()
   @ApiOperation({

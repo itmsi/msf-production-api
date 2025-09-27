@@ -1,25 +1,7 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  Put,
-  Delete,
-  UseGuards,
-  Query,
-  ParseIntPipe,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Put, Delete, UseGuards, Query, ParseIntPipe } from '@nestjs/common';
 import { BrandService } from './brand.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiOperation,
-  ApiResponse as SwaggerApiResponse,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse as SwaggerApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import {
   CreateBrandDto,
   GetBrandsQueryDto,
@@ -38,8 +20,7 @@ export class BrandController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary:
-      'Mendapatkan semua data brand dengan pagination, filtering, dan sorting',
+    summary: 'Mendapatkan semua data brand dengan pagination, filtering, dan sorting',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -240,8 +221,7 @@ export class BrandController {
   @Post()
   @ApiOperation({
     summary: 'Membuat brand baru',
-    description:
-      'Membuat brand baru dengan validasi duplikasi brand_name. Nama brand harus unik dalam sistem.',
+    description: 'Membuat brand baru dengan validasi duplikasi brand_name. Nama brand harus unik dalam sistem.',
   })
   @SwaggerApiResponse({
     status: 201,
@@ -316,8 +296,7 @@ export class BrandController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data brand berdasarkan ID',
-    description:
-      'Mengupdate data brand dengan validasi duplikasi brand_name. Hanya field yang dikirim yang akan diupdate.',
+    description: 'Mengupdate data brand dengan validasi duplikasi brand_name. Hanya field yang dikirim yang akan diupdate.',
   })
   @ApiParam({
     name: 'id',

@@ -499,10 +499,7 @@ export class MenuSeeder {
     // First, create parent menus
     for (const menuData of menusData) {
       if (menuData.isParent) {
-        const existingMenu = await this.dataSource.query(
-          'SELECT * FROM m_menu WHERE menu_code = $1',
-          [menuData.menuCode],
-        );
+        const existingMenu = await this.dataSource.query('SELECT * FROM m_menu WHERE menu_code = $1', [menuData.menuCode]);
 
         if (existingMenu.length === 0) {
           await this.dataSource.query(
@@ -530,17 +527,11 @@ export class MenuSeeder {
     // Then, create child menus with parent references
     for (const menuData of menusData) {
       if (!menuData.isParent && menuData.parentCode) {
-        const existingMenu = await this.dataSource.query(
-          'SELECT * FROM m_menu WHERE menu_code = $1',
-          [menuData.menuCode],
-        );
+        const existingMenu = await this.dataSource.query('SELECT * FROM m_menu WHERE menu_code = $1', [menuData.menuCode]);
 
         if (existingMenu.length === 0) {
           // Get parent menu ID
-          const parentMenu = await this.dataSource.query(
-            'SELECT id FROM m_menu WHERE menu_code = $1',
-            [menuData.parentCode],
-          );
+          const parentMenu = await this.dataSource.query('SELECT id FROM m_menu WHERE menu_code = $1', [menuData.parentCode]);
 
           if (parentMenu.length > 0) {
             await this.dataSource.query(
@@ -558,9 +549,7 @@ export class MenuSeeder {
               ],
             );
             createdCount++;
-            console.log(
-              `✅ Child menu created: ${menuData.menuCode} (parent: ${menuData.parentCode})`,
-            );
+            console.log(`✅ Child menu created: ${menuData.menuCode} (parent: ${menuData.parentCode})`);
           } else {
             console.log(`❌ Parent menu not found: ${menuData.parentCode}`);
           }

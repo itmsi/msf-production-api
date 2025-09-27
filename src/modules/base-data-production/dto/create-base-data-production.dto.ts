@@ -7,9 +7,9 @@ import { MaterialType, ActivityType } from '../entities/base-data-pro.entity';
 // Custom validator untuk format tanggal
 export function IsValidDateFormat(validationOptions?: any) {
   return function (object: any, propertyName: string) {
-    const originalValidate = function(value: any) {
+    const originalValidate = function (value: any) {
       if (value === undefined || value === null) return true;
-      
+
       // Coba parse berbagai format tanggal
       const date = new Date(value);
       if (isNaN(date.getTime())) {
@@ -17,7 +17,7 @@ export function IsValidDateFormat(validationOptions?: any) {
       }
       return true;
     };
-    
+
     Reflect.defineMetadata('validation:isValidDateFormat', originalValidate, object, propertyName);
   };
 }
@@ -25,10 +25,10 @@ export function IsValidDateFormat(validationOptions?: any) {
 // Custom validator untuk validasi kondisional berdasarkan type
 export function IsKmRequiredBasedOnType(validationOptions?: any) {
   return function (object: any, propertyName: string) {
-    const originalValidate = function(value: any) {
+    const originalValidate = function (value: any) {
       // Dapatkan nilai type dari parent object (CreateBaseDataProductionDto)
       const parentType = object.type || object.parent?.type;
-      
+
       // Jika type adalah DT, maka kmAwal dan kmAkhir wajib diisi
       if (parentType === 'DT') {
         if (value === undefined || value === null || value === '') {
@@ -37,10 +37,10 @@ export function IsKmRequiredBasedOnType(validationOptions?: any) {
       }
       // Jika type adalah HE, maka kmAwal dan kmAkhir optional (nullable)
       // Tidak perlu validasi khusus untuk HE
-      
+
       return true;
     };
-    
+
     Reflect.defineMetadata('validation:isKmRequiredBasedOnType', originalValidate, object, propertyName);
   };
 }
@@ -56,10 +56,10 @@ export class BaseDataProDetailDto {
   @IsOptional()
   kmAkhir?: number;
 
-  @ApiProperty({ 
-    description: 'Total kilometer (calculated automatically as kmAkhir - kmAwal if not provided)', 
-    example: 0, 
-    required: false 
+  @ApiProperty({
+    description: 'Total kilometer (calculated automatically as kmAkhir - kmAwal if not provided)',
+    example: 0,
+    required: false,
   })
   @IsNumber()
   @IsOptional()
@@ -75,10 +75,10 @@ export class BaseDataProDetailDto {
   @IsNotEmpty()
   hmAkhir: number;
 
-  @ApiProperty({ 
-    description: 'Total hour meter (calculated automatically as hmAkhir - hmAwal if not provided)', 
-    example: 0, 
-    required: false 
+  @ApiProperty({
+    description: 'Total hour meter (calculated automatically as hmAkhir - hmAwal if not provided)',
+    example: 0,
+    required: false,
   })
   @IsNumber()
   @IsOptional()
@@ -94,7 +94,11 @@ export class BaseDataProDetailDto {
   @IsOptional()
   dumpingPointId?: number | null;
 
-  @ApiProperty({ description: 'ID dumping point operation (references m_operation_points)', example: 1, required: false })
+  @ApiProperty({
+    description: 'ID dumping point operation (references m_operation_points)',
+    example: 1,
+    required: false,
+  })
   @IsInt()
   @IsOptional()
   dumpingPointOpId?: number;
@@ -151,7 +155,11 @@ export class CreateBaseDataProductionDto {
   })
   activityDate: string;
 
-  @ApiProperty({ description: 'Shift type (DS/NS or ds/ns - will be converted to lowercase automatically)', enum: ShiftType, example: 'DS' })
+  @ApiProperty({
+    description: 'Shift type (DS/NS or ds/ns - will be converted to lowercase automatically)',
+    enum: ShiftType,
+    example: 'DS',
+  })
   @Transform(({ value }) => value?.toLowerCase())
   @IsEnum(ShiftType)
   @IsNotEmpty()

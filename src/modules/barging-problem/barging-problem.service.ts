@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  InternalServerErrorException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder, IsNull } from 'typeorm';
 import { BargingProblem } from './entities/barging-problem.entity';
@@ -16,11 +11,7 @@ import {
   BargingProblemResponseDto,
   GetBargingProblemsQueryDto,
 } from './dto/barging-problem.dto';
-import {
-  successResponse,
-  emptyDataResponse,
-  throwError,
-} from '../../common/helpers/response.helper';
+import { successResponse, emptyDataResponse, throwError } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 
 export interface ApiResponse<T = any> {
@@ -48,9 +39,7 @@ export class BargingProblemService {
     private sitesRepository: Repository<Sites>,
   ) {}
 
-  async findAll(
-    query: GetBargingProblemsQueryDto,
-  ): Promise<ApiResponse<BargingProblemResponseDto[]>> {
+  async findAll(query: GetBargingProblemsQueryDto): Promise<ApiResponse<BargingProblemResponseDto[]>> {
     try {
       const page = parseInt(query.page?.toString() ?? '1', 10);
       const limit = parseInt(query.limit?.toString() ?? '10', 10);
@@ -110,7 +99,7 @@ export class BargingProblemService {
         const activityDate = new Date(query.activity_date);
         const nextDay = new Date(activityDate);
         nextDay.setDate(nextDay.getDate() + 1);
-        
+
         qb.andWhere('bargingProblem.activityDate >= :startDate AND bargingProblem.activityDate < :endDate', {
           startDate: activityDate,
           endDate: nextDay,
@@ -122,7 +111,7 @@ export class BargingProblemService {
         const startDate = new Date(query.start_date);
         const endDate = new Date(query.end_date);
         endDate.setDate(endDate.getDate() + 1); // Include end date
-        
+
         qb.andWhere('bargingProblem.activityDate >= :startDate AND bargingProblem.activityDate < :endDate', {
           startDate: startDate,
           endDate: endDate,
@@ -190,13 +179,7 @@ export class BargingProblemService {
         updatedAt: item.updatedAt,
       }));
 
-      return paginateResponse(
-        transformedResult,
-        total,
-        page,
-        limit,
-        'Data barging problem berhasil diambil',
-      );
+      return paginateResponse(transformedResult, total, page, limit, 'Data barging problem berhasil diambil');
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException('Gagal mengambil data barging problem');
@@ -269,7 +252,7 @@ export class BargingProblemService {
       // Validate start and finish dates
       const startDate = new Date(createDto.start);
       const finishDate = new Date(createDto.finish);
-      
+
       if (startDate >= finishDate) {
         throwError('Waktu start harus lebih awal dari waktu finish', 400);
       }
@@ -326,10 +309,7 @@ export class BargingProblemService {
     }
   }
 
-  async update(
-    id: number,
-    updateDto: UpdateBargingProblemDto,
-  ): Promise<ApiResponse<BargingProblemResponseDto>> {
+  async update(id: number, updateDto: UpdateBargingProblemDto): Promise<ApiResponse<BargingProblemResponseDto>> {
     try {
       const existingBargingProblem = await this.bargingProblemRepository.findOne({
         where: { id, deletedAt: IsNull() },

@@ -14,12 +14,7 @@ import {
   Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import {
-  IsNotEmptyString,
-  IsValidFloat,
-  IsFloatInRange,
-  IsNullableFloatInRange,
-} from '../../../common/validators';
+import { IsNotEmptyString, IsValidFloat, IsFloatInRange, IsNullableFloatInRange } from '../../../common/validators';
 
 export enum OperatorPointType {
   DUMPING = 'dumping',
@@ -345,17 +340,8 @@ export class GetSitesQueryDto {
   @ApiProperty({
     required: false,
     example: 'name',
-    description:
-      'Field untuk sorting (id, name, location, longitude, latitude, createdAt, updatedAt)',
-    enum: [
-      'id',
-      'name',
-      'location',
-      'longitude',
-      'latitude',
-      'createdAt',
-      'updatedAt',
-    ],
+    description: 'Field untuk sorting (id, name, location, longitude, latitude, createdAt, updatedAt)',
+    enum: ['id', 'name', 'location', 'longitude', 'latitude', 'createdAt', 'updatedAt'],
     default: 'id',
   })
   @IsOptional()

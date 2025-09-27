@@ -1,13 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsInt,
-  IsString,
-  IsDateString,
-  IsNumber,
-  IsOptional,
-  ValidateIf,
-  Min,
-} from 'class-validator';
+import { IsInt, IsString, IsDateString, IsNumber, IsOptional, ValidateIf, Min } from 'class-validator';
 
 export class CreateBargeFormDto {
   @ApiProperty({

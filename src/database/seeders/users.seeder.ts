@@ -38,16 +38,12 @@ export class UsersSeeder {
     const employees = await employeeRepository.find();
 
     if (!superAdminRole || !adminRole || !managerRole || !staffRole) {
-      console.log(
-        '❌ Required roles not found. Please run roles seeder first.',
-      );
+      console.log('❌ Required roles not found. Please run roles seeder first.');
       return;
     }
 
     if (!siteJakarta || !siteSurabaya) {
-      console.log(
-        '❌ Required sites not found. Please run sites seeder first.',
-      );
+      console.log('❌ Required sites not found. Please run sites seeder first.');
       return;
     }
 
@@ -130,9 +126,7 @@ export class UsersSeeder {
         });
 
         await usersRepository.save(user);
-        console.log(
-          `✅ User "${userData.username}" created with password: ${userData.password}`,
-        );
+        console.log(`✅ User "${userData.username}" created with password: ${userData.password}`);
       } else {
         console.log(`⏭️  User "${userData.username}" already exists`);
       }

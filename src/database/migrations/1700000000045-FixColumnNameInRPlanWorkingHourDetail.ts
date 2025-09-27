@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
 
-export class FixColumnNameInRPlanWorkingHourDetail1700000000045
-  implements MigrationInterface
-{
+export class FixColumnNameInRPlanWorkingHourDetail1700000000045 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Ubah nama kolom dari plant_working_hour_id menjadi plant_working_hour_id
     // (sebenarnya nama sudah benar, tapi untuk memastikan konsistensi)

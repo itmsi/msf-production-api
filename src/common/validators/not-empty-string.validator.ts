@@ -1,8 +1,4 @@
-import {
-  registerDecorator,
-  ValidationOptions,
-  ValidationArguments,
-} from 'class-validator';
+import { registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator';
 
 /**
  * Custom validator untuk memastikan string tidak kosong (tidak hanya whitespace)
@@ -66,9 +62,7 @@ export function IsNotEmptyStringArray(validationOptions?: ValidationOptions) {
           }
 
           // Cek apakah setiap item adalah string yang tidak kosong
-          return value.every(
-            (item) => typeof item === 'string' && item.trim().length > 0,
-          );
+          return value.every((item) => typeof item === 'string' && item.trim().length > 0);
         },
         defaultMessage(args: ValidationArguments) {
           return `${args.property} harus berupa array yang tidak kosong dan setiap item tidak boleh kosong`;

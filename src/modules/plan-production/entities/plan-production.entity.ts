@@ -127,10 +127,7 @@ export class PlanProduction {
   @Column({ type: 'int', nullable: false })
   parent_plan_production_id: number;
 
-  @ManyToOne(
-    () => ParentPlanProduction,
-    (parentPlanProduction) => parentPlanProduction.planProductions,
-  )
+  @ManyToOne(() => ParentPlanProduction, (parentPlanProduction) => parentPlanProduction.planProductions)
   @JoinColumn({ name: 'parent_plan_production_id' })
   parentPlanProduction: ParentPlanProduction;
 }

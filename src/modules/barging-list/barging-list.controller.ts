@@ -1,30 +1,7 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  ParseIntPipe,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiQuery,
-  ApiBody,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { BargingListService } from './barging-list.service';
-import {
-  CreateBargingListDto,
-  UpdateBargingListDto,
-  BargingListResponseDto,
-  GetBargingListQueryDto,
-} from './dto';
+import { CreateBargingListDto, UpdateBargingListDto, BargingListResponseDto, GetBargingListQueryDto } from './dto';
 
 @ApiTags('Barging List')
 @ApiBearerAuth('jwt')
@@ -484,10 +461,7 @@ export class BargingListController {
       },
     },
   })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateBargingListDto: UpdateBargingListDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateBargingListDto: UpdateBargingListDto) {
     return this.bargingListService.update(id, updateBargingListDto);
   }
 

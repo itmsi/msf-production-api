@@ -1,10 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  HttpException,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, HttpException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, ILike, SelectQueryBuilder } from 'typeorm';
 
@@ -20,16 +14,8 @@ import {
   QueryBaseDataProductionDto,
   QueryExportBaseDataProductionDto,
 } from './dto';
-import {
-  successResponse,
-  emptyDataResponse,
-  throwError,
-} from '../../common/helpers/response.helper';
-import {
-  CsvHelper,
-  paginateResponse,
-  setCsvExportHeaders,
-} from '../../common/helpers/public.helper';
+import { successResponse, emptyDataResponse, throwError } from '../../common/helpers/response.helper';
+import { CsvHelper, paginateResponse, setCsvExportHeaders } from '../../common/helpers/public.helper';
 import { S3Service } from 'src/integrations/s3/s3.service';
 import { Response } from 'express';
 import { format } from '@fast-csv/format';
@@ -78,15 +64,11 @@ export class BaseDataProductionService {
           activityDate: new Date(createDto.activityDate),
           shift: createDto.shift,
           driverId: createDto.driverId,
-          startShift: createDto.startShift
-            ? new Date(createDto.startShift)
-            : null,
+          startShift: createDto.startShift ? new Date(createDto.startShift) : null,
           endShift: createDto.endShift ? new Date(createDto.endShift) : null,
         });
 
-        savedParent = (await this.parentBaseDataProRepository.save(
-          parentBaseDataPro,
-        )) as ParentBaseDataPro;
+        savedParent = await this.parentBaseDataProRepository.save(parentBaseDataPro);
       }
 
       // Create parent base data pro
@@ -97,11 +79,7 @@ export class BaseDataProductionService {
           parentBaseDataProId: parent.id,
           kmAwal: detail.kmAwal,
           kmAkhir: detail.kmAkhir,
-          totalKm:
-            detail.totalKm ??
-            (detail.kmAkhir && detail.kmAwal
-              ? detail.kmAkhir - detail.kmAwal
-              : 0),
+          totalKm: detail.totalKm ?? (detail.kmAkhir && detail.kmAwal ? detail.kmAkhir - detail.kmAwal : 0),
           hmAwal: detail.hmAwal,
           hmAkhir: detail.hmAkhir,
           totalHm: detail.totalHm ?? detail.hmAkhir - detail.hmAwal,
@@ -128,9 +106,7 @@ export class BaseDataProductionService {
       });
 
       if (!createdData) {
-        throw new NotFoundException(
-          'Base data production not found after creation',
-        );
+        throw new NotFoundException('Base data production not found after creation');
       }
 
       // Transform data to response format
@@ -171,17 +147,10 @@ export class BaseDataProductionService {
           })) || [],
       };
 
-      return successResponse(
-        transformedData,
-        'Base data production berhasil dibuat',
-        201,
-      );
+      return successResponse(transformedData, 'Base data production berhasil dibuat', 201);
     } catch (error) {
       // Re-throw specific exceptions
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
         throw error;
       }
 
@@ -200,35 +169,24 @@ export class BaseDataProductionService {
       }
 
       // Handle date parsing errors
-      if (
-        error instanceof TypeError &&
-        error.message.includes('Invalid Date')
-      ) {
-        throw new BadRequestException(
-          'Format tanggal tidak valid. Gunakan format ISO: YYYY-MM-DD atau YYYY-MM-DDTHH:mm:ss.sssZ',
-        );
+      if (error instanceof TypeError && error.message.includes('Invalid Date')) {
+        throw new BadRequestException('Format tanggal tidak valid. Gunakan format ISO: YYYY-MM-DD atau YYYY-MM-DDTHH:mm:ss.sssZ');
       }
 
       // Log unexpected errors
       console.error('Unexpected error in create base data production:', error);
-      throw new BadRequestException(
-        'Terjadi kesalahan internal. Silakan coba lagi atau hubungi administrator.',
-      );
+      throw new BadRequestException('Terjadi kesalahan internal. Silakan coba lagi atau hubungi administrator.');
     }
   }
 
-  private async validateForeignKeysForUpdate(
-    updateDto: UpdateBaseDataProductionDto,
-  ): Promise<void> {
+  private async validateForeignKeysForUpdate(updateDto: UpdateBaseDataProductionDto): Promise<void> {
     // Validate Population ID if provided
     if (updateDto.population_id !== undefined) {
       const population = await this.populationRepository.findOne({
         where: { id: updateDto.population_id, deletedAt: IsNull() },
       });
       if (!population) {
-        throw new BadRequestException(
-          `Unit dengan ID ${updateDto.population_id} tidak ditemukan di tabel population`,
-        );
+        throw new BadRequestException(`Unit dengan ID ${updateDto.population_id} tidak ditemukan di tabel population`);
       }
     }
 
@@ -239,9 +197,7 @@ export class BaseDataProductionService {
         relations: ['employees'],
       });
       if (!driver) {
-        throw new BadRequestException(
-          `Driver dengan ID ${updateDto.driverId} tidak ditemukan`,
-        );
+        throw new BadRequestException(`Driver dengan ID ${updateDto.driverId} tidak ditemukan`);
       }
     }
 
@@ -254,9 +210,7 @@ export class BaseDataProductionService {
             where: { id: detail.loadingPointId, deletedAt: IsNull() },
           });
           if (!loadingPoint) {
-            throw new BadRequestException(
-              `Loading Point dengan ID ${detail.loadingPointId} tidak ditemukan di tabel m_operation_points`,
-            );
+            throw new BadRequestException(`Loading Point dengan ID ${detail.loadingPointId} tidak ditemukan di tabel m_operation_points`);
           }
         }
 
@@ -266,9 +220,7 @@ export class BaseDataProductionService {
             where: { id: detail.dumpingPointId, deletedAt: IsNull() },
           });
           if (!dumpingPoint) {
-            throw new BadRequestException(
-              `Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan di tabel m_operation_points`,
-            );
+            throw new BadRequestException(`Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan di tabel m_operation_points`);
           }
         }
 
@@ -278,9 +230,7 @@ export class BaseDataProductionService {
             where: { id: detail.dumpingPointOpId, deletedAt: IsNull() },
           });
           if (!dumpingPointOp) {
-            throw new BadRequestException(
-              `Dumping Point Operation dengan ID ${detail.dumpingPointOpId} tidak ditemukan`,
-            );
+            throw new BadRequestException(`Dumping Point Operation dengan ID ${detail.dumpingPointOpId} tidak ditemukan`);
           }
         }
 
@@ -290,26 +240,20 @@ export class BaseDataProductionService {
             where: { id: detail.dumpingPointBargeId, deletedAt: IsNull() },
           });
           if (!dumpingPointBarge) {
-            throw new BadRequestException(
-              `Dumping Point Barge dengan ID ${detail.dumpingPointBargeId} tidak ditemukan`,
-            );
+            throw new BadRequestException(`Dumping Point Barge dengan ID ${detail.dumpingPointBargeId} tidak ditemukan`);
           }
         }
       }
     }
   }
 
-  private async validateForeignKeys(
-    createDto: CreateBaseDataProductionDto,
-  ): Promise<void> {
+  private async validateForeignKeys(createDto: CreateBaseDataProductionDto): Promise<void> {
     // Validate Population ID
     const population = await this.populationRepository.findOne({
       where: { id: createDto.population_id, deletedAt: IsNull() },
     });
     if (!population) {
-      throw new BadRequestException(
-        `Unit dengan ID ${createDto.population_id} tidak ditemukan di tabel population`,
-      );
+      throw new BadRequestException(`Unit dengan ID ${createDto.population_id} tidak ditemukan di tabel population`);
     }
 
     // Validate Driver ID
@@ -318,9 +262,7 @@ export class BaseDataProductionService {
       relations: ['employees'],
     });
     if (!driver) {
-      throw new BadRequestException(
-        `Driver dengan ID ${createDto.driverId} tidak ditemukan`,
-      );
+      throw new BadRequestException(`Driver dengan ID ${createDto.driverId} tidak ditemukan`);
     }
 
     // Validate Loading Point IDs
@@ -331,9 +273,7 @@ export class BaseDataProductionService {
           where: { id: detail.loadingPointId, deletedAt: IsNull() },
         });
         if (!loadingPoint) {
-          throw new BadRequestException(
-            `Loading Point dengan ID ${detail.loadingPointId} tidak ditemukan di tabel m_operation_points`,
-          );
+          throw new BadRequestException(`Loading Point dengan ID ${detail.loadingPointId} tidak ditemukan di tabel m_operation_points`);
         }
       }
 
@@ -343,9 +283,7 @@ export class BaseDataProductionService {
           where: { id: detail.dumpingPointId, deletedAt: IsNull() },
         });
         if (!dumpingPoint) {
-          throw new BadRequestException(
-            `Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan di tabel m_operation_points`,
-          );
+          throw new BadRequestException(`Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan di tabel m_operation_points`);
         }
       }
 
@@ -355,9 +293,7 @@ export class BaseDataProductionService {
           where: { id: detail.dumpingPointOpId, deletedAt: IsNull() },
         });
         if (!dumpingPointOp) {
-          throw new BadRequestException(
-            `Dumping Point Operation dengan ID ${detail.dumpingPointOpId} tidak ditemukan`,
-          );
+          throw new BadRequestException(`Dumping Point Operation dengan ID ${detail.dumpingPointOpId} tidak ditemukan`);
         }
       }
 
@@ -367,9 +303,7 @@ export class BaseDataProductionService {
           where: { id: detail.dumpingPointBargeId, deletedAt: IsNull() },
         });
         if (!dumpingPointBarge) {
-          throw new BadRequestException(
-            `Dumping Point Barge dengan ID ${detail.dumpingPointBargeId} tidak ditemukan`,
-          );
+          throw new BadRequestException(`Dumping Point Barge dengan ID ${detail.dumpingPointBargeId} tidak ditemukan`);
         }
       }
     }
@@ -541,8 +475,7 @@ export class BaseDataProductionService {
     if (!unitId || !driverId || !loadingId || !dumpingId) {
       return {
         isValid: false,
-        error:
-          'Foreign key tidak ditemukan (population/driver/loading/dumping)',
+        error: 'Foreign key tidak ditemukan (population/driver/loading/dumping)',
       };
     }
 
@@ -567,12 +500,7 @@ export class BaseDataProductionService {
     };
   }
 
-  private buildImportPayload(
-    csvData: any[],
-    details: any[],
-    populationId?: number,
-    driverId?: number,
-  ): any {
+  private buildImportPayload(csvData: any[], details: any[], populationId?: number, driverId?: number): any {
     if (
       !csvData ||
       csvData.length === 0 ||
@@ -629,11 +557,7 @@ export class BaseDataProductionService {
       const csvBuffer = Buffer.from(csvContent, 'utf8');
       const filename = `import-base-data-pro-errors-${Date.now()}.csv`;
 
-      const result = await this.s3Service.uploadErrorFile(
-        filename,
-        csvBuffer,
-        'base_data_production_import_error',
-      );
+      const result = await this.s3Service.uploadErrorFile(filename, csvBuffer, 'base_data_production_import_error');
 
       return {
         error_file: result
@@ -696,10 +620,7 @@ export class BaseDataProductionService {
       row.error || 'Foreign key tidak ditemukan',
     ]);
 
-    return [
-      csvHeaders.join(','),
-      ...csvRows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
-    ].join('\n');
+    return [csvHeaders.join(','), ...csvRows.map((row) => row.map((cell) => `"${cell}"`).join(','))].join('\n');
   }
 
   private buildImportResponse(
@@ -720,29 +641,21 @@ export class BaseDataProductionService {
       },
       failedCount > 0
         ? `Import selesai dengan ${failedCount} error. ${
-            errorFileInfo.error_file
-              ? 'Download error CSV untuk detail.'
-              : 'Gagal generate error file.'
+            errorFileInfo.error_file ? 'Download error CSV untuk detail.' : 'Gagal generate error file.'
           }`
         : 'Semua data valid',
     );
   }
 
   /** PUBLIC */
-  async update(
-    id: number,
-    updateDto: UpdateBaseDataProductionDto,
-    userId: number,
-  ) {
+  async update(id: number, updateDto: UpdateBaseDataProductionDto, userId: number) {
     const parentBaseDataPro = await this.parentBaseDataProRepository.findOne({
       where: { id },
       relations: ['baseDataPro'],
     });
 
     if (!parentBaseDataPro) {
-      throw new NotFoundException(
-        `Base data production with ID ${id} not found`,
-      );
+      throw new NotFoundException(`Base data production with ID ${id} not found`);
     }
 
     // Validate foreign key constraints if provided
@@ -756,22 +669,12 @@ export class BaseDataProductionService {
     }
 
     // Update parent base data pro
-    if (updateDto.population_id !== undefined)
-      parentBaseDataPro.populationId = updateDto.population_id;
-    if (updateDto.activityDate !== undefined)
-      parentBaseDataPro.activityDate = new Date(updateDto.activityDate);
-    if (updateDto.shift !== undefined)
-      parentBaseDataPro.shift = updateDto.shift;
-    if (updateDto.driverId !== undefined)
-      parentBaseDataPro.driverId = updateDto.driverId;
-    if (updateDto.startShift !== undefined)
-      parentBaseDataPro.startShift = updateDto.startShift
-        ? new Date(updateDto.startShift)
-        : null;
-    if (updateDto.endShift !== undefined)
-      parentBaseDataPro.endShift = updateDto.endShift
-        ? new Date(updateDto.endShift)
-        : null;
+    if (updateDto.population_id !== undefined) parentBaseDataPro.populationId = updateDto.population_id;
+    if (updateDto.activityDate !== undefined) parentBaseDataPro.activityDate = new Date(updateDto.activityDate);
+    if (updateDto.shift !== undefined) parentBaseDataPro.shift = updateDto.shift;
+    if (updateDto.driverId !== undefined) parentBaseDataPro.driverId = updateDto.driverId;
+    if (updateDto.startShift !== undefined) parentBaseDataPro.startShift = updateDto.startShift ? new Date(updateDto.startShift) : null;
+    if (updateDto.endShift !== undefined) parentBaseDataPro.endShift = updateDto.endShift ? new Date(updateDto.endShift) : null;
 
     await this.parentBaseDataProRepository.save(parentBaseDataPro);
 
@@ -792,19 +695,14 @@ export class BaseDataProductionService {
           existingDetail.kmAwal = detailDto.kmAwal ?? existingDetail.kmAwal;
           existingDetail.kmAkhir = detailDto.kmAkhir ?? existingDetail.kmAkhir;
           existingDetail.totalKm =
-            detailDto.totalKm ??
-            (detailDto.kmAkhir && detailDto.kmAwal
-              ? detailDto.kmAkhir - detailDto.kmAwal
-              : existingDetail.totalKm);
+            detailDto.totalKm ?? (detailDto.kmAkhir && detailDto.kmAwal ? detailDto.kmAkhir - detailDto.kmAwal : existingDetail.totalKm);
           existingDetail.hmAwal = detailDto.hmAwal;
           existingDetail.hmAkhir = detailDto.hmAkhir;
-          existingDetail.totalHm =
-            detailDto.totalHm ?? detailDto.hmAkhir - detailDto.hmAwal;
+          existingDetail.totalHm = detailDto.totalHm ?? detailDto.hmAkhir - detailDto.hmAwal;
           existingDetail.loadingPointId = detailDto.loadingPointId || null;
           existingDetail.dumpingPointId = detailDto.dumpingPointId || null;
           existingDetail.dumpingPointOpId = detailDto.dumpingPointOpId || null;
-          existingDetail.dumpingPointBargeId =
-            detailDto.dumpingPointBargeId || null;
+          existingDetail.dumpingPointBargeId = detailDto.dumpingPointBargeId || null;
           existingDetail.activity = detailDto.activity || null;
           existingDetail.mroundDistance = detailDto.distance; // Store distance as is, no need to floor
           existingDetail.distance = detailDto.distance;
@@ -819,11 +717,7 @@ export class BaseDataProductionService {
             parentBaseDataProId: id,
             kmAwal: detailDto.kmAwal,
             kmAkhir: detailDto.kmAkhir,
-            totalKm:
-              detailDto.totalKm ??
-              (detailDto.kmAkhir && detailDto.kmAwal
-                ? detailDto.kmAkhir - detailDto.kmAwal
-                : 0),
+            totalKm: detailDto.totalKm ?? (detailDto.kmAkhir && detailDto.kmAwal ? detailDto.kmAkhir - detailDto.kmAwal : 0),
             hmAwal: detailDto.hmAwal,
             hmAkhir: detailDto.hmAkhir,
             totalHm: detailDto.totalHm ?? detailDto.hmAkhir - detailDto.hmAwal,
@@ -860,9 +754,7 @@ export class BaseDataProductionService {
     });
 
     if (!updatedData) {
-      throw new NotFoundException(
-        'Base data production not found after update',
-      );
+      throw new NotFoundException('Base data production not found after update');
     }
 
     // Transform data to response format
@@ -903,10 +795,7 @@ export class BaseDataProductionService {
         })) || [],
     };
 
-    return successResponse(
-      transformedData,
-      'Base data production berhasil diupdate',
-    );
+    return successResponse(transformedData, 'Base data production berhasil diupdate');
   }
 
   async findAll(queryDto: QueryBaseDataProductionDto): Promise<any> {
@@ -937,34 +826,17 @@ export class BaseDataProductionService {
       const result = rawResult.map((item) => ({
         ...item,
         km_awal: item.km_awal ? parseFloat(Number(item.km_awal).toFixed(2)) : 0,
-        km_akhir: item.km_akhir
-          ? parseFloat(Number(item.km_akhir).toFixed(2))
-          : 0,
+        km_akhir: item.km_akhir ? parseFloat(Number(item.km_akhir).toFixed(2)) : 0,
         hm_awal: item.hm_awal ? parseFloat(Number(item.hm_awal).toFixed(2)) : 0,
-        hm_akhir: item.hm_akhir
-          ? parseFloat(Number(item.hm_akhir).toFixed(2))
-          : 0,
-        total_km: item.total_km
-          ? parseFloat(Number(item.total_km).toFixed(2))
-          : 0,
-        total_hm: item.total_hm
-          ? parseFloat(Number(item.total_hm).toFixed(2))
-          : 0,
+        hm_akhir: item.hm_akhir ? parseFloat(Number(item.hm_akhir).toFixed(2)) : 0,
+        total_km: item.total_km ? parseFloat(Number(item.total_km).toFixed(2)) : 0,
+        total_hm: item.total_hm ? parseFloat(Number(item.total_hm).toFixed(2)) : 0,
         total_vessel: item.total_vessel ? Number(item.total_vessel) : 0,
-        mround_distance: item.mround_distance
-          ? Number(item.mround_distance)
-          : 0,
+        mround_distance: item.mround_distance ? Number(item.mround_distance) : 0,
         distance: item.distance ? Number(item.distance) : 0,
       }));
 
-      return paginateResponse(
-        result,
-        total,
-        page,
-        limit,
-        'retrieve data success',
-        200,
-      );
+      return paginateResponse(result, total, page, limit, 'retrieve data success', 200);
     } catch (error) {
       if (error instanceof HttpException) throw error;
       return throwError('Failed to fetch Relocation Inbound', 500);
@@ -1022,11 +894,7 @@ export class BaseDataProductionService {
         ],
       };
 
-      return successResponse(
-        result,
-        'Base data production retrieved successfully',
-        200,
-      );
+      return successResponse(result, 'Base data production retrieved successfully', 200);
     } catch (error) {
       throwError('Failed to retrieve base data production', 500);
     }
@@ -1038,9 +906,7 @@ export class BaseDataProductionService {
     });
 
     if (!baseDataPro) {
-      throw new NotFoundException(
-        `Base data production with ID ${id} not found`,
-      );
+      throw new NotFoundException(`Base data production with ID ${id} not found`);
     }
 
     await this.baseDataProRepository.delete({ id });
@@ -1061,51 +927,30 @@ export class BaseDataProductionService {
       this.validateImportFile(file);
       const csvData = await CsvHelper.parseCsvFile(file.buffer);
       const validationResult = await this.processImportData(csvData);
-      const payload = this.buildImportPayload(
-        csvData,
-        validationResult.details,
-        validationResult.populationId,
-        validationResult.driverId,
-      );
+      const payload = this.buildImportPayload(csvData, validationResult.details, validationResult.populationId, validationResult.driverId);
 
       if (payload && validationResult.successCount > 0) {
         await this.create(payload, userId);
       }
 
-      const errorFileInfo = await this.generateErrorCsv(
-        validationResult.failedRows,
-      );
+      const errorFileInfo = await this.generateErrorCsv(validationResult.failedRows);
 
-      return this.buildImportResponse(
-        csvData.length,
-        validationResult.successCount,
-        validationResult.failedCount,
-        errorFileInfo,
-      );
+      return this.buildImportResponse(csvData.length, validationResult.successCount, validationResult.failedCount, errorFileInfo);
     } catch (error) {
       if (error instanceof BadRequestException) {
         throwError(error, 400);
       }
 
       if (error.message?.includes('CSV') || error.message?.includes('parse')) {
-        throwError(
-          'Format CSV tidak valid. Pastikan file CSV memiliki format yang benar.',
-          400,
-        );
+        throwError('Format CSV tidak valid. Pastikan file CSV memiliki format yang benar.', 400);
       }
 
       if (error.code === '23503') {
-        throwError(
-          'Data referensi tidak ditemukan. Pastikan semua ID referensi valid.',
-          400,
-        );
+        throwError('Data referensi tidak ditemukan. Pastikan semua ID referensi valid.', 400);
       }
 
       console.error('Unexpected error in importData:', error.stack);
-      throwError(
-        'Terjadi kesalahan saat memproses file import. Silakan coba lagi atau hubungi administrator.',
-        400,
-      );
+      throwError('Terjadi kesalahan saat memproses file import. Silakan coba lagi atau hubungi administrator.', 400);
     }
   }
 
@@ -1136,29 +981,13 @@ export class BaseDataProductionService {
         'r.distance AS distance',
         'r.material AS material',
       ])
-      .leftJoin(
-        'r_parent_base_data_pro',
-        'r2',
-        'r2.id = r.parent_base_data_pro_id',
-      )
+      .leftJoin('r_parent_base_data_pro', 'r2', 'r2.id = r.parent_base_data_pro_id')
       // .leftJoin('m_user', 'u', 'u.id = r2.driver_id')
       .leftJoin('users', 'u', 'u.id = r2.driver_id')
       .leftJoin('m_population', 'm', 'm.id = r2.population_id')
-      .leftJoin(
-        'm_operation_points',
-        'm2',
-        `m2.id = r.loading_point_id AND m2.type = 'loading'`,
-      )
-      .leftJoin(
-        'm_operation_points',
-        'm3',
-        `m3.id = r.dumping_point_id AND m3.type = 'dumping'`,
-      )
-      .leftJoin(
-        'm_operation_points',
-        'm4',
-        `m4.id = r.dumping_point_op_id AND m4.type = 'dumping'`,
-      )
+      .leftJoin('m_operation_points', 'm2', `m2.id = r.loading_point_id AND m2.type = 'loading'`)
+      .leftJoin('m_operation_points', 'm3', `m3.id = r.dumping_point_id AND m3.type = 'dumping'`)
+      .leftJoin('m_operation_points', 'm4', `m4.id = r.dumping_point_op_id AND m4.type = 'dumping'`)
       .leftJoin('m_barge', 'm5', 'm5.id = r.dumping_point_barge_id');
     return qb;
   }
@@ -1187,9 +1016,7 @@ export class BaseDataProductionService {
 
   private mapExportDataToCsvRow(item: any, index: number) {
     const formatDate = (date: any, formatStr: string) => {
-      return date && moment(date).isValid()
-        ? moment(date).format(formatStr)
-        : '-';
+      return date && moment(date).isValid() ? moment(date).format(formatStr) : '-';
     };
     return {
       No: index + 1,
@@ -1200,29 +1027,15 @@ export class BaseDataProductionService {
       Unit: item?.unit || '-',
       'Shift Start': formatDate(item?.start_shift, 'HH:mm'),
       'Shift End': formatDate(item?.end_shift, 'HH:mm'),
-      'KM Start': item.km_awal
-        ? parseFloat(Number(item.km_awal).toFixed(2))
-        : 0,
-      'KM End': item.km_akhir
-        ? parseFloat(Number(item.km_akhir).toFixed(2))
-        : 0,
-      'KM Total': item.total_km
-        ? parseFloat(Number(item.total_km).toFixed(2))
-        : 0,
-      'HM Start': item.hm_awal
-        ? parseFloat(Number(item.hm_awal).toFixed(2))
-        : 0,
-      'HM End': item.hm_akhir
-        ? parseFloat(Number(item.hm_akhir).toFixed(2))
-        : 0,
-      'HM Total': item.total_hm
-        ? parseFloat(Number(item.total_hm).toFixed(2))
-        : 0,
+      'KM Start': item.km_awal ? parseFloat(Number(item.km_awal).toFixed(2)) : 0,
+      'KM End': item.km_akhir ? parseFloat(Number(item.km_akhir).toFixed(2)) : 0,
+      'KM Total': item.total_km ? parseFloat(Number(item.total_km).toFixed(2)) : 0,
+      'HM Start': item.hm_awal ? parseFloat(Number(item.hm_awal).toFixed(2)) : 0,
+      'HM End': item.hm_akhir ? parseFloat(Number(item.hm_akhir).toFixed(2)) : 0,
+      'HM Total': item.total_hm ? parseFloat(Number(item.total_hm).toFixed(2)) : 0,
       'Loading Point': item?.loading_point || '-',
       'Dumping Point': item?.dumping_point || '-',
-      'M Round Distance (m)': item.mround_distance
-        ? Number(item.mround_distance)
-        : 0,
+      'M Round Distance (m)': item.mround_distance ? Number(item.mround_distance) : 0,
       'Distance (m)': item.distance ? Number(item.distance) : 0,
       Vessel: item.total_vessel ? Number(item.total_vessel) : 0,
       Material: item?.material || '-',

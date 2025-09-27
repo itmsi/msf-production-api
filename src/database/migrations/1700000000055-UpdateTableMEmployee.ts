@@ -60,9 +60,7 @@ export class UpdateTableMEmployee1700000000055 implements MigrationInterface {
     // Drop foreign key constraint for department_id
     const table = await queryRunner.getTable('m_employee');
     if (table) {
-      const foreignKey = table.foreignKeys.find(
-        (fk) => fk.columnNames.indexOf('department_id') !== -1,
-      );
+      const foreignKey = table.foreignKeys.find((fk) => fk.columnNames.indexOf('department_id') !== -1);
       if (foreignKey) {
         await queryRunner.dropForeignKey('m_employee', foreignKey);
       }

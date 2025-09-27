@@ -7,13 +7,7 @@ import { MtdWorkHourService } from './mtd-work-hour.service';
 import { MtdWorkHourController } from './mtd-work-hour.controller';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      MtdWorkHour,
-      Population,
-      EffectiveWorkingHours,
-    ]),
-  ],
+  imports: [TypeOrmModule.forFeature([MtdWorkHour, Population, EffectiveWorkingHours])],
   controllers: [MtdWorkHourController],
   providers: [MtdWorkHourService],
   exports: [MtdWorkHourService],

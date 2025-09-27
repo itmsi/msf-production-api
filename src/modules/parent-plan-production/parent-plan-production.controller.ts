@@ -39,10 +39,7 @@ import {
   ExportParentPlanProductionQueryDto,
 } from './dto/parent-plan-production.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
-import {
-  NumberFormatInterceptor,
-  SkipLogging,
-} from '../../common/interceptors/number-format.interceptor';
+import { NumberFormatInterceptor, SkipLogging } from '../../common/interceptors/number-format.interceptor';
 import { Pagination } from '../../common/helpers/public.helper';
 import { successResponse } from '../../common/helpers/response.helper';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -58,20 +55,14 @@ import { Response } from 'express';
 @UseInterceptors(NumberFormatInterceptor)
 @ApiExtraModels(CreateParentPlanProductionDto, GetRemainingStockQueryDto)
 export class ParentPlanProductionController {
-  constructor(
-    private readonly parentPlanProductionService: ParentPlanProductionService,
-  ) {}
+  constructor(private readonly parentPlanProductionService: ParentPlanProductionService) {}
 
   @Get('export')
   @ApiOperation({
     summary: 'Export data Barge Form dari CSV',
-    description:
-      'Mengimport data Barge Form dari CSV ke database setelah validasi',
+    description: 'Mengimport data Barge Form dari CSV ke database setelah validasi',
   })
-  async exportData(
-    @Query() query: ExportParentPlanProductionQueryDto,
-    @Res({ passthrough: false }) res: Response,
-  ) {
+  async exportData(@Query() query: ExportParentPlanProductionQueryDto, @Res({ passthrough: false }) res: Response) {
     return await this.parentPlanProductionService.exportData(query, res);
   }
 
@@ -136,8 +127,7 @@ export class ParentPlanProductionController {
   })
   @ApiResponse({
     status: 201,
-    description:
-      'Parent plan production berhasil dibuat dan data harian berhasil di-generate',
+    description: 'Parent plan production berhasil dibuat dan data harian berhasil di-generate',
     schema: {
       example: {
         id: 1,
@@ -199,11 +189,7 @@ export class ParentPlanProductionController {
   })
   async create(@Body() createDto: CreateParentPlanProductionDto) {
     const result = await this.parentPlanProductionService.create(createDto);
-    return successResponse(
-      result,
-      'Parent plan production berhasil dibuat dan data harian berhasil di-generate',
-      201,
-    );
+    return successResponse(result, 'Parent plan production berhasil dibuat dan data harian berhasil di-generate', 201);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -258,8 +244,7 @@ export class ParentPlanProductionController {
   })
   @ApiResponse({
     status: 200,
-    description:
-      'Parent plan production berhasil diupdate dan data harian berhasil di-regenerate',
+    description: 'Parent plan production berhasil diupdate dan data harian berhasil di-regenerate',
     schema: {
       example: {
         id: 1,
@@ -315,19 +300,9 @@ export class ParentPlanProductionController {
       },
     },
   })
-  async update(
-    @Param('id') id: string,
-    @Body() updateDto: UpdateParentPlanProductionDto,
-  ) {
-    const result = await this.parentPlanProductionService.update(
-      +id,
-      updateDto,
-    );
-    return successResponse(
-      result,
-      'Parent plan production berhasil diupdate dan data harian berhasil di-regenerate',
-      200,
-    );
+  async update(@Param('id') id: string, @Body() updateDto: UpdateParentPlanProductionDto) {
+    const result = await this.parentPlanProductionService.update(+id, updateDto);
+    return successResponse(result, 'Parent plan production berhasil diupdate dan data harian berhasil di-regenerate', 200);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -362,13 +337,11 @@ export class ParentPlanProductionController {
   })
   @ApiResponse({
     status: 400,
-    description:
-      'Data tidak valid, parent plan production tidak ditemukan, atau tidak dapat dihapus',
+    description: 'Data tidak valid, parent plan production tidak ditemukan, atau tidak dapat dihapus',
     schema: {
       example: {
         statusCode: 400,
-        message:
-          'Data tidak dapat dihapus karena tanggal sudah lewat atau hari ini',
+        message: 'Data tidak dapat dihapus karena tanggal sudah lewat atau hari ini',
         error: 'Bad Request',
       },
     },
@@ -386,26 +359,20 @@ export class ParentPlanProductionController {
   })
   async delete(@Param('id') id: string) {
     const result = await this.parentPlanProductionService.delete(+id);
-    return successResponse(
-      result,
-      'Parent plan production dan data harian berhasil dihapus',
-      200,
-    );
+    return successResponse(result, 'Parent plan production dan data harian berhasil dihapus', 200);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary:
-      'Mendapatkan semua parent plan production dengan pagination dan filter',
+    summary: 'Mendapatkan semua parent plan production dengan pagination dan filter',
     description:
       'Mengambil data parent plan production dengan pagination, filter tanggal, filter bulan, dan response format yang disesuaikan',
   })
   @ApiQuery({
     name: 'month',
     required: false,
-    description:
-      'Filter bulan (1-12) untuk menampilkan data sesuai bulan tersebut walaupun tahunnya beda',
+    description: 'Filter bulan (1-12) untuk menampilkan data sesuai bulan tersebut walaupun tahunnya beda',
     example: 8,
     schema: {
       type: 'integer',
@@ -508,11 +475,7 @@ export class ParentPlanProductionController {
   })
   async findAll(@Query() query: GetParentPlanProductionQueryDto) {
     const result = await this.parentPlanProductionService.findAll(query);
-    return successResponse(
-      result.data,
-      'Daftar parent plan production berhasil diambil',
-      200,
-    );
+    return successResponse(result.data, 'Daftar parent plan production berhasil diambil', 200);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -528,8 +491,7 @@ export class ParentPlanProductionController {
   })
   @ApiResponse({
     status: 200,
-    description:
-      'Remaining stock berhasil ditemukan atau menggunakan default value 0',
+    description: 'Remaining stock berhasil ditemukan atau menggunakan default value 0',
     schema: {
       example: {
         data: {
@@ -584,10 +546,7 @@ export class ParentPlanProductionController {
     },
   })
   async getRemainingStock(@Query() query: GetRemainingStockQueryDto) {
-    const result =
-      await this.parentPlanProductionService.getRemainingStockFromPreviousMonth(
-        query.plan_date,
-      );
+    const result = await this.parentPlanProductionService.getRemainingStockFromPreviousMonth(query.plan_date);
     return successResponse(result, 'Remaining stock berhasil ditemukan', 200);
   }
 
@@ -669,11 +628,7 @@ export class ParentPlanProductionController {
   })
   async findOne(@Param('id') id: string) {
     const result = await this.parentPlanProductionService.findOne(+id);
-    return successResponse(
-      result,
-      'Parent plan production berhasil ditemukan',
-      200,
-    );
+    return successResponse(result, 'Parent plan production berhasil ditemukan', 200);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -685,8 +640,7 @@ export class ParentPlanProductionController {
   })
   @ApiParam({
     name: 'planDate',
-    description:
-      'Tanggal rencana produksi (format: YYYY-MM-DD). Sistem akan mencari berdasarkan bulan dari tanggal tersebut.',
+    description: 'Tanggal rencana produksi (format: YYYY-MM-DD). Sistem akan mencari berdasarkan bulan dari tanggal tersebut.',
     example: '2025-08-21',
     type: 'string',
   })
@@ -733,13 +687,11 @@ export class ParentPlanProductionController {
   })
   @ApiResponse({
     status: 400,
-    description:
-      'Parent plan production tidak ditemukan untuk tanggal tersebut',
+    description: 'Parent plan production tidak ditemukan untuk tanggal tersebut',
     schema: {
       example: {
         statusCode: 400,
-        message:
-          'Parent plan production tidak ditemukan untuk tanggal tersebut',
+        message: 'Parent plan production tidak ditemukan untuk tanggal tersebut',
         error: 'Bad Request',
       },
     },
@@ -757,11 +709,7 @@ export class ParentPlanProductionController {
   })
   async findByDate(@Param('planDate') planDate: string) {
     const result = await this.parentPlanProductionService.findByDate(planDate);
-    return successResponse(
-      result,
-      'Parent plan production berhasil ditemukan berdasarkan tanggal',
-      200,
-    );
+    return successResponse(result, 'Parent plan production berhasil ditemukan berdasarkan tanggal', 200);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -773,10 +721,8 @@ export class ParentPlanProductionController {
     type: FileUploadDto,
   })
   @ApiOperation({
-    summary:
-      'Import data monthly production plan for generate daily csv dari CSV',
-    description:
-      'Mengimport data population dari CSV ke database setelah validasi',
+    summary: 'Import data monthly production plan for generate daily csv dari CSV',
+    description: 'Mengimport data population dari CSV ke database setelah validasi',
   })
   importData(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
     const userId = req.user?.id;
@@ -788,20 +734,15 @@ export class ParentPlanProductionController {
   @SkipLogging()
   @ApiOperation({
     summary: 'Download template CSV untuk import population',
-    description:
-      'Mendownload template CSV yang berisi format kolom yang diperlukan',
+    description: 'Mendownload template CSV yang berisi format kolom yang diperlukan',
   })
   downloadTemplate(): StreamableFile {
     try {
-      const file = join(
-        process.cwd(),
-        'src/modules/parent-plan-production/template-monthly-plan-production-import.csv',
-      );
+      const file = join(process.cwd(), 'src/modules/parent-plan-production/template-monthly-plan-production-import.csv');
       const stream = createReadStream(file);
       return new StreamableFile(stream, {
         type: 'text/csv',
-        disposition:
-          'attachment; filename="template-monthly-plan-production-import.csv"',
+        disposition: 'attachment; filename="template-monthly-plan-production-import.csv"',
       });
     } catch (error) {
       throw new InternalServerErrorException('Failed to download CSV template');

@@ -1,12 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsNumberString,
-  IsEnum,
-  IsArray,
-} from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsNumberString, IsEnum, IsArray } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export enum ActivityStatus {
@@ -162,7 +155,7 @@ export class GetActivitiesQueryDto {
   @IsOptional()
   @Transform(({ value }) => {
     if (typeof value === 'string') {
-      return value.split(',').map(s => s.trim());
+      return value.split(',').map((s) => s.trim());
     }
     if (Array.isArray(value)) {
       return value;

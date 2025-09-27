@@ -1,11 +1,4 @@
-import {
-  CallHandler,
-  ExecutionContext,
-  Injectable,
-  NestInterceptor,
-  Logger,
-  BadRequestException,
-} from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor, Logger, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import multer from 'multer';
 import { Observable, catchError, tap, throwError } from 'rxjs';
@@ -28,8 +21,7 @@ export class LoggerInterceptor implements NestInterceptor {
         const duration = Date.now() - now;
         this.logger.log(` ${method} ${url} [${duration}ms]`);
         if (process.env.DEBUG == 'yes') {
-          const safeResponse =
-            res && typeof res === 'object' && 'data' in res ? res.data : res;
+          const safeResponse = res && typeof res === 'object' && 'data' in res ? res.data : res;
 
           this.logger.debug(
             JSON.stringify({
@@ -43,13 +35,8 @@ export class LoggerInterceptor implements NestInterceptor {
       }),
       catchError((error) => {
         const duration = Date.now() - now;
-        this.logger.error(
-          ` ${method} ${url} [${duration}ms] Error: ${error.message}`,
-        );
-        if (process.env.DEBUG == 'yes')
-          this.logger.debug(
-            ` ${JSON.stringify({ method: method, url: url, body: sanitizedBody })}`,
-          );
+        this.logger.error(` ${method} ${url} [${duration}ms] Error: ${error.message}`);
+        if (process.env.DEBUG == 'yes') this.logger.debug(` ${JSON.stringify({ method: method, url: url, body: sanitizedBody })}`);
 
         return throwError(() => error);
       }),
@@ -64,21 +51,12 @@ export const MemoryFileInterceptor = () =>
     fileFilter: (req, file, callback) => {
       const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg'];
       if (!allowedMimeTypes.includes(file.mimetype)) {
-        return callback(
-          new BadRequestException(
-            'Invalid file type. Only JPEG, PNG, and PDF are allowed.',
-          ),
-          false,
-        );
+        return callback(new BadRequestException('Invalid file type. Only JPEG, PNG, and PDF are allowed.'), false);
       }
       callback(null, true);
     },
   });
 
-function memoryFileFilter(
-  req: Express.Request,
-  file: Express.Multer.File,
-  callback: multer.FileFilterCallback,
-): void {
+function memoryFileFilter(req: Express.Request, file: Express.Multer.File, callback: multer.FileFilterCallback): void {
   callback(null, true);
 }

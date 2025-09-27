@@ -1,13 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  OneToMany,
-  JoinColumn,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { Menu } from '../../menu/entities/menu.entity';
 import { Permission } from '../../permission/entities/permission.entity';
 import { RoleHasPermission } from '../../role-has-permission/entities/role-has-permission.entity';
@@ -44,9 +35,6 @@ export class MenuHasPermission {
   @JoinColumn({ name: 'permission_id' })
   permission: Permission;
 
-  @OneToMany(
-    () => RoleHasPermission,
-    (roleHasPermission) => roleHasPermission.menuHasPermission,
-  )
+  @OneToMany(() => RoleHasPermission, (roleHasPermission) => roleHasPermission.menuHasPermission)
   roleHasPermissions: RoleHasPermission[];
 }

@@ -1,8 +1,4 @@
-import {
-  registerDecorator,
-  ValidationOptions,
-  ValidationArguments,
-} from 'class-validator';
+import { registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator';
 
 /**
  * Custom validator untuk memastikan value adalah float/number yang valid
@@ -50,11 +46,7 @@ export function IsValidFloat(validationOptions?: ValidationOptions) {
 /**
  * Custom validator untuk memastikan value adalah float dengan range tertentu
  */
-export function IsFloatInRange(
-  min: number,
-  max: number,
-  validationOptions?: ValidationOptions,
-) {
+export function IsFloatInRange(min: number, max: number, validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isFloatInRange',
@@ -137,11 +129,7 @@ export function IsNullableFloat(validationOptions?: ValidationOptions) {
 /**
  * Custom validator untuk memastikan value adalah float yang nullable dengan range tertentu
  */
-export function IsNullableFloatInRange(
-  min: number,
-  max: number,
-  validationOptions?: ValidationOptions,
-) {
+export function IsNullableFloatInRange(min: number, max: number, validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isNullableFloatInRange',

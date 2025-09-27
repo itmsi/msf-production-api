@@ -1,15 +1,5 @@
 import { Type } from 'class-transformer';
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsNumber,
-  IsString,
-  MinLength,
-  MaxLength,
-  IsOptional,
-  IsNumberString,
-  Min,
-} from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumber, IsString, MinLength, MaxLength, IsOptional, IsNumberString, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateRolesDto {

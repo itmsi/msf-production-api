@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-} from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
 import { request } from 'express';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -18,10 +13,7 @@ export class NumberFormatInterceptor implements NestInterceptor {
   constructor(private readonly reflector: Reflector) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const skip = this.reflector.get<boolean>(
-      SKIP_LOGGING_KEY,
-      context.getHandler(),
-    );
+    const skip = this.reflector.get<boolean>(SKIP_LOGGING_KEY, context.getHandler());
 
     if (skip) {
       return next.handle();

@@ -3,6 +3,7 @@
 ## 1. Create Data
 
 ### Request
+
 ```bash
 curl -X POST http://localhost:3000/effective-working-hours \
   -H "Content-Type: application/json" \
@@ -20,6 +21,7 @@ curl -X POST http://localhost:3000/effective-working-hours \
 ```
 
 ### Response
+
 ```json
 {
   "statusCode": 200,
@@ -42,12 +44,14 @@ curl -X POST http://localhost:3000/effective-working-hours \
 ## 2. Get All Data dengan Filter
 
 ### Request
+
 ```bash
 curl -X GET "http://localhost:3000/effective-working-hours?startDate=2024-01-01&endDate=2024-01-31&lossType=STB&keyword=standby&page=1&limit=10" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 ### Response
+
 ```json
 {
   "statusCode": 200,
@@ -77,12 +81,14 @@ curl -X GET "http://localhost:3000/effective-working-hours?startDate=2024-01-01&
 ## 3. Get Data by ID
 
 ### Request
+
 ```bash
 curl -X GET http://localhost:3000/effective-working-hours/1 \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 ### Response
+
 ```json
 {
   "statusCode": 200,
@@ -105,6 +111,7 @@ curl -X GET http://localhost:3000/effective-working-hours/1 \
 ## 4. Update Data
 
 ### Request
+
 ```bash
 curl -X PATCH http://localhost:3000/effective-working-hours/1 \
   -H "Content-Type: application/json" \
@@ -116,6 +123,7 @@ curl -X PATCH http://localhost:3000/effective-working-hours/1 \
 ```
 
 ### Response
+
 ```json
 {
   "statusCode": 200,
@@ -138,12 +146,14 @@ curl -X PATCH http://localhost:3000/effective-working-hours/1 \
 ## 5. Delete Data
 
 ### Request
+
 ```bash
 curl -X DELETE http://localhost:3000/effective-working-hours/1 \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 ### Response
+
 ```json
 {
   "statusCode": 200,
@@ -155,6 +165,7 @@ curl -X DELETE http://localhost:3000/effective-working-hours/1 \
 ## Contoh Data untuk Testing
 
 ### Standby Time
+
 ```json
 {
   "dateActivity": "2024-01-15",
@@ -169,6 +180,7 @@ curl -X DELETE http://localhost:3000/effective-working-hours/1 \
 ```
 
 ### Breakdown Time
+
 ```json
 {
   "dateActivity": "2024-01-15",
@@ -185,19 +197,24 @@ curl -X DELETE http://localhost:3000/effective-working-hours/1 \
 ## Filter Options
 
 ### Date Range
+
 - `startDate`: Format YYYY-MM-DD
 - `endDate`: Format YYYY-MM-DD
 
 ### Loss Type
+
 - `STB`: StandBy
 - `BD`: BreakDown
 
 ### Shift
+
 - `DS`: Day Shift
 - `NS`: Night Shift
 
 ### Keyword Search
+
 Mencari di kolom:
+
 - description
 - activity name
 - unit name
@@ -205,5 +222,6 @@ Mencari di kolom:
 - model name
 
 ### Pagination
+
 - `page`: Halaman (default: 1)
 - `limit`: Limit per halaman (default: 10)

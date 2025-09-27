@@ -1,9 +1,5 @@
 import { validate } from 'class-validator';
-import {
-  CreateBargeDto,
-  UpdateBargeDto,
-  GetBargesQueryDto,
-} from '../dto/barge.dto';
+import { CreateBargeDto, UpdateBargeDto, GetBargesQueryDto } from '../dto/barge.dto';
 
 describe('Barge DTOs', () => {
   describe('CreateBargeDto', () => {

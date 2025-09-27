@@ -9,6 +9,7 @@ Modul ini menangani manajemen employee dalam sistem MSF Production. Employee ada
 Mendapatkan semua data employee dengan pagination, filtering, dan sorting.
 
 **Query Parameters:**
+
 - `page` (optional): Nomor halaman (default: 1)
 - `limit` (optional): Jumlah data per halaman (default: 10, max: 100)
 - `search` (optional): Pencarian umum di field firstName, lastName, department, position
@@ -18,11 +19,13 @@ Mendapatkan semua data employee dengan pagination, filtering, dan sorting.
 - `sortOrder` (optional): Urutan sorting (ASC atau DESC)
 
 **Contoh Request:**
+
 ```bash
 GET /api/employees?page=1&limit=10&search=john&department=IT&status=active&sortBy=firstName&sortOrder=ASC
 ```
 
 **Response Success (200):**
+
 ```json
 {
   "statusCode": 200,
@@ -55,14 +58,17 @@ GET /api/employees?page=1&limit=10&search=john&department=IT&status=active&sortB
 Mendapatkan data employee berdasarkan ID.
 
 **Path Parameters:**
+
 - `id`: ID employee (number)
 
 **Contoh Request:**
+
 ```bash
 GET /api/employees/1
 ```
 
 **Response Success (200):**
+
 ```json
 {
   "statusCode": 200,
@@ -88,14 +94,17 @@ GET /api/employees/1
 Mendapatkan semua employee berdasarkan department.
 
 **Path Parameters:**
+
 - `department`: Nama department (string)
 
 **Contoh Request:**
+
 ```bash
 GET /api/employees/by-department/IT
 ```
 
 **Response Success (200):**
+
 ```json
 {
   "statusCode": 200,
@@ -123,14 +132,17 @@ GET /api/employees/by-department/IT
 Mendapatkan semua employee berdasarkan status.
 
 **Path Parameters:**
+
 - `status`: Status employee (active, inactive, resign, on-leave)
 
 **Contoh Request:**
+
 ```bash
 GET /api/employees/by-status/active
 ```
 
 **Response Success (200):**
+
 ```json
 {
   "statusCode": 200,
@@ -158,6 +170,7 @@ GET /api/employees/by-status/active
 Membuat employee baru dengan validasi duplikasi NIP.
 
 **Request Body:**
+
 ```json
 {
   "firstName": "John",
@@ -171,6 +184,7 @@ Membuat employee baru dengan validasi duplikasi NIP.
 ```
 
 **Field Validation:**
+
 - `firstName`: String, required, min: 1, max: 100 karakter
 - `lastName`: String, required, min: 1, max: 100 karakter
 - `department`: String, required, min: 1, max: 100 karakter
@@ -180,6 +194,7 @@ Membuat employee baru dengan validasi duplikasi NIP.
 - `salary`: String, optional, min: 1, max: 20 karakter
 
 **Response Success (201):**
+
 ```json
 {
   "statusCode": 201,
@@ -205,9 +220,11 @@ Membuat employee baru dengan validasi duplikasi NIP.
 Mengupdate data employee berdasarkan ID.
 
 **Path Parameters:**
+
 - `id`: ID employee yang akan diupdate (number)
 
 **Request Body:**
+
 ```json
 {
   "firstName": "John Updated",
@@ -217,6 +234,7 @@ Mengupdate data employee berdasarkan ID.
 ```
 
 **Response Success (200):**
+
 ```json
 {
   "statusCode": 200,
@@ -242,14 +260,17 @@ Mengupdate data employee berdasarkan ID.
 Menghapus data employee berdasarkan ID (soft delete).
 
 **Path Parameters:**
+
 - `id`: ID employee yang akan dihapus (number)
 
 **Contoh Request:**
+
 ```bash
 DELETE /api/employees/1
 ```
 
 **Response Success (200):**
+
 ```json
 {
   "statusCode": 200,
@@ -261,6 +282,7 @@ DELETE /api/employees/1
 ## Error Responses
 
 ### Bad Request (400)
+
 ```json
 {
   "statusCode": 400,
@@ -271,6 +293,7 @@ DELETE /api/employees/1
 ```
 
 ### Unauthorized (401)
+
 ```json
 {
   "statusCode": 401,
@@ -281,6 +304,7 @@ DELETE /api/employees/1
 ```
 
 ### Not Found (404)
+
 ```json
 {
   "statusCode": 404,
@@ -291,6 +315,7 @@ DELETE /api/employees/1
 ```
 
 ### Conflict (409)
+
 ```json
 {
   "statusCode": 409,
@@ -301,6 +326,7 @@ DELETE /api/employees/1
 ```
 
 ### Internal Server Error (500)
+
 ```json
 {
   "statusCode": 500,
@@ -321,24 +347,26 @@ Authorization: Bearer <jwt_token>
 ## Data Model
 
 ### Employee Entity
+
 ```typescript
 {
-  id: number;           // Primary key, auto increment
-  firstName: string;    // Nama depan (max 100 karakter)
-  lastName: string;     // Nama belakang (max 100 karakter)
-  department: string;   // Department (max 100 karakter)
-  position: string;     // Posisi/jabatan (max 100 karakter)
-  nip: number;          // NIP/Employee ID (9 digit)
-  status: string;       // Status employee (active, inactive, resign, on-leave)
-  salary: string;       // Gaji (optional, max 20 karakter)
-  createdAt: Date;      // Timestamp pembuatan
-  updatedAt: Date;      // Timestamp update terakhir
-  deletedAt: Date;      // Timestamp soft delete (nullable)
-  name: string;         // Virtual property: firstName + lastName
+  id: number; // Primary key, auto increment
+  firstName: string; // Nama depan (max 100 karakter)
+  lastName: string; // Nama belakang (max 100 karakter)
+  department: string; // Department (max 100 karakter)
+  position: string; // Posisi/jabatan (max 100 karakter)
+  nip: number; // NIP/Employee ID (9 digit)
+  status: string; // Status employee (active, inactive, resign, on-leave)
+  salary: string; // Gaji (optional, max 20 karakter)
+  createdAt: Date; // Timestamp pembuatan
+  updatedAt: Date; // Timestamp update terakhir
+  deletedAt: Date; // Timestamp soft delete (nullable)
+  name: string; // Virtual property: firstName + lastName
 }
 ```
 
 ### Employee Status Values
+
 - `active` - Karyawan aktif
 - `inactive` - Karyawan tidak aktif
 - `resign` - Karyawan sudah resign
@@ -396,6 +424,7 @@ curl -X PUT http://localhost:3000/api/employees/1 \
 ## Testing
 
 Untuk testing endpoint ini, gunakan file test yang tersedia:
+
 - `employee.controller.spec.ts`
 - `employee.service.spec.ts`
 

@@ -1,11 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
-import {
-  DayProductionItemDto,
-  DayProductionQueryDto,
-  MtdProductionItemDto,
-  MtdProductionQueryDto,
-} from './dto/mtd-production.dto';
+import { DayProductionItemDto, DayProductionQueryDto, MtdProductionItemDto, MtdProductionQueryDto } from './dto/mtd-production.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BaseDataPro } from '../base-data-production';
 import { EffectiveWorkingHours, LossType } from '../effective-working-hours';
@@ -23,14 +18,7 @@ export class MtdProductionService {
     private readonly dataSource: DataSource,
   ) {}
   /**---------------------------------- PRIVATE -------------------------------------*/
-  private buildMainQuery(
-    startDate: string,
-    endDate: string,
-    skip: number,
-    limit: number,
-    unit_id?: string,
-    shift?: string,
-  ) {
+  private buildMainQuery(startDate: string, endDate: string, skip: number, limit: number, unit_id?: string, shift?: string) {
     const query = this.baseDataProductionRepository
       .createQueryBuilder('rbdp')
       .select('rpbdp.population_id', 'population_id')
@@ -41,25 +29,11 @@ export class MtdProductionService {
       .addSelect('SUM(rbdp.total_hm::numeric)', 'ewh')
       .addSelect('SUM(rbdp.total_km::numeric)', 'total_km')
       .addSelect('SUM(rbdp.total_hm::numeric)', 'total_hm')
-      .addSelect(
-        'ROUND(SUM(rbdp.total_km::numeric) / NULLIF(SUM(rbdp.total_hm::numeric),0),2)',
-        'speed',
-      )
-      .addSelect(
-        'ROUND(SUM(rbdp.total_hm::numeric) / NULLIF(SUM(rbdp.total_vessel::numeric),0),2)',
-        'ct',
-      )
-      .leftJoin(
-        'r_parent_base_data_pro',
-        'rpbdp',
-        'rpbdp.id = rbdp.parent_base_data_pro_id',
-      )
+      .addSelect('ROUND(SUM(rbdp.total_km::numeric) / NULLIF(SUM(rbdp.total_hm::numeric),0),2)', 'speed')
+      .addSelect('ROUND(SUM(rbdp.total_hm::numeric) / NULLIF(SUM(rbdp.total_vessel::numeric),0),2)', 'ct')
+      .leftJoin('r_parent_base_data_pro', 'rpbdp', 'rpbdp.id = rbdp.parent_base_data_pro_id')
       .leftJoin('m_population', 'm', 'm.id = rpbdp.population_id')
-      .leftJoin(
-        'm_unit_type',
-        'mut',
-        "mut.id = m.unit_type_id AND mut.unit_name = 'Dump Truck'",
-      )
+      .leftJoin('m_unit_type', 'mut', "mut.id = m.unit_type_id AND mut.unit_name = 'Dump Truck'")
       .where('rpbdp.activity_date BETWEEN :startDate AND :endDate', {
         startDate,
         endDate,
@@ -76,31 +50,15 @@ export class MtdProductionService {
       });
     }
 
-    return query
-      .groupBy('rpbdp.population_id, m.no_unit, m.tyre_type,rpbdp.shift')
-      .offset(skip)
-      .limit(limit);
+    return query.groupBy('rpbdp.population_id, m.no_unit, m.tyre_type,rpbdp.shift').offset(skip).limit(limit);
   }
 
-  private buildCountQuery(
-    startDate: string,
-    endDate: string,
-    unit_id?: string,
-    shift?: string,
-  ) {
+  private buildCountQuery(startDate: string, endDate: string, unit_id?: string, shift?: string) {
     const query = this.baseDataProductionRepository
       .createQueryBuilder('rbdp')
-      .leftJoin(
-        'r_parent_base_data_pro',
-        'rpbdp',
-        'rpbdp.id = rbdp.parent_base_data_pro_id',
-      )
+      .leftJoin('r_parent_base_data_pro', 'rpbdp', 'rpbdp.id = rbdp.parent_base_data_pro_id')
       .leftJoin('m_population', 'm', 'm.id = rpbdp.population_id')
-      .leftJoin(
-        'm_unit_type',
-        'mut',
-        "mut.id = m.unit_type_id AND mut.unit_name = 'Dump Truck'",
-      )
+      .leftJoin('m_unit_type', 'mut', "mut.id = m.unit_type_id AND mut.unit_name = 'Dump Truck'")
       .where('rpbdp.activity_date BETWEEN :startDate AND :endDate', {
         startDate,
         endDate,
@@ -116,11 +74,7 @@ export class MtdProductionService {
     return query.select('COUNT(DISTINCT rpbdp.population_id)', 'total');
   }
 
-  private async getBreakDown(
-    startDate: string,
-    endDate: string,
-    unitId: number,
-  ) {
+  private async getBreakDown(startDate: string, endDate: string, unitId: number) {
     try {
       const qb = this.dataSource
         .createQueryBuilder()
@@ -136,27 +90,17 @@ export class MtdProductionService {
       const result = await qb.getRawOne();
       return result.sum / 60;
     } catch (error) {
-      throw new BadRequestException(
-        `Failed mendapatkan data: ${error.message}`,
-      );
+      throw new BadRequestException(`Failed mendapatkan data: ${error.message}`);
     }
   }
 
-  private async getOreHauling(
-    startDate: string,
-    endDate: string,
-    unitId: number,
-  ) {
+  private async getOreHauling(startDate: string, endDate: string, unitId: number) {
     try {
       const qb = this.dataSource
         .createQueryBuilder()
         .select('COALESCE(SUM(rbdp.total_vessel),0)', 'sum')
         .from('r_base_data_pro', 'rbdp')
-        .leftJoin(
-          'r_parent_base_data_pro',
-          'rpbdp',
-          'rpbdp.id=rbdp.parent_base_data_pro_id',
-        )
+        .leftJoin('r_parent_base_data_pro', 'rpbdp', 'rpbdp.id=rbdp.parent_base_data_pro_id')
         .where('rpbdp.activity_date BETWEEN :startDate AND :endDate', {
           startDate,
           endDate,
@@ -172,27 +116,17 @@ export class MtdProductionService {
 
       return result.sum;
     } catch (error) {
-      throw new BadRequestException(
-        `Failed mendapatkan data: ${error.message}`,
-      );
+      throw new BadRequestException(`Failed mendapatkan data: ${error.message}`);
     }
   }
 
-  private async getOreBarge(
-    startDate: string,
-    endDate: string,
-    unitId: number,
-  ) {
+  private async getOreBarge(startDate: string, endDate: string, unitId: number) {
     try {
       const qb = this.dataSource
         .createQueryBuilder()
         .select('COALESCE(SUM(rbdp.total_vessel),0)', 'sum')
         .from('r_base_data_pro', 'rbdp')
-        .leftJoin(
-          'r_parent_base_data_pro',
-          'rpbdp',
-          'rpbdp.id=rbdp.parent_base_data_pro_id',
-        )
+        .leftJoin('r_parent_base_data_pro', 'rpbdp', 'rpbdp.id=rbdp.parent_base_data_pro_id')
         .where('rpbdp.activity_date BETWEEN :startDate AND :endDate', {
           startDate,
           endDate,
@@ -208,29 +142,18 @@ export class MtdProductionService {
 
       return result.sum;
     } catch (error) {
-      throw new BadRequestException(
-        `Failed mendapatkan data: ${error.message}`,
-      );
+      throw new BadRequestException(`Failed mendapatkan data: ${error.message}`);
     }
   }
 
-  private async getMaterial(
-    startDate: string,
-    endDate: string,
-    unitId: number,
-    material: string,
-  ) {
+  private async getMaterial(startDate: string, endDate: string, unitId: number, material: string) {
     {
       try {
         const qb = this.dataSource
           .createQueryBuilder()
           .select('COALESCE(SUM(rbdp.total_vessel),0)', 'sum')
           .from('r_base_data_pro', 'rbdp')
-          .leftJoin(
-            'r_parent_base_data_pro',
-            'rpbdp',
-            'rpbdp.id=rbdp.parent_base_data_pro_id',
-          )
+          .leftJoin('r_parent_base_data_pro', 'rpbdp', 'rpbdp.id=rbdp.parent_base_data_pro_id')
           .where('rpbdp.activity_date BETWEEN :startDate AND :endDate', {
             startDate,
             endDate,
@@ -242,19 +165,12 @@ export class MtdProductionService {
 
         return result.sum;
       } catch (error) {
-        throw new BadRequestException(
-          `Failed mendapatkan data: ${error.message}`,
-        );
+        throw new BadRequestException(`Failed mendapatkan data: ${error.message}`);
       }
     }
   }
 
-  private async getBreakdownTimeByRange(
-    noUnit: string,
-    startDate: string,
-    endDate: string,
-    shift: string,
-  ): Promise<number> {
+  private async getBreakdownTimeByRange(noUnit: string, startDate: string, endDate: string, shift: string): Promise<number> {
     try {
       const result = await this.effectiveWorkingHoursRepository
         .createQueryBuilder('rlt')
@@ -287,16 +203,13 @@ export class MtdProductionService {
     const page = parseInt(filters.page ?? '1', 10);
     const limit = parseInt(filters.limit ?? '10', 10);
     const skip = (page - 1) * limit;
-    const startDate =
-      filters.startDate ?? moment().startOf('month').format('YYYY-MM-DD');
-    const endDate =
-      filters.endDate ?? moment().endOf('month').format('YYYY-MM-DD');
+    const startDate = filters.startDate ?? moment().startOf('month').format('YYYY-MM-DD');
+    const endDate = filters.endDate ?? moment().endOf('month').format('YYYY-MM-DD');
     const unit_id = filters.unit;
 
     const toNum = (v: any) => Number(v) || 0;
 
-    const safeRatio = (num: number, den: number): string =>
-      den ? `${Math.round((num / den) * 10000) / 100}%` : '0%';
+    const safeRatio = (num: number, den: number): string => (den ? `${Math.round((num / den) * 10000) / 100}%` : '0%');
     const formulaMap: Record<string, { ore: number; quarry: number }> = {
       '6x4': { ore: 26.56, quarry: 16.6 },
       '8x4': { ore: 29.56, quarry: 18.56 },
@@ -304,13 +217,7 @@ export class MtdProductionService {
 
     try {
       const [rows, { total }] = await Promise.all([
-        this.buildMainQuery(
-          startDate,
-          endDate,
-          skip,
-          limit,
-          unit_id,
-        ).getRawMany(),
+        this.buildMainQuery(startDate, endDate, skip, limit, unit_id).getRawMany(),
         this.buildCountQuery(startDate, endDate, unit_id).getRawOne(),
       ]);
 
@@ -323,20 +230,14 @@ export class MtdProductionService {
           const speed = toNum(row.speed);
           const ct = toNum(row.ct);
           const { ore = 0, quarry = 0 } = formulaMap[row.tyre_type] || {};
-          const [breakdown, oreHauling, quarryVal, oreBarge, ob, boulder] =
-            await Promise.all([
-              this.getBreakDown(startDate, endDate, row.population_id),
-              this.getOreHauling(startDate, endDate, row.population_id),
-              this.getMaterial(startDate, endDate, row.population_id, 'quarry'),
-              this.getOreBarge(startDate, endDate, row.population_id),
-              this.getMaterial(startDate, endDate, row.population_id, 'ob'),
-              this.getMaterial(
-                startDate,
-                endDate,
-                row.population_id,
-                'boulder',
-              ),
-            ]);
+          const [breakdown, oreHauling, quarryVal, oreBarge, ob, boulder] = await Promise.all([
+            this.getBreakDown(startDate, endDate, row.population_id),
+            this.getOreHauling(startDate, endDate, row.population_id),
+            this.getMaterial(startDate, endDate, row.population_id, 'quarry'),
+            this.getOreBarge(startDate, endDate, row.population_id),
+            this.getMaterial(startDate, endDate, row.population_id, 'ob'),
+            this.getMaterial(startDate, endDate, row.population_id, 'boulder'),
+          ]);
 
           const oreHaulingTon = oreHauling * ore;
           const quarryTon = quarryVal * quarry;
@@ -376,14 +277,7 @@ export class MtdProductionService {
         }),
       );
 
-      return paginateResponse(
-        results,
-        parseInt(total, 10),
-        page,
-        limit,
-        'retrieve data control mtd production successfully',
-        200,
-      );
+      return paginateResponse(results, parseInt(total, 10), page, limit, 'retrieve data control mtd production successfully', 200);
     } catch (error) {
       throw new BadRequestException(`Gagal mendapatkan data: ${error.message}`);
     }
@@ -394,15 +288,12 @@ export class MtdProductionService {
     const limit = parseInt(filters.limit ?? '10', 10);
     const skip = (page - 1) * limit;
     const shift = filters.shift?.toLowerCase() ?? '';
-    const startDate =
-      filters.startDate ?? moment().startOf('month').format('YYYY-MM-DD');
-    const endDate =
-      filters.endDate ?? moment().endOf('month').format('YYYY-MM-DD');
+    const startDate = filters.startDate ?? moment().startOf('month').format('YYYY-MM-DD');
+    const endDate = filters.endDate ?? moment().endOf('month').format('YYYY-MM-DD');
 
     const toNum = (v: any) => Number(v) || 0;
 
-    const safeRatio = (num: number, den: number): string =>
-      den ? `${Math.round((num / den) * 10000) / 100}%` : '0%';
+    const safeRatio = (num: number, den: number): string => (den ? `${Math.round((num / den) * 10000) / 100}%` : '0%');
     const formulaMap: Record<string, { ore: number; quarry: number }> = {
       '6x4': { ore: 26.56, quarry: 16.6 },
       '8x4': { ore: 29.56, quarry: 18.56 },
@@ -410,14 +301,7 @@ export class MtdProductionService {
 
     try {
       const [rows, { total }] = await Promise.all([
-        this.buildMainQuery(
-          startDate,
-          endDate,
-          skip,
-          limit,
-          '',
-          shift,
-        ).getRawMany(),
+        this.buildMainQuery(startDate, endDate, skip, limit, '', shift).getRawMany(),
         this.buildCountQuery(startDate, endDate, '', shift).getRawOne(),
       ]);
 
@@ -430,20 +314,14 @@ export class MtdProductionService {
           const speed = toNum(row.speed);
           const ct = toNum(row.ct);
           const { ore = 0, quarry = 0 } = formulaMap[row.tyre_type] || {};
-          const [breakdown, oreHauling, quarryVal, oreBarge, ob, boulder] =
-            await Promise.all([
-              this.getBreakDown(startDate, endDate, row.population_id),
-              this.getOreHauling(startDate, endDate, row.population_id),
-              this.getMaterial(startDate, endDate, row.population_id, 'quarry'),
-              this.getOreBarge(startDate, endDate, row.population_id),
-              this.getMaterial(startDate, endDate, row.population_id, 'ob'),
-              this.getMaterial(
-                startDate,
-                endDate,
-                row.population_id,
-                'boulder',
-              ),
-            ]);
+          const [breakdown, oreHauling, quarryVal, oreBarge, ob, boulder] = await Promise.all([
+            this.getBreakDown(startDate, endDate, row.population_id),
+            this.getOreHauling(startDate, endDate, row.population_id),
+            this.getMaterial(startDate, endDate, row.population_id, 'quarry'),
+            this.getOreBarge(startDate, endDate, row.population_id),
+            this.getMaterial(startDate, endDate, row.population_id, 'ob'),
+            this.getMaterial(startDate, endDate, row.population_id, 'boulder'),
+          ]);
 
           const oreHaulingTon = oreHauling * ore;
           const quarryTon = quarryVal * quarry;
@@ -484,14 +362,7 @@ export class MtdProductionService {
         }),
       );
 
-      return paginateResponse(
-        results,
-        parseInt(total, 10),
-        page,
-        limit,
-        'retrieve data control mtd production successfully',
-        200,
-      );
+      return paginateResponse(results, parseInt(total, 10), page, limit, 'retrieve data control mtd production successfully', 200);
     } catch (error) {
       throw new BadRequestException(`Gagal mendapatkan data: ${error.message}`);
     }

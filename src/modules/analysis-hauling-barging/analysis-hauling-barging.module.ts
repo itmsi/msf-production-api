@@ -12,14 +12,7 @@ import { ParentPlanProduction } from '../parent-plan-production/entities/parent-
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      AnalysisHaulingBarging,
-      BaseDataPro,
-      ParentBaseDataPro,
-      Population,
-      PlanProduction,
-      ParentPlanProduction,
-    ]),
+    TypeOrmModule.forFeature([AnalysisHaulingBarging, BaseDataPro, ParentBaseDataPro, Population, PlanProduction, ParentPlanProduction]),
   ],
   controllers: [AnalysisHaulingBargingController],
   providers: [AnalysisHaulingBargingService, ProductionFormulaService],

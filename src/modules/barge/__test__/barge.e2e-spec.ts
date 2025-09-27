@@ -77,10 +77,7 @@ describe('BargeController (e2e)', () => {
         capacity: -1, // Invalid capacity
       };
 
-      return request(app.getHttpServer())
-        .post('/barges')
-        .send(invalidBargeDto)
-        .expect(400);
+      return request(app.getHttpServer()).post('/barges').send(invalidBargeDto).expect(400);
     });
   });
 
@@ -97,10 +94,7 @@ describe('BargeController (e2e)', () => {
         remarks: 'Test remarks',
       };
 
-      const createResponse = await request(app.getHttpServer())
-        .post('/barges')
-        .send(createBargeDto)
-        .expect(201);
+      const createResponse = await request(app.getHttpServer()).post('/barges').send(createBargeDto).expect(201);
 
       const bargeId = createResponse.body.data.id;
 
@@ -125,10 +119,7 @@ describe('BargeController (e2e)', () => {
         remarks: 'Test remarks',
       };
 
-      const createResponse = await request(app.getHttpServer())
-        .post('/barges')
-        .send(createBargeDto)
-        .expect(201);
+      const createResponse = await request(app.getHttpServer()).post('/barges').send(createBargeDto).expect(201);
 
       const bargeId = createResponse.body.data.id;
 
@@ -154,10 +145,7 @@ describe('BargeController (e2e)', () => {
         name: 'Updated Name',
       };
 
-      return request(app.getHttpServer())
-        .put('/barges/999')
-        .send(updateBargeDto)
-        .expect(404);
+      return request(app.getHttpServer()).put('/barges/999').send(updateBargeDto).expect(404);
     });
   });
 
@@ -171,10 +159,7 @@ describe('BargeController (e2e)', () => {
         remarks: 'Test remarks',
       };
 
-      const createResponse = await request(app.getHttpServer())
-        .post('/barges')
-        .send(createBargeDto)
-        .expect(201);
+      const createResponse = await request(app.getHttpServer()).post('/barges').send(createBargeDto).expect(201);
 
       const bargeId = createResponse.body.data.id;
 
@@ -203,17 +188,12 @@ describe('BargeController (e2e)', () => {
         remarks: 'Test remarks',
       };
 
-      const createResponse = await request(app.getHttpServer())
-        .post('/barges')
-        .send(createBargeDto)
-        .expect(201);
+      const createResponse = await request(app.getHttpServer()).post('/barges').send(createBargeDto).expect(201);
 
       const bargeId = createResponse.body.data.id;
 
       // Then delete the barge
-      await request(app.getHttpServer())
-        .delete(`/barges/${bargeId}`)
-        .expect(200);
+      await request(app.getHttpServer()).delete(`/barges/${bargeId}`).expect(200);
 
       // Then restore the barge
       return request(app.getHttpServer())
@@ -226,9 +206,7 @@ describe('BargeController (e2e)', () => {
     });
 
     it('should return 404 for non-existent barge', () => {
-      return request(app.getHttpServer())
-        .post('/barges/999/restore')
-        .expect(404);
+      return request(app.getHttpServer()).post('/barges/999/restore').expect(404);
     });
   });
 });

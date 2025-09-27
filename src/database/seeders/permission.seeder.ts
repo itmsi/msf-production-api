@@ -42,28 +42,21 @@ export class PermissionSeeder {
 
     for (const permissionData of permissionsData) {
       // Check if permission already exists
-      const existingPermission = await this.dataSource.query(
-        'SELECT * FROM m_permission WHERE permission_code = $1',
-        [permissionData.permissionCode],
-      );
+      const existingPermission = await this.dataSource.query('SELECT * FROM m_permission WHERE permission_code = $1', [
+        permissionData.permissionCode,
+      ]);
 
       if (existingPermission.length === 0) {
         // Create new permission
         await this.dataSource.query(
           'INSERT INTO m_permission (permission_name, permission_code, description, "createdAt", "updatedAt") VALUES ($1, $2, $3, NOW(), NOW())',
-          [
-            permissionData.permissionName,
-            permissionData.permissionCode,
-            permissionData.description,
-          ],
+          [permissionData.permissionName, permissionData.permissionCode, permissionData.description],
         );
         createdCount++;
         console.log(`✅ Permission created: ${permissionData.permissionCode}`);
       } else {
         skippedCount++;
-        console.log(
-          `⏭️  Permission already exists: ${permissionData.permissionCode}`,
-        );
+        console.log(`⏭️  Permission already exists: ${permissionData.permissionCode}`);
       }
     }
 

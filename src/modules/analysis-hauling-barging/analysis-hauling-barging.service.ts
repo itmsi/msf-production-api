@@ -84,13 +84,7 @@ export class AnalysisHaulingBargingService {
     const offset = (page - 1) * limit;
     const paginatedData = processedData.slice(offset, offset + limit);
 
-    return paginateResponse(
-      paginatedData,
-      total,
-      page,
-      limit,
-      'Data analysis hauling barging berhasil diambil',
-    );
+    return paginateResponse(paginatedData, total, page, limit, 'Data analysis hauling barging berhasil diambil');
   }
 
   private processAnalysisData(rawData: any[]): AnalysisHaulingBargingResponseDto[] {

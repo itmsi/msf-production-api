@@ -38,15 +38,9 @@ describe('Generate Daily Data Tests', () => {
       ],
     }).compile();
 
-    service = module.get<ParentPlanProductionService>(
-      ParentPlanProductionService,
-    );
-    parentPlanProductionRepository = module.get<
-      Repository<ParentPlanProduction>
-    >(getRepositoryToken(ParentPlanProduction));
-    planProductionRepository = module.get<Repository<PlanProduction>>(
-      getRepositoryToken(PlanProduction),
-    );
+    service = module.get<ParentPlanProductionService>(ParentPlanProductionService);
+    parentPlanProductionRepository = module.get<Repository<ParentPlanProduction>>(getRepositoryToken(ParentPlanProduction));
+    planProductionRepository = module.get<Repository<PlanProduction>>(getRepositoryToken(PlanProduction));
   });
 
   afterEach(() => {
@@ -92,91 +86,69 @@ describe('Generate Daily Data Tests', () => {
       },
     ];
 
-    testCases.forEach(
-      ({
-        month,
-        planDate,
-        expectedDays,
-        expectedSundays,
-        expectedAvailableDays,
-      }) => {
-        it(`should generate correct data for ${month}`, async () => {
-          const createDto: CreateParentPlanProductionDto = {
-            plan_date: planDate,
-            total_average_day_ewh: 150.0,
-            total_average_month_ewh: 4500.0,
-            total_ob_target: 1500000.0,
-            total_ore_target: 750000.0,
-            total_quarry_target: 300000.0,
-            total_sr_target: 2.0,
-            total_ore_shipment_target: 600000.0,
-            total_remaining_stock: 100000.0,
-            total_sisa_stock: 50000.0,
-            total_fleet: 25,
-          };
+    testCases.forEach(({ month, planDate, expectedDays, expectedSundays, expectedAvailableDays }) => {
+      it(`should generate correct data for ${month}`, async () => {
+        const createDto: CreateParentPlanProductionDto = {
+          plan_date: planDate,
+          total_average_day_ewh: 150.0,
+          total_average_month_ewh: 4500.0,
+          total_ob_target: 1500000.0,
+          total_ore_target: 750000.0,
+          total_quarry_target: 300000.0,
+          total_sr_target: 2.0,
+          total_ore_shipment_target: 600000.0,
+          total_remaining_stock: 100000.0,
+          total_sisa_stock: 50000.0,
+          total_fleet: 25,
+        };
 
-          // Mock existing parent check
-          mockParentPlanProductionRepository.findOne.mockResolvedValue(null);
+        // Mock existing parent check
+        mockParentPlanProductionRepository.findOne.mockResolvedValue(null);
 
-          // Mock parent creation
-          const mockParent = {
-            id: 1,
-            total_calender_day: expectedDays,
-            total_holiday_day: expectedSundays,
-            total_available_day: expectedAvailableDays,
-            ...createDto,
-          };
-          mockParentPlanProductionRepository.create.mockReturnValue(mockParent);
-          mockParentPlanProductionRepository.save.mockResolvedValue(mockParent);
+        // Mock parent creation
+        const mockParent = {
+          id: 1,
+          total_calender_day: expectedDays,
+          total_holiday_day: expectedSundays,
+          total_available_day: expectedAvailableDays,
+          ...createDto,
+        };
+        mockParentPlanProductionRepository.create.mockReturnValue(mockParent);
+        mockParentPlanProductionRepository.save.mockResolvedValue(mockParent);
 
-          // Mock old stock global
-          mockPlanProductionRepository.findOne.mockResolvedValue(null);
-          mockParentPlanProductionRepository.findOne.mockResolvedValueOnce(
-            null,
-          );
+        // Mock old stock global
+        mockPlanProductionRepository.findOne.mockResolvedValue(null);
+        mockParentPlanProductionRepository.findOne.mockResolvedValueOnce(null);
 
-          // Mock daily plan production save
-          const mockDailyData = Array(expectedDays)
-            .fill(null)
-            .map((_, index) => ({
-              id: index + 1,
-              plan_date: new Date(
-                new Date(planDate).getFullYear(),
-                new Date(planDate).getMonth(),
-                index + 1,
-              ),
+        // Mock daily plan production save
+        const mockDailyData = Array(expectedDays)
+          .fill(null)
+          .map((_, index) => ({
+            id: index + 1,
+            plan_date: new Date(new Date(planDate).getFullYear(), new Date(planDate).getMonth(), index + 1),
+            parent_plan_production_id: 1,
+          }));
+        mockPlanProductionRepository.save.mockResolvedValue(mockDailyData);
+
+        const result = await service.create(createDto);
+
+        expect(result.total_calender_day).toBe(expectedDays);
+        expect(result.total_holiday_day).toBe(expectedSundays);
+        expect(result.total_available_day).toBe(expectedAvailableDays);
+        expect(mockPlanProductionRepository.save).toHaveBeenCalledWith(
+          expect.arrayContaining([
+            expect.objectContaining({
+              plan_date: new Date(new Date(planDate).getFullYear(), new Date(planDate).getMonth(), 1),
               parent_plan_production_id: 1,
-            }));
-          mockPlanProductionRepository.save.mockResolvedValue(mockDailyData);
-
-          const result = await service.create(createDto);
-
-          expect(result.total_calender_day).toBe(expectedDays);
-          expect(result.total_holiday_day).toBe(expectedSundays);
-          expect(result.total_available_day).toBe(expectedAvailableDays);
-          expect(mockPlanProductionRepository.save).toHaveBeenCalledWith(
-            expect.arrayContaining([
-              expect.objectContaining({
-                plan_date: new Date(
-                  new Date(planDate).getFullYear(),
-                  new Date(planDate).getMonth(),
-                  1,
-                ),
-                parent_plan_production_id: 1,
-              }),
-              expect.objectContaining({
-                plan_date: new Date(
-                  new Date(planDate).getFullYear(),
-                  new Date(planDate).getMonth(),
-                  expectedDays,
-                ),
-                parent_plan_production_id: 1,
-              }),
-            ]),
-          );
-        });
-      },
-    );
+            }),
+            expect.objectContaining({
+              plan_date: new Date(new Date(planDate).getFullYear(), new Date(planDate).getMonth(), expectedDays),
+              parent_plan_production_id: 1,
+            }),
+          ]),
+        );
+      });
+    });
   });
 
   describe('Daily Data Generation Logic', () => {

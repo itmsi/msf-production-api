@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class UpdateSitesAndOperationPointsConstraints1700000000032
-  implements MigrationInterface
-{
+export class UpdateSitesAndOperationPointsConstraints1700000000032 implements MigrationInterface {
   name = 'UpdateSitesAndOperationPointsConstraints1700000000032';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

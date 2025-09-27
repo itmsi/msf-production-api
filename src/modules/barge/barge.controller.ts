@@ -1,33 +1,8 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  Put,
-  Delete,
-  UseGuards,
-  Query,
-  ParseIntPipe,
-  Request,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Put, Delete, UseGuards, Query, ParseIntPipe, Request } from '@nestjs/common';
 import { BargeService } from './barge.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiOperation,
-  ApiResponse as SwaggerApiResponse,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
-import {
-  CreateBargeDto,
-  GetBargesQueryDto,
-  UpdateBargeDto,
-  BargeDataMasterListResponseDto,
-  SingleBargeResponseDto,
-} from './dto/barge.dto';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse as SwaggerApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { CreateBargeDto, GetBargesQueryDto, UpdateBargeDto, BargeDataMasterListResponseDto, SingleBargeResponseDto } from './dto/barge.dto';
 
 @ApiTags('Barge')
 @ApiBearerAuth('jwt')
@@ -38,8 +13,7 @@ export class BargeController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary:
-      'Mendapatkan semua data barge dengan pagination, filtering, dan sorting',
+    summary: 'Mendapatkan semua data barge dengan pagination, filtering, dan sorting',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -179,8 +153,7 @@ export class BargeController {
   @Get(':id')
   @ApiOperation({
     summary: 'Mendapatkan data barge berdasarkan ID',
-    description:
-      'Endpoint untuk mengambil data barge spesifik berdasarkan ID yang diberikan',
+    description: 'Endpoint untuk mengambil data barge spesifik berdasarkan ID yang diberikan',
   })
   @ApiParam({
     name: 'id',
@@ -410,11 +383,7 @@ export class BargeController {
       },
     },
   })
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateBargeDto: UpdateBargeDto,
-    @Request() req: any,
-  ) {
+  async update(@Param('id', ParseIntPipe) id: number, @Body() updateBargeDto: UpdateBargeDto, @Request() req: any) {
     const userId = req.user?.id || 1; // Default user ID jika tidak ada
     return this.bargeService.update(id, updateBargeDto, userId);
   }
@@ -423,8 +392,7 @@ export class BargeController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Menghapus data barge berdasarkan ID (Soft Delete)',
-    description:
-      'Endpoint untuk menghapus data barge secara soft delete (tidak benar-benar dihapus dari database)',
+    description: 'Endpoint untuk menghapus data barge secara soft delete (tidak benar-benar dihapus dari database)',
   })
   @ApiParam({
     name: 'id',
@@ -500,8 +468,7 @@ export class BargeController {
   @Post(':id/restore')
   @ApiOperation({
     summary: 'Memulihkan data barge yang sudah dihapus (Soft Delete)',
-    description:
-      'Endpoint untuk memulihkan data barge yang sudah di-soft delete',
+    description: 'Endpoint untuk memulihkan data barge yang sudah di-soft delete',
   })
   @ApiParam({
     name: 'id',
@@ -556,8 +523,7 @@ export class BargeController {
   })
   @SwaggerApiResponse({
     status: 404,
-    description:
-      'Not Found - Barge tidak ditemukan atau tidak dalam status deleted',
+    description: 'Not Found - Barge tidak ditemukan atau tidak dalam status deleted',
     schema: {
       example: {
         statusCode: 404,
