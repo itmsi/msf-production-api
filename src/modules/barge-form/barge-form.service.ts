@@ -557,8 +557,6 @@ export class BargeFormService {
           let recalculatedAchievement: number | null = null;
           if (item.vol_by_survey && capacity) {
             recalculatedAchievement = Number((item.vol_by_survey / capacity).toFixed(2));
-          } else {
-            console.log('Cannot calculate achievement for item', item.id, '- vol_by_survey:', item.vol_by_survey, 'capacity:', capacity);
           }
 
           const result = {

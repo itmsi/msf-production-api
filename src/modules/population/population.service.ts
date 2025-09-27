@@ -167,32 +167,24 @@ export class PopulationService {
 
       if (isDt !== null && isDt !== undefined) {
         try {
-          console.log('✅ Condition met: Applying is_dt filter');
-
           if (isDt === true) {
             // Jika is_dt = true, hanya ambil dump truck
-            console.log('🔍 Applying filter: is_dt = true (hanya dump truck)');
             qb.andWhere('LOWER(unitType.unit_name) = LOWER(:dumpTruckName)', {
               dumpTruckName: 'dump truck',
             });
-            console.log('✅ Filter applied: Hanya dump truck (case-insensitive)');
           } else if (isDt === false) {
             // Jika is_dt = false, hanya ambil excavator
-            console.log('🔍 Applying filter: is_dt = false (hanya excavator)');
+
             qb.andWhere('LOWER(unitType.unit_name) = LOWER(:excavatorName)', {
               excavatorName: 'excavator',
             });
-            console.log('✅ Filter applied: Hanya excavator (case-insensitive)');
           }
         } catch (error) {
           console.error('❌ Error applying is_dt filter:', error);
-          console.log('🔄 Fallback: Tidak ada filter is_dt');
         }
       } else {
         console.log('✅ No is_dt parameter provided: Getting all data');
-        console.log('Reason: isDt is null or undefined - showing all unit types');
       }
-      console.log('=== END DEBUG is_dt FILTER ===');
 
       // Filter by activities_id
       if (activitiesId) {
@@ -238,23 +230,12 @@ export class PopulationService {
       // Log SQL query untuk debugging
       try {
         const sql = qb.getSql();
-        console.log('Generated SQL Query:', sql);
-        console.log('Query Parameters:', qb.getParameters());
       } catch (error) {
         console.error('Error getting SQL:', error);
       }
 
       const [result, total] = await qb.getManyAndCount();
 
-      // Log result untuk debugging
-      console.log('Query result:', {
-        totalRecords: total,
-        returnedRecords: result.length,
-        firstRecordUnitType: result[0]?.unitType?.unit_name || 'N/A',
-      });
-
-      // Transform result to DTO format
-      console.log(result[0]);
       const transformedResult = result.map((population) => ({
         id: population.id,
         date_arrive: population.date_arrive,
@@ -852,7 +833,6 @@ export class PopulationService {
         throw new Error('Template CSV tidak ditemukan di semua lokasi yang mungkin');
       }
 
-      console.log('Template found at:', templatePath);
       return fs.readFileSync(templatePath);
     } catch (error) {
       console.error('Error downloading template:', error);
