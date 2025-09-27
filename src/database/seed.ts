@@ -20,7 +20,6 @@ async function seed() {
 
   try {
     await dataSource.initialize();
-    console.log('🔌 Database connection established');
 
     const mainSeeder = new MainSeeder(dataSource);
     await mainSeeder.run();
@@ -30,7 +29,6 @@ async function seed() {
   } finally {
     if (dataSource.isInitialized) {
       await dataSource.destroy();
-      console.log('🔌 Database connection closed');
     }
     process.exit(0);
   }

@@ -113,9 +113,6 @@ export class ProductionFormulaService {
       endDate = today.toISOString().split('T')[0];
     }
 
-    console.log(startDate);
-    console.log(endDate);
-
     const qb = this.baseDataProRepository
       .createQueryBuilder('rbdp')
       .select(
@@ -138,8 +135,6 @@ export class ProductionFormulaService {
       });
 
     const resultData = await qb.getRawMany();
-
-    console.log(resultData);
 
     let total_tonnage = 0;
 
@@ -603,125 +598,9 @@ export class ProductionFormulaService {
     return result.reduce((total: number, row: any) => total + parseFloat(row.tonnage), 0);
   }
 
-  /**
-   * Mendapatkan actual produksi dari Control Day Production API
-   * Berdasarkan formula yang diminta: menggunakan data dari /api/control/day-production
-   */
-  // async getActualFromControlDayProduction(selectedDate?: string, shift?: string): Promise<ProductionActuals> {
-  //   // Query untuk mendapatkan data actual dari control day production
-  //   let query = `
-  //     SELECT
-  //       SUM(ore_hauling_tonnage) as ore_hauling_tonnage,
-  //       SUM(ob_tonnage) as ob_tonnage,
-  //       SUM(ore_barge_tonnage) as ore_barge_tonnage,
-  //       SUM(quarry_tonnage) as quarry_tonnage
-  //     FROM (
-  //       SELECT DISTINCT
-  //         activity_date,
-  //         tyre_type,
-  //         no_unit,
-  //         shift,
-  //         ore_hauling_tonnage,
-  //         ob_tonnage,
-  //         ore_barge_tonnage,
-  //         quarry_tonnage
-  //       FROM (
-  //         SELECT
-  //           DATE(pbdp.activity_date) as activity_date,
-  //           mp.tyre_type,
-  //           mp.no_unit,
-  //           pbdp.shift,
-  //           CASE
-  //             WHEN rbdp.material = 'ore' AND rbdp.activity = 'hauling' THEN
-  //               CASE
-  //                 WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 26.56)
-  //                 WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 29.56)
-  //                 ELSE 0
-  //               END
-  //             ELSE 0
-  //           END as ore_hauling_tonnage,
-  //           CASE
-  //             WHEN rbdp.material = 'ob' THEN
-  //               CASE
-  //                 WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 26.56) / 1.6
-  //                 WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 29.56) / 1.6
-  //                 ELSE 0
-  //               END
-  //             ELSE 0
-  //           END as ob_tonnage,
-  //           CASE
-  //             WHEN rbdp.material = 'ore-barge' AND rbdp.activity = 'barging' THEN
-  //               CASE
-  //                 WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 26.56)
-  //                 WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 29.56)
-  //                 ELSE 0
-  //               END
-  //             ELSE 0
-  //           END as ore_barge_tonnage,
-  //           CASE
-  //             WHEN rbdp.material = 'quarry' THEN
-  //               CASE
-  //                 WHEN mp.tyre_type = '6x4' THEN (SUM(rbdp.total_vessel) * 16.6)
-  //                 WHEN mp.tyre_type = '8x4' THEN (SUM(rbdp.total_vessel) * 18.26)
-  //                 ELSE 0
-  //               END
-  //             ELSE 0
-  //           END as quarry_tonnage
-  //         FROM r_parent_base_data_pro pbdp
-  //         JOIN r_base_data_pro rbdp ON pbdp.id = rbdp.parent_base_data_pro_id
-  //         JOIN m_population mp ON pbdp.population_id = mp.id
-  //         WHERE mp.site_id = 1
-  //   `;
-
-  //   const queryParams: any[] = [];
-  //   let paramIndex = 1;
-
-  //   // Filter by activity_date (default to Today if not provided)
-  //   const dateToUse = selectedDate || new Date().toISOString().split('T')[0];
-  //   query += ` AND DATE(pbdp.activity_date) = $${paramIndex}`;
-  //   queryParams.push(dateToUse);
-  //   paramIndex++;
-
-  //   // Filter by shift (ds or ns) - menggunakan nilai lowercase yang sesuai dengan database
-  //   if (shift) {
-  //     // Konversi input ke lowercase untuk mencocokkan dengan nilai di database
-  //     const shiftValue = shift.toLowerCase();
-  //     if (shiftValue === 'ds' || shiftValue === 'ns') {
-  //       query += ` AND pbdp.shift = $${paramIndex}`;
-  //       queryParams.push(shiftValue);
-  //       paramIndex++;
-  //     } else {
-  //       // Jika nilai shift tidak valid, tidak menambahkan filter
-  //       console.warn(`Invalid shift value: ${shift}. Valid values are 'ds' or 'ns'`);
-  //     }
-  //   } else {
-  //     // Default filter for both ds and ns shifts
-  //     query += ` AND pbdp.shift IN ('ds', 'ns')`;
-  //   }
-
-  //   query += `
-  //         GROUP BY DATE(pbdp.activity_date), mp.tyre_type, mp.no_unit, pbdp.shift, rbdp.material, rbdp.activity
-  //       ) grouped_data
-  //     ) final_data
-  //   `;
-
-  //   const result = await this.baseDataProRepository.query(query, queryParams);
-  //   console.log(result);
-  //   const data = result[0] || {};
-
-  //   return {
-  //     oreHaulingTonnage: parseFloat(data.ore_hauling_tonnage) || 0,
-  //     obBCM: parseFloat(data.ob_tonnage) || 0,
-  //     bargeTonnage: parseFloat(data.ore_barge_tonnage) || 0,
-  //     quarryTonnage: parseFloat(data.quarry_tonnage) || 0,
-  //   };
-  // }
   async getActualFromControlDayProduction(selectedDate?: string, shift?: string) {
     const dateToUse = selectedDate || new Date().toISOString().split('T')[0];
     const shifts = shift ? [shift] : ['ds', 'ns'];
-
-    console.log(dateToUse);
-    console.log(shifts);
     const result = await this.baseDataProRepository
       .createQueryBuilder('rbdp')
       .select(
@@ -768,7 +647,6 @@ export class ProductionFormulaService {
       bargeTonnage: parseFloat(result.bargeTonnage) || 0,
       quarryTonnage: parseFloat(result.quarryTonnage) || 0,
     };
-    console.log(response);
     return response;
   }
   /**

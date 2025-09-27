@@ -20,19 +20,15 @@ async function seedPlanWorkingHour() {
 
   try {
     await dataSource.initialize();
-    console.log('🔌 Database connection established');
 
     const seeder = new PlanWorkingHourSeeder();
     await seeder.run(dataSource);
-
-    console.log('✅ Plan Working Hour seeding completed');
   } catch (error) {
     console.error('❌ Plan Working Hour Seeding failed:', error);
     process.exit(1);
   } finally {
     if (dataSource.isInitialized) {
       await dataSource.destroy();
-      console.log('🔌 Database connection closed');
     }
     process.exit(0);
   }

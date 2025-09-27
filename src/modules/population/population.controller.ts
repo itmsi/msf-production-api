@@ -138,13 +138,6 @@ export class PopulationController {
     },
   })
   findAll(@Query() query: GetPopulationsQueryDto) {
-    // Log incoming query untuk debugging
-    console.log('Controller received query:', {
-      ...query,
-      is_dt: query.is_dt,
-      typeOfIsDt: typeof query.is_dt,
-    });
-
     return this.populationService.findAll(query);
   }
 
@@ -745,9 +738,9 @@ export class PopulationController {
     status: 200,
     description: 'Template CSV berhasil didownload',
   })
-  async downloadTemplate(@Res() res: Response) {
+  downloadTemplate(@Res() res: Response) {
     try {
-      const buffer = await this.populationService.downloadTemplate();
+      const buffer = this.populationService.downloadTemplate();
 
       res.set({
         'Content-Type': 'text/csv',

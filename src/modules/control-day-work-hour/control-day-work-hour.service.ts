@@ -21,10 +21,6 @@ export class ControlDayWorkHourService {
     // Jika tidak ada tanggal yang disediakan, gunakan tanggal hari ini
     let filterDate = endDate || startDate || new Date().toISOString().split('T')[0];
 
-    console.log('=== DEBUG Control Day Work Hour ===');
-    console.log('Query params:', { startDate, endDate, unit, shift, page, limit });
-    console.log('Filter date:', filterDate);
-
     // Query untuk mengambil data unit dari m_population
     const populationQuery = this.populationRepository.createQueryBuilder('pop').where('pop.status = :status', { status: 'active' });
 
@@ -35,26 +31,15 @@ export class ControlDayWorkHourService {
     }
 
     let populations = await populationQuery.getMany();
-    console.log('Found populations:', populations.length);
-    console.log(
-      'Population data:',
-      populations.map((p) => ({ id: p.id, no_unit: p.no_unit })),
-    );
 
     // Jika tidak ada population yang ditemukan dengan exact match, coba dengan LIKE
     if (populations.length === 0 && unit) {
-      console.log(`No exact match for unit "${unit}", trying LIKE search...`);
       const likeQuery = this.populationRepository
         .createQueryBuilder('pop')
         .where('pop.status = :status', { status: 'active' })
         .andWhere('pop.no_unit LIKE :unit', { unit: `%${unit}%` });
 
       populations = await likeQuery.getMany();
-      console.log('Found populations with LIKE:', populations.length);
-      console.log(
-        'Population data with LIKE:',
-        populations.map((p) => ({ id: p.id, no_unit: p.no_unit })),
-      );
     }
 
     // Debug: Periksa apakah ada data di r_loss_time untuk tanggal ini
@@ -62,12 +47,9 @@ export class ControlDayWorkHourService {
       .createQueryBuilder('ewh')
       .where('ewh.date_activity = :filterDate', { filterDate })
       .getCount();
-    console.log(`Total r_loss_time data for date ${filterDate}:`, totalLossTimeData);
 
     // Jika tidak ada data untuk tanggal ini, coba tanggal kemarin dan beberapa hari sebelumnya
     if (totalLossTimeData === 0 && !startDate && !endDate) {
-      console.log(`No data for date ${filterDate}, trying previous dates...`);
-
       for (let i = 1; i <= 7; i++) {
         const previousDate = new Date();
         previousDate.setDate(previousDate.getDate() - i);
@@ -77,10 +59,8 @@ export class ControlDayWorkHourService {
           .createQueryBuilder('ewh')
           .where('ewh.date_activity = :previousDate', { previousDate: previousDateStr })
           .getCount();
-        console.log(`Total r_loss_time data for ${i} days ago ${previousDateStr}:`, previousData);
 
         if (previousData > 0) {
-          console.log(`Using date ${previousDateStr} instead of ${filterDate}`);
           filterDate = previousDateStr;
           break;
         }
@@ -95,7 +75,6 @@ export class ControlDayWorkHourService {
         .where('pop.no_unit = :unit', { unit })
         .andWhere('ewh.date_activity = :filterDate', { filterDate })
         .getCount();
-      console.log(`Total r_loss_time data for unit ${unit} on date ${filterDate}:`, unitLossTimeData);
     }
 
     // Array untuk menyimpan hasil data
@@ -103,8 +82,6 @@ export class ControlDayWorkHourService {
 
     // Loop untuk setiap population/unit
     for (const population of populations) {
-      console.log(`\nProcessing population ID: ${population.id}, no_unit: ${population.no_unit}`);
-
       // Query untuk mengambil data shift dari r_loss_time untuk unit ini
       const shiftQuery = this.effectiveWorkingHoursRepository
         .createQueryBuilder('ewh')
@@ -118,7 +95,6 @@ export class ControlDayWorkHourService {
       }
 
       const shifts = await shiftQuery.getRawMany();
-      console.log(`Found shifts for population ${population.id}:`, shifts);
 
       // Loop untuk setiap shift
       for (const shiftData of shifts) {
@@ -143,8 +119,6 @@ export class ControlDayWorkHourService {
 
         const problemData = {};
 
-        console.log(`\nProcessing shift: ${currentShift} for population ${population.id}`);
-
         // Ambil data untuk setiap problem type
         for (const problemType of problemTypes) {
           const durationQuery = this.effectiveWorkingHoursRepository
@@ -156,7 +130,6 @@ export class ControlDayWorkHourService {
             .andWhere('ewh.description = :problemType', { problemType });
 
           const durationResult = await durationQuery.getRawOne();
-          console.log(`Problem type "${problemType}":`, durationResult);
 
           // Jika tidak ada data dengan exact match, coba dengan LIKE
           if (!durationResult?.totalDuration) {
@@ -169,7 +142,6 @@ export class ControlDayWorkHourService {
               .andWhere('ewh.description LIKE :problemType', { problemType: `%${problemType}%` });
 
             const likeResult = await likeQuery.getRawOne();
-            console.log(`Problem type "${problemType}" with LIKE:`, likeResult);
 
             problemData[this.mapProblemTypeToField(problemType)] = likeResult?.totalDuration ? parseFloat(likeResult.totalDuration) : null;
           } else {
@@ -187,30 +159,15 @@ export class ControlDayWorkHourService {
           ...problemData,
         };
 
-        console.log(`Control data created:`, controlData);
         resultData.push(controlData);
       }
     }
-
-    console.log(`\nTotal result data: ${resultData.length}`);
-    console.log('Final result data:', resultData);
 
     // Implementasi pagination manual
     const total = resultData.length;
     const skip = (page - 1) * limit;
     const paginatedData = resultData.slice(skip, skip + limit);
     const totalPages = Math.ceil(total / limit);
-
-    console.log('=== END DEBUG ===\n');
-
-    // Jika tidak ada data sama sekali, kembalikan pesan informatif
-    if (resultData.length === 0) {
-      console.log('No data found. Possible reasons:');
-      console.log('1. No data in r_loss_time table for the specified date range');
-      console.log('2. No matching unit in m_population table');
-      console.log('3. No data for the specified problem types');
-      console.log('4. Database connection issues');
-    }
 
     return {
       data: paginatedData,

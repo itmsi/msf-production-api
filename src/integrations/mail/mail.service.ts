@@ -3,8 +3,6 @@ import { Injectable } from '@nestjs/common';
 @Injectable()
 export class MailService {
   sendMail(to: string, subject: string, content: string): Promise<void> {
-    console.log(`Sending email to ${to}: ${subject}`);
-    console.log(`Content: ${content}`);
     return Promise.resolve();
   }
 

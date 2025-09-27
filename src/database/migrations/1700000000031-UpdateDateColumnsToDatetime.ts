@@ -5,7 +5,6 @@ export class UpdateDateColumnsToDatetime1700000000031 implements MigrationInterf
     try {
       // Update kolom activity_date di tabel r_base_data_pro
       await queryRunner.query('ALTER TABLE r_base_data_pro ALTER COLUMN activity_date TYPE timestamp');
-      console.log('Updated r_base_data_pro.activity_date');
     } catch (error) {
       console.log('Table r_base_data_pro or column activity_date not found, skipping...');
     }
@@ -13,7 +12,6 @@ export class UpdateDateColumnsToDatetime1700000000031 implements MigrationInterf
     try {
       // Update kolom plan_date di tabel r_plan_production
       await queryRunner.query('ALTER TABLE r_plan_production ALTER COLUMN plan_date TYPE timestamp');
-      console.log('Updated r_plan_production.plan_date');
     } catch (error) {
       console.log('Table r_plan_production or column plan_date not found, skipping...');
     }
