@@ -8,6 +8,13 @@ import {
   Delete,
   Query,
   ParseIntPipe,
+  UseInterceptors,
+  UploadedFile,
+  Req,
+  UseGuards,
+  StreamableFile,
+  InternalServerErrorException,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,15 +29,46 @@ import { BargingListService } from './barging-list.service';
 import {
   CreateBargingListDto,
   UpdateBargingListDto,
-  BargingListResponseDto,
   GetBargingListQueryDto,
+  ExportBargingListQueryDto,
 } from './dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard } from 'src/common';
+import { join } from 'path';
+import { createReadStream } from 'fs';
+import { Response } from 'express';
 
 @ApiTags('Barging List')
 @ApiBearerAuth('jwt')
+@UseGuards(JwtAuthGuard)
 @Controller('barging-list')
 export class BargingListController {
   constructor(private readonly bargingListService: BargingListService) {}
+
+  @Get('export')
+  async exportData(
+    @Query() query: ExportBargingListQueryDto,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    return await this.bargingListService.exportData(query, res);
+  }
+
+  @Get('import/template')
+  downloadTemplate(): StreamableFile {
+    try {
+      const file = join(
+        process.cwd(),
+        'src/modules/barging-list/template-barging-list-import.csv',
+      );
+      const stream = createReadStream(file);
+      return new StreamableFile(stream, {
+        type: 'text/csv',
+        disposition: 'attachment; filename="template-barging-list-import.csv"',
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to download CSV template');
+    }
+  }
 
   @Get('test/data')
   @ApiOperation({
@@ -48,7 +86,8 @@ export class BargingListController {
   @Post()
   @ApiOperation({
     summary: 'Buat data barging list baru',
-    description: 'Endpoint untuk membuat data barging list baru dengan validasi unit_hauler_id dan barge_id',
+    description:
+      'Endpoint untuk membuat data barging list baru dengan validasi unit_hauler_id dan barge_id',
   })
   @ApiBody({
     type: CreateBargingListDto,
@@ -86,7 +125,8 @@ export class BargingListController {
           barge_id: 1,
           vessel: 5,
         },
-        description: 'Contoh dengan unit hauler ID 6 (KFM-DT-001) dan barge ID 1 (Barge-001tt)',
+        description:
+          'Contoh dengan unit hauler ID 6 (KFM-DT-001) dan barge ID 1 (Barge-001tt)',
       },
       example4: {
         summary: 'Contoh data barging list dengan barge ID 2',
@@ -98,7 +138,8 @@ export class BargingListController {
           barge_id: 2,
           vessel: 5,
         },
-        description: 'Contoh dengan unit hauler ID 6 (KFM-DT-001) dan barge ID 2 (Barge-002)',
+        description:
+          'Contoh dengan unit hauler ID 6 (KFM-DT-001) dan barge ID 2 (Barge-002)',
       },
     },
   })
@@ -137,7 +178,8 @@ export class BargingListController {
         summary: 'Unit hauler tidak ditemukan',
         value: {
           statusCode: 400,
-          message: 'Unit hauler dengan ID 999 tidak ditemukan di tabel m_population',
+          message:
+            'Unit hauler dengan ID 999 tidak ditemukan di tabel m_population',
         },
       },
       example2: {
@@ -169,7 +211,8 @@ export class BargingListController {
   @Get()
   @ApiOperation({
     summary: 'Ambil semua data barging list',
-    description: 'Endpoint untuk mengambil semua data barging list dengan pagination, filter, dan search',
+    description:
+      'Endpoint untuk mengambil semua data barging list dengan pagination, filter, dan search',
   })
   @ApiQuery({
     name: 'page',
@@ -286,7 +329,8 @@ export class BargingListController {
   @Get(':id')
   @ApiOperation({
     summary: 'Ambil data barging list berdasarkan ID',
-    description: 'Endpoint untuk mengambil data barging list berdasarkan ID tertentu',
+    description:
+      'Endpoint untuk mengambil data barging list berdasarkan ID tertentu',
   })
   @ApiParam({
     name: 'id',
@@ -414,7 +458,8 @@ export class BargingListController {
           barge_id: 2,
           vessel: 5,
         },
-        description: 'Contoh update dengan data yang sesuai dengan unit hauler ID 6 (KFM-DT-001) dan barge ID 2 (Barge-002)',
+        description:
+          'Contoh update dengan data yang sesuai dengan unit hauler ID 6 (KFM-DT-001) dan barge ID 2 (Barge-002)',
       },
     },
   })
@@ -453,7 +498,8 @@ export class BargingListController {
         summary: 'Unit hauler tidak ditemukan',
         value: {
           statusCode: 400,
-          message: 'Unit hauler dengan ID 999 tidak ditemukan di tabel m_population',
+          message:
+            'Unit hauler dengan ID 999 tidak ditemukan di tabel m_population',
         },
       },
     },
@@ -494,7 +540,8 @@ export class BargingListController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Hapus data barging list',
-    description: 'Endpoint untuk menghapus data barging list berdasarkan ID (soft delete)',
+    description:
+      'Endpoint untuk menghapus data barging list berdasarkan ID (soft delete)',
   })
   @ApiParam({
     name: 'id',
@@ -544,5 +591,12 @@ export class BargingListController {
   })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.bargingListService.remove(id);
+  }
+
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  async importData(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    const userId = req.user?.id;
+    return await this.bargingListService.importData(file, userId);
   }
 }

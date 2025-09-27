@@ -36,7 +36,7 @@ import {
   QueryBargeFormDto,
   QueryExportBargeFormDto,
 } from './dto';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { join } from 'path';
 import { createReadStream } from 'fs';
