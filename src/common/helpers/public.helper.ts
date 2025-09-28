@@ -203,3 +203,43 @@ export function convertStringDateYYYYMMDD(input: string) {
   const date = moment(input).format('YYYY-MM-DD');
   return date;
 }
+
+export function combineDateTime(date: string, time: string): string {
+  const dateFormat = convertStringDateYYYYMMDD(date);
+  return moment(`${dateFormat} ${time}`, 'YYYY-MM-DD HH:mm').format(
+    'YYYY-MM-DD HH:mm:ss.SSS',
+  );
+}
+
+export function combineShiftDateTime(
+  date: string,
+  startTime: string,
+  endTime: string,
+) {
+  const dateFormat = convertStringDateYYYYMMDD(date);
+  const start = moment(
+    `${dateFormat} ${startTime.replace('.', ':')}`,
+    'YYYY-MM-DD HH:mm',
+  );
+  let end = moment(
+    `${dateFormat} ${endTime.replace('.', ':')}`,
+    'YYYY-MM-DD HH:mm',
+  );
+
+  if (end.isSameOrBefore(start)) {
+    end = end.add(1, 'day');
+  }
+
+  return {
+    start: start.format('YYYY-MM-DD HH:mm:ss.SSS'),
+    end: end.format('YYYY-MM-DD HH:mm:ss.SSS'),
+  };
+}
+
+export function extractTime(
+  datetime: string | Date,
+  withSeconds = true,
+): string {
+  const format = withSeconds ? 'HH:mm:ss' : 'HH:mm';
+  return moment(datetime).format(format);
+}

@@ -8,6 +8,12 @@ import {
   Param,
   Query,
   UseGuards,
+  StreamableFile,
+  InternalServerErrorException,
+  UseInterceptors,
+  UploadedFile,
+  Req,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,6 +22,8 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiQuery,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { HaulingProblemService } from './hauling-problem.service';
@@ -25,6 +33,11 @@ import {
   HaulingProblemResponseDto,
   GetHaulingProblemQueryDto,
 } from './dto';
+import { createReadStream } from 'fs';
+import { join } from 'path';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { FileUploadDto } from '../population';
+import { Response } from 'express';
 
 @ApiTags('Hauling Problem')
 @Controller('hauling-problem')
@@ -33,10 +46,24 @@ import {
 export class HaulingProblemController {
   constructor(private readonly haulingProblemService: HaulingProblemService) {}
 
+  @Get('export')
+  @ApiOperation({
+    summary: 'Export data Fuel consumption dari CSV',
+    description:
+      'Mengimport data Fuel consumption dari CSV ke database setelah validasi',
+  })
+  async exportData(
+    @Query() query: GetHaulingProblemQueryDto,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    return await this.haulingProblemService.exportData(query, res);
+  }
+
   @Post()
   @ApiOperation({
     summary: 'Membuat data hauling problem baru',
-    description: 'Endpoint untuk membuat data hauling problem baru dengan validasi lengkap',
+    description:
+      'Endpoint untuk membuat data hauling problem baru dengan validasi lengkap',
   })
   @ApiResponse({
     status: 201,
@@ -59,10 +86,10 @@ export class HaulingProblemController {
           site_name: 'Site Jakarta',
           remark: 'Problem pada unit excavator',
           createdAt: '2024-01-01T00:00:00.000Z',
-          updatedAt: '2024-01-01T00:00:00.000Z'
-        }
-      }
-    }
+          updatedAt: '2024-01-01T00:00:00.000Z',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 400,
@@ -83,7 +110,8 @@ export class HaulingProblemController {
   @Get()
   @ApiOperation({
     summary: 'Mengambil semua data hauling problem',
-    description: 'Endpoint untuk mengambil data hauling problem dengan pagination, filtering, dan sorting',
+    description:
+      'Endpoint untuk mengambil data hauling problem dengan pagination, filtering, dan sorting',
   })
   @ApiQuery({
     name: 'page',
@@ -106,13 +134,15 @@ export class HaulingProblemController {
   @ApiQuery({
     name: 'start_date',
     required: false,
-    description: 'Filter berdasarkan tanggal mulai aktivitas (format: YYYY-MM-DD)',
+    description:
+      'Filter berdasarkan tanggal mulai aktivitas (format: YYYY-MM-DD)',
     type: String,
   })
   @ApiQuery({
     name: 'end_date',
     required: false,
-    description: 'Filter berdasarkan tanggal akhir aktivitas (format: YYYY-MM-DD)',
+    description:
+      'Filter berdasarkan tanggal akhir aktivitas (format: YYYY-MM-DD)',
     type: String,
   })
   @ApiQuery({
@@ -142,7 +172,8 @@ export class HaulingProblemController {
   @ApiQuery({
     name: 'sortBy',
     required: false,
-    description: 'Field untuk sorting (id, activityDate, shift, start, finish, duration, createdAt, updatedAt)',
+    description:
+      'Field untuk sorting (id, activityDate, shift, start, finish, duration, createdAt, updatedAt)',
     type: String,
   })
   @ApiQuery({
@@ -172,17 +203,17 @@ export class HaulingProblemController {
             site_name: 'Site Jakarta',
             remark: 'Problem pada unit excavator',
             createdAt: '2024-01-01T00:00:00.000Z',
-            updatedAt: '2024-01-01T00:00:00.000Z'
-          }
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
         ],
         pagination: {
           total: 1,
           page: 1,
           limit: 10,
-          lastPage: 1
-        }
-      }
-    }
+          lastPage: 1,
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 400,
@@ -203,7 +234,8 @@ export class HaulingProblemController {
   @Get(':id')
   @ApiOperation({
     summary: 'Mengambil data hauling problem berdasarkan ID',
-    description: 'Endpoint untuk mengambil data hauling problem berdasarkan ID tertentu',
+    description:
+      'Endpoint untuk mengambil data hauling problem berdasarkan ID tertentu',
   })
   @ApiParam({
     name: 'id',
@@ -232,10 +264,10 @@ export class HaulingProblemController {
           site_name: 'Site Jakarta',
           remark: 'Problem pada unit excavator',
           createdAt: '2024-01-01T00:00:00.000Z',
-          updatedAt: '2024-01-01T00:00:00.000Z'
-        }
-      }
-    }
+          updatedAt: '2024-01-01T00:00:00.000Z',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 200,
@@ -244,9 +276,9 @@ export class HaulingProblemController {
       example: {
         statusCode: 200,
         message: 'Data hauling problem tidak ditemukan',
-        data: null
-      }
-    }
+        data: null,
+      },
+    },
   })
   @ApiResponse({
     status: 400,
@@ -267,7 +299,8 @@ export class HaulingProblemController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data hauling problem',
-    description: 'Endpoint untuk mengupdate data hauling problem berdasarkan ID',
+    description:
+      'Endpoint untuk mengupdate data hauling problem berdasarkan ID',
   })
   @ApiParam({
     name: 'id',
@@ -296,10 +329,10 @@ export class HaulingProblemController {
           site_name: 'Site Jakarta',
           remark: 'Problem pada unit excavator - updated',
           createdAt: '2024-01-01T00:00:00.000Z',
-          updatedAt: '2024-01-01T00:00:00.000Z'
-        }
-      }
-    }
+          updatedAt: '2024-01-01T00:00:00.000Z',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 400,
@@ -327,7 +360,8 @@ export class HaulingProblemController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Menghapus data hauling problem',
-    description: 'Endpoint untuk menghapus data hauling problem berdasarkan ID (soft delete)',
+    description:
+      'Endpoint untuk menghapus data hauling problem berdasarkan ID (soft delete)',
   })
   @ApiParam({
     name: 'id',
@@ -342,9 +376,9 @@ export class HaulingProblemController {
       example: {
         statusCode: 200,
         message: 'Data hauling problem berhasil dihapus',
-        data: null
-      }
-    }
+        data: null,
+      },
+    },
   })
   @ApiResponse({
     status: 400,
@@ -364,5 +398,47 @@ export class HaulingProblemController {
   })
   async delete(@Param('id') id: number) {
     return this.haulingProblemService.delete(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('import/template')
+  @ApiOperation({
+    summary: 'Download template CSV untuk import Fuel Consumption Data',
+    description:
+      'Mendownload template CSV yang berisi format kolom yang diperlukan',
+  })
+  downloadTemplate(): StreamableFile {
+    try {
+      const file = join(
+        process.cwd(),
+        'src/modules/hauling-problem/template-hauling-problem-import.csv',
+      );
+      const stream = createReadStream(file);
+      return new StreamableFile(stream, {
+        type: 'text/csv',
+        disposition:
+          'attachment; filename="template-hauling-problem-import.csv"',
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to download CSV template');
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'File CSV yang akan diimport',
+    type: FileUploadDto,
+  })
+  @ApiOperation({
+    summary: 'Import data Hauling CCR  dari CSV',
+    description:
+      'Mengimport data Hauling CCR dari CSV ke database setelah validasi',
+  })
+  importData(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    const userId = req.user?.id;
+    return this.haulingProblemService.importData(file, userId);
   }
 }

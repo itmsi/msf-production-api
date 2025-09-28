@@ -662,7 +662,7 @@ export class HaulingListService {
               errorFileInfo = await this.s3Service.uploadErrorFile(
                 `import_error_${Date.now()}.csv`,
                 errorCsvBuffer,
-                'ewh_import_error',
+                'hauling_list_import_error',
               );
 
               if (errorFileInfo) {
