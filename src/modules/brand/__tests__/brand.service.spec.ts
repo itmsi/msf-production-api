@@ -91,9 +91,7 @@ describe('BrandService', () => {
 
       mockRepository.findOne.mockResolvedValue(existingBrand);
 
-      await expect(service.create(createDto)).rejects.toThrow(
-        "Business rule validation gagal: Nama brand 'Toyota' sudah ada",
-      );
+      await expect(service.create(createDto)).rejects.toThrow("Business rule validation gagal: Nama brand 'Toyota' sudah ada");
     });
   });
 
@@ -140,9 +138,7 @@ describe('BrandService', () => {
         .mockResolvedValueOnce(existingBrand) // Find existing brand
         .mockResolvedValueOnce(duplicateBrand); // Find duplicate name
 
-      await expect(service.update(1, updateDto)).rejects.toThrow(
-        "Business rule validation gagal: Nama brand 'Toyota Motor' sudah ada",
-      );
+      await expect(service.update(1, updateDto)).rejects.toThrow("Business rule validation gagal: Nama brand 'Toyota Motor' sudah ada");
     });
 
     it('should fail when brand_name is empty string', async () => {

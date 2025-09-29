@@ -1,13 +1,6 @@
-import {
-  MigrationInterface,
-  QueryRunner,
-  Table,
-  TableForeignKey,
-} from 'typeorm';
+import { MigrationInterface, QueryRunner, Table, TableForeignKey } from 'typeorm';
 
-export class CreateTableRPlanWorkingHourDetail1700000000029
-  implements MigrationInterface
-{
+export class CreateTableRPlanWorkingHourDetail1700000000029 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Buat tabel baru r_plan_working_hour_detail
     await queryRunner.createTable(
@@ -83,16 +76,11 @@ export class CreateTableRPlanWorkingHourDetail1700000000029
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Hapus foreign key constraints dari tabel detail
-    const detailTable = await queryRunner.getTable(
-      'r_plan_working_hour_detail',
-    );
+    const detailTable = await queryRunner.getTable('r_plan_working_hour_detail');
     if (detailTable) {
       const foreignKeys = detailTable.foreignKeys;
       for (const foreignKey of foreignKeys) {
-        await queryRunner.dropForeignKey(
-          'r_plan_working_hour_detail',
-          foreignKey,
-        );
+        await queryRunner.dropForeignKey('r_plan_working_hour_detail', foreignKey);
       }
     }
 

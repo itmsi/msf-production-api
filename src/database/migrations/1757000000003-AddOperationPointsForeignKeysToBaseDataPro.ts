@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddOperationPointsForeignKeysToBaseDataPro1757000000003
-  implements MigrationInterface
-{
+export class AddOperationPointsForeignKeysToBaseDataPro1757000000003 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Tambahkan foreign key constraint untuk loading_point_id ke m_operation_points
     await queryRunner.query(`
@@ -38,9 +36,9 @@ export class AddOperationPointsForeignKeysToBaseDataPro1757000000003
 
     // Skip parent_base_data_pro_id constraint karena sudah ada
     // await queryRunner.query(`
-    //   ALTER TABLE r_base_data_pro 
-    //   ADD CONSTRAINT FK_r_base_data_pro_parent_base_data_pro_id 
-    //   FOREIGN KEY (parent_base_data_pro_id) REFERENCES r_parent_base_data_pro(id) 
+    //   ALTER TABLE r_base_data_pro
+    //   ADD CONSTRAINT FK_r_base_data_pro_parent_base_data_pro_id
+    //   FOREIGN KEY (parent_base_data_pro_id) REFERENCES r_parent_base_data_pro(id)
     //   ON DELETE CASCADE ON UPDATE CASCADE
     // `);
   }

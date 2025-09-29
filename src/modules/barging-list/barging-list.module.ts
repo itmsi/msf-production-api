@@ -8,10 +8,7 @@ import { Barge } from '../barge/entities/barge.entity';
 import { S3Module } from 'src/integrations/s3/s3.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([BargingList, Population, Barge]),
-    S3Module,
-  ],
+  imports: [TypeOrmModule.forFeature([BargingList, Population, Barge]), S3Module],
   controllers: [BargingListController],
   providers: [BargingListService],
   exports: [BargingListService],

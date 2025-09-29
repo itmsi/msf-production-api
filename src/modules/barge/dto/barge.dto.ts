@@ -1,15 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsNumberString,
-  IsNumber,
-  MinLength,
-  MaxLength,
-  Min,
-  Max,
-} from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsNumberString, IsNumber, MinLength, MaxLength, Min, Max } from 'class-validator';
 
 export class CreateBargeDto {
   @ApiProperty({

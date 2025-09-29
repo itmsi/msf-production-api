@@ -1,34 +1,10 @@
-import {
-  BadRequestException,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  Repository,
-  SelectQueryBuilder,
-  ILike,
-  DataSource,
-  DeepPartial,
-} from 'typeorm';
+import { Repository, SelectQueryBuilder, ILike, DataSource, DeepPartial } from 'typeorm';
 import { BargeForm } from './entities/barge-form.entity';
-import {
-  CreateBargeFormDto,
-  UpdateBargeFormDto,
-  BargeFormResponseDto,
-  QueryBargeFormDto,
-  QueryExportBargeFormDto,
-} from './dto';
-import {
-  successResponse,
-  emptyDataResponse,
-  throwError,
-} from '../../common/helpers/response.helper';
-import {
-  CsvHelper,
-  setCsvExportHeaders,
-} from '../../common/helpers/public.helper';
+import { CreateBargeFormDto, UpdateBargeFormDto, BargeFormResponseDto, QueryBargeFormDto, QueryExportBargeFormDto } from './dto';
+import { successResponse, emptyDataResponse, throwError } from '../../common/helpers/response.helper';
+import { CsvHelper, setCsvExportHeaders } from '../../common/helpers/public.helper';
 import { Response } from 'express';
 import { format } from '@fast-csv/format';
 import moment from 'moment';
@@ -77,10 +53,7 @@ export class BargeFormService {
       row.error || 'Foreign key tidak ditemukan',
     ]);
 
-    return [
-      csvHeaders.join(','),
-      ...csvRows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
-    ].join('\n');
+    return [csvHeaders.join(','), ...csvRows.map((row) => row.map((cell) => `"${cell}"`).join(','))].join('\n');
   }
 
   private async generateErrorCsv(failedRows: any[]): Promise<{
@@ -97,11 +70,7 @@ export class BargeFormService {
       const csvBuffer = Buffer.from(csvContent, 'utf8');
       const filename = `import-barge-errors-${Date.now()}.csv`;
 
-      const result = await this.s3Service.uploadErrorFile(
-        filename,
-        csvBuffer,
-        'barge_import_error',
-      );
+      const result = await this.s3Service.uploadErrorFile(filename, csvBuffer, 'barge_import_error');
 
       return {
         error_file: result
@@ -166,10 +135,7 @@ export class BargeFormService {
       };
     }
 
-    if (
-      row.finish_date &&
-      !moment(row.finish_date, 'YYYY-MM-DD', true).isValid()
-    ) {
+    if (row.finish_date && !moment(row.finish_date, 'YYYY-MM-DD', true).isValid()) {
       return {
         isValid: false,
         error: `finish_date harus dalam format YYYY-MM-DD (row: ${row.finish_date})`,
@@ -186,10 +152,7 @@ export class BargeFormService {
       }
     }
 
-    if (
-      row.vol_by_draft_survey !== undefined &&
-      row.vol_by_draft_survey !== null
-    ) {
+    if (row.vol_by_draft_survey !== undefined && row.vol_by_draft_survey !== null) {
       const volBySurvey = Number(row.vol_by_draft_survey);
       if (isNaN(volBySurvey)) {
         return {
@@ -199,15 +162,10 @@ export class BargeFormService {
       }
     }
 
-    const [siteId, bargeId] = await Promise.all([
-      this.getSite(row.site),
-      this.getBarge(row.barge),
-    ]);
+    const [siteId, bargeId] = await Promise.all([this.getSite(row.site), this.getBarge(row.barge)]);
 
     if (!siteId) {
-      const message = row.site
-        ? `Site ${row?.site} tidak ditemukan`
-        : 'Site tidak ditemukan';
+      const message = row.site ? `Site ${row?.site} tidak ditemukan` : 'Site tidak ditemukan';
       return {
         isValid: false,
         error: message,
@@ -215,9 +173,7 @@ export class BargeFormService {
     }
 
     if (!bargeId) {
-      const message = row.barge
-        ? `Barge ${row?.barge} tidak ditemukan`
-        : 'Barge tidak ditemukan';
+      const message = row.barge ? `Barge ${row?.barge} tidak ditemukan` : 'Barge tidak ditemukan';
       return {
         isValid: false,
         error: message,
@@ -322,18 +278,13 @@ export class BargeFormService {
       },
       failedCount > 0
         ? `Import selesai dengan ${failedCount} error. ${
-            errorFileInfo.error_file
-              ? 'Download error CSV untuk detail.'
-              : 'Gagal generate error file.'
+            errorFileInfo.error_file ? 'Download error CSV untuk detail.' : 'Gagal generate error file.'
           }`
         : 'Semua data valid',
     );
   }
 
-  async bulkCreate(
-    payload: CreateBargeFormDto[],
-    userId: number,
-  ): Promise<any> {
+  async bulkCreate(payload: CreateBargeFormDto[], userId: number): Promise<any> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -365,10 +316,7 @@ export class BargeFormService {
           achievment = Number((dto.vol_by_survey / capacity).toFixed(2));
         }
 
-        const status =
-          dto.end_loading && dto.end_loading !== null
-            ? 'Completed'
-            : 'On Progress';
+        const status = dto.end_loading && dto.end_loading !== null ? 'Completed' : 'On Progress';
 
         return queryRunner.manager.create(BargeForm, {
           ...dto,
@@ -396,47 +344,28 @@ export class BargeFormService {
       validateImportFile(file);
       const csvData = await CsvHelper.parseCsvFile(file.buffer);
       const validationResult = await this.processImportData(csvData);
-      if (
-        validationResult?.payload.length &&
-        validationResult.successCount > 0
-      ) {
+      if (validationResult?.payload.length && validationResult.successCount > 0) {
         await this.bulkCreate(validationResult.payload, userId);
       }
 
-      const errorFileInfo = await this.generateErrorCsv(
-        validationResult.failedRows,
-      );
+      const errorFileInfo = await this.generateErrorCsv(validationResult.failedRows);
 
-      return this.buildImportResponse(
-        csvData.length,
-        validationResult.successCount,
-        validationResult.failedCount,
-        errorFileInfo,
-      );
+      return this.buildImportResponse(csvData.length, validationResult.successCount, validationResult.failedCount, errorFileInfo);
     } catch (error) {
       if (error instanceof BadRequestException) {
         throwError(error, 400);
       }
 
       if (error.message?.includes('CSV') || error.message?.includes('parse')) {
-        throwError(
-          'Format CSV tidak valid. Pastikan file CSV memiliki format yang benar.',
-          400,
-        );
+        throwError('Format CSV tidak valid. Pastikan file CSV memiliki format yang benar.', 400);
       }
 
       if (error.code === '23503') {
-        throwError(
-          'Data referensi tidak ditemukan. Pastikan semua ID referensi valid.',
-          400,
-        );
+        throwError('Data referensi tidak ditemukan. Pastikan semua ID referensi valid.', 400);
       }
 
       console.error('Unexpected error in importData:', error.stack);
-      throwError(
-        'Terjadi kesalahan saat memproses file import. Silakan coba lagi atau hubungi administrator.',
-        400,
-      );
+      throwError('Terjadi kesalahan saat memproses file import. Silakan coba lagi atau hubungi administrator.', 400);
     }
   }
 
@@ -447,23 +376,17 @@ export class BargeFormService {
       .leftJoinAndSelect('bargeForm.site', 'site');
   }
 
-  private applyFilterExportData(
-    qb: SelectQueryBuilder<BargeForm>,
-    query: QueryExportBargeFormDto,
-  ): SelectQueryBuilder<BargeForm> {
+  private applyFilterExportData(qb: SelectQueryBuilder<BargeForm>, query: QueryExportBargeFormDto): SelectQueryBuilder<BargeForm> {
     const { keyword, barge_id, end_date, start_date } = query;
 
     if (start_date && end_date) {
       const from = new Date(`${start_date}T00:00:00.000Z`);
       const to = new Date(`${end_date}T23:59:59.999Z`);
 
-      qb.andWhere(
-        'bargeForm.start_loading >= :from AND bargeForm.end_loading <= :to',
-        {
-          from,
-          to,
-        },
-      );
+      qb.andWhere('bargeForm.start_loading >= :from AND bargeForm.end_loading <= :to', {
+        from,
+        to,
+      });
 
       qb.orderBy('bargeForm.start_loading', 'ASC');
     } else {
@@ -487,9 +410,7 @@ export class BargeFormService {
   private mapExportDataToCsvRow(item: BargeForm, index: number) {
     let achievement: number | '-' = '-';
     if (item.vol_by_survey && item.barge?.capacity) {
-      achievement = Number(
-        (item.vol_by_survey / item.barge.capacity).toFixed(2),
-      );
+      achievement = Number((item.vol_by_survey / item.barge.capacity).toFixed(2));
     }
     return {
       No: index + 1,
@@ -499,12 +420,8 @@ export class BargeFormService {
       'Date Finish': moment(item.end_loading).format('DD/MM/YYYY'),
       Capacity: item?.barge?.capacity || '-',
       Vessel: item.total_vessel ? Number(item.total_vessel.toFixed(2)) : '-',
-      'Vol By Draft Survey': item.vol_by_survey
-        ? Number(item.vol_by_survey.toFixed(2))
-        : '-',
-      'Capacity Per DT': item.capacity_per_dt
-        ? Number(item.capacity_per_dt.toFixed(2))
-        : '-',
+      'Vol By Draft Survey': item.vol_by_survey ? Number(item.vol_by_survey.toFixed(2)) : '-',
+      'Capacity Per DT': item.capacity_per_dt ? Number(item.capacity_per_dt.toFixed(2)) : '-',
       'ACV (%)': achievement,
       Remarks: item?.remarks || '-',
       Status: item?.status || '-',
@@ -543,48 +460,24 @@ export class BargeFormService {
   async create(createBargeFormDto: CreateBargeFormDto): Promise<any> {
     try {
       // Get barge capacity first
-      const bargeCapacityResult = await this.bargeFormRepository.query(
-        'SELECT capacity FROM m_barge WHERE id = $1',
-        [createBargeFormDto.barge_id],
-      );
-      const capacity =
-        bargeCapacityResult.length > 0 ? bargeCapacityResult[0].capacity : null;
-      console.log(
-        'Creating barge form - barge_id:',
+      const bargeCapacityResult = await this.bargeFormRepository.query('SELECT capacity FROM m_barge WHERE id = $1', [
         createBargeFormDto.barge_id,
-        'capacity:',
-        capacity,
-      );
-
+      ]);
+      const capacity = bargeCapacityResult.length > 0 ? bargeCapacityResult[0].capacity : null;
       // Calculate capacity_per_dt if both vol_by_survey and total_vessel are provided
       let capacity_per_dt: number | null = null;
       if (createBargeFormDto.vol_by_survey && createBargeFormDto.total_vessel) {
-        capacity_per_dt =
-          createBargeFormDto.vol_by_survey / createBargeFormDto.total_vessel;
+        capacity_per_dt = createBargeFormDto.vol_by_survey / createBargeFormDto.total_vessel;
       }
 
       // Calculate achievment if both vol_by_survey and capacity are provided
       let achievment: number | null = null;
       if (createBargeFormDto.vol_by_survey && capacity) {
-        achievment = Number(
-          (createBargeFormDto.vol_by_survey / capacity).toFixed(2),
-        );
-        console.log(
-          'Creating barge form - vol_by_survey:',
-          createBargeFormDto.vol_by_survey,
-          'capacity:',
-          capacity,
-          'achievment:',
-          achievment,
-        );
+        achievment = Number((createBargeFormDto.vol_by_survey / capacity).toFixed(2));
       }
 
       // Calculate status based on end_loading
-      const status =
-        createBargeFormDto.end_loading &&
-        createBargeFormDto.end_loading !== null
-          ? 'Completed'
-          : 'On Progress';
+      const status = createBargeFormDto.end_loading && createBargeFormDto.end_loading !== null ? 'Completed' : 'On Progress';
 
       const bargeFormData: any = {
         ...createBargeFormDto,
@@ -613,26 +506,16 @@ export class BargeFormService {
 
   async findAll(queryDto: QueryBargeFormDto): Promise<any> {
     try {
-      const {
-        start_date,
-        end_date,
-        keyword,
-        barge_id,
-        page = 1,
-        limit = 10,
-      } = queryDto;
+      const { start_date, end_date, keyword, barge_id, page = 1, limit = 10 } = queryDto;
       const skip = (page - 1) * limit;
 
       const queryBuilder = this.findAllQueryBuilder();
       // Apply date range filter
       if (start_date && end_date) {
-        queryBuilder.andWhere(
-          'bargeForm.start_loading >= :start_date AND bargeForm.end_loading <= :end_date',
-          {
-            start_date: new Date(start_date + 'T00:00:00.000Z'),
-            end_date: new Date(end_date + 'T23:59:59.999Z'),
-          },
-        );
+        queryBuilder.andWhere('bargeForm.start_loading >= :start_date AND bargeForm.end_loading <= :end_date', {
+          start_date: new Date(start_date + 'T00:00:00.000Z'),
+          end_date: new Date(end_date + 'T23:59:59.999Z'),
+        });
       }
 
       // Apply keyword filter
@@ -652,68 +535,20 @@ export class BargeFormService {
       const total = await queryBuilder.getCount();
 
       // Apply pagination
-      const bargeForms = await queryBuilder
-        .skip(skip)
-        .take(limit)
-        .orderBy('bargeForm.createdAt', 'DESC')
-        .getMany();
+      const bargeForms = await queryBuilder.skip(skip).take(limit).orderBy('bargeForm.createdAt', 'DESC').getMany();
 
       // Transform data to response format
       const transformedData: BargeFormResponseDto[] = await Promise.all(
         bargeForms.map(async (item) => {
-          console.log(
-            'Processing item:',
-            item.id,
-            'barge_id:',
-            item.barge_id,
-            'vol_by_survey:',
-            item.vol_by_survey,
-          );
-
           // Get barge capacity directly from database
-          const bargeCapacityResult = await this.bargeFormRepository.query(
-            'SELECT capacity FROM m_barge WHERE id = $1',
-            [item.barge_id],
-          );
+          const bargeCapacityResult = await this.bargeFormRepository.query('SELECT capacity FROM m_barge WHERE id = $1', [item.barge_id]);
 
-          const capacity =
-            bargeCapacityResult.length > 0
-              ? bargeCapacityResult[0].capacity
-              : null;
-          console.log(
-            'Barge capacity for item',
-            item.id,
-            'barge_id',
-            item.barge_id,
-            ':',
-            capacity,
-          );
+          const capacity = bargeCapacityResult.length > 0 ? bargeCapacityResult[0].capacity : null;
 
           // Recalculate achievement using new formula: vol_by_survey / capacity
           let recalculatedAchievement: number | null = null;
           if (item.vol_by_survey && capacity) {
-            recalculatedAchievement = Number(
-              (item.vol_by_survey / capacity).toFixed(2),
-            );
-            console.log(
-              'Recalculating achievement for item',
-              item.id,
-              '- vol_by_survey:',
-              item.vol_by_survey,
-              'capacity:',
-              capacity,
-              'new_achievement:',
-              recalculatedAchievement,
-            );
-          } else {
-            console.log(
-              'Cannot calculate achievement for item',
-              item.id,
-              '- vol_by_survey:',
-              item.vol_by_survey,
-              'capacity:',
-              capacity,
-            );
+            recalculatedAchievement = Number((item.vol_by_survey / capacity).toFixed(2));
           }
 
           const result = {
@@ -725,29 +560,16 @@ export class BargeFormService {
             site_name: item.site?.name || '',
             start_loading: item.start_loading,
             end_loading: item.end_loading,
-            total_vessel: item.total_vessel
-              ? Number(item.total_vessel.toFixed(2))
-              : null,
-            vol_by_survey: item.vol_by_survey
-              ? Number(item.vol_by_survey.toFixed(2))
-              : null,
-            capacity_per_dt: item.capacity_per_dt
-              ? Number(item.capacity_per_dt.toFixed(2))
-              : null,
+            total_vessel: item.total_vessel ? Number(item.total_vessel.toFixed(2)) : null,
+            vol_by_survey: item.vol_by_survey ? Number(item.vol_by_survey.toFixed(2)) : null,
+            capacity_per_dt: item.capacity_per_dt ? Number(item.capacity_per_dt.toFixed(2)) : null,
             achievment: recalculatedAchievement, // Use recalculated achievement
             remarks: item.remarks,
             status: item.status,
             capacity: capacity,
           } as any;
-
-          console.log('Final result object:', JSON.stringify(result, null, 2));
           return result;
         }),
-      );
-
-      console.log(
-        'Final transformed data:',
-        JSON.stringify(transformedData, null, 2),
       );
 
       if (transformedData.length === 0) {
@@ -765,8 +587,6 @@ export class BargeFormService {
           lastPage: Math.ceil(total / limit),
         },
       };
-
-      console.log('Final response:', JSON.stringify(response, null, 2));
       return response;
     } catch (error) {
       throwError('Failed to retrieve barge forms', 500);
@@ -785,29 +605,13 @@ export class BargeFormService {
       }
 
       // Get barge capacity and recalculate achievement
-      const bargeCapacityResult = await this.bargeFormRepository.query(
-        'SELECT capacity FROM m_barge WHERE id = $1',
-        [bargeForm.barge_id],
-      );
-      const capacity =
-        bargeCapacityResult.length > 0 ? bargeCapacityResult[0].capacity : null;
+      const bargeCapacityResult = await this.bargeFormRepository.query('SELECT capacity FROM m_barge WHERE id = $1', [bargeForm.barge_id]);
+      const capacity = bargeCapacityResult.length > 0 ? bargeCapacityResult[0].capacity : null;
 
       // Recalculate achievement using new formula: vol_by_survey / capacity
       let recalculatedAchievement: number | null = null;
       if (bargeForm.vol_by_survey && capacity) {
-        recalculatedAchievement = Number(
-          (bargeForm.vol_by_survey / capacity).toFixed(2),
-        );
-        console.log(
-          'Finding barge form',
-          id,
-          '- vol_by_survey:',
-          bargeForm.vol_by_survey,
-          'capacity:',
-          capacity,
-          'new_achievement:',
-          recalculatedAchievement,
-        );
+        recalculatedAchievement = Number((bargeForm.vol_by_survey / capacity).toFixed(2));
       }
 
       const transformedData: BargeFormResponseDto = {
@@ -820,33 +624,21 @@ export class BargeFormService {
         capacity: capacity,
         start_loading: bargeForm.start_loading,
         end_loading: bargeForm.end_loading,
-        total_vessel: bargeForm.total_vessel
-          ? Number(bargeForm.total_vessel.toFixed(2))
-          : null,
-        vol_by_survey: bargeForm.vol_by_survey
-          ? Number(bargeForm.vol_by_survey.toFixed(2))
-          : null,
-        capacity_per_dt: bargeForm.capacity_per_dt
-          ? Number(bargeForm.capacity_per_dt.toFixed(2))
-          : null,
+        total_vessel: bargeForm.total_vessel ? Number(bargeForm.total_vessel.toFixed(2)) : null,
+        vol_by_survey: bargeForm.vol_by_survey ? Number(bargeForm.vol_by_survey.toFixed(2)) : null,
+        capacity_per_dt: bargeForm.capacity_per_dt ? Number(bargeForm.capacity_per_dt.toFixed(2)) : null,
         achievment: recalculatedAchievement, // Use recalculated achievement
         remarks: bargeForm.remarks,
         status: bargeForm.status,
       };
 
-      return successResponse(
-        transformedData,
-        'Barge form retrieved successfully',
-      );
+      return successResponse(transformedData, 'Barge form retrieved successfully');
     } catch (error) {
       throwError('Failed to retrieve barge form', 500);
     }
   }
 
-  async update(
-    id: number,
-    updateBargeFormDto: UpdateBargeFormDto,
-  ): Promise<any> {
+  async update(id: number, updateBargeFormDto: UpdateBargeFormDto): Promise<any> {
     try {
       const bargeForm = await this.bargeFormRepository.findOne({
         where: { id },
@@ -857,26 +649,12 @@ export class BargeFormService {
       }
 
       // Get barge capacity first
-      const bargeCapacityResult = await this.bargeFormRepository.query(
-        'SELECT capacity FROM m_barge WHERE id = $1',
-        [bargeForm.barge_id],
-      );
-      const capacity =
-        bargeCapacityResult.length > 0 ? bargeCapacityResult[0].capacity : null;
-      console.log(
-        'Updating barge form - barge_id:',
-        bargeForm.barge_id,
-        'capacity:',
-        capacity,
-      );
-
+      const bargeCapacityResult = await this.bargeFormRepository.query('SELECT capacity FROM m_barge WHERE id = $1', [bargeForm.barge_id]);
+      const capacity = bargeCapacityResult.length > 0 ? bargeCapacityResult[0].capacity : null;
       // Get current values or use updated values
-      const vol_by_survey =
-        updateBargeFormDto.vol_by_survey ?? bargeForm.vol_by_survey;
-      const total_vessel =
-        updateBargeFormDto.total_vessel ?? bargeForm.total_vessel;
-      const end_loading =
-        updateBargeFormDto.end_loading ?? bargeForm.end_loading;
+      const vol_by_survey = updateBargeFormDto.vol_by_survey ?? bargeForm.vol_by_survey;
+      const total_vessel = updateBargeFormDto.total_vessel ?? bargeForm.total_vessel;
+      const end_loading = updateBargeFormDto.end_loading ?? bargeForm.end_loading;
 
       // Calculate capacity_per_dt if both vol_by_survey and total_vessel are provided
       let capacity_per_dt: number | null = null;
@@ -888,19 +666,10 @@ export class BargeFormService {
       let achievment: number | null = null;
       if (vol_by_survey && capacity) {
         achievment = Number((vol_by_survey / capacity).toFixed(2));
-        console.log(
-          'Updating barge form - vol_by_survey:',
-          vol_by_survey,
-          'capacity:',
-          capacity,
-          'achievment:',
-          achievment,
-        );
       }
 
       // Calculate status based on end_loading
-      const status =
-        end_loading && end_loading !== null ? 'Completed' : 'On Progress';
+      const status = end_loading && end_loading !== null ? 'Completed' : 'On Progress';
 
       const updateData: any = {
         ...updateBargeFormDto,
@@ -937,10 +706,7 @@ export class BargeFormService {
         status: updatedBargeForm.status,
       };
 
-      return successResponse(
-        transformedData,
-        'Barge form updated successfully',
-      );
+      return successResponse(transformedData, 'Barge form updated successfully');
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;

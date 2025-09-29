@@ -1,14 +1,17 @@
 # Effective Working Hours API Documentation
 
 ## Overview
+
 Module ini mengelola data effective working hours yang disimpan dalam tabel `r_loss_time`. Data ini mencakup informasi tentang waktu kerja efektif, termasuk standby time dan breakdown time.
 
 ## Endpoints
 
 ### 1. Create Effective Working Hours
+
 **POST** `/effective-working-hours`
 
 **Request Body:**
+
 ```json
 {
   "dateActivity": "2024-01-15",
@@ -23,6 +26,7 @@ Module ini mengelola data effective working hours yang disimpan dalam tabel `r_l
 ```
 
 **Response:**
+
 ```json
 {
   "statusCode": 200,
@@ -43,9 +47,11 @@ Module ini mengelola data effective working hours yang disimpan dalam tabel `r_l
 ```
 
 ### 2. Get All Effective Working Hours
+
 **GET** `/effective-working-hours`
 
 **Query Parameters:**
+
 - `startDate` (optional): Tanggal mulai filter (format: YYYY-MM-DD)
 - `endDate` (optional): Tanggal akhir filter (format: YYYY-MM-DD)
 - `lossType` (optional): Filter berdasarkan tipe loss (STB atau BD)
@@ -54,6 +60,7 @@ Module ini mengelola data effective working hours yang disimpan dalam tabel `r_l
 - `limit` (optional): Limit per halaman (default: 10)
 
 **Response:**
+
 ```json
 {
   "statusCode": 200,
@@ -81,9 +88,11 @@ Module ini mengelola data effective working hours yang disimpan dalam tabel `r_l
 ```
 
 ### 3. Get Effective Working Hours by ID
+
 **GET** `/effective-working-hours/:id`
 
 **Response:**
+
 ```json
 {
   "statusCode": 200,
@@ -104,9 +113,11 @@ Module ini mengelola data effective working hours yang disimpan dalam tabel `r_l
 ```
 
 ### 4. Update Effective Working Hours
+
 **PATCH** `/effective-working-hours/:id`
 
 **Request Body:**
+
 ```json
 {
   "description": "Standby karena hujan lebat",
@@ -115,6 +126,7 @@ Module ini mengelola data effective working hours yang disimpan dalam tabel `r_l
 ```
 
 **Response:**
+
 ```json
 {
   "statusCode": 200,
@@ -135,9 +147,11 @@ Module ini mengelola data effective working hours yang disimpan dalam tabel `r_l
 ```
 
 ### 5. Delete Effective Working Hours
+
 **DELETE** `/effective-working-hours/:id`
 
 **Response:**
+
 ```json
 {
   "statusCode": 200,
@@ -149,17 +163,21 @@ Module ini mengelola data effective working hours yang disimpan dalam tabel `r_l
 ## Data Models
 
 ### Loss Type Enum
+
 - `STB`: StandBy
 - `BD`: BreakDown
 
 ### Shift Enum
+
 - `DS`: Day Shift
 - `NS`: Night Shift
 
 ### Auto Calculation
+
 Field `duration` akan otomatis dihitung dari selisih waktu `start` dan `end` dalam menit.
 
 ## Validation Rules
+
 - `dateActivity`: Wajib diisi, format datetime
 - `lossType`: Wajib diisi, enum STB atau BD
 - `shift`: Wajib diisi, enum DS atau NS
@@ -170,6 +188,7 @@ Field `duration` akan otomatis dihitung dari selisih waktu `start` dan `end` dal
 - `end`: Opsional, datetime
 
 ## Notes
+
 - Semua endpoint memerlukan autentikasi JWT
 - Data yang dihapus menggunakan soft delete
 - Duration otomatis dihitung jika start dan end tersedia

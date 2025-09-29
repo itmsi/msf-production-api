@@ -1,14 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsNumberString,
-  IsNumber,
-  MinLength,
-  MaxLength,
-  Min,
-} from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsNumberString, IsNumber, MinLength, MaxLength, Min } from 'class-validator';
 
 export class CreateUnitTypeDto {
   @ApiProperty({
@@ -202,8 +193,7 @@ export class GetUnitTypesQueryDto {
   @ApiProperty({
     required: false,
     example: 'excavator',
-    description:
-      'Pencarian umum di semua field (unit_name, type_name, model_name, brand_name)',
+    description: 'Pencarian umum di semua field (unit_name, type_name, model_name, brand_name)',
     minLength: 1,
   })
   @IsOptional()
@@ -258,15 +248,7 @@ export class GetUnitTypesQueryDto {
     required: false,
     example: 'unit_name',
     description: 'Field untuk sorting',
-    enum: [
-      'id',
-      'brand_id',
-      'unit_name',
-      'type_name',
-      'model_name',
-      'createdAt',
-      'updatedAt',
-    ],
+    enum: ['id', 'brand_id', 'unit_name', 'type_name', 'model_name', 'createdAt', 'updatedAt'],
     default: 'id',
   })
   @IsOptional()

@@ -49,12 +49,12 @@ import { SshTunnelService } from './common/services/ssh-tunnel.service';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
         const dbHitServer = configService.get<string>('DB_HIT_SERVER', 'OFF').toUpperCase();
-        
+
         if (dbHitServer === 'ON') {
           // Wait for SSH tunnel to be ready for server database
           const sshTunnelService = new SshTunnelService(configService);
           await sshTunnelService.onModuleInit();
-          
+
           return {
             type: 'postgres',
             host: process.env.POSTGRES_HOST || '127.0.0.1',

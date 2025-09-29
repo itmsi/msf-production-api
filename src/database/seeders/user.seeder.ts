@@ -6,9 +6,7 @@ export class UserSeeder {
 
   async run(): Promise<void> {
     // Get first employee for user creation
-    const employees = await this.dataSource.query(
-      'SELECT id FROM m_employee LIMIT 1',
-    );
+    const employees = await this.dataSource.query('SELECT id FROM m_employee LIMIT 1');
     if (employees.length === 0) {
       console.log('❌ No employees found. Please run employee seeder first.');
       return;
@@ -30,10 +28,10 @@ export class UserSeeder {
 
     for (const userData of usersData) {
       // Check if user already exists
-      const existingUser = await this.dataSource.query(
-        'SELECT * FROM m_user WHERE username = $1 OR email = $2',
-        [userData.username, userData.email],
-      );
+      const existingUser = await this.dataSource.query('SELECT * FROM m_user WHERE username = $1 OR email = $2', [
+        userData.username,
+        userData.email,
+      ]);
 
       if (existingUser.length === 0) {
         // Hash password
@@ -43,13 +41,7 @@ export class UserSeeder {
         // Create new user
         await this.dataSource.query(
           'INSERT INTO m_user (username, email, password, "isActive", employee_id, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, NOW(), NOW())',
-          [
-            userData.username,
-            userData.email,
-            hashedPassword,
-            userData.isActive,
-            userData.employeeId,
-          ],
+          [userData.username, userData.email, hashedPassword, userData.isActive, userData.employeeId],
         );
         createdCount++;
         console.log(`✅ User created: ${userData.username}`);

@@ -1,18 +1,9 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  HttpException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException, HttpException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Sites } from './entities/sites.entity';
 import { OperationPoints } from '../operation-points/entities/operation-points.entity';
 import { Repository, Not } from 'typeorm';
-import {
-  ApiResponse,
-  successResponse,
-  throwError,
-  emptyDataResponse,
-} from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import {
   validateNotEmptyString,
@@ -25,13 +16,7 @@ import {
   validateMultipleFields,
   ValidationResult,
 } from '../../common/helpers/validation.helper';
-import {
-  CreateSitesDto,
-  SitesResponseDto,
-  GetSitesQueryDto,
-  UpdateSitesDto,
-  OperatorPointDto,
-} from './dto/sites.dto';
+import { CreateSitesDto, SitesResponseDto, GetSitesQueryDto, UpdateSitesDto, OperatorPointDto } from './dto/sites.dto';
 
 @Injectable()
 export class SitesService {
@@ -46,9 +31,7 @@ export class SitesService {
    * Validasi tambahan untuk data sites sebelum disimpan
    * Bisa digunakan untuk validasi business logic yang lebih kompleks
    */
-  private validateSiteData(
-    data: CreateSitesDto | UpdateSitesDto,
-  ): ValidationResult {
+  private validateSiteData(data: CreateSitesDto | UpdateSitesDto): ValidationResult {
     const validations: ValidationResult[] = [];
 
     // Validasi untuk create (semua field mandatory)
@@ -70,33 +53,17 @@ export class SitesService {
 
     // Validasi operator points jika ada
     if ('operator_point' in data && data.operator_point !== undefined) {
-      validations.push(
-        validateNotEmptyArray(data.operator_point, 'operator_point'),
-      );
+      validations.push(validateNotEmptyArray(data.operator_point, 'operator_point'));
 
       // Validasi setiap operator point
       if (Array.isArray(data.operator_point)) {
         data.operator_point.forEach((op, index) => {
-          validations.push(
-            validateEnum(op.type, ['loading', 'dumping'], `operator_point[${index}].type`),
-          );
-          validations.push(
-            validateNotEmptyString(op.name, `operator_point[${index}].name`),
-          );
+          validations.push(validateEnum(op.type, ['loading', 'dumping'], `operator_point[${index}].type`));
+          validations.push(validateNotEmptyString(op.name, `operator_point[${index}].name`));
 
           // Longitude dan latitude nullable, gunakan helper functions khusus
-          validations.push(
-            validateNullableLongitude(
-              op.longitude,
-              `operator_point[${index}].longitude`,
-            ),
-          );
-          validations.push(
-            validateNullableLatitude(
-              op.latitude,
-              `operator_point[${index}].latitude`,
-            ),
-          );
+          validations.push(validateNullableLongitude(op.longitude, `operator_point[${index}].longitude`));
+          validations.push(validateNullableLatitude(op.latitude, `operator_point[${index}].latitude`));
         });
       }
     }
@@ -108,10 +75,7 @@ export class SitesService {
    * Validasi business logic khusus
    * Contoh: nama site tidak boleh duplikat
    */
-  private async validateBusinessRules(
-    data: CreateSitesDto | UpdateSitesDto,
-    excludeId?: number,
-  ): Promise<ValidationResult> {
+  private async validateBusinessRules(data: CreateSitesDto | UpdateSitesDto, excludeId?: number): Promise<ValidationResult> {
     const errors: string[] = [];
 
     // Validasi nama site tidak boleh duplikat
@@ -129,12 +93,7 @@ export class SitesService {
     }
 
     // Validasi koordinat tidak boleh sama dengan site lain
-    if (
-      'longitude' in data &&
-      'latitude' in data &&
-      data.longitude !== undefined &&
-      data.latitude !== undefined
-    ) {
+    if ('longitude' in data && 'latitude' in data && data.longitude !== undefined && data.latitude !== undefined) {
       const existingSite = await this.sitesRepository.findOne({
         where: {
           longitude: data.longitude,
@@ -144,9 +103,7 @@ export class SitesService {
       });
 
       if (existingSite) {
-        errors.push(
-          `Koordinat (${data.longitude}, ${data.latitude}) sudah digunakan oleh site lain`,
-        );
+        errors.push(`Koordinat (${data.longitude}, ${data.latitude}) sudah digunakan oleh site lain`);
       }
     }
 
@@ -176,9 +133,7 @@ export class SitesService {
     }
   }
 
-  async findAll(
-    query: GetSitesQueryDto,
-  ): Promise<ApiResponse<SitesResponseDto[]>> {
+  async findAll(query: GetSitesQueryDto): Promise<ApiResponse<SitesResponseDto[]>> {
     try {
       const page = parseInt(query.page ?? '1', 10);
       const limit = parseInt(query.limit ?? '10', 10);
@@ -201,10 +156,7 @@ export class SitesService {
 
       // Search filter (mencari di semua field yang relevan)
       if (search) {
-        qb.andWhere(
-          '(site.name ILIKE :search OR site.location ILIKE :search)',
-          { search: `%${search}%` },
-        );
+        qb.andWhere('(site.name ILIKE :search OR site.location ILIKE :search)', { search: `%${search}%` });
       }
 
       // Filter by name (exact match atau partial match)
@@ -222,15 +174,7 @@ export class SitesService {
       }
 
       // Validate sortBy field to prevent SQL injection
-      const allowedSortFields = [
-        'id',
-        'name',
-        'location',
-        'longitude',
-        'latitude',
-        'createdAt',
-        'updatedAt',
-      ];
+      const allowedSortFields = ['id', 'name', 'location', 'longitude', 'latitude', 'createdAt', 'updatedAt'];
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
@@ -260,13 +204,7 @@ export class SitesService {
           })) || [],
       }));
 
-      return paginateResponse(
-        transformedResult,
-        total,
-        page,
-        limit,
-        'Data sites berhasil diambil',
-      );
+      return paginateResponse(transformedResult, total, page, limit, 'Data sites berhasil diambil');
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Gagal mengambil data sites');
@@ -278,19 +216,13 @@ export class SitesService {
       // Validasi tambahan menggunakan helper functions
       const validationResult = this.validateSiteData(data);
       if (!validationResult.isValid) {
-        throwError(
-          `Validasi gagal: ${validationResult.errors.join(', ')}`,
-          400,
-        );
+        throwError(`Validasi gagal: ${validationResult.errors.join(', ')}`, 400);
       }
 
       // Validasi business rules
       const businessValidation = await this.validateBusinessRules(data);
       if (!businessValidation.isValid) {
-        throwError(
-          `Business rule validation gagal: ${businessValidation.errors.join(', ')}`,
-          400,
-        );
+        throwError(`Business rule validation gagal: ${businessValidation.errors.join(', ')}`, 400);
       }
 
       // Create site first
@@ -328,10 +260,7 @@ export class SitesService {
         throwError('Gagal mengambil data site yang baru dibuat', 500);
       }
 
-      return successResponse(
-        result as SitesResponseDto,
-        'Site berhasil dibuat',
-      );
+      return successResponse(result as SitesResponseDto, 'Site berhasil dibuat');
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -340,10 +269,7 @@ export class SitesService {
     }
   }
 
-  async update(
-    id: number,
-    updateDto: UpdateSitesDto,
-  ): Promise<ApiResponse<SitesResponseDto | null>> {
+  async update(id: number, updateDto: UpdateSitesDto): Promise<ApiResponse<SitesResponseDto | null>> {
     try {
       const site = await this.sitesRepository.findOne({ where: { id } });
 
@@ -354,27 +280,18 @@ export class SitesService {
       // Validasi tambahan menggunakan helper functions (hanya untuk field yang diisi)
       const validationResult = this.validateSiteData(updateDto);
       if (!validationResult.isValid) {
-        throwError(
-          `Validasi gagal: ${validationResult.errors.join(', ')}`,
-          400,
-        );
+        throwError(`Validasi gagal: ${validationResult.errors.join(', ')}`, 400);
       }
 
       // Validasi business rules (exclude current site ID)
-      const businessValidation = await this.validateBusinessRules(
-        updateDto,
-        id,
-      );
+      const businessValidation = await this.validateBusinessRules(updateDto, id);
       if (!businessValidation.isValid) {
-        throwError(
-          `Business rule validation gagal: ${businessValidation.errors.join(', ')}`,
-          400,
-        );
+        throwError(`Business rule validation gagal: ${businessValidation.errors.join(', ')}`, 400);
       }
 
       // Update site data - hanya update field yang ada dalam updateDto
       const updateData: Partial<Sites> = {};
-      
+
       if (updateDto.name !== undefined) {
         updateData.name = updateDto.name;
       }
@@ -400,7 +317,7 @@ export class SitesService {
           const existingOperationPoints = await this.operationPointsRepository.find({
             where: { sites_id: id },
           });
-          
+
           if (existingOperationPoints.length > 0) {
             // Soft delete existing operation points
             await this.operationPointsRepository.softRemove(existingOperationPoints);
@@ -420,9 +337,7 @@ export class SitesService {
           await this.operationPointsRepository.save(operatorPoints);
         } catch (operationPointsError) {
           console.error('Error updating operator points:', operationPointsError);
-          throw new InternalServerErrorException(
-            'Gagal mengupdate operator points: ' + operationPointsError.message,
-          );
+          throw new InternalServerErrorException('Gagal mengupdate operator points: ' + operationPointsError.message);
         }
       }
 
@@ -436,10 +351,7 @@ export class SitesService {
         throwError('Gagal mengambil data site yang diupdate', 500);
       }
 
-      return successResponse(
-        result as SitesResponseDto,
-        'Site berhasil diupdate',
-      );
+      return successResponse(result as SitesResponseDto, 'Site berhasil diupdate');
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

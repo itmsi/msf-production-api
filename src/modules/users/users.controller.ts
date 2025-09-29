@@ -1,46 +1,19 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  Put,
-  Delete,
-  UseGuards,
-  Query,
-  ParseIntPipe,
-  Request,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Put, Delete, UseGuards, Query, ParseIntPipe, Request } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiQuery,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiBody,
-} from '@nestjs/swagger';
-import {
-  CreateUserDto,
-  GetUsersQueryDto,
-  UpdateUserDto,
-  UserListResponseDto,
-  SingleUserResponseDto,
-} from './dto/user.dto';
+import { ApiBearerAuth, ApiTags, ApiQuery, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { CreateUserDto, GetUsersQueryDto, UpdateUserDto, UserListResponseDto, SingleUserResponseDto } from './dto/user.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth('jwt')
-@Controller('prod/users')
+@Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary:
-      'Mendapatkan semua data users dengan pagination, filtering, dan sorting',
+    summary: 'Mendapatkan semua data users dengan pagination, filtering, dan sorting',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -150,15 +123,7 @@ export class UsersController {
     const limit = query.limit || '10';
     const pageNum = parseInt(page, 10);
     const limitNum = parseInt(limit, 10);
-    return this.usersService.findAll(
-      pageNum,
-      limitNum,
-      query.search,
-      query.role,
-      query.position_name,
-      query.sortBy,
-      query.sortOrder,
-    );
+    return this.usersService.findAll(pageNum, limitNum, query.search, query.role, query.position_name, query.sortBy, query.sortOrder);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -238,8 +203,7 @@ export class UsersController {
   @Post()
   @ApiOperation({
     summary: 'Membuat user baru',
-    description:
-      'Membuat user baru dengan username dan email yang unik. Password akan di-hash secara otomatis.',
+    description: 'Membuat user baru dengan username dan email yang unik. Password akan di-hash secara otomatis.',
   })
   @ApiBody({
     type: CreateUserDto,
@@ -296,8 +260,7 @@ export class UsersController {
     schema: {
       example: {
         statusCode: 400,
-        message:
-          'Username hanya boleh mengandung huruf dan angka, tanpa spasi atau simbol',
+        message: 'Username hanya boleh mengandung huruf dan angka, tanpa spasi atau simbol',
         error: true,
         timestamp: '2024-01-01T00:00:00.000Z',
       },
@@ -347,8 +310,7 @@ export class UsersController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data user berdasarkan ID',
-    description:
-      'Mengupdate data user dengan validasi duplikasi email dan role assignment',
+    description: 'Mengupdate data user dengan validasi duplikasi email dan role assignment',
   })
   @ApiParam({
     name: 'id',
@@ -406,8 +368,7 @@ export class UsersController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Menghapus data user berdasarkan ID',
-    description:
-      'Soft delete user (marks as deleted but keeps in database). User-role relationships akan dihapus terlebih dahulu.',
+    description: 'Soft delete user (marks as deleted but keeps in database). User-role relationships akan dihapus terlebih dahulu.',
   })
   @ApiParam({
     name: 'id',

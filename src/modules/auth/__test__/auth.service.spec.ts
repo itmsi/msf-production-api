@@ -26,11 +26,7 @@ describe('AuthService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        AuthService,
-        { provide: UsersService, useValue: mockUsersService },
-        { provide: JwtService, useValue: mockJwtService },
-      ],
+      providers: [AuthService, { provide: UsersService, useValue: mockUsersService }, { provide: JwtService, useValue: mockJwtService }],
     }).compile();
 
     service = module.get<AuthService>(AuthService);
@@ -102,9 +98,7 @@ describe('AuthService', () => {
       } as any);
       const result = await service.sendResetPasswordEmail('user@example.com');
       expect(result).toEqual({ success: true });
-      expect(usersService.sendResetPasswordEmail).toHaveBeenCalledWith(
-        'user@example.com',
-      );
+      expect(usersService.sendResetPasswordEmail).toHaveBeenCalledWith('user@example.com');
     });
   });
 
@@ -132,9 +126,7 @@ describe('AuthService', () => {
 
     it('should throw error if passwords do not match', async () => {
       const invalidDto = { ...dto, confirmPassword: 'wrong' };
-      await expect(service.resetPassword(invalidDto)).rejects.toThrow(
-        'Passwords do not match',
-      );
+      await expect(service.resetPassword(invalidDto)).rejects.toThrow('Passwords do not match');
     });
 
     it('should throw error if token expired', async () => {
@@ -142,16 +134,12 @@ describe('AuthService', () => {
         reset_password_expires: new Date(Date.now() - 1000),
       };
       usersService.findByPassword.mockResolvedValue(expiredUser as any);
-      await expect(service.resetPassword(dto)).rejects.toThrow(
-        'Invalid or expired reset token',
-      );
+      await expect(service.resetPassword(dto)).rejects.toThrow('Invalid or expired reset token');
     });
 
     it('should throw error if user not found', async () => {
       usersService.findByPassword.mockResolvedValue(null);
-      await expect(service.resetPassword(dto)).rejects.toThrow(
-        'Invalid or expired reset token',
-      );
+      await expect(service.resetPassword(dto)).rejects.toThrow('Invalid or expired reset token');
     });
 
     it('should throw error if reset_password_expires is missing or expired', async () => {
@@ -162,9 +150,7 @@ describe('AuthService', () => {
       };
       usersService.findByPassword.mockResolvedValue(user as any);
 
-      await expect(service.resetPassword(dto)).rejects.toThrow(
-        'Invalid or expired reset token',
-      );
+      await expect(service.resetPassword(dto)).rejects.toThrow('Invalid or expired reset token');
     });
 
     it('should throw error if reset_password_expires < now', async () => {
@@ -175,9 +161,7 @@ describe('AuthService', () => {
       };
       usersService.findByPassword.mockResolvedValue(user as any);
 
-      await expect(service.resetPassword(dto)).rejects.toThrow(
-        'Invalid or expired reset token',
-      );
+      await expect(service.resetPassword(dto)).rejects.toThrow('Invalid or expired reset token');
     });
   });
 
@@ -208,9 +192,7 @@ describe('AuthService', () => {
     it('should throw error if user not found', async () => {
       usersService.findByPassword.mockResolvedValue(null);
 
-      await expect(service.cekTokenReset(dto)).rejects.toThrow(
-        'Invalid or expired reset token',
-      );
+      await expect(service.cekTokenReset(dto)).rejects.toThrow('Invalid or expired reset token');
     });
 
     it('should throw error if reset_password_expires is missing or expired', async () => {
@@ -220,9 +202,7 @@ describe('AuthService', () => {
       };
       usersService.findByPassword.mockResolvedValue(expiredUser as any);
 
-      await expect(service.cekTokenReset(dto)).rejects.toThrow(
-        'Invalid or expired reset token',
-      );
+      await expect(service.cekTokenReset(dto)).rejects.toThrow('Invalid or expired reset token');
     });
   });
 });

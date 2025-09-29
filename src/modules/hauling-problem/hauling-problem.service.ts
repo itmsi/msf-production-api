@@ -1,28 +1,12 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  HttpException,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException, HttpException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, Like } from 'typeorm';
 import { HaulingProblem } from './entities/hauling-problem.entity';
 import { Activities } from '../activities/entities/activities.entity';
 import { Sites } from '../sites/entities/sites.entity';
-import {
-  ApiResponse,
-  successResponse,
-  throwError,
-  emptyDataResponse,
-} from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
-import {
-  CreateHaulingProblemDto,
-  UpdateHaulingProblemDto,
-  HaulingProblemResponseDto,
-  GetHaulingProblemQueryDto,
-} from './dto';
+import { CreateHaulingProblemDto, UpdateHaulingProblemDto, HaulingProblemResponseDto, GetHaulingProblemQueryDto } from './dto';
 
 @Injectable()
 export class HaulingProblemService {
@@ -135,7 +119,7 @@ export class HaulingProblemService {
         const activityDate = new Date(query.activity_date);
         const nextDay = new Date(activityDate);
         nextDay.setDate(nextDay.getDate() + 1);
-        
+
         qb.andWhere('hp.activityDate >= :startDate AND hp.activityDate < :endDate', {
           startDate: activityDate,
           endDate: nextDay,
@@ -147,7 +131,7 @@ export class HaulingProblemService {
         const startDate = new Date(query.start_date);
         const endDate = new Date(query.end_date);
         endDate.setDate(endDate.getDate() + 1); // Include end date
-        
+
         qb.andWhere('hp.activityDate >= :startDate AND hp.activityDate < :endDate', {
           startDate: startDate,
           endDate: endDate,
@@ -183,10 +167,9 @@ export class HaulingProblemService {
       // Search filter
       if (query.search) {
         const searchTerm = `%${query.search.toLowerCase()}%`;
-        qb.andWhere(
-          '(LOWER(activities.name) LIKE :search OR LOWER(site.name) LIKE :search OR LOWER(hp.remark) LIKE :search)',
-          { search: searchTerm },
-        );
+        qb.andWhere('(LOWER(activities.name) LIKE :search OR LOWER(site.name) LIKE :search OR LOWER(hp.remark) LIKE :search)', {
+          search: searchTerm,
+        });
       }
 
       // Sorting
@@ -194,7 +177,7 @@ export class HaulingProblemService {
       const validSortBy = allowedSortFields.includes(query.sortBy || '') ? query.sortBy || 'id' : 'id';
       const validSortOrder = query.sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
-      qb.orderBy(`hp.${validSortBy}`, validSortOrder as 'ASC' | 'DESC');
+      qb.orderBy(`hp.${validSortBy}`, validSortOrder);
 
       const [result, total] = await qb.skip(skip).take(limit).getManyAndCount();
 
@@ -215,13 +198,7 @@ export class HaulingProblemService {
         updatedAt: item.updatedAt,
       }));
 
-      return paginateResponse(
-        transformedResult,
-        total,
-        page,
-        limit,
-        'Data hauling problem berhasil diambil',
-      );
+      return paginateResponse(transformedResult, total, page, limit, 'Data hauling problem berhasil diambil');
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Gagal mengambil data hauling problem');

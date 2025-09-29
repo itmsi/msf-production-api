@@ -21,7 +21,6 @@ async function seedProduction() {
 
   try {
     await dataSource.initialize();
-    console.log('🔌 Database connection established');
 
     const productionSeeder = new ProductionSeeder(dataSource);
     await productionSeeder.run();
@@ -30,12 +29,10 @@ async function seedProduction() {
     const customRolesUsersSeeder = new CustomRolesUsersSeeder(dataSource);
     await customRolesUsersSeeder.run();
   } catch (error) {
-    console.error('❌ Production Module seeding failed:', error);
     process.exit(1);
   } finally {
     if (dataSource.isInitialized) {
       await dataSource.destroy();
-      console.log('🔌 Database connection closed');
     }
     process.exit(0);
   }

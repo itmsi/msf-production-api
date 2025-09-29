@@ -1,8 +1,4 @@
-import {
-  MigrationInterface,
-  QueryRunner,
-  TableColumn,
-} from 'typeorm';
+import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
 
 export class AddStatusColumnToRInputBarge1700000000052 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {

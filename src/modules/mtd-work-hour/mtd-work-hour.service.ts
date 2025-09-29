@@ -25,9 +25,7 @@ export class MtdWorkHourService {
       const limit = parseInt(query.limit?.toString() ?? '10', 10);
 
       // Ambil data dari Population untuk mendapatkan daftar unit
-      const populationQuery = this.populationRepository
-        .createQueryBuilder('pop')
-        .where('pop.status = :status', { status: 'active' });
+      const populationQuery = this.populationRepository.createQueryBuilder('pop').where('pop.status = :status', { status: 'active' });
 
       if (query.unit) {
         populationQuery.andWhere('pop.no_unit ILIKE :unit', { unit: `%${query.unit}%` });
@@ -45,8 +43,8 @@ export class MtdWorkHourService {
 
       // Filter berdasarkan problem type yang spesifik
       if (query.problemType) {
-        lossTimeQuery.andWhere('act.name = :problemType', { 
-          problemType: query.problemType 
+        lossTimeQuery.andWhere('act.name = :problemType', {
+          problemType: query.problemType,
         });
       }
 
@@ -64,7 +62,7 @@ export class MtdWorkHourService {
       const groupedData: Record<string, MtdWorkHourSummaryDto> = {};
 
       // Initialize data untuk setiap unit dari population
-      populations.forEach(pop => {
+      populations.forEach((pop) => {
         if (pop.no_unit) {
           groupedData[pop.no_unit] = {
             unit: pop.no_unit,
@@ -75,7 +73,7 @@ export class MtdWorkHourService {
       });
 
       // Process loss time data dan group by unit
-      lossTimeData.forEach(lt => {
+      lossTimeData.forEach((lt) => {
         const unit = lt.population?.no_unit;
         const problemType = lt.activities?.name;
         const duration = lt.duration || 0;
@@ -90,8 +88,8 @@ export class MtdWorkHourService {
           }
 
           // Cari apakah problem type sudah ada untuk unit ini
-          const existingProblem = groupedData[unit].problems.find(p => p.problemType === problemType);
-          
+          const existingProblem = groupedData[unit].problems.find((p) => p.problemType === problemType);
+
           if (existingProblem) {
             existingProblem.duration += duration;
             existingProblem.totalDuration += duration;
@@ -117,13 +115,7 @@ export class MtdWorkHourService {
       const endIndex = startIndex + limit;
       const paginatedResult = result.slice(startIndex, endIndex);
 
-      return paginateResponse(
-        paginatedResult,
-        total,
-        page,
-        limit,
-        'Data MTD Work Hour berhasil diambil',
-      );
+      return paginateResponse(paginatedResult, total, page, limit, 'Data MTD Work Hour berhasil diambil');
     } catch (error) {
       throw new BadRequestException(`Gagal mendapatkan data: ${error.message}`);
     }
@@ -149,8 +141,8 @@ export class MtdWorkHourService {
 
       // Filter berdasarkan unit
       if (query.unit) {
-        lossTimeQuery.andWhere('pop.no_unit ILIKE :unit', { 
-          unit: `%${query.unit}%` 
+        lossTimeQuery.andWhere('pop.no_unit ILIKE :unit', {
+          unit: `%${query.unit}%`,
         });
       }
 
@@ -167,7 +159,7 @@ export class MtdWorkHourService {
         .take(limit)
         .getManyAndCount();
 
-      const result: MtdWorkHourResponseDto[] = lossTimeData.map(lt => ({
+      const result: MtdWorkHourResponseDto[] = lossTimeData.map((lt) => ({
         unit: lt.population?.no_unit || '',
         activityDate: lt.dateActivity,
         problemType: lt.activities?.name || '',
@@ -176,13 +168,7 @@ export class MtdWorkHourService {
         totalDuration: lt.duration || 0,
       }));
 
-      return paginateResponse(
-        result,
-        total,
-        page,
-        limit,
-        `Data ${query.problemType} berhasil diambil`,
-      );
+      return paginateResponse(result, total, page, limit, `Data ${query.problemType} berhasil diambil`);
     } catch (error) {
       throw new BadRequestException(`Gagal mendapatkan data: ${error.message}`);
     }
@@ -200,15 +186,15 @@ export class MtdWorkHourService {
 
       // Filter berdasarkan problem type
       if (query.problemType) {
-        lossTimeQuery.andWhere('act.name = :problemType', { 
-          problemType: query.problemType 
+        lossTimeQuery.andWhere('act.name = :problemType', {
+          problemType: query.problemType,
         });
       }
 
       // Filter berdasarkan unit
       if (query.unit) {
-        lossTimeQuery.andWhere('pop.no_unit ILIKE :unit', { 
-          unit: `%${query.unit}%` 
+        lossTimeQuery.andWhere('pop.no_unit ILIKE :unit', {
+          unit: `%${query.unit}%`,
         });
       }
 
@@ -225,7 +211,7 @@ export class MtdWorkHourService {
       // Group data berdasarkan problem type
       const groupedByProblemType: Record<string, { totalDuration: number; count: number }> = {};
 
-      lossTimeData.forEach(lt => {
+      lossTimeData.forEach((lt) => {
         const problemType = lt.activities?.name || 'Unknown';
         const duration = lt.duration || 0;
 
@@ -267,9 +253,7 @@ export class MtdWorkHourService {
       const limit = parseInt(query.limit?.toString() ?? '10', 10);
 
       // Ambil data dari Population untuk mendapatkan daftar unit
-      const populationQuery = this.populationRepository
-        .createQueryBuilder('pop')
-        .where('pop.status = :status', { status: 'active' });
+      const populationQuery = this.populationRepository.createQueryBuilder('pop').where('pop.status = :status', { status: 'active' });
 
       if (query.unit) {
         populationQuery.andWhere('pop.no_unit ILIKE :unit', { unit: `%${query.unit}%` });
@@ -291,7 +275,7 @@ export class MtdWorkHourService {
         'Travelling Equipment',
         'Fogging',
         'Safety Talk',
-        'P2H'
+        'P2H',
       ];
 
       // Ambil data dari r_loss_time untuk semua problem types
@@ -317,7 +301,7 @@ export class MtdWorkHourService {
       const groupedData: Record<string, any> = {};
 
       // Initialize data untuk setiap unit dari population
-      populations.forEach(pop => {
+      populations.forEach((pop) => {
         if (pop.no_unit) {
           groupedData[pop.no_unit] = {
             unit: pop.no_unit,
@@ -340,7 +324,7 @@ export class MtdWorkHourService {
       });
 
       // Process loss time data dan group by unit
-      lossTimeData.forEach(lt => {
+      lossTimeData.forEach((lt) => {
         const unit = lt.population?.no_unit;
         const problemType = lt.activities?.name;
         const duration = lt.duration || 0;
@@ -400,13 +384,7 @@ export class MtdWorkHourService {
       const endIndex = startIndex + limit;
       const paginatedResult = result.slice(startIndex, endIndex);
 
-      return paginateResponse(
-        paginatedResult,
-        total,
-        page,
-        limit,
-        'Data MTD Work Hour berdasarkan semua problem types berhasil diambil',
-      );
+      return paginateResponse(paginatedResult, total, page, limit, 'Data MTD Work Hour berdasarkan semua problem types berhasil diambil');
     } catch (error) {
       throw new BadRequestException(`Gagal mendapatkan data: ${error.message}`);
     }

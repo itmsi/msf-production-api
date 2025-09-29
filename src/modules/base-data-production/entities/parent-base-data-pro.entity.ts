@@ -1,13 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  OneToMany,
-  ManyToOne,
-  JoinColumn,
-  OneToOne,
-  RelationId,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn, OneToOne, RelationId } from 'typeorm';
 import { BaseDataPro } from './base-data-pro.entity';
 import { Population } from '../../population/entities/population.entity';
 
@@ -23,7 +14,6 @@ export class ParentBaseDataPro {
 
   @Column({ type: 'int', name: 'population_id' })
   populationId: number;
-
 
   @Column({ type: 'timestamp', name: 'activity_date' })
   activityDate: Date;

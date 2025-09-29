@@ -18,24 +18,10 @@ import {
   StreamableFile,
   InternalServerErrorException,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiQuery,
-  ApiBearerAuth,
-  ApiExtraModels,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth, ApiExtraModels } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { BargeFormService } from './barge-form.service';
-import {
-  CreateBargeFormDto,
-  UpdateBargeFormDto,
-  BargeFormResponseDto,
-  QueryBargeFormDto,
-  QueryExportBargeFormDto,
-} from './dto';
+import { CreateBargeFormDto, UpdateBargeFormDto, BargeFormResponseDto, QueryBargeFormDto, QueryExportBargeFormDto } from './dto';
 import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { join } from 'path';
@@ -52,15 +38,11 @@ export class BargeFormController {
   @Get('import/template')
   @ApiOperation({
     summary: 'Download template CSV untuk import Barge',
-    description:
-      'Mendownload template CSV yang berisi format kolom yang diperlukan',
+    description: 'Mendownload template CSV yang berisi format kolom yang diperlukan',
   })
   downloadTemplate(): StreamableFile {
     try {
-      const file = join(
-        process.cwd(),
-        'src/modules/barge-form/template-barge-import.csv',
-      );
+      const file = join(process.cwd(), 'src/modules/barge-form/template-barge-import.csv');
       const stream = createReadStream(file);
       return new StreamableFile(stream, {
         type: 'text/csv',
@@ -81,13 +63,9 @@ export class BargeFormController {
   @Get('export')
   @ApiOperation({
     summary: 'Export data Barge Form dari CSV',
-    description:
-      'Mengimport data Barge Form dari CSV ke database setelah validasi',
+    description: 'Mengimport data Barge Form dari CSV ke database setelah validasi',
   })
-  async exportData(
-    @Query() query: QueryExportBargeFormDto,
-    @Res({ passthrough: false }) res: Response,
-  ) {
+  async exportData(@Query() query: QueryExportBargeFormDto, @Res({ passthrough: false }) res: Response) {
     return await this.bargeFormService.exportData(query, res);
   }
 
@@ -143,22 +121,19 @@ export class BargeFormController {
   @ApiQuery({
     name: 'start_date',
     required: false,
-    description:
-      'Tanggal mulai untuk filter rentang tanggal (start_loading) - format YYYY-MM-DD',
+    description: 'Tanggal mulai untuk filter rentang tanggal (start_loading) - format YYYY-MM-DD',
     example: '2024-01-01',
   })
   @ApiQuery({
     name: 'end_date',
     required: false,
-    description:
-      'Tanggal akhir untuk filter rentang tanggal (end_loading) - format YYYY-MM-DD',
+    description: 'Tanggal akhir untuk filter rentang tanggal (end_loading) - format YYYY-MM-DD',
     example: '2024-01-31',
   })
   @ApiQuery({
     name: 'keyword',
     required: false,
-    description:
-      'Kata kunci pencarian untuk nama barge, nama site, shipment, atau remarks',
+    description: 'Kata kunci pencarian untuk nama barge, nama site, shipment, atau remarks',
     example: 'alpha',
   })
   @ApiQuery({
@@ -228,8 +203,7 @@ export class BargeFormController {
   @Get(':id')
   @ApiOperation({
     summary: 'Mendapatkan barge form berdasarkan ID',
-    description:
-      'Mengambil barge form spesifik berdasarkan ID dengan relasi barge dan site',
+    description: 'Mengambil barge form spesifik berdasarkan ID dengan relasi barge dan site',
   })
   @ApiParam({
     name: 'id',
@@ -324,10 +298,7 @@ export class BargeFormController {
     status: 500,
     description: 'Internal server error',
   })
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateBargeFormDto: UpdateBargeFormDto,
-  ) {
+  async update(@Param('id', ParseIntPipe) id: number, @Body() updateBargeFormDto: UpdateBargeFormDto) {
     return this.bargeFormService.update(id, updateBargeFormDto);
   }
 
@@ -335,8 +306,7 @@ export class BargeFormController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Menghapus barge form',
-    description:
-      'Soft delete barge form berdasarkan ID. Data tidak benar-benar dihapus dari database.',
+    description: 'Soft delete barge form berdasarkan ID. Data tidak benar-benar dihapus dari database.',
   })
   @ApiParam({
     name: 'id',

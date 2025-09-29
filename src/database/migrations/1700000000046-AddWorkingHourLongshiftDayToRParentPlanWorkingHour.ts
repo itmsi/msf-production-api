@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
 
-export class AddWorkingHourLongshiftDayToRParentPlanWorkingHour1700000000046
-  implements MigrationInterface
-{
+export class AddWorkingHourLongshiftDayToRParentPlanWorkingHour1700000000046 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Tambah kolom working_hour_longshift_day ke tabel r_parent_plan_working_hour
     await queryRunner.addColumn(
@@ -20,9 +18,6 @@ export class AddWorkingHourLongshiftDayToRParentPlanWorkingHour1700000000046
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Hapus kolom working_hour_longshift_day dari tabel r_parent_plan_working_hour
-    await queryRunner.dropColumn(
-      'r_parent_plan_working_hour',
-      'working_hour_longshift_day',
-    );
+    await queryRunner.dropColumn('r_parent_plan_working_hour', 'working_hour_longshift_day');
   }
 }

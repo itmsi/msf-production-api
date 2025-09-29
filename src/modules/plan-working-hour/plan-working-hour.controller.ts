@@ -1,15 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  UseGuards,
-  ParseIntPipe,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { PlanWorkingHourService } from './plan-working-hour.service';
 import {
   CreatePlanWorkingHourDto,
@@ -20,14 +9,10 @@ import {
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { successResponse } from '../../common/helpers/response.helper';
 
-
-
 @Controller('plan-working-hour')
 @UseGuards(JwtAuthGuard)
 export class PlanWorkingHourController {
-  constructor(
-    private readonly planWorkingHourService: PlanWorkingHourService,
-  ) {}
+  constructor(private readonly planWorkingHourService: PlanWorkingHourService) {}
 
   @Post()
   async create(@Body() createDto: CreatePlanWorkingHourDto) {
@@ -48,33 +33,15 @@ export class PlanWorkingHourController {
   }
 
   @Get('summary')
-  async getSummary(
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
-  ) {
-    const result = await this.planWorkingHourService.getWorkingHoursSummary(
-      new Date(startDate),
-      new Date(endDate),
-    );
-    return successResponse(
-      result,
-      'Working hours summary retrieved successfully',
-    );
+  async getSummary(@Query('startDate') startDate: string, @Query('endDate') endDate: string) {
+    const result = await this.planWorkingHourService.getWorkingHoursSummary(new Date(startDate), new Date(endDate));
+    return successResponse(result, 'Working hours summary retrieved successfully');
   }
 
   @Get('date-range')
-  async findByDateRange(
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
-  ) {
-    const result = await this.planWorkingHourService.findByDateRange(
-      new Date(startDate),
-      new Date(endDate),
-    );
-    return successResponse(
-      result,
-      'Plan working hours by date range retrieved successfully',
-    );
+  async findByDateRange(@Query('startDate') startDate: string, @Query('endDate') endDate: string) {
+    const result = await this.planWorkingHourService.findByDateRange(new Date(startDate), new Date(endDate));
+    return successResponse(result, 'Plan working hours by date range retrieved successfully');
   }
 
   @Get(':id')
@@ -84,10 +51,7 @@ export class PlanWorkingHourController {
   }
 
   @Patch(':id')
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateDto: UpdatePlanWorkingHourDto,
-  ) {
+  async update(@Param('id', ParseIntPipe) id: number, @Body() updateDto: UpdatePlanWorkingHourDto) {
     const result = await this.planWorkingHourService.update(id, updateDto);
     return successResponse(result, 'Plan working hour updated successfully');
   }

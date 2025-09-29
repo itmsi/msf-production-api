@@ -1,32 +1,11 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  HttpException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException, HttpException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  DataSource,
-  DeepPartial,
-  ILike,
-  Repository,
-  SelectQueryBuilder,
-} from 'typeorm';
+import { DataSource, DeepPartial, ILike, Repository, SelectQueryBuilder } from 'typeorm';
 import { BargingList } from './entities/barging-list.entity';
 import { Population } from '../population/entities/population.entity';
 import { Barge } from '../barge/entities/barge.entity';
-import {
-  ApiResponse,
-  successResponse,
-  throwError,
-  emptyDataResponse,
-  importResponse,
-} from '../../common/helpers/response.helper';
-import {
-  CsvHelper,
-  paginateResponse,
-  setCsvExportHeaders,
-} from '../../common/helpers/public.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse, importResponse } from '../../common/helpers/response.helper';
+import { CsvHelper, paginateResponse, setCsvExportHeaders } from '../../common/helpers/public.helper';
 import {
   CreateBargingListDto,
   UpdateBargingListDto,
@@ -35,10 +14,7 @@ import {
   ExportBargingListQueryDto,
 } from './dto';
 import { calculateTimeRange } from '../../common/helpers/public.helper';
-import {
-  validateFileNumber,
-  validateImportFile,
-} from 'src/common/helpers/validation.helper';
+import { validateFileNumber, validateImportFile } from 'src/common/helpers/validation.helper';
 import { S3Service } from 'src/integrations/s3/s3.service';
 import moment from 'moment';
 import { Response } from 'express';
@@ -66,10 +42,7 @@ export class BargingListService {
     });
 
     if (!population) {
-      throwError(
-        `Unit hauler dengan ID ${unitHaulerId} tidak ditemukan di tabel m_population`,
-        400,
-      );
+      throwError(`Unit hauler dengan ID ${unitHaulerId} tidak ditemukan di tabel m_population`, 400);
     }
   }
 
@@ -82,10 +55,7 @@ export class BargingListService {
     });
 
     if (!barge) {
-      throwError(
-        `Barge dengan ID ${bargeId} tidak ditemukan di tabel m_barge`,
-        400,
-      );
+      throwError(`Barge dengan ID ${bargeId} tidak ditemukan di tabel m_barge`, 400);
     }
   }
 
@@ -99,10 +69,7 @@ export class BargingListService {
         ? bargingList.activityDate.toLocaleDateString('en-CA')
         : new Date(bargingList.activityDate).toLocaleDateString('en-CA');
 
-    const time =
-      bargingList.time instanceof Date
-        ? bargingList.time.toISOString()
-        : new Date(bargingList.time).toISOString();
+    const time = bargingList.time instanceof Date ? bargingList.time.toISOString() : new Date(bargingList.time).toISOString();
 
     // Hitung time range dari time
     const timeRange = calculateTimeRange(bargingList.time);
@@ -158,29 +125,20 @@ export class BargingListService {
         message: 'Data test berhasil diambil',
       };
     } catch (error) {
-      throw new InternalServerErrorException(
-        `Gagal mengambil data test: ${error.message}`,
-      );
+      throw new InternalServerErrorException(`Gagal mengambil data test: ${error.message}`);
     }
   }
 
-  async create(
-    createDto: CreateBargingListDto,
-  ): Promise<ApiResponse<BargingListResponseDto>> {
+  async create(createDto: CreateBargingListDto): Promise<ApiResponse<BargingListResponseDto>> {
     try {
-      console.log('Creating barging list with data:', createDto);
-
       // Validasi unit_hauler_id
       await this.validateUnitHaulerId(createDto.unit_hauler_id);
-      console.log('Unit hauler validation passed');
 
       // Validasi barge_id
       await this.validateBargeId(createDto.barge_id);
-      console.log('Barge validation passed');
 
       // Hitung total_tonnage (vessel * 40)
       const totalTonnage = createDto.vessel * 40;
-      console.log('Calculated total tonnage:', totalTonnage);
 
       // Buat entity baru
       const newBargingList = this.bargingListRepository.create({
@@ -193,10 +151,7 @@ export class BargingListService {
         totalTonnage,
       });
 
-      console.log('Created entity:', newBargingList);
-
       const result = await this.bargingListRepository.save(newBargingList);
-      console.log('Saved result:', result);
 
       // Ambil data lengkap dengan relasi
       const savedBargingList = await this.bargingListRepository.findOne({
@@ -204,14 +159,11 @@ export class BargingListService {
         relations: ['unitHauler', 'barge'],
       });
 
-      console.log('Retrieved saved data:', savedBargingList);
-
       if (!savedBargingList) {
         throwError('Gagal mengambil data barging list yang baru dibuat', 500);
       }
 
       const response = this.transformResponse(savedBargingList!);
-      console.log('Transformed response:', response);
 
       return successResponse(response, 'Barging list berhasil dibuat', 201);
     } catch (error) {
@@ -219,15 +171,11 @@ export class BargingListService {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        `Gagal membuat barging list: ${error.message}`,
-      );
+      throw new InternalServerErrorException(`Gagal membuat barging list: ${error.message}`);
     }
   }
 
-  async findAll(
-    query: GetBargingListQueryDto,
-  ): Promise<ApiResponse<BargingListResponseDto[]>> {
+  async findAll(query: GetBargingListQueryDto): Promise<ApiResponse<BargingListResponseDto[]>> {
     try {
       const page = parseInt(query.page?.toString() ?? '1', 10);
       const limit = parseInt(query.limit?.toString() ?? '10', 10);
@@ -245,10 +193,9 @@ export class BargingListService {
 
       // Filter berdasarkan search
       if (search) {
-        qb.andWhere(
-          '(LOWER(unitHauler.no_unit) LIKE :search OR LOWER(barge.name) LIKE :search)',
-          { search: `%${search}%` },
-        );
+        qb.andWhere('(LOWER(unitHauler.no_unit) LIKE :search OR LOWER(barge.name) LIKE :search)', {
+          search: `%${search}%`,
+        });
       }
 
       // Filter berdasarkan shift
@@ -288,26 +235,16 @@ export class BargingListService {
       // Transform response
       const transformedData = data.map((item) => this.transformResponse(item));
 
-      return paginateResponse(
-        transformedData,
-        total,
-        page,
-        limit,
-        'Data barging list berhasil diambil',
-      );
+      return paginateResponse(transformedData, total, page, limit, 'Data barging list berhasil diambil');
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        'Gagal mengambil data barging list',
-      );
+      throw new InternalServerErrorException('Gagal mengambil data barging list');
     }
   }
 
-  async findOne(
-    id: number,
-  ): Promise<ApiResponse<BargingListResponseDto | null>> {
+  async findOne(id: number): Promise<ApiResponse<BargingListResponseDto | null>> {
     try {
       const bargingList = await this.bargingListRepository.findOne({
         where: { id, deletedAt: undefined },
@@ -318,24 +255,16 @@ export class BargingListService {
         return emptyDataResponse('Barging list tidak ditemukan');
       }
 
-      return successResponse(
-        this.transformResponse(bargingList),
-        'Data barging list berhasil diambil',
-      );
+      return successResponse(this.transformResponse(bargingList), 'Data barging list berhasil diambil');
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        'Gagal mengambil data barging list',
-      );
+      throw new InternalServerErrorException('Gagal mengambil data barging list');
     }
   }
 
-  async update(
-    id: number,
-    updateDto: UpdateBargingListDto,
-  ): Promise<ApiResponse<BargingListResponseDto | null>> {
+  async update(id: number, updateDto: UpdateBargingListDto): Promise<ApiResponse<BargingListResponseDto | null>> {
     try {
       // Cek apakah data exists
       const existingBargingList = await this.bargingListRepository.findOne({
@@ -394,16 +323,10 @@ export class BargingListService {
       });
 
       if (!updatedBargingList) {
-        throwError(
-          'Gagal mengambil data barging list yang sudah diupdate',
-          500,
-        );
+        throwError('Gagal mengambil data barging list yang sudah diupdate', 500);
       }
 
-      return successResponse(
-        this.transformResponse(updatedBargingList!),
-        'Barging list berhasil diupdate',
-      );
+      return successResponse(this.transformResponse(updatedBargingList!), 'Barging list berhasil diupdate');
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -509,10 +432,7 @@ export class BargingListService {
       };
     }
 
-    if (
-      row.time_activity &&
-      !moment(row.time_activity, 'HH:mm', true).isValid()
-    ) {
+    if (row.time_activity && !moment(row.time_activity, 'HH:mm', true).isValid()) {
       return {
         isValid: false,
         error: `time_activity harus dalam format (10:00) HH:mm (row: ${row.time_activity})`,
@@ -529,15 +449,10 @@ export class BargingListService {
     const res = validateFileNumber(row, 'vessel', 'vessel');
     if (!res.ok) return { isValid: false, error: res.error };
 
-    const [populationId, bargeId] = await Promise.all([
-      this.getPopulation(row.unit_hauler),
-      this.getBarge(row.barge),
-    ]);
+    const [populationId, bargeId] = await Promise.all([this.getPopulation(row.unit_hauler), this.getBarge(row.barge)]);
 
     if (!populationId) {
-      const message = row.unit_hauler
-        ? `Unit ${row?.unit_hauler} tidak ditemukan`
-        : 'Unit tidak ditemukan';
+      const message = row.unit_hauler ? `Unit ${row?.unit_hauler} tidak ditemukan` : 'Unit tidak ditemukan';
       return {
         isValid: false,
         error: message,
@@ -545,9 +460,7 @@ export class BargingListService {
     }
 
     if (!bargeId) {
-      const message = row.barge
-        ? `Barge ${row?.barge} tidak ditemukan`
-        : 'Barge tidak ditemukan';
+      const message = row.barge ? `Barge ${row?.barge} tidak ditemukan` : 'Barge tidak ditemukan';
       return {
         isValid: false,
         error: message,
@@ -633,10 +546,7 @@ export class BargingListService {
     };
   }
 
-  async bulkCreate(
-    payload: CreateBargingListDto[],
-    userId: number,
-  ): Promise<any> {
+  async bulkCreate(payload: CreateBargingListDto[], userId: number): Promise<any> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -680,21 +590,10 @@ export class BargingListService {
       });
     });
 
-    const workingHour = [
-      'year_month',
-      'total_working_hour_month',
-      'total_working_hour_day',
-      'total_mohh_per_month',
-    ];
-    const activityKeys = [...dynamicKeys].filter(
-      (k) => !workingHour.includes(k),
-    );
+    const workingHour = ['year_month', 'total_working_hour_month', 'total_working_hour_day', 'total_mohh_per_month'];
+    const activityKeys = [...dynamicKeys].filter((k) => !workingHour.includes(k));
 
-    const csvHeaders = [
-      ...workingHour,
-      ...activityKeys,
-      'error_message  (Please delete this column before importing again)',
-    ];
+    const csvHeaders = [...workingHour, ...activityKeys, 'error_message  (Please delete this column before importing again)'];
 
     const csvRows = failedRows.map((row) =>
       csvHeaders
@@ -722,11 +621,7 @@ export class BargingListService {
       const csvBuffer = Buffer.from(csvContent, 'utf8');
       const filename = `import-barge-errors-${Date.now()}.csv`;
 
-      const result = await this.s3Service.uploadErrorFile(
-        filename,
-        csvBuffer,
-        'barge_import_error',
-      );
+      const result = await this.s3Service.uploadErrorFile(filename, csvBuffer, 'barge_import_error');
 
       return {
         error_file: result
@@ -749,64 +644,39 @@ export class BargingListService {
       const csvData = await CsvHelper.parseCsvFile(file.buffer);
       const validationResult = await this.processImportData(csvData);
 
-      if (
-        validationResult?.payload?.length &&
-        validationResult.successCount > 0
-      ) {
+      if (validationResult?.payload?.length && validationResult.successCount > 0) {
         await this.bulkCreate(validationResult.payload, userId);
       }
 
-      const errorFileInfo = await this.generateErrorCsv(
-        validationResult.failedRows,
-      );
+      const errorFileInfo = await this.generateErrorCsv(validationResult.failedRows);
 
-      return importResponse(
-        csvData.length,
-        validationResult.successCount,
-        validationResult.failedCount,
-        errorFileInfo,
-      );
+      return importResponse(csvData.length, validationResult.successCount, validationResult.failedCount, errorFileInfo);
     } catch (error) {
       if (error instanceof BadRequestException) {
         throwError(error, 400);
       }
 
       if (error.message?.includes('CSV') || error.message?.includes('parse')) {
-        throwError(
-          'Format CSV tidak valid. Pastikan file CSV memiliki format yang benar.',
-          400,
-        );
+        throwError('Format CSV tidak valid. Pastikan file CSV memiliki format yang benar.', 400);
       }
 
       if (error.code === '23503') {
-        throwError(
-          'Data referensi tidak ditemukan. Pastikan semua ID referensi valid.',
-          400,
-        );
+        throwError('Data referensi tidak ditemukan. Pastikan semua ID referensi valid.', 400);
       }
 
       console.error('Unexpected error in importData:', error.stack);
-      throwError(
-        'Terjadi kesalahan saat memproses file import. Silakan coba lagi atau hubungi administrator.',
-        400,
-      );
+      throwError('Terjadi kesalahan saat memproses file import. Silakan coba lagi atau hubungi administrator.', 400);
     }
   }
 
-  private applyFilterExportData(
-    qb: SelectQueryBuilder<BargingList>,
-    query: ExportBargingListQueryDto,
-  ): SelectQueryBuilder<BargingList> {
+  private applyFilterExportData(qb: SelectQueryBuilder<BargingList>, query: ExportBargingListQueryDto): SelectQueryBuilder<BargingList> {
     const search = query.search?.trim().toLowerCase();
     const shift = query.shift?.toLowerCase();
     const unitHaulerId = query.unit_hauler_id;
     const bargeId = query.barge_id;
     const sortOrder = query.sortOrder ?? 'DESC';
     if (search) {
-      qb.andWhere(
-        '(LOWER(unitHauler.no_unit) LIKE :search OR LOWER(barge.name) LIKE :search)',
-        { search: `%${search}%` },
-      );
+      qb.andWhere('(LOWER(unitHauler.no_unit) LIKE :search OR LOWER(barge.name) LIKE :search)', { search: `%${search}%` });
     }
 
     if (shift) {
@@ -869,10 +739,7 @@ export class BargingListService {
         return;
       }
       // // Set headers CSV
-      setCsvExportHeaders(
-        res,
-        `parent_plan_working_hour_export_${Date.now()}.csv`,
-      );
+      setCsvExportHeaders(res, `parent_plan_working_hour_export_${Date.now()}.csv`);
       // // Buat stream writer
       const csvStream = format({ headers: true });
       csvStream.pipe(res);

@@ -10,11 +10,7 @@ export class FormulaService {
    * Menghitung Cycle Time dari Control MTD Production
    * Formula: SUM[Cycle Time] sesuai rentang tanggal yang dipilih
    */
-  async calculateCycleTime(
-    queryRunner: any,
-    startDate: Date,
-    endDate: Date,
-  ): Promise<number> {
+  async calculateCycleTime(queryRunner: any, startDate: Date, endDate: Date): Promise<number> {
     try {
       const result = await queryRunner.query(
         `
@@ -48,11 +44,7 @@ export class FormulaService {
    * Menghitung Production Actual dari Summary Production
    * Formula: SUM[Tonnage] where material_type = ore_hauling sesuai rentang tanggal yang dipilih
    */
-  async calculateProductionActual(
-    queryRunner: any,
-    startDate: Date,
-    endDate: Date,
-  ): Promise<number> {
+  async calculateProductionActual(queryRunner: any, startDate: Date, endDate: Date): Promise<number> {
     try {
       const result = await queryRunner.query(
         `
@@ -86,11 +78,7 @@ export class FormulaService {
    * Menghitung EWH Actual dari Control Day Production
    * Formula: Total EWH lalu di rata-ratakan berdasarkan total unit yang ada
    */
-  async calculateEWHActual(
-    queryRunner: any,
-    startDate: Date,
-    endDate: Date,
-  ): Promise<number> {
+  async calculateEWHActual(queryRunner: any, startDate: Date, endDate: Date): Promise<number> {
     try {
       const result = await queryRunner.query(
         `
@@ -117,11 +105,7 @@ export class FormulaService {
    * Menghitung Fuel Ratio Actual
    * Formula: [SUM(qty_supply)] dibagi dengan [SUM(ORE BARGE TONNAGE)]
    */
-  async calculateFuelRatioActual(
-    queryRunner: any,
-    startDate: Date,
-    endDate: Date,
-  ): Promise<number> {
+  async calculateFuelRatioActual(queryRunner: any, startDate: Date, endDate: Date): Promise<number> {
     try {
       const fuelResult = await queryRunner.query(
         `
@@ -155,9 +139,7 @@ export class FormulaService {
       );
 
       const totalQtySupply = parseFloat(fuelResult[0]?.total_qty_supply || '0');
-      const totalOreBarge = parseFloat(
-        oreBargeResult[0]?.total_ore_barge_tonnage || '0',
-      );
+      const totalOreBarge = parseFloat(oreBargeResult[0]?.total_ore_barge_tonnage || '0');
 
       return totalOreBarge > 0 ? totalQtySupply / totalOreBarge : 0;
     } catch (error) {
@@ -170,11 +152,7 @@ export class FormulaService {
    * Menghitung Speed Actual dari Control MTD Production
    * Formula: AVG[SPEED] sesuai rentang tanggal yang dipilih
    */
-  async calculateSpeedActual(
-    queryRunner: any,
-    startDate: Date,
-    endDate: Date,
-  ): Promise<number> {
+  async calculateSpeedActual(queryRunner: any, startDate: Date, endDate: Date): Promise<number> {
     try {
       const result = await queryRunner.query(
         `
@@ -208,11 +186,7 @@ export class FormulaService {
    * Menghitung Production Target dari R_Plan_Production
    * Formula: SUM(ore_target) sesuai rentang tanggal yang dipilih
    */
-  async calculateProductionTarget(
-    queryRunner: any,
-    startDate: Date,
-    endDate: Date,
-  ): Promise<number> {
+  async calculateProductionTarget(queryRunner: any, startDate: Date, endDate: Date): Promise<number> {
     try {
       const result = await queryRunner.query(
         `
@@ -303,11 +277,7 @@ export class FormulaService {
   /**
    * Mendapatkan nilai target dari m_setting_dashboard
    */
-  async getSettingValue(
-    queryRunner: any,
-    field: 'cycle_time' | 'fuel_ratio' | 'speed',
-    defaultValue: number,
-  ): Promise<number> {
+  async getSettingValue(queryRunner: any, field: 'cycle_time' | 'fuel_ratio' | 'speed', defaultValue: number): Promise<number> {
     try {
       const result = await queryRunner.query(`
         SELECT ${field} FROM m_setting_dashboard 

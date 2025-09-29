@@ -2,10 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
-import {
-  successResponse,
-  throwError,
-} from '../../common/helpers/response.helper';
+import { successResponse, throwError } from '../../common/helpers/response.helper';
 import { CheckTokenDto, ResetPasswordDto } from './dto/reset-password.dto';
 import { getResetCountdown } from '../../common/helpers/public.helper';
 

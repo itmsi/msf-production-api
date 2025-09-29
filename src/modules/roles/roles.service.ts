@@ -1,25 +1,11 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  HttpException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException, HttpException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Roles } from './entities/roles.entity';
 import { ILike, Not, Repository } from 'typeorm';
-import {
-  ApiResponse,
-  successResponse,
-  throwError,
-  emptyDataResponse,
-} from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import * as bcrypt from 'bcrypt';
-import {
-  CreateRolesDto,
-  RolesResponseDto,
-  GetRolesQueryDto,
-  UpdateRolesDto,
-} from './dto/roles.dto';
+import { CreateRolesDto, RolesResponseDto, GetRolesQueryDto, UpdateRolesDto } from './dto/roles.dto';
 import { plainToInstance } from 'class-transformer';
 
 @Injectable()
@@ -74,20 +60,12 @@ export class RolesService {
       }
 
       // Validate sortBy field to prevent SQL injection
-      const allowedSortFields = [
-        'id',
-        'role_code',
-        'position_name',
-        'createdAt',
-        'updatedAt',
-      ];
+      const allowedSortFields = ['id', 'role_code', 'position_name', 'createdAt', 'updatedAt'];
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
       const [result, total] = await this.rolesRepository.findAndCount({
-        where: query.search
-          ? [{ position_name: ILike(`%${query.search}%`) }]
-          : {},
+        where: query.search ? [{ position_name: ILike(`%${query.search}%`) }] : {},
         relations: ['sites'],
         order: {
           [validSortBy]: validSortOrder,
@@ -96,13 +74,7 @@ export class RolesService {
         take: limit,
       });
 
-      return paginateResponse(
-        result,
-        total,
-        page,
-        limit,
-        'Get roles successfully',
-      );
+      return paginateResponse(result, total, page, limit, 'Get roles successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch roles');
@@ -120,9 +92,7 @@ export class RolesService {
       }
 
       // Check if position_name already exists
-      const existingPositionName = await this.findByPositionName(
-        data.position_name,
-      );
+      const existingPositionName = await this.findByPositionName(data.position_name);
       if (existingPositionName) {
         throwError('Role name already exists', 409);
       }
@@ -150,10 +120,7 @@ export class RolesService {
     }
   }
 
-  async update(
-    id: number,
-    updateDto: UpdateRolesDto,
-  ): Promise<ApiResponse<Roles | null>> {
+  async update(id: number, updateDto: UpdateRolesDto): Promise<ApiResponse<Roles | null>> {
     try {
       const roles = await this.rolesRepository.findOne({ where: { id } });
       if (!roles) {

@@ -55,9 +55,7 @@ describe('DailyPlanProduction (e2e)', () => {
         .send(createDto)
         .expect(201)
         .expect((res) => {
-          expect(res.body.message).toBe(
-            'Daily plan production berhasil dibuat',
-          );
+          expect(res.body.message).toBe('Daily plan production berhasil dibuat');
           expect(res.body.data).toBeDefined();
           expect(res.body.data.plan_date).toBeDefined();
           expect(res.body.data.sr_target).toBe(1.25);
@@ -82,10 +80,7 @@ describe('DailyPlanProduction (e2e)', () => {
       };
 
       // Create first record
-      await request(app.getHttpServer())
-        .post('/daily-plan-production')
-        .send(createDto)
-        .expect(201);
+      await request(app.getHttpServer()).post('/daily-plan-production').send(createDto).expect(201);
 
       // Try to create duplicate
       return request(app.getHttpServer())
@@ -104,10 +99,7 @@ describe('DailyPlanProduction (e2e)', () => {
         ob_target: 0,
       };
 
-      return request(app.getHttpServer())
-        .post('/daily-plan-production')
-        .send(invalidDto)
-        .expect(400);
+      return request(app.getHttpServer()).post('/daily-plan-production').send(invalidDto).expect(400);
     });
   });
 
@@ -125,9 +117,7 @@ describe('DailyPlanProduction (e2e)', () => {
         total_fleet: 15,
       };
 
-      await request(app.getHttpServer())
-        .post('/daily-plan-production')
-        .send(createDto);
+      await request(app.getHttpServer()).post('/daily-plan-production').send(createDto);
     });
 
     it('should return all daily plan productions', () => {
@@ -135,9 +125,7 @@ describe('DailyPlanProduction (e2e)', () => {
         .get('/daily-plan-production')
         .expect(200)
         .expect((res) => {
-          expect(res.body.message).toBe(
-            'Data daily plan production berhasil diambil',
-          );
+          expect(res.body.message).toBe('Data daily plan production berhasil diambil');
           expect(res.body.data).toBeDefined();
           expect(res.body.data.data).toBeInstanceOf(Array);
           expect(res.body.data.pagination).toBeDefined();
@@ -179,9 +167,7 @@ describe('DailyPlanProduction (e2e)', () => {
         total_fleet: 15,
       };
 
-      const response = await request(app.getHttpServer())
-        .post('/daily-plan-production')
-        .send(createDto);
+      const response = await request(app.getHttpServer()).post('/daily-plan-production').send(createDto);
 
       createdId = response.body.data.id;
     });
@@ -191,17 +177,13 @@ describe('DailyPlanProduction (e2e)', () => {
         .get(`/daily-plan-production/${createdId}`)
         .expect(200)
         .expect((res) => {
-          expect(res.body.message).toBe(
-            'Data daily plan production berhasil diambil',
-          );
+          expect(res.body.message).toBe('Data daily plan production berhasil diambil');
           expect(res.body.data.id).toBe(createdId);
         });
     });
 
     it('should return 404 for non-existent id', () => {
-      return request(app.getHttpServer())
-        .get('/daily-plan-production/999')
-        .expect(404);
+      return request(app.getHttpServer()).get('/daily-plan-production/999').expect(404);
     });
   });
 
@@ -220,9 +202,7 @@ describe('DailyPlanProduction (e2e)', () => {
         total_fleet: 15,
       };
 
-      const response = await request(app.getHttpServer())
-        .post('/daily-plan-production')
-        .send(createDto);
+      const response = await request(app.getHttpServer()).post('/daily-plan-production').send(createDto);
 
       createdId = response.body.data.id;
     });
@@ -238,9 +218,7 @@ describe('DailyPlanProduction (e2e)', () => {
         .send(updateDto)
         .expect(200)
         .expect((res) => {
-          expect(res.body.message).toBe(
-            'Daily plan production berhasil diupdate',
-          );
+          expect(res.body.message).toBe('Daily plan production berhasil diupdate');
           expect(res.body.data.ob_target).toBe(1200);
           expect(res.body.data.ore_target).toBe(900);
           expect(res.body.data.sr_target).toBe(1.33);
@@ -252,10 +230,7 @@ describe('DailyPlanProduction (e2e)', () => {
     it('should return 404 for non-existent id', () => {
       const updateDto = { ob_target: 1200 };
 
-      return request(app.getHttpServer())
-        .patch('/daily-plan-production/999')
-        .send(updateDto)
-        .expect(404);
+      return request(app.getHttpServer()).patch('/daily-plan-production/999').send(updateDto).expect(404);
     });
   });
 
@@ -274,9 +249,7 @@ describe('DailyPlanProduction (e2e)', () => {
         total_fleet: 15,
       };
 
-      const response = await request(app.getHttpServer())
-        .post('/daily-plan-production')
-        .send(createDto);
+      const response = await request(app.getHttpServer()).post('/daily-plan-production').send(createDto);
 
       createdId = response.body.data.id;
     });
@@ -286,16 +259,12 @@ describe('DailyPlanProduction (e2e)', () => {
         .delete(`/daily-plan-production/${createdId}`)
         .expect(200)
         .expect((res) => {
-          expect(res.body.message).toBe(
-            'Daily plan production berhasil dihapus',
-          );
+          expect(res.body.message).toBe('Daily plan production berhasil dihapus');
         });
     });
 
     it('should return 404 for non-existent id', () => {
-      return request(app.getHttpServer())
-        .delete('/daily-plan-production/999')
-        .expect(404);
+      return request(app.getHttpServer()).delete('/daily-plan-production/999').expect(404);
     });
   });
 });

@@ -1,3 +1,4 @@
+// eslint.config.mjs
 // @ts-check
 import eslint from '@eslint/js';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
@@ -33,8 +34,19 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
-      "@typescript-eslint/unbound-method": "off",
-      "@typescript-eslint/no-unsafe-return": "off"
+      '@typescript-eslint/unbound-method': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+
+      // ⬇️ tambahkan ini
+      'prettier/prettier': [
+        'error',
+        {
+          singleQuote: true,
+          trailingComma: 'all',
+          printWidth: 140,
+          semi: true,
+        },
+      ],
     },
   },
 );

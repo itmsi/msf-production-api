@@ -1,25 +1,12 @@
-import {
-  Injectable,
-  HttpException,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, HttpException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder, IsNull } from 'typeorm';
 import { MenuHasPermission } from './entities/menu-has-permission.entity';
 import { Permission } from '../permission/entities/permission.entity';
 import { Menu } from '../menu/entities/menu.entity';
 import { RoleHasPermission } from '../role-has-permission/entities/role-has-permission.entity';
-import {
-  CreateMenuHasPermissionDto,
-  UpdateMenuHasPermissionDto,
-  GetMenuHasPermissionsQueryDto,
-} from './dto/menu-has-permission.dto';
-import {
-  ApiResponse,
-  successResponse,
-  throwError,
-  emptyDataResponse,
-} from '../../common/helpers/response.helper';
+import { CreateMenuHasPermissionDto, UpdateMenuHasPermissionDto, GetMenuHasPermissionsQueryDto } from './dto/menu-has-permission.dto';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 
 @Injectable()
@@ -35,9 +22,7 @@ export class MenuHasPermissionService {
     private roleHasPermissionRepository: Repository<RoleHasPermission>,
   ) {}
 
-  async create(
-    createMenuHasPermissionDto: CreateMenuHasPermissionDto,
-  ): Promise<ApiResponse<MenuHasPermission>> {
+  async create(createMenuHasPermissionDto: CreateMenuHasPermissionDto): Promise<ApiResponse<MenuHasPermission>> {
     try {
       // Check if combination already exists
       const existing = await this.menuHasPermissionRepository.findOne({
@@ -51,28 +36,17 @@ export class MenuHasPermissionService {
         throwError('Menu permission combination already exists', 409);
       }
 
-      const menuHasPermission = this.menuHasPermissionRepository.create(
-        createMenuHasPermissionDto,
-      );
-      const result =
-        await this.menuHasPermissionRepository.save(menuHasPermission);
+      const menuHasPermission = this.menuHasPermissionRepository.create(createMenuHasPermissionDto);
+      const result = await this.menuHasPermissionRepository.save(menuHasPermission);
 
-      return successResponse(
-        result,
-        'Menu permission created successfully',
-        201,
-      );
+      return successResponse(result, 'Menu permission created successfully', 201);
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to create menu permission',
-      );
+      throw new InternalServerErrorException('Failed to create menu permission');
     }
   }
 
-  async findAll(
-    query?: GetMenuHasPermissionsQueryDto,
-  ): Promise<ApiResponse<MenuHasPermission[]>> {
+  async findAll(query?: GetMenuHasPermissionsQueryDto): Promise<ApiResponse<MenuHasPermission[]>> {
     try {
       if (!query) {
         // Fallback untuk kompatibilitas backward
@@ -87,9 +61,7 @@ export class MenuHasPermissionService {
       const limit = parseInt(query.limit ?? '10', 10);
       const skip = (page - 1) * limit;
       const menu_id = query.menu_id ? parseInt(query.menu_id, 10) : null;
-      const permission_id = query.permission_id
-        ? parseInt(query.permission_id, 10)
-        : null;
+      const permission_id = query.permission_id ? parseInt(query.permission_id, 10) : null;
       const sortBy = query.sortBy ?? 'id';
       const sortOrder = query.sortOrder ?? 'DESC';
 
@@ -98,11 +70,10 @@ export class MenuHasPermissionService {
         throwError('Limit tidak boleh lebih dari 100', 400);
       }
 
-      const qb: SelectQueryBuilder<MenuHasPermission> =
-        this.menuHasPermissionRepository
-          .createQueryBuilder('mhp')
-          .leftJoinAndSelect('mhp.menu', 'menu')
-          .leftJoinAndSelect('mhp.permission', 'permission');
+      const qb: SelectQueryBuilder<MenuHasPermission> = this.menuHasPermissionRepository
+        .createQueryBuilder('mhp')
+        .leftJoinAndSelect('mhp.menu', 'menu')
+        .leftJoinAndSelect('mhp.permission', 'permission');
 
       // Filter by menu_id
       if (menu_id) {
@@ -115,13 +86,7 @@ export class MenuHasPermissionService {
       }
 
       // Validate sortBy field to prevent SQL injection
-      const allowedSortFields = [
-        'id',
-        'menu_id',
-        'permission_id',
-        'createdAt',
-        'updatedAt',
-      ];
+      const allowedSortFields = ['id', 'menu_id', 'permission_id', 'createdAt', 'updatedAt'];
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
@@ -129,18 +94,10 @@ export class MenuHasPermissionService {
 
       const [result, total] = await qb.getManyAndCount();
 
-      return paginateResponse(
-        result,
-        total,
-        page,
-        limit,
-        'Get menu permissions successfully',
-      );
+      return paginateResponse(result, total, page, limit, 'Get menu permissions successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to fetch menu permissions',
-      );
+      throw new InternalServerErrorException('Failed to fetch menu permissions');
     }
   }
 
@@ -155,20 +112,14 @@ export class MenuHasPermissionService {
         return emptyDataResponse('Menu permission not found', null);
       }
 
-      return successResponse(
-        menuHasPermission,
-        'Get menu permission successfully',
-      );
+      return successResponse(menuHasPermission, 'Get menu permission successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch menu permission');
     }
   }
 
-  async update(
-    id: number,
-    updateMenuHasPermissionDto: UpdateMenuHasPermissionDto,
-  ): Promise<ApiResponse<MenuHasPermission | null>> {
+  async update(id: number, updateMenuHasPermissionDto: UpdateMenuHasPermissionDto): Promise<ApiResponse<MenuHasPermission | null>> {
     try {
       const menuHasPermission = await this.menuHasPermissionRepository.findOne({
         where: { id },
@@ -179,15 +130,9 @@ export class MenuHasPermissionService {
       }
 
       // Check if new combination already exists (if being updated)
-      if (
-        updateMenuHasPermissionDto.menu_id ||
-        updateMenuHasPermissionDto.permission_id
-      ) {
-        const newMenuId =
-          updateMenuHasPermissionDto.menu_id || menuHasPermission.menu_id;
-        const newPermissionId =
-          updateMenuHasPermissionDto.permission_id ||
-          menuHasPermission.permission_id;
+      if (updateMenuHasPermissionDto.menu_id || updateMenuHasPermissionDto.permission_id) {
+        const newMenuId = updateMenuHasPermissionDto.menu_id || menuHasPermission.menu_id;
+        const newPermissionId = updateMenuHasPermissionDto.permission_id || menuHasPermission.permission_id;
 
         const existing = await this.menuHasPermissionRepository.findOne({
           where: {
@@ -202,15 +147,12 @@ export class MenuHasPermissionService {
       }
 
       Object.assign(menuHasPermission, updateMenuHasPermissionDto);
-      const result =
-        await this.menuHasPermissionRepository.save(menuHasPermission);
+      const result = await this.menuHasPermissionRepository.save(menuHasPermission);
 
       return successResponse(result, 'Menu permission updated successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to update menu permission',
-      );
+      throw new InternalServerErrorException('Failed to update menu permission');
     }
   }
 
@@ -229,9 +171,7 @@ export class MenuHasPermissionService {
       return successResponse(null, 'Menu permission deleted successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to delete menu permission',
-      );
+      throw new InternalServerErrorException('Failed to delete menu permission');
     }
   }
 
@@ -244,11 +184,10 @@ export class MenuHasPermissionService {
       });
 
       // Ambil menu has permissions yang sudah ada untuk menu ini
-      const existingMenuPermissions =
-        await this.menuHasPermissionRepository.find({
-          where: { menu_id: menuId },
-          relations: ['permission'],
-        });
+      const existingMenuPermissions = await this.menuHasPermissionRepository.find({
+        where: { menu_id: menuId },
+        relations: ['permission'],
+      });
 
       // Buat map untuk permission yang sudah ada
       const existingPermissionMap = new Map();
@@ -259,9 +198,7 @@ export class MenuHasPermissionService {
       // Buat response data dengan format yang diminta
       const dataPermissions = allPermissions.map((permission) => {
         // Cari menu has permission yang sesuai untuk permission ini
-        const existingMhp = existingMenuPermissions.find(
-          (mhp) => mhp.permission_id === permission.id,
-        );
+        const existingMhp = existingMenuPermissions.find((mhp) => mhp.permission_id === permission.id);
 
         return {
           permission_id: permission.id,
@@ -277,36 +214,24 @@ export class MenuHasPermissionService {
         data_permission: dataPermissions,
       };
 
-      return successResponse(
-        [responseData],
-        'Get menu permissions by menu ID successfully',
-      );
+      return successResponse([responseData], 'Get menu permissions by menu ID successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to fetch menu permissions by menu ID',
-      );
+      throw new InternalServerErrorException('Failed to fetch menu permissions by menu ID');
     }
   }
 
-  async findByPermissionId(
-    permissionId: number,
-  ): Promise<ApiResponse<MenuHasPermission[]>> {
+  async findByPermissionId(permissionId: number): Promise<ApiResponse<MenuHasPermission[]>> {
     try {
       const result = await this.menuHasPermissionRepository.find({
         where: { permission_id: permissionId },
         relations: ['menu'],
       });
 
-      return successResponse(
-        result,
-        'Get menu permissions by permission ID successfully',
-      );
+      return successResponse(result, 'Get menu permissions by permission ID successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to fetch menu permissions by permission ID',
-      );
+      throw new InternalServerErrorException('Failed to fetch menu permissions by permission ID');
     }
   }
 
@@ -336,12 +261,11 @@ export class MenuHasPermissionService {
       const responseData = await Promise.all(
         allMenus.map(async (menu) => {
           // Ambil menu has permissions yang benar-benar ada untuk menu ini
-          const menuHasPermissions =
-            await this.menuHasPermissionRepository.find({
-              where: { menu_id: menu.id },
-              relations: ['permission'],
-              order: { permission_id: 'ASC' },
-            });
+          const menuHasPermissions = await this.menuHasPermissionRepository.find({
+            where: { menu_id: menu.id },
+            relations: ['permission'],
+            order: { permission_id: 'ASC' },
+          });
 
           // Buat array permissions yang hanya berisi permission yang di-assign ke menu
           const menuPermissions = menuHasPermissions.map((mhp) => ({
@@ -364,9 +288,7 @@ export class MenuHasPermissionService {
       return successResponse(responseData, 'Get menu permissions successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to fetch menu permissions by role',
-      );
+      throw new InternalServerErrorException('Failed to fetch menu permissions by role');
     }
   }
 }

@@ -121,9 +121,7 @@ export class CompleteSeeder {
 
       // 14. Seed Menu-Permission relationships (depends on Menus and Permissions)
       console.log('🔗 Seeding Menu-Permission relationships...');
-      const menuHasPermissionSeeder = new MenuHasPermissionSeeder(
-        this.dataSource,
-      );
+      const menuHasPermissionSeeder = new MenuHasPermissionSeeder(this.dataSource);
       await menuHasPermissionSeeder.run();
       console.log('✅ Menu-Permission relationships seeding completed\n');
 
@@ -138,9 +136,7 @@ export class CompleteSeeder {
 
       // 16. Seed Role-Permission relationships (depends on Roles, Menu-Permissions, and Permissions)
       console.log('🔗 Seeding Role-Permission relationships...');
-      const roleHasPermissionSeeder = new RoleHasPermissionSeeder(
-        this.dataSource,
-      );
+      const roleHasPermissionSeeder = new RoleHasPermissionSeeder(this.dataSource);
       await roleHasPermissionSeeder.run();
       console.log('✅ Role-Permission relationships seeding completed\n');
 
@@ -155,17 +151,11 @@ export class CompleteSeeder {
 
       // 18. Seed Custom Roles, Users, and Access Mappings
       console.log('🔐 Seeding Custom Roles, Users, and Access Mappings...');
-      const customRolesUsersSeeder = new CustomRolesUsersSeeder(
-        this.dataSource,
-      );
+      const customRolesUsersSeeder = new CustomRolesUsersSeeder(this.dataSource);
       await customRolesUsersSeeder.run();
-      console.log(
-        '✅ Custom Roles, Users, and Access Mappings seeding completed\n',
-      );
+      console.log('✅ Custom Roles, Users, and Access Mappings seeding completed\n');
 
-      console.log(
-        '🎉 Complete Database Seeding Process Finished Successfully!',
-      );
+      console.log('🎉 Complete Database Seeding Process Finished Successfully!');
       console.log('\n📋 Summary of All Seeded Data:');
       console.log('   • Sites (5 sites)');
       console.log('   • Roles (7 roles)');
@@ -188,9 +178,7 @@ export class CompleteSeeder {
 
       console.log('\n🔑 User Credentials:');
       console.log('   • superadmin / Qwer1234! (Super Admin)');
-      console.log(
-        '   • productionadmin / Qwer1234! (Production Administrator)',
-      );
+      console.log('   • productionadmin / Qwer1234! (Production Administrator)');
       console.log('   • management / Qwer1234! (Management)');
       console.log('   • ccr / Qwer1234! (CCR)');
     } catch (error) {

@@ -3,21 +3,15 @@ import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/exceptions/all-exception.exception';
 import { LoggerInterceptor } from './common/interceptors/logger.interceptor';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import {
-  BadRequestException,
-  ClassSerializerInterceptor,
-  ValidationPipe,
-} from '@nestjs/common';
+import { BadRequestException, ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {});
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api/revenue');
   // Swagger config
   const config = new DocumentBuilder()
     .setTitle('MSF Production API')
-    .setDescription(
-      'API documentation for the MSF Production System with User Management',
-    )
+    .setDescription('API documentation for the MSF Production System with User Management')
     .setVersion('1.0')
     .addTag('Auth', 'Authentication endpoints')
     .addTag('Users', 'User management endpoints')
@@ -58,15 +52,9 @@ async function bootstrap() {
     },
   }); // http://localhost:3000/docs
   app.enableCors({
-    origin: ['*'],
+    origin: ['*', 'http://localhost:3000', 'https://tid-dev.motorsightsinternational.com'],
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'Accept',
-      'Origin',
-      'X-Requested-With',
-    ],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
     exposedHeaders: ['Content-Disposition'],
     credentials: true,
     preflightContinue: false,
@@ -85,9 +73,7 @@ async function bootstrap() {
       },
       exceptionFactory: (errors) => {
         const firstError = errors[0];
-        const constraint = firstError?.constraints
-          ? Object.values(firstError.constraints)[0]
-          : 'Invalid input';
+        const constraint = firstError?.constraints ? Object.values(firstError.constraints)[0] : 'Invalid input';
         return new BadRequestException(constraint);
       },
     }),

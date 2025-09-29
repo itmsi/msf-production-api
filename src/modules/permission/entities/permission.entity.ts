@@ -1,12 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  DeleteDateColumn,
-  OneToMany,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, OneToMany } from 'typeorm';
 import { RoleHasPermission } from '../../role-has-permission/entities/role-has-permission.entity';
 import { MenuHasPermission } from '../../menu-has-permission/entities/menu-has-permission.entity';
 
@@ -43,15 +35,9 @@ export class Permission {
   deletedBy: number;
 
   // Relations
-  @OneToMany(
-    () => RoleHasPermission,
-    (roleHasPermission) => roleHasPermission.permission,
-  )
+  @OneToMany(() => RoleHasPermission, (roleHasPermission) => roleHasPermission.permission)
   roleHasPermissions: RoleHasPermission[];
 
-  @OneToMany(
-    () => MenuHasPermission,
-    (menuHasPermission) => menuHasPermission.permission,
-  )
+  @OneToMany(() => MenuHasPermission, (menuHasPermission) => menuHasPermission.permission)
   menuHasPermissions: MenuHasPermission[];
 }

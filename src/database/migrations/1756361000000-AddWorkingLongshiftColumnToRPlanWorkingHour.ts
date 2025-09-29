@@ -1,12 +1,6 @@
-import {
-  MigrationInterface,
-  QueryRunner,
-  TableColumn,
-} from 'typeorm';
+import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
 
-export class AddWorkingLongshiftColumnToRPlanWorkingHour1756361000000
-  implements MigrationInterface
-{
+export class AddWorkingLongshiftColumnToRPlanWorkingHour1756361000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Tambah kolom working_longshift
     await queryRunner.addColumn(
@@ -22,9 +16,6 @@ export class AddWorkingLongshiftColumnToRPlanWorkingHour1756361000000
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Hapus kolom working_longshift
-    await queryRunner.dropColumn(
-      'r_plan_working_hour',
-      'working_longshift',
-    );
+    await queryRunner.dropColumn('r_plan_working_hour', 'working_longshift');
   }
 }

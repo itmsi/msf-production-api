@@ -1,30 +1,8 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { HaulingProblemService } from './hauling-problem.service';
-import {
-  CreateHaulingProblemDto,
-  UpdateHaulingProblemDto,
-  HaulingProblemResponseDto,
-  GetHaulingProblemQueryDto,
-} from './dto';
+import { CreateHaulingProblemDto, UpdateHaulingProblemDto, HaulingProblemResponseDto, GetHaulingProblemQueryDto } from './dto';
 
 @ApiTags('Hauling Problem')
 @Controller('hauling-problem')
@@ -59,10 +37,10 @@ export class HaulingProblemController {
           site_name: 'Site Jakarta',
           remark: 'Problem pada unit excavator',
           createdAt: '2024-01-01T00:00:00.000Z',
-          updatedAt: '2024-01-01T00:00:00.000Z'
-        }
-      }
-    }
+          updatedAt: '2024-01-01T00:00:00.000Z',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 400,
@@ -172,17 +150,17 @@ export class HaulingProblemController {
             site_name: 'Site Jakarta',
             remark: 'Problem pada unit excavator',
             createdAt: '2024-01-01T00:00:00.000Z',
-            updatedAt: '2024-01-01T00:00:00.000Z'
-          }
+            updatedAt: '2024-01-01T00:00:00.000Z',
+          },
         ],
         pagination: {
           total: 1,
           page: 1,
           limit: 10,
-          lastPage: 1
-        }
-      }
-    }
+          lastPage: 1,
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 400,
@@ -232,10 +210,10 @@ export class HaulingProblemController {
           site_name: 'Site Jakarta',
           remark: 'Problem pada unit excavator',
           createdAt: '2024-01-01T00:00:00.000Z',
-          updatedAt: '2024-01-01T00:00:00.000Z'
-        }
-      }
-    }
+          updatedAt: '2024-01-01T00:00:00.000Z',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 200,
@@ -244,9 +222,9 @@ export class HaulingProblemController {
       example: {
         statusCode: 200,
         message: 'Data hauling problem tidak ditemukan',
-        data: null
-      }
-    }
+        data: null,
+      },
+    },
   })
   @ApiResponse({
     status: 400,
@@ -296,10 +274,10 @@ export class HaulingProblemController {
           site_name: 'Site Jakarta',
           remark: 'Problem pada unit excavator - updated',
           createdAt: '2024-01-01T00:00:00.000Z',
-          updatedAt: '2024-01-01T00:00:00.000Z'
-        }
-      }
-    }
+          updatedAt: '2024-01-01T00:00:00.000Z',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 400,
@@ -317,10 +295,7 @@ export class HaulingProblemController {
     status: 500,
     description: 'Internal Server Error',
   })
-  async update(
-    @Param('id') id: number,
-    @Body() updateDto: UpdateHaulingProblemDto,
-  ) {
+  async update(@Param('id') id: number, @Body() updateDto: UpdateHaulingProblemDto) {
     return this.haulingProblemService.update(id, updateDto);
   }
 
@@ -342,9 +317,9 @@ export class HaulingProblemController {
       example: {
         statusCode: 200,
         message: 'Data hauling problem berhasil dihapus',
-        data: null
-      }
-    }
+        data: null,
+      },
+    },
   })
   @ApiResponse({
     status: 400,

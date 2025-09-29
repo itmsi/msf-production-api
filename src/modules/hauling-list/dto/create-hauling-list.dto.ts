@@ -27,7 +27,11 @@ export class CreateHaulingListDto {
   @IsNotEmpty()
   unit_hauler_id: number;
 
-  @ApiProperty({ description: 'Material', enum: ['biomas', 'boulder', 'ob', 'ore', 'ore-barge', 'quarry'], example: 'ore' })
+  @ApiProperty({
+    description: 'Material',
+    enum: ['biomas', 'boulder', 'ob', 'ore', 'ore-barge', 'quarry'],
+    example: 'ore',
+  })
   @IsEnum(['biomas', 'boulder', 'ob', 'ore', 'ore-barge', 'quarry'])
   @IsNotEmpty()
   material: string;

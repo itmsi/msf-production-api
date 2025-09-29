@@ -1,31 +1,18 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { MtdProductionService } from './mtd-production.service';
-import {
-  MtdProductionQueryDto,
-  DayProductionQueryDto,
-  MtdProductionResponseDto,
-} from './dto/mtd-production.dto';
+import { MtdProductionQueryDto, DayProductionQueryDto, MtdProductionResponseDto } from './dto/mtd-production.dto';
 
 @ApiTags('Control MTD Production')
 @ApiBearerAuth('jwt')
 @Controller('control')
 export class MtdProductionController {
-  constructor(
-    private readonly controlMtdProductionService: MtdProductionService,
-  ) {}
+  constructor(private readonly controlMtdProductionService: MtdProductionService) {}
 
   @Get('mtd-production')
   @ApiOperation({
     summary: 'Get MTD Production Data',
-    description:
-      'Mengambil data produksi Month-to-Date dengan filter tanggal, unit, dan pagination',
+    description: 'Mengambil data produksi Month-to-Date dengan filter tanggal, unit, dan pagination',
   })
   @ApiResponse({
     status: 200,
@@ -94,8 +81,7 @@ export class MtdProductionController {
   @Get('day-production')
   @ApiOperation({
     summary: 'Get Daily Production Data',
-    description:
-      'Mengambil data produksi harian dengan grouping berdasarkan NS/DS dan filter tanggal, shift, unit, dan pagination',
+    description: 'Mengambil data produksi harian dengan grouping berdasarkan NS/DS dan filter tanggal, shift, unit, dan pagination',
   })
   @ApiResponse({
     status: 200,
@@ -228,8 +214,7 @@ export class MtdProductionController {
   @Get('day-work-hour')
   @ApiOperation({
     summary: 'Get Daily Work Hour Data',
-    description:
-      'Mengambil data jam kerja harian dengan filter tanggal dan pagination',
+    description: 'Mengambil data jam kerja harian dengan filter tanggal dan pagination',
   })
   @ApiResponse({
     status: 200,
@@ -254,7 +239,7 @@ export class MtdProductionController {
       },
     },
   })
-  async getControlDayWorkHour(@Query() query: MtdProductionQueryDto) {
-    return await this.controlMtdProductionService.getDayWorkHour(query);
+  getControlDayWorkHour(@Query() query: MtdProductionQueryDto) {
+    return this.controlMtdProductionService.getDayWorkHour(query);
   }
 }

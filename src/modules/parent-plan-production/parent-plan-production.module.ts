@@ -7,10 +7,7 @@ import { PlanProduction } from '../plan-production/entities/plan-production.enti
 import { S3Module } from 'src/integrations/s3/s3.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([ParentPlanProduction, PlanProduction]),
-    S3Module,
-  ],
+  imports: [TypeOrmModule.forFeature([ParentPlanProduction, PlanProduction]), S3Module],
   controllers: [ParentPlanProductionController],
   providers: [ParentPlanProductionService],
   exports: [ParentPlanProductionService],

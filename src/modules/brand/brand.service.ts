@@ -1,30 +1,11 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  HttpException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException, HttpException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brand } from './entities/brand.entity';
 import { Repository, Not } from 'typeorm';
-import {
-  ApiResponse,
-  successResponse,
-  throwError,
-  emptyDataResponse,
-} from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
-import {
-  validateNotEmptyString,
-  validateEnum,
-  validateMultipleFields,
-  ValidationResult,
-} from '../../common/helpers/validation.helper';
-import {
-  CreateBrandDto,
-  BrandResponseDto,
-  GetBrandsQueryDto,
-  UpdateBrandDto,
-} from './dto/brand.dto';
+import { validateNotEmptyString, validateEnum, validateMultipleFields, ValidationResult } from '../../common/helpers/validation.helper';
+import { CreateBrandDto, BrandResponseDto, GetBrandsQueryDto, UpdateBrandDto } from './dto/brand.dto';
 
 @Injectable()
 export class BrandService {
@@ -36,9 +17,7 @@ export class BrandService {
   /**
    * Validasi tambahan untuk data brand sebelum disimpan
    */
-  private validateBrandData(
-    data: CreateBrandDto | UpdateBrandDto,
-  ): ValidationResult {
+  private validateBrandData(data: CreateBrandDto | UpdateBrandDto): ValidationResult {
     const validations: ValidationResult[] = [];
 
     // Validasi untuk create (brand_name mandatory)
@@ -52,10 +31,7 @@ export class BrandService {
   /**
    * Validasi business rules khusus
    */
-  private async validateBusinessRules(
-    data: CreateBrandDto | UpdateBrandDto,
-    excludeId?: number,
-  ): Promise<ValidationResult> {
+  private async validateBusinessRules(data: CreateBrandDto | UpdateBrandDto, excludeId?: number): Promise<ValidationResult> {
     const errors: string[] = [];
 
     // Validasi nama brand tidak boleh duplikat
@@ -97,9 +73,7 @@ export class BrandService {
     }
   }
 
-  async findAll(
-    query: GetBrandsQueryDto,
-  ): Promise<ApiResponse<BrandResponseDto[]>> {
+  async findAll(query: GetBrandsQueryDto): Promise<ApiResponse<BrandResponseDto[]>> {
     try {
       const page = parseInt(query.page ?? '1', 10);
       const limit = parseInt(query.limit ?? '10', 10);
@@ -114,9 +88,7 @@ export class BrandService {
         throwError('Limit tidak boleh lebih dari 100', 400);
       }
 
-      const qb = this.brandRepository
-        .createQueryBuilder('brand')
-        .where('brand.deletedAt IS NULL'); // Exclude soft deleted records
+      const qb = this.brandRepository.createQueryBuilder('brand').where('brand.deletedAt IS NULL'); // Exclude soft deleted records
 
       // Search filter (mencari di semua field yang relevan)
       if (search) {
@@ -149,13 +121,7 @@ export class BrandService {
         updatedAt: brand.updatedAt,
       }));
 
-      return paginateResponse(
-        transformedResult,
-        total,
-        page,
-        limit,
-        'Data brand berhasil diambil',
-      );
+      return paginateResponse(transformedResult, total, page, limit, 'Data brand berhasil diambil');
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Gagal mengambil data brand');
@@ -167,19 +133,13 @@ export class BrandService {
       // Validasi tambahan menggunakan helper functions
       const validationResult = this.validateBrandData(data);
       if (!validationResult.isValid) {
-        throwError(
-          `Validasi gagal: ${validationResult.errors.join(', ')}`,
-          400,
-        );
+        throwError(`Validasi gagal: ${validationResult.errors.join(', ')}`, 400);
       }
 
       // Validasi business rules
       const businessValidation = await this.validateBusinessRules(data);
       if (!businessValidation.isValid) {
-        throwError(
-          `Business rule validation gagal: ${businessValidation.errors.join(', ')}`,
-          409,
-        );
+        throwError(`Business rule validation gagal: ${businessValidation.errors.join(', ')}`, 409);
       }
 
       const newBrand = this.brandRepository.create(data);
@@ -194,10 +154,7 @@ export class BrandService {
     }
   }
 
-  async update(
-    id: number,
-    updateDto: UpdateBrandDto,
-  ): Promise<ApiResponse<BrandResponseDto | null>> {
+  async update(id: number, updateDto: UpdateBrandDto): Promise<ApiResponse<BrandResponseDto | null>> {
     try {
       const brand = await this.brandRepository.findOne({ where: { id } });
 
@@ -208,22 +165,13 @@ export class BrandService {
       // Validasi tambahan menggunakan helper functions (hanya untuk field yang diisi)
       const validationResult = this.validateBrandData(updateDto);
       if (!validationResult.isValid) {
-        throwError(
-          `Validasi gagal: ${validationResult.errors.join(', ')}`,
-          400,
-        );
+        throwError(`Validasi gagal: ${validationResult.errors.join(', ')}`, 400);
       }
 
       // Validasi business rules (exclude current brand ID)
-      const businessValidation = await this.validateBusinessRules(
-        updateDto,
-        id,
-      );
+      const businessValidation = await this.validateBusinessRules(updateDto, id);
       if (!businessValidation.isValid) {
-        throwError(
-          `Business rule validation gagal: ${businessValidation.errors.join(', ')}`,
-          409,
-        );
+        throwError(`Business rule validation gagal: ${businessValidation.errors.join(', ')}`, 409);
       }
 
       const updatedBrand = this.brandRepository.merge(brand, updateDto);

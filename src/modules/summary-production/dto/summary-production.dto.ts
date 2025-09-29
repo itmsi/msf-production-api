@@ -2,37 +2,37 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsOptional, IsString, IsDateString } from 'class-validator';
 
 export class SummaryProductionQueryDto {
-  @ApiProperty({ 
-    description: 'Start date for filtering (YYYY-MM-DD format)', 
+  @ApiProperty({
+    description: 'Start date for filtering (YYYY-MM-DD format)',
     example: '2025-01-01',
-    required: false 
+    required: false,
   })
   @IsOptional()
   @IsDateString()
   startDate?: string;
 
-  @ApiProperty({ 
-    description: 'End date for filtering (YYYY-MM-DD format)', 
+  @ApiProperty({
+    description: 'End date for filtering (YYYY-MM-DD format)',
     example: '2025-01-31',
-    required: false 
+    required: false,
   })
   @IsOptional()
   @IsDateString()
   endDate?: string;
 
-  @ApiProperty({ 
-    description: 'DT Type filter (10, 12, or N/A)', 
+  @ApiProperty({
+    description: 'DT Type filter (10, 12, or N/A)',
     example: '10',
-    required: false 
+    required: false,
   })
   @IsOptional()
   @IsString()
   dtType?: string;
 
-  @ApiProperty({ 
-    description: 'Material type filter', 
+  @ApiProperty({
+    description: 'Material type filter',
     example: 'ore barge',
-    required: false 
+    required: false,
   })
   @IsOptional()
   @IsString()

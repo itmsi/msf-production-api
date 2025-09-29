@@ -1,46 +1,19 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  Put,
-  Delete,
-  UseGuards,
-  Query,
-  ParseIntPipe,
-  Request,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Put, Delete, UseGuards, Query, ParseIntPipe, Request } from '@nestjs/common';
 import { RolesService } from './roles.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiBody,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
-import {
-  CreateRolesDto,
-  GetRolesQueryDto,
-  UpdateRolesDto,
-  RoleListResponseDto,
-  SingleRoleResponseDto,
-} from './dto/roles.dto';
+import { ApiBearerAuth, ApiTags, ApiBody, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { CreateRolesDto, GetRolesQueryDto, UpdateRolesDto, RoleListResponseDto, SingleRoleResponseDto } from './dto/roles.dto';
 
 @ApiTags('Roles')
 @ApiBearerAuth('jwt')
-@Controller('prod/roles')
+@Controller('roles')
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary:
-      'Mendapatkan semua data roles dengan pagination, filtering, dan sorting',
+    summary: 'Mendapatkan semua data roles dengan pagination, filtering, dan sorting',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -200,8 +173,7 @@ export class RolesController {
   @Post()
   @ApiOperation({
     summary: 'Membuat role baru',
-    description:
-      'Membuat role baru dengan kode unik dan nama posisi. Role code dan position name harus unik dalam sistem.',
+    description: 'Membuat role baru dengan kode unik dan nama posisi. Role code dan position name harus unik dalam sistem.',
   })
   @ApiBody({
     type: CreateRolesDto,
@@ -308,8 +280,7 @@ export class RolesController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data role berdasarkan ID',
-    description:
-      'Mengupdate data role dengan validasi duplikasi role_code dan position_name',
+    description: 'Mengupdate data role dengan validasi duplikasi role_code dan position_name',
   })
   @ApiParam({
     name: 'id',
@@ -359,11 +330,7 @@ export class RolesController {
     status: 500,
     description: 'Internal Server Error - Terjadi kesalahan pada server',
   })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateRolesDto,
-    @Request() req: any,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRolesDto, @Request() req: any) {
     if (!dto.updatedBy) {
       dto.updatedBy = req.user?.id;
     }

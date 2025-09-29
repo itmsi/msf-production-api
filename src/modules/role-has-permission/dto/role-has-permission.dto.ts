@@ -1,11 +1,4 @@
-import {
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsNumberString,
-  IsString,
-  Min,
-} from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsNumberString, IsString, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateRoleHasPermissionDto {
@@ -148,14 +141,7 @@ export class GetRoleHasPermissionsQueryDto {
     required: false,
     example: 'id',
     description: 'Field untuk sorting',
-    enum: [
-      'id',
-      'role_id',
-      'mhp_id',
-      'permission_id',
-      'createdAt',
-      'updatedAt',
-    ],
+    enum: ['id', 'role_id', 'mhp_id', 'permission_id', 'createdAt', 'updatedAt'],
     default: 'id',
   })
   @IsOptional()

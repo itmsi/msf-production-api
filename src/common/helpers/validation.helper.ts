@@ -13,10 +13,7 @@ export interface ValidationResult {
 /**
  * Validasi string tidak boleh kosong (tidak hanya whitespace)
  */
-export function validateNotEmptyString(
-  value: any,
-  fieldName: string,
-): ValidationResult {
+export function validateNotEmptyString(value: any, fieldName: string): ValidationResult {
   if (value === null || value === undefined) {
     return {
       isValid: false,
@@ -47,10 +44,7 @@ export function validateNotEmptyString(
 /**
  * Validasi array tidak boleh kosong
  */
-export function validateNotEmptyArray(
-  value: any,
-  fieldName: string,
-): ValidationResult {
+export function validateNotEmptyArray(value: any, fieldName: string): ValidationResult {
   if (value === null || value === undefined) {
     return {
       isValid: false,
@@ -81,10 +75,7 @@ export function validateNotEmptyArray(
 /**
  * Validasi koordinat longitude (-180 sampai 180)
  */
-export function validateLongitude(
-  value: any,
-  fieldName: string,
-): ValidationResult {
+export function validateLongitude(value: any, fieldName: string): ValidationResult {
   if (value === null || value === undefined) {
     return {
       isValid: false,
@@ -122,10 +113,7 @@ export function validateLongitude(
 /**
  * Validasi koordinat latitude (-90 sampai 90)
  */
-export function validateLatitude(
-  value: any,
-  fieldName: string,
-): ValidationResult {
+export function validateLatitude(value: any, fieldName: string): ValidationResult {
   if (value === null || value === undefined) {
     return {
       isValid: false,
@@ -163,11 +151,7 @@ export function validateLatitude(
 /**
  * Validasi enum value
  */
-export function validateEnum(
-  value: any,
-  allowedValues: any[],
-  fieldName: string,
-): ValidationResult {
+export function validateEnum(value: any, allowedValues: any[], fieldName: string): ValidationResult {
   if (value === null || value === undefined) {
     return {
       isValid: false,
@@ -178,9 +162,7 @@ export function validateEnum(
   if (!allowedValues.includes(value)) {
     return {
       isValid: false,
-      errors: [
-        `${fieldName} harus salah satu dari: ${allowedValues.join(', ')}`,
-      ],
+      errors: [`${fieldName} harus salah satu dari: ${allowedValues.join(', ')}`],
     };
   }
 
@@ -193,9 +175,7 @@ export function validateEnum(
 /**
  * Validasi multiple fields dan return semua error
  */
-export function validateMultipleFields(
-  validations: ValidationResult[],
-): ValidationResult {
+export function validateMultipleFields(validations: ValidationResult[]): ValidationResult {
   const allErrors: string[] = [];
 
   validations.forEach((validation) => {
@@ -213,10 +193,7 @@ export function validateMultipleFields(
 /**
  * Validasi object dengan rules yang diberikan
  */
-export function validateObject(
-  obj: any,
-  rules: Record<string, (value: any) => ValidationResult>,
-): ValidationResult {
+export function validateObject(obj: any, rules: Record<string, (value: any) => ValidationResult>): ValidationResult {
   const allErrors: string[] = [];
 
   for (const [fieldName, validator] of Object.entries(rules)) {
@@ -237,10 +214,7 @@ export function validateObject(
 /**
  * Validasi koordinat longitude yang nullable (-180 sampai 180)
  */
-export function validateNullableLongitude(
-  value: any,
-  fieldName: string,
-): ValidationResult {
+export function validateNullableLongitude(value: any, fieldName: string): ValidationResult {
   // Jika null/undefined, valid (nullable)
   if (value === null || value === undefined) {
     return {
@@ -279,10 +253,7 @@ export function validateNullableLongitude(
 /**
  * Validasi koordinat latitude yang nullable (-90 sampai 90)
  */
-export function validateNullableLatitude(
-  value: any,
-  fieldName: string,
-): ValidationResult {
+export function validateNullableLatitude(value: any, fieldName: string): ValidationResult {
   // Jika null/undefined, valid (nullable)
   if (value === null || value === undefined) {
     return {

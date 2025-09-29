@@ -1,30 +1,9 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  UseGuards,
-  Query,
-  ParseIntPipe,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, ParseIntPipe } from '@nestjs/common';
 import { SettingDashboardService } from './setting-dashboard.service';
 import { CreateSettingDashboardDto, UpdateSettingDashboardDto } from './dto/setting-dashboard.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
-import {
-  SettingDashboardListResponseDto,
-  SingleSettingDashboardResponseDto,
-} from './dto/setting-dashboard.dto';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { SettingDashboardListResponseDto, SingleSettingDashboardResponseDto } from './dto/setting-dashboard.dto';
 
 @ApiTags('Setting Dashboard')
 @ApiBearerAuth('jwt')
@@ -82,10 +61,7 @@ export class SettingDashboardController {
     status: 401,
     description: 'Unauthorized - Token tidak valid',
   })
-  findAll(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-  ) {
+  findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
     return this.settingDashboardService.findAll(page, limit);
   }
 
@@ -145,10 +121,7 @@ export class SettingDashboardController {
     status: 401,
     description: 'Unauthorized - Token tidak valid',
   })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateSettingDashboardDto: UpdateSettingDashboardDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateSettingDashboardDto: UpdateSettingDashboardDto) {
     return this.settingDashboardService.update(id, updateSettingDashboardDto);
   }
 

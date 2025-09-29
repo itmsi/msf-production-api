@@ -26,21 +26,13 @@ export class RoleSeeder {
 
     for (const roleData of rolesData) {
       // Check if role already exists
-      const existingRole = await this.dataSource.query(
-        'SELECT * FROM m_role WHERE role_code = $1',
-        [roleData.roleCode],
-      );
+      const existingRole = await this.dataSource.query('SELECT * FROM m_role WHERE role_code = $1', [roleData.roleCode]);
 
       if (existingRole.length === 0) {
         // Create new role
         await this.dataSource.query(
           'INSERT INTO m_role (role_code, position_name, role_parent, sites_id, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, NOW(), NOW())',
-          [
-            roleData.roleCode,
-            roleData.positionName,
-            roleData.roleParent,
-            roleData.sitesId,
-          ],
+          [roleData.roleCode, roleData.positionName, roleData.roleParent, roleData.sitesId],
         );
         createdCount++;
         console.log(`✅ Role created: ${roleData.roleCode}`);

@@ -79,10 +79,7 @@ export function generateNIPWithInitial(name: string, id: number): string {
   return `${initials}${symbol}${paddedId}`;
 }
 
-export function calculateTimeRange(
-  time: Date,
-  timeZone: string = 'Asia/Jakarta',
-): string {
+export function calculateTimeRange(time: Date, timeZone: string = 'Asia/Jakarta'): string {
   // Ambil jam di zona waktu tertentu
   const formatter = new Intl.DateTimeFormat('en-US', {
     hour: '2-digit',
@@ -119,9 +116,7 @@ export class CsvHelper {
     const headers = Object.keys(errorRows[0]);
     const csvContent = [
       headers.join(','), // header line
-      ...errorRows.map((row) =>
-        headers.map((h) => JSON.stringify(row[h] ?? '')).join(','),
-      ),
+      ...errorRows.map((row) => headers.map((h) => JSON.stringify(row[h] ?? '')).join(',')),
     ].join('\n');
 
     return Buffer.from(csvContent, 'utf-8');
