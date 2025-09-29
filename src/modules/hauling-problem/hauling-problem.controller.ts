@@ -1,8 +1,29 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  StreamableFile,
+  InternalServerErrorException,
+  UseInterceptors,
+  UploadedFile,
+  Req,
+  Res,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { HaulingProblemService } from './hauling-problem.service';
 import { CreateHaulingProblemDto, UpdateHaulingProblemDto, HaulingProblemResponseDto, GetHaulingProblemQueryDto } from './dto';
+import { createReadStream } from 'fs';
+import { join } from 'path';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { FileUploadDto } from '../population';
+import { Response } from 'express';
 
 @ApiTags('Hauling Problem')
 @Controller('hauling-problem')
@@ -10,6 +31,15 @@ import { CreateHaulingProblemDto, UpdateHaulingProblemDto, HaulingProblemRespons
 @ApiBearerAuth('jwt')
 export class HaulingProblemController {
   constructor(private readonly haulingProblemService: HaulingProblemService) {}
+
+  @Get('export')
+  @ApiOperation({
+    summary: 'Export data Fuel consumption dari CSV',
+    description: 'Mengimport data Fuel consumption dari CSV ke database setelah validasi',
+  })
+  async exportData(@Query() query: GetHaulingProblemQueryDto, @Res({ passthrough: false }) res: Response) {
+    return await this.haulingProblemService.exportData(query, res);
+  }
 
   @Post()
   @ApiOperation({
@@ -339,5 +369,41 @@ export class HaulingProblemController {
   })
   async delete(@Param('id') id: number) {
     return this.haulingProblemService.delete(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('import/template')
+  @ApiOperation({
+    summary: 'Download template CSV untuk import Fuel Consumption Data',
+    description: 'Mendownload template CSV yang berisi format kolom yang diperlukan',
+  })
+  downloadTemplate(): StreamableFile {
+    try {
+      const file = join(process.cwd(), 'src/modules/hauling-problem/template-hauling-problem-import.csv');
+      const stream = createReadStream(file);
+      return new StreamableFile(stream, {
+        type: 'text/csv',
+        disposition: 'attachment; filename="template-hauling-problem-import.csv"',
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to download CSV template');
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'File CSV yang akan diimport',
+    type: FileUploadDto,
+  })
+  @ApiOperation({
+    summary: 'Import data Hauling CCR  dari CSV',
+    description: 'Mengimport data Hauling CCR dari CSV ke database setelah validasi',
+  })
+  importData(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    const userId = req.user?.id;
+    return this.haulingProblemService.importData(file, userId);
   }
 }

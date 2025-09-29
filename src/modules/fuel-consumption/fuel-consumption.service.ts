@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FuelConsumption } from './entities/fuel-consumption.entity';
 import { CreateFuelConsumptionDto, UpdateFuelConsumptionDto, FuelConsumptionResponseDto, QueryFuelConsumptionDto } from './dto';
 import { successResponse, emptyDataResponse, throwError, ApiResponse } from '../../common/helpers/response.helper';
-import { normalizeString, paginateResponse, setCsvExportHeaders } from '../../common/helpers/public.helper';
+import { convertStringDateYYYYMMDD, normalizeString, paginateResponse, setCsvExportHeaders } from '../../common/helpers/public.helper';
 import { ImportFuelConsumptionCsvRowDto, ImportFuelConsumptionItemDto } from './dto/import-fuel-consumption.dto';
 import { S3Service } from '../../integrations/s3/s3.service';
 import csv from 'csv-parser';
@@ -581,7 +581,11 @@ export class FuelConsumptionService {
             minioAvailable = await this.s3Service.testConnection();
 
             if (minioAvailable) {
-              errorFileInfo = await this.s3Service.uploadErrorFile(`import_error_${Date.now()}.csv`, errorCsvBuffer, 'ewh_import_error');
+              errorFileInfo = await this.s3Service.uploadErrorFile(
+                `import_error_${Date.now()}.csv`,
+                errorCsvBuffer,
+                'fuel_consumption_import_error',
+              );
 
               if (errorFileInfo) {
                 this.logger.log('Error file uploaded to MinIO successfully');
@@ -775,11 +779,15 @@ export class FuelConsumptionService {
     }
 
     // Validasi format date
-    if (row.activity_date && !this.isValidDate(row.activity_date)) {
-      errors.push({
-        field: 'activity_date',
-        message: 'Format tanggal tidak valid (yyyy-mm-dd)',
-      });
+    if (row.activity_date) {
+      const date = convertStringDateYYYYMMDD(row.activity_date);
+
+      if (date === 'Invalid date') {
+        errors.push({
+          field: 'activity_date',
+          message: 'Format tanggal tidak valid (yyyy-mm-dd)',
+        });
+      }
     }
 
     if (row.start_refueling_time && !this.isValidDateTime(row.start_refueling_time)) {
@@ -879,7 +887,7 @@ export class FuelConsumptionService {
     }
 
     const fuelConsumptionData: CreateFuelConsumptionDto = {
-      activity_date: row.activity_date,
+      activity_date: moment(row.activity_date).format('YYYY-MM-DD'),
       unit_id: population.id,
       shift: row.shift.toUpperCase() as Shift,
       part_name: row.part_name,
