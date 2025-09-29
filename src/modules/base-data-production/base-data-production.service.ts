@@ -30,8 +30,6 @@ export class BaseDataProductionService {
     private baseDataProRepository: Repository<BaseDataPro>,
     @InjectRepository(Population)
     private populationRepository: Repository<Population>,
-    @InjectRepository(Employee)
-    private employeeRepository: Repository<Employee>,
     @InjectRepository(Barge)
     private bargeRepository: Repository<Barge>,
     @InjectRepository(OperationPoints)
@@ -216,11 +214,20 @@ export class BaseDataProductionService {
 
         // Validate Dumping Point ID if provided
         if (detail.dumpingPointId) {
-          const dumpingPoint = await this.operationPointsRepository.findOne({
-            where: { id: detail.dumpingPointId, deletedAt: IsNull() },
-          });
-          if (!dumpingPoint) {
-            throw new BadRequestException(`Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan di tabel m_operation_points`);
+          if (detail?.activity && ['direct', 'hauling'].includes(detail?.activity?.toLowerCase())) {
+            const dumpingPointBarge = await this.bargeRepository.findOne({
+              where: { id: detail.dumpingPointBargeId, deletedAt: IsNull() },
+            });
+            if (!dumpingPointBarge) {
+              throw new BadRequestException(`Dumping Point Barge dengan ID ${detail.dumpingPointBargeId} tidak ditemukan`);
+            }
+          } else {
+            const dumpingPoint = await this.operationPointsRepository.findOne({
+              where: { id: detail.dumpingPointId, deletedAt: IsNull() },
+            });
+            if (!dumpingPoint) {
+              throw new BadRequestException(`Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan di tabel m_operation_points`);
+            }
           }
         }
 
@@ -361,7 +368,7 @@ export class BaseDataProductionService {
 
   private async getOperationPoint(point: string): Promise<number | undefined> {
     const operation = await this.operationPointsRepository.findOne({
-      where: { name: ILike(`%${point?.trim()}%`) },
+      where: { name: ILike(`%${point?.trim()}%`), deletedAt: IsNull() },
     });
     return operation?.id;
   }
@@ -507,6 +514,11 @@ export class BaseDataProductionService {
       return { isValid: false, error: message };
     }
 
+    let dumpingPointBargeId: null | number = null;
+    if (['hauling', 'direct'].includes(row.activity)) {
+      dumpingPointBargeId = dumpingId;
+    }
+
     const detail = {
       hmAwal: Number(row.hmAwal),
       hmAkhir: Number(row.hmAkhir),
@@ -515,7 +527,7 @@ export class BaseDataProductionService {
       totalVessel: Number(row.totalVessel),
       distance: Number(row.distance),
       loadingPointId: loadingId,
-      dumpingPointId: dumpingId,
+      dumpingPointBargeId: dumpingId,
       activity: row.activity,
       material: row.material,
     };
