@@ -26,7 +26,6 @@ import { S3Service } from 'src/integrations/s3/s3.service';
 import moment from 'moment';
 import { ImportHaulingListCsvRowDto, ImportHaulingListItemDto } from './dto/import-hauling-list.dto';
 import { Readable } from 'stream';
-import { ImportFuelConsumptionCsvRowDto } from '../fuel-consumption/dto/import-fuel-consumption.dto';
 import csv from 'csv-parser';
 import { Population } from '../population';
 import { Barge } from '../barge';
@@ -42,8 +41,6 @@ export class HaulingListService {
     private readonly haulingListRepository: Repository<HaulingList>,
     @InjectRepository(OperationPoints)
     private readonly operationPointsRepository: Repository<OperationPoints>,
-    @InjectRepository(Sites)
-    private readonly sitesRepository: Repository<Sites>,
     @InjectRepository(Population)
     private readonly populationRepository: Repository<Population>,
     @InjectRepository(Barge)
