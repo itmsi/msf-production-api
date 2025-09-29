@@ -2352,7 +2352,7 @@ export class DashboardService {
 
       const totalMohh = parseFloat(mohhQuery[0]?.total_mohh || '0');
       // const totalEwh = parseFloat(ewhQuery[0]?.total_ewh || '0');
-      const totalBreakdown = parseFloat(breakdownQuery[0]?.total_breakdown || '0');
+      const totalBreakdown = parseFloat(breakdownQuery[0]?.total_duration || '0');
       const totalStandby = parseFloat(standbyQuery[0]?.total_duration || '0');
 
       // Hitung STB = MOHH - EWH - Breakdown Time
