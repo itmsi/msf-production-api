@@ -1,13 +1,24 @@
-import { Injectable, InternalServerErrorException, HttpException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, HttpException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, Like, SelectQueryBuilder } from 'typeorm';
+import { DataSource, DeepPartial, ILike, Repository, SelectQueryBuilder } from 'typeorm';
 import { BargingList } from './entities/barging-list.entity';
 import { Population } from '../population/entities/population.entity';
 import { Barge } from '../barge/entities/barge.entity';
-import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
-import { paginateResponse } from '../../common/helpers/public.helper';
-import { CreateBargingListDto, UpdateBargingListDto, BargingListResponseDto, GetBargingListQueryDto } from './dto';
+import { ApiResponse, successResponse, throwError, emptyDataResponse, importResponse } from '../../common/helpers/response.helper';
+import { CsvHelper, paginateResponse, setCsvExportHeaders } from '../../common/helpers/public.helper';
+import {
+  CreateBargingListDto,
+  UpdateBargingListDto,
+  BargingListResponseDto,
+  GetBargingListQueryDto,
+  ExportBargingListQueryDto,
+} from './dto';
 import { calculateTimeRange } from '../../common/helpers/public.helper';
+import { validateFileNumber, validateImportFile } from 'src/common/helpers/validation.helper';
+import { S3Service } from 'src/integrations/s3/s3.service';
+import moment from 'moment';
+import { Response } from 'express';
+import { format } from '@fast-csv/format';
 
 @Injectable()
 export class BargingListService {
@@ -18,6 +29,8 @@ export class BargingListService {
     private populationRepository: Repository<Population>,
     @InjectRepository(Barge)
     private bargeRepository: Repository<Barge>,
+    private s3Service: S3Service,
+    private dataSource: DataSource,
   ) {}
 
   /**
@@ -112,7 +125,6 @@ export class BargingListService {
         message: 'Data test berhasil diambil',
       };
     } catch (error) {
-      console.error('Error in testData method:', error);
       throw new InternalServerErrorException(`Gagal mengambil data test: ${error.message}`);
     }
   }
@@ -343,6 +355,400 @@ export class BargingListService {
         throw error;
       }
       throw new InternalServerErrorException('Gagal menghapus barging list');
+    }
+  }
+
+  private async getPopulation(namePopulation: string) {
+    const name = namePopulation?.trim();
+    const populationId = await this.populationRepository.findOne({
+      where: {
+        no_unit: ILike(`%${name}%`),
+      },
+    });
+    return populationId?.id;
+  }
+
+  private async getBarge(bargeName: string): Promise<number | undefined> {
+    const name = bargeName?.trim();
+    const barge = await this.bargeRepository.findOne({
+      where: {
+        name: ILike(`%${name}%`),
+      },
+    });
+    return barge?.id;
+  }
+
+  private async validateRowData(row: any): Promise<{
+    isValid: boolean;
+    error?: string;
+    payload?: CreateBargingListDto;
+  }> {
+    if (!row.activity_date) {
+      return {
+        isValid: false,
+        error: 'activity_date is required',
+      };
+    }
+
+    if (!row.time_activity) {
+      return {
+        isValid: false,
+        error: 'time_activity is required',
+      };
+    }
+
+    if (!row.shift) {
+      return {
+        isValid: false,
+        error: 'shift is required',
+      };
+    }
+
+    if (!row.unit_hauler) {
+      return {
+        isValid: false,
+        error: 'unit_hauler is required',
+      };
+    }
+
+    if (!row.barge) {
+      return {
+        isValid: false,
+        error: 'barge is required',
+      };
+    }
+
+    if (!row.vessel) {
+      return {
+        isValid: false,
+        error: 'vessel is required',
+      };
+    }
+
+    if (!moment(row.activity_date, 'YYYY-MM-DD', true).isValid()) {
+      return {
+        isValid: false,
+        error: `start_date harus dalam format YYYY-MM-DD (row: ${row.start_date})`,
+      };
+    }
+
+    if (row.time_activity && !moment(row.time_activity, 'HH:mm', true).isValid()) {
+      return {
+        isValid: false,
+        error: `time_activity harus dalam format (10:00) HH:mm (row: ${row.time_activity})`,
+      };
+    }
+
+    if (!['ds', 'ns'].includes(row?.shift?.toLowerCase())) {
+      return {
+        isValid: false,
+        error: `shift harus ds or ns (row: ${row.shift})`,
+      };
+    }
+
+    const res = validateFileNumber(row, 'vessel', 'vessel');
+    if (!res.ok) return { isValid: false, error: res.error };
+
+    const [populationId, bargeId] = await Promise.all([this.getPopulation(row.unit_hauler), this.getBarge(row.barge)]);
+
+    if (!populationId) {
+      const message = row.unit_hauler ? `Unit ${row?.unit_hauler} tidak ditemukan` : 'Unit tidak ditemukan';
+      return {
+        isValid: false,
+        error: message,
+      };
+    }
+
+    if (!bargeId) {
+      const message = row.barge ? `Barge ${row?.barge} tidak ditemukan` : 'Barge tidak ditemukan';
+      return {
+        isValid: false,
+        error: message,
+      };
+    }
+
+    const payload = {
+      activity_date: row.activity_date,
+      shift: row.shift,
+      time: `${row.activity_date} ${row.time_activity}`,
+      unit_hauler_id: populationId,
+      barge_id: bargeId,
+      vessel: row.vessel,
+    };
+    return {
+      isValid: true,
+      payload,
+    };
+  }
+
+  private async processImportData(csvData: any[]): Promise<{
+    results: any[];
+    failedRows: any[];
+    successCount: number;
+    failedCount: number;
+    payload: CreateBargingListDto[];
+  }> {
+    const results: any[] = [];
+    const failedRows: any[] = [];
+    let successCount = 0;
+    let failedCount = 0;
+    const payload: CreateBargingListDto[] = [];
+
+    const validations = await Promise.all(
+      csvData.map(async (row: any, idx: number) => {
+        const rowNumber = idx + 1;
+        try {
+          const validationResult = await this.validateRowData(row);
+          if (!validationResult.isValid) {
+            failedCount++;
+            failedRows.push({
+              rowNumber,
+              ...row,
+              error: validationResult.error,
+            });
+            return {
+              row: rowNumber,
+              status: 'error',
+              message: validationResult.error,
+              data: row,
+            };
+          }
+
+          successCount++;
+          if (validationResult.payload) payload.push(validationResult.payload);
+          return {
+            row: rowNumber,
+            status: 'success',
+            message: 'Data valid',
+            data: row,
+          };
+        } catch (err) {
+          failedCount++;
+          failedRows.push({ rowNumber, ...row, error: err.message });
+          return {
+            row: rowNumber,
+            status: 'error',
+            message: err.message || 'Validasi gagal',
+            data: row,
+          };
+        }
+      }),
+    );
+
+    results.push(...validations);
+
+    return {
+      results,
+      failedRows,
+      successCount,
+      failedCount,
+      payload,
+    };
+  }
+
+  async bulkCreate(payload: CreateBargingListDto[], userId: number): Promise<any> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const bargeListEntities = payload.map((dto) => {
+        const totalTonnage = dto.vessel * 40;
+        return queryRunner.manager.create(BargingList, {
+          activityDate: moment(dto.activity_date, 'YYYY-MM-DD', true).toDate(),
+          shift: dto.shift,
+          time: moment(dto.time, 'YYYY-MM-DD HH:mm', true).toDate(),
+          unitHaulerId: dto.unit_hauler_id,
+          bargeId: dto.barge_id,
+          vessel: dto.vessel,
+          totalTonnage,
+          createdBy: userId,
+        } as DeepPartial<BargingList>);
+      });
+
+      await queryRunner.manager.save(BargingList, bargeListEntities);
+
+      await queryRunner.commitTransaction();
+      return;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throwError('Failed to import Barge List', 500);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  private createErrorCsvContent(failedRows: any[]): string {
+    if (failedRows.length === 0) return '';
+
+    const dynamicKeys = new Set<string>();
+    failedRows.forEach((row) => {
+      Object.keys(row).forEach((key) => {
+        if (key !== 'error' && key !== 'rowNumber') {
+          dynamicKeys.add(key);
+        }
+      });
+    });
+
+    const workingHour = ['year_month', 'total_working_hour_month', 'total_working_hour_day', 'total_mohh_per_month'];
+    const activityKeys = [...dynamicKeys].filter((k) => !workingHour.includes(k));
+
+    const csvHeaders = [...workingHour, ...activityKeys, 'error_message  (Please delete this column before importing again)'];
+
+    const csvRows = failedRows.map((row) =>
+      csvHeaders
+        .map((header) => {
+          if (header === 'error_message') return `"${row.error || ''}"`;
+          return `"${row[header] ?? ''}"`;
+        })
+        .join(','),
+    );
+
+    return [csvHeaders.join(','), ...csvRows].join('\n');
+  }
+
+  private async generateErrorCsv(failedRows: any[]): Promise<{
+    error_file: { download_url: string; file_name: string } | null;
+  }> {
+    if (failedRows.length === 0) {
+      return {
+        error_file: null,
+      };
+    }
+
+    try {
+      const csvContent = this.createErrorCsvContent(failedRows);
+      const csvBuffer = Buffer.from(csvContent, 'utf8');
+      const filename = `import-barge-errors-${Date.now()}.csv`;
+
+      const result = await this.s3Service.uploadErrorFile(filename, csvBuffer, 'barge_import_error');
+
+      return {
+        error_file: result
+          ? {
+              download_url: result.downloadUrl,
+              file_name: filename,
+            }
+          : null,
+      };
+    } catch (error) {
+      return {
+        error_file: null,
+      };
+    }
+  }
+
+  async importData(file: Express.Multer.File, userId: number) {
+    try {
+      validateImportFile(file);
+      const csvData = await CsvHelper.parseCsvFile(file.buffer);
+      const validationResult = await this.processImportData(csvData);
+
+      if (validationResult?.payload?.length && validationResult.successCount > 0) {
+        await this.bulkCreate(validationResult.payload, userId);
+      }
+
+      const errorFileInfo = await this.generateErrorCsv(validationResult.failedRows);
+
+      return importResponse(csvData.length, validationResult.successCount, validationResult.failedCount, errorFileInfo);
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throwError(error, 400);
+      }
+
+      if (error.message?.includes('CSV') || error.message?.includes('parse')) {
+        throwError('Format CSV tidak valid. Pastikan file CSV memiliki format yang benar.', 400);
+      }
+
+      if (error.code === '23503') {
+        throwError('Data referensi tidak ditemukan. Pastikan semua ID referensi valid.', 400);
+      }
+
+      console.error('Unexpected error in importData:', error.stack);
+      throwError('Terjadi kesalahan saat memproses file import. Silakan coba lagi atau hubungi administrator.', 400);
+    }
+  }
+
+  private applyFilterExportData(qb: SelectQueryBuilder<BargingList>, query: ExportBargingListQueryDto): SelectQueryBuilder<BargingList> {
+    const search = query.search?.trim().toLowerCase();
+    const shift = query.shift?.toLowerCase();
+    const unitHaulerId = query.unit_hauler_id;
+    const bargeId = query.barge_id;
+    const sortOrder = query.sortOrder ?? 'DESC';
+    if (search) {
+      qb.andWhere('(LOWER(unitHauler.no_unit) LIKE :search OR LOWER(barge.name) LIKE :search)', { search: `%${search}%` });
+    }
+
+    if (shift) {
+      qb.andWhere('barging.shift = :shift', { shift });
+    }
+
+    if (unitHaulerId) {
+      qb.andWhere('barging.unitHaulerId = :unitHaulerId', { unitHaulerId });
+    }
+
+    if (bargeId) {
+      qb.andWhere('barging.bargeId = :bargeId', { bargeId });
+    }
+
+    if (query.date_from && query.date_to) {
+      qb.andWhere('barging.activityDate BETWEEN :dateFrom AND :dateTo', {
+        dateFrom: query.date_from,
+        dateTo: query.date_to,
+      });
+    } else if (query.date_from) {
+      qb.andWhere('barging.activityDate >= :dateFrom', {
+        dateFrom: query.date_from,
+      });
+    } else if (query.date_to) {
+      qb.andWhere('barging.activityDate <= :dateTo', { dateTo: query.date_to });
+    } else {
+      qb.take(10);
+    }
+
+    qb.orderBy('barging.id', sortOrder);
+    return qb;
+  }
+
+  private mapExportDataToCsvRow(item: BargingList, index: number) {
+    const timeRange = calculateTimeRange(item.time);
+    return {
+      No: index + 1,
+      Date: moment(item.activityDate).format('YYYY-MM-DD'),
+      Shift: item?.shift?.toUpperCase(),
+      Time: moment(item?.time).format('HH:mm'),
+      'Time Range': timeRange,
+      'Unit Hauler': item?.unitHauler?.no_unit || '',
+      'Barge Name': item?.barge?.name || '',
+      'Dump Area': item?.barge?.name || '',
+      Vessel: item?.vessel || 0,
+      'Total Tonnage': item?.totalTonnage || 0,
+    };
+  }
+
+  async exportData(query: ExportBargingListQueryDto, res: Response) {
+    try {
+      const qb = this.createQueryBuilder();
+
+      this.applyFilterExportData(qb, query);
+
+      const data = await qb.getMany();
+
+      if (!data.length) {
+        res.status(200).json(successResponse([], 'Data Not Found'));
+        return;
+      }
+      // // Set headers CSV
+      setCsvExportHeaders(res, `parent_plan_working_hour_export_${Date.now()}.csv`);
+      // // Buat stream writer
+      const csvStream = format({ headers: true });
+      csvStream.pipe(res);
+      data.forEach((item, i) => {
+        csvStream.write(this.mapExportDataToCsvRow(item, i));
+      });
+      csvStream.end();
+    } catch (error) {
+      throw new InternalServerErrorException('Gagal export data');
     }
   }
 }
