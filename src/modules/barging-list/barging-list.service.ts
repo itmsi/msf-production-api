@@ -5,7 +5,7 @@ import { BargingList } from './entities/barging-list.entity';
 import { Population } from '../population/entities/population.entity';
 import { Barge } from '../barge/entities/barge.entity';
 import { ApiResponse, successResponse, throwError, emptyDataResponse, importResponse } from '../../common/helpers/response.helper';
-import { CsvHelper, paginateResponse, setCsvExportHeaders } from '../../common/helpers/public.helper';
+import { CsvHelper, paginateResponse, parseDateFile, setCsvExportHeaders } from '../../common/helpers/public.helper';
 import {
   CreateBargingListDto,
   UpdateBargingListDto,
@@ -425,7 +425,8 @@ export class BargingListService {
       };
     }
 
-    if (!moment(row.activity_date, 'YYYY-MM-DD', true).isValid()) {
+    const parsedActivityDate = parseDateFile(row.activity_date);
+    if (!parsedActivityDate) {
       return {
         isValid: false,
         error: `activity_date harus dalam format YYYY-MM-DD (row: ${row.activity_date})`,
@@ -468,7 +469,7 @@ export class BargingListService {
     }
 
     const payload = {
-      activity_date: row.activity_date,
+      activity_date: parsedActivityDate,
       shift: row.shift,
       time: `${row.activity_date} ${row.time_activity}`,
       unit_hauler_id: populationId,
@@ -664,7 +665,6 @@ export class BargingListService {
         throwError('Data referensi tidak ditemukan. Pastikan semua ID referensi valid.', 400);
       }
 
-      console.error('Unexpected error in importData:', error.stack);
       throwError('Terjadi kesalahan saat memproses file import. Silakan coba lagi atau hubungi administrator.', 400);
     }
   }

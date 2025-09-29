@@ -13,7 +13,7 @@ import {
   ExportBargingProblemsQueryDto,
 } from './dto/barging-problem.dto';
 import { successResponse, emptyDataResponse, throwError, importResponse } from '../../common/helpers/response.helper';
-import { CsvHelper, paginateResponse, setCsvExportHeaders } from '../../common/helpers/public.helper';
+import { CsvHelper, paginateResponse, parseDateFile, setCsvExportHeaders } from '../../common/helpers/public.helper';
 import { validateImportFile } from 'src/common/helpers/validation.helper';
 import moment from 'moment';
 import { S3Service } from 'src/integrations/s3/s3.service';
@@ -624,29 +624,32 @@ export class BargingProblemService {
       return { isValid: false, error: 'activity is required' };
     }
 
-    if (!moment(row.activity_date, 'YYYY-MM-DD', true).isValid()) {
+    const parsedActivityDate = parseDateFile(row.activity_date);
+    if (!parsedActivityDate) {
       return {
         isValid: false,
-        error: `start_date harus dalam format YYYY-MM-DD (row: ${row.activity_date})`,
+        error: `start_date harus dalam format DD/MM/YYYY or YYYY-MM-DD (row: ${row.activity_date})`,
       };
     }
 
-    if (!moment(row.start, 'YYYY-MM-DD HH:mm', true).isValid()) {
+    const parsedStartTime = parseDateFile(row.start, 'YYYY-MM-DD HH:mm');
+    if (!parsedStartTime) {
       return {
         isValid: false,
-        error: `start harus dalam format (2025-09-01 10:00) YYYY-MM-DD HH:mm (row: ${row.start})`,
+        error: `start harus dalam format (2025-09-01 10:00 or 01/09/2025 10:00) DD/MM/YYYY HH:mm or YYYY-MM-DD HH:mm (row: ${row.start})`,
       };
     }
 
-    if (!moment(row.finish, 'YYYY-MM-DD HH:mm', true).isValid()) {
+    const parsedFinishTime = parseDateFile(row.finish, 'YYYY-MM-DD HH:mm');
+    if (!parsedFinishTime) {
       return {
         isValid: false,
-        error: `finish harus dalam format (2025-09-01 10:00) YYYY-MM-DD HH:mm (row: ${row.finish})`,
+        error: `finish harus dalam format (2025-09-01 10:00 or 01/09/2025 10:00) DD/MM/YYYY HH:mm or YYYY-MM-DD HH:mm (row: ${row.finish})`,
       };
     }
 
-    const startMoment = moment(row.start, 'YYYY-MM-DD HH:mm', true);
-    const finishMoment = moment(row.finish, 'YYYY-MM-DD HH:mm', true);
+    const startMoment = moment(parsedStartTime, 'YYYY-MM-DD HH:mm', true);
+    const finishMoment = moment(parsedFinishTime, 'YYYY-MM-DD HH:mm', true);
     if (startMoment.isAfter(finishMoment)) {
       return {
         isValid: false,
@@ -683,13 +686,13 @@ export class BargingProblemService {
     }
 
     const payload = {
-      activity_date: row.activity_date,
+      activity_date: parsedActivityDate,
       shift: row.shift?.toLowerCase(),
       site_id: siteId,
       barge_id: bargeId,
       activities_id: activityId,
-      start: row.start,
-      finish: row.finish,
+      start: parsedStartTime,
+      finish: parsedFinishTime,
       remark: row.remark,
     };
 
@@ -766,7 +769,6 @@ export class BargingProblemService {
       validateImportFile(file);
       const csvData = await CsvHelper.parseCsvFile(file.buffer);
       const validationResult = await this.processImportData(csvData);
-
       if (validationResult?.payload?.length && validationResult.successCount > 0) {
         await this.bulkCreate(validationResult.payload, userId);
       }
@@ -787,7 +789,6 @@ export class BargingProblemService {
         throwError('Data referensi tidak ditemukan. Pastikan semua ID referensi valid.', 400);
       }
 
-      console.error('Unexpected error in importData:', error.stack);
       throwError('Terjadi kesalahan saat memproses file import. Silakan coba lagi atau hubungi administrator.', 400);
     }
   }

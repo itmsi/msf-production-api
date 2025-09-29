@@ -10,7 +10,7 @@ import {
   ImportEwhItemDto,
   QueryExportEffectiveWorkingHoursDto,
 } from './dto/effective-working-hours.dto';
-import { normalizeString, paginateResponse, setCsvExportHeaders } from '../../common/helpers/public.helper';
+import { normalizeString, paginateResponse, parseDateFile, setCsvExportHeaders } from '../../common/helpers/public.helper';
 import { ApiResponse, successResponse } from 'src/common';
 import { Readable } from 'stream';
 import csv from 'csv-parser';
@@ -89,62 +89,66 @@ export class EffectiveWorkingHoursService {
     if (!row.activity_date) {
       errors.push({
         field: 'activity_date',
-        message: 'Tanggal Aktifitas wajib diisi',
+        message: 'activity_date is required',
       });
     }
+
     if (!row.category) {
-      errors.push({ field: 'category', message: 'Category wajib diisi' });
+      errors.push({ field: 'category', message: 'Category is required' });
     }
     if (!row.no_unit) {
-      errors.push({ field: 'no_unit', message: 'Nomor unit wajib diisi' });
+      errors.push({ field: 'no_unit', message: 'Nomor unit is required' });
     }
     if (!row.shift) {
-      errors.push({ field: 'shift', message: 'Shift wajib diisi' });
+      errors.push({ field: 'shift', message: 'Shift is required' });
     }
     if (!row.problem) {
       errors.push({
         field: 'problem',
-        message: 'Problem wajib diisi',
+        message: 'Problem is required',
       });
     }
     if (!row.remarks) {
       errors.push({
         field: 'remarks',
-        message: 'Remarks wajib diisi',
+        message: 'Remarks is required',
       });
     }
     if (!row.start_time) {
       errors.push({
         field: 'start_time',
-        message: 'Start Time wajib diisi',
+        message: 'Start Time is required',
       });
     }
     if (!row.stop_time) {
       errors.push({
         field: 'stop_time',
-        message: 'Stop Time wajib diisi',
+        message: 'Stop Time is required',
       });
     }
 
     // Validasi format date
-    if (row.activity_date && !this.isValidDate(row.activity_date)) {
+    const parsedActivityDate = parseDateFile(row.activity_date);
+    if (!parsedActivityDate) {
       errors.push({
         field: 'activity_date',
-        message: 'Format tanggal tidak valid (yyyy-mm-dd)',
+        message: 'Format tanggal tidak valid (DD/MM/YYYY or YYYY-MM-DD)',
       });
     }
 
-    if (row.start_time && !this.isValidDateTime(row.start_time)) {
+    const parsedStartTime = parseDateFile(row.start_time, 'YYYY-MM-DD HH:mm');
+    if (!parsedStartTime) {
       errors.push({
         field: 'start_time',
-        message: 'Format start time tidak valid (yyyy-mm-dd HH:mm)',
+        message: 'Format start time tidak valid (DD/MM/YYYY or YYYY-MM-DD HH:mm)',
       });
     }
 
-    if (row.stop_time && !this.isValidDateTime(row.stop_time)) {
+    const parsedStopTime = parseDateFile(row.stop_time, 'YYYY-MM-DD HH:mm');
+    if (!parsedStopTime) {
       errors.push({
         field: 'stop_time',
-        message: 'Format stop time tidak valid (yyyy-mm-dd HH:mm)',
+        message: 'Format stop time tidak valid (DD/MM/YYYY or YYYY-MM-DD HH:mm)',
       });
     }
 
@@ -214,7 +218,6 @@ export class EffectiveWorkingHoursService {
     try {
       // Header dengan kolom error
       const headers = [
-        'row_number',
         'error_details',
         'activity_date',
         'no_unit',
@@ -238,7 +241,6 @@ export class EffectiveWorkingHoursService {
         const errorMessages = errors.map((err) => `${err.field}: ${err.message}`).join('; ');
 
         const csvRow = [
-          errorRow.row,
           `"${errorMessages}"`, // Wrap dalam quotes untuk menghindari masalah dengan comma
           rowData.activity_date || '',
           rowData.no_unit || '',
