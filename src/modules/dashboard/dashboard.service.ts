@@ -2423,8 +2423,6 @@ export class DashboardService {
         [startDate, endDate],
       );
 
-      console.log(lostTimeQuery);
-
       // Mapping nama aktivitas ke warna yang sesuai
       // const activityColors: { [key: string]: string } = {
       //   Rain: '#1e3a8a',
@@ -2459,10 +2457,12 @@ export class DashboardService {
 
         return {
           name: item.name,
-          value: percentage.toFixed(2) ?? '0',
+          value: Number(percentage.toFixed(2)) || 0,
           color: colors[i],
         };
       });
+
+      console.log(result);
 
       return result;
     } catch (error) {
