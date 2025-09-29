@@ -77,9 +77,7 @@ export const importResponse = (
     },
     failedCount > 0
       ? `Import selesai dengan ${failedCount} error. ${
-          errorFileInfo.error_file
-            ? 'Download error CSV untuk detail.'
-            : 'Gagal generate error file.'
+          errorFileInfo.error_file ? 'Download error CSV untuk detail.' : 'Gagal generate error file.'
         }`
       : 'Semua data valid',
   );

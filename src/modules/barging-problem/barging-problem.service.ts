@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder, IsNull } from 'typeorm';
+import { Repository, IsNull, DataSource, ILike, In, DeepPartial, SelectQueryBuilder } from 'typeorm';
 import { BargingProblem } from './entities/barging-problem.entity';
 import { Barge } from '../barge/entities/barge.entity';
 import { Activities } from '../activities/entities/activities.entity';
@@ -10,9 +10,15 @@ import {
   UpdateBargingProblemDto,
   BargingProblemResponseDto,
   GetBargingProblemsQueryDto,
+  ExportBargingProblemsQueryDto,
 } from './dto/barging-problem.dto';
-import { successResponse, emptyDataResponse, throwError } from '../../common/helpers/response.helper';
-import { paginateResponse } from '../../common/helpers/public.helper';
+import { successResponse, emptyDataResponse, throwError, importResponse } from '../../common/helpers/response.helper';
+import { CsvHelper, paginateResponse, setCsvExportHeaders } from '../../common/helpers/public.helper';
+import { validateImportFile } from 'src/common/helpers/validation.helper';
+import moment from 'moment';
+import { S3Service } from 'src/integrations/s3/s3.service';
+import { Response } from 'express';
+import { format } from '@fast-csv/format';
 
 export interface ApiResponse<T = any> {
   statusCode: number;
@@ -37,6 +43,8 @@ export class BargingProblemService {
     private activitiesRepository: Repository<Activities>,
     @InjectRepository(Sites)
     private sitesRepository: Repository<Sites>,
+    private dataSource: DataSource,
+    private s3Service: S3Service,
   ) {}
 
   async findAll(query: GetBargingProblemsQueryDto): Promise<ApiResponse<BargingProblemResponseDto[]>> {
@@ -57,12 +65,7 @@ export class BargingProblemService {
         throwError('Limit tidak boleh lebih dari 100', 400);
       }
 
-      const qb = this.bargingProblemRepository
-        .createQueryBuilder('bargingProblem')
-        .leftJoinAndSelect('bargingProblem.barge', 'barge')
-        .leftJoinAndSelect('bargingProblem.activities', 'activities')
-        .leftJoinAndSelect('bargingProblem.site', 'site')
-        .where('bargingProblem.deletedAt IS NULL'); // Exclude soft deleted records
+      const qb = this.createQueryBuilder();
 
       // Search filter
       if (search) {
@@ -455,5 +458,444 @@ export class BargingProblemService {
     const diffMs = finish.getTime() - start.getTime();
     const diffHours = diffMs / (1000 * 60 * 60);
     return Math.round(diffHours * 100) / 100; // Round to 2 decimal places
+  }
+
+  private createErrorCsvContent(failedRows: any[]): string {
+    if (failedRows.length === 0) return '';
+
+    const dynamicKeys = new Set<string>();
+    failedRows.forEach((row) => {
+      Object.keys(row).forEach((key) => {
+        if (key !== 'error' && key !== 'rowNumber') {
+          dynamicKeys.add(key);
+        }
+      });
+    });
+
+    const csvHeaders = [
+      'activity_date',
+      'shift',
+      'barge',
+      'activity',
+      'site',
+      'start',
+      'finish',
+      'remark',
+      'error_message (Please delete this column before importing again)',
+    ];
+
+    const csvRows = failedRows.map((row) =>
+      csvHeaders
+        .map((header) => {
+          if (header.startsWith('error_message')) return `"${row.error || ''}"`;
+          return `"${row[header] ?? ''}"`;
+        })
+        .join(','),
+    );
+
+    return [csvHeaders.join(','), ...csvRows].join('\n');
+  }
+
+  private async generateErrorCsv(failedRows: any[]): Promise<{
+    error_file: { download_url: string; file_name: string } | null;
+  }> {
+    if (failedRows.length === 0) {
+      return {
+        error_file: null,
+      };
+    }
+
+    try {
+      const csvContent = this.createErrorCsvContent(failedRows);
+      const csvBuffer = Buffer.from(csvContent, 'utf8');
+      const filename = `import-barging-problem-errors-${Date.now()}.csv`;
+
+      const result = await this.s3Service.uploadErrorFile(filename, csvBuffer, 'barging_problem_import_error');
+
+      return {
+        error_file: result
+          ? {
+              download_url: result.downloadUrl,
+              file_name: filename,
+            }
+          : null,
+      };
+    } catch (error) {
+      return {
+        error_file: null,
+      };
+    }
+  }
+
+  async bulkCreate(payload: CreateBargingProblemDto[], userId: number): Promise<any> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const bargingProblemEntities = payload.map((dto) => {
+        const startDate = moment(dto.start, 'YYYY-MM-DD HH:mm', true).toDate();
+        const finishDate = moment(dto.finish, 'YYYY-MM-DD HH:mm', true).toDate();
+        const duration = this.calculateDuration(startDate, finishDate);
+        return queryRunner.manager.create(BargingProblem, {
+          activityDate: moment(dto.activity_date, 'YYYY-MM-DD', true).toDate(),
+          shift: dto.shift,
+          createdBy: userId,
+          bargeId: dto.barge_id,
+          activitiesId: dto.activities_id,
+          siteId: dto.site_id,
+          start: startDate,
+          finish: finishDate,
+          duration,
+          remark: dto.remark,
+        } as DeepPartial<BargingProblem>);
+      });
+
+      await queryRunner.manager.save(BargingProblem, bargingProblemEntities);
+
+      await queryRunner.commitTransaction();
+      return;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throwError('Failed to import Barging List', 500);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  private async getBarge(bargeName: string): Promise<number | undefined> {
+    const name = bargeName?.trim();
+    const barge = await this.bargeRepository.findOne({
+      where: {
+        name: ILike(`%${name}%`),
+        deletedAt: IsNull(),
+      },
+    });
+    return barge?.id;
+  }
+
+  private async getSite(siteName: string): Promise<number | undefined> {
+    const name = siteName?.trim();
+    const site = await this.sitesRepository.findOne({
+      where: {
+        name: ILike(`%${name}%`),
+        deletedAt: IsNull(),
+      },
+    });
+    return site?.id;
+  }
+
+  private async getActivity(siteName: string): Promise<number | undefined> {
+    const name = siteName?.trim();
+    const activity = await this.activitiesRepository.findOne({
+      where: {
+        name: ILike(`%${name}%`),
+        status: In(['delay', 'idle']),
+        deletedAt: IsNull(),
+      },
+    });
+    return activity?.id;
+  }
+
+  private async validateRowData(row: any): Promise<{
+    isValid: boolean;
+    error?: string;
+    payload?: CreateBargingProblemDto;
+  }> {
+    if (!row.activity_date) {
+      return { isValid: false, error: 'activity_date is required' };
+    }
+    if (!row.start) {
+      return { isValid: false, error: 'start is required' };
+    }
+    if (!row.finish) {
+      return { isValid: false, error: 'finish is required' };
+    }
+    if (!row.shift) {
+      return { isValid: false, error: 'shift is required' };
+    }
+    if (!row.barge) {
+      return { isValid: false, error: 'barge is required' };
+    }
+    if (!row.site) {
+      return { isValid: false, error: 'site is required' };
+    }
+    if (!row.activity) {
+      return { isValid: false, error: 'activity is required' };
+    }
+
+    if (!moment(row.activity_date, 'YYYY-MM-DD', true).isValid()) {
+      return {
+        isValid: false,
+        error: `start_date harus dalam format YYYY-MM-DD (row: ${row.activity_date})`,
+      };
+    }
+
+    if (!moment(row.start, 'YYYY-MM-DD HH:mm', true).isValid()) {
+      return {
+        isValid: false,
+        error: `start harus dalam format (2025-09-01 10:00) YYYY-MM-DD HH:mm (row: ${row.start})`,
+      };
+    }
+
+    if (!moment(row.finish, 'YYYY-MM-DD HH:mm', true).isValid()) {
+      return {
+        isValid: false,
+        error: `finish harus dalam format (2025-09-01 10:00) YYYY-MM-DD HH:mm (row: ${row.finish})`,
+      };
+    }
+
+    const startMoment = moment(row.start, 'YYYY-MM-DD HH:mm', true);
+    const finishMoment = moment(row.finish, 'YYYY-MM-DD HH:mm', true);
+    if (startMoment.isAfter(finishMoment)) {
+      return {
+        isValid: false,
+        error: `start tidak boleh lebih dari finish (start: ${row.start}, finish: ${row.finish})`,
+      };
+    }
+
+    if (!['ds', 'ns'].includes(row.shift.toLowerCase())) {
+      return {
+        isValid: false,
+        error: `shift harus ds or ns (row: ${row.shift})`,
+      };
+    }
+
+    const [siteId, bargeId, activityId] = await Promise.all([
+      this.getSite(row.site),
+      this.getBarge(row.barge),
+      this.getActivity(row.activity),
+    ]);
+
+    if (!siteId) {
+      const message = row.site ? `Site ${row.site} tidak ditemukan` : 'Site tidak ditemukan';
+      return { isValid: false, error: message };
+    }
+
+    if (!bargeId) {
+      const message = row.barge ? `Barge ${row.barge} tidak ditemukan` : 'Barge tidak ditemukan';
+      return { isValid: false, error: message };
+    }
+
+    if (!activityId) {
+      const message = row.barge ? `Activity ${row.barge} tidak ditemukan` : 'Activity tidak ditemukan';
+      return { isValid: false, error: message };
+    }
+
+    const payload = {
+      activity_date: row.activity_date,
+      shift: row.shift?.toLowerCase(),
+      site_id: siteId,
+      barge_id: bargeId,
+      activities_id: activityId,
+      start: row.start,
+      finish: row.finish,
+      remark: row.remark,
+    };
+
+    return { isValid: true, payload };
+  }
+
+  private async processImportData(csvData: any[]): Promise<{
+    results: any[];
+    failedRows: any[];
+    successCount: number;
+    failedCount: number;
+    payload: CreateBargingProblemDto[];
+  }> {
+    const results: any[] = [];
+    const failedRows: any[] = [];
+    let successCount = 0;
+    let failedCount = 0;
+    const payload: CreateBargingProblemDto[] = [];
+
+    const validations = await Promise.all(
+      csvData.map(async (row: any, idx: number) => {
+        const rowNumber = idx + 1;
+        try {
+          const validationResult = await this.validateRowData(row);
+          if (!validationResult.isValid) {
+            failedCount++;
+            failedRows.push({
+              rowNumber,
+              ...row,
+              error: validationResult.error,
+            });
+            return {
+              row: rowNumber,
+              status: 'error',
+              message: validationResult.error,
+              data: row,
+            };
+          }
+
+          successCount++;
+          if (validationResult.payload) payload.push(validationResult.payload);
+          return {
+            row: rowNumber,
+            status: 'success',
+            message: 'Data valid',
+            data: row,
+          };
+        } catch (err) {
+          failedCount++;
+          failedRows.push({ rowNumber, ...row, error: err.message });
+          return {
+            row: rowNumber,
+            status: 'error',
+            message: err.message || 'Validasi gagal',
+            data: row,
+          };
+        }
+      }),
+    );
+
+    results.push(...validations);
+
+    return {
+      results,
+      failedRows,
+      successCount,
+      failedCount,
+      payload,
+    };
+  }
+
+  async importData(file: Express.Multer.File, userId: number) {
+    try {
+      validateImportFile(file);
+      const csvData = await CsvHelper.parseCsvFile(file.buffer);
+      const validationResult = await this.processImportData(csvData);
+
+      if (validationResult?.payload?.length && validationResult.successCount > 0) {
+        await this.bulkCreate(validationResult.payload, userId);
+      }
+
+      const errorFileInfo = await this.generateErrorCsv(validationResult.failedRows);
+
+      return importResponse(csvData.length, validationResult.successCount, validationResult.failedCount, errorFileInfo);
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throwError(error, 400);
+      }
+
+      if (error.message?.includes('CSV') || error.message?.includes('parse')) {
+        throwError('Format CSV tidak valid. Pastikan file CSV memiliki format yang benar.', 400);
+      }
+
+      if (error.code === '23503') {
+        throwError('Data referensi tidak ditemukan. Pastikan semua ID referensi valid.', 400);
+      }
+
+      console.error('Unexpected error in importData:', error.stack);
+      throwError('Terjadi kesalahan saat memproses file import. Silakan coba lagi atau hubungi administrator.', 400);
+    }
+  }
+
+  private createQueryBuilder(): SelectQueryBuilder<BargingProblem> {
+    return this.bargingProblemRepository
+      .createQueryBuilder('bargingProblem')
+      .leftJoinAndSelect('bargingProblem.barge', 'barge')
+      .leftJoinAndSelect('bargingProblem.activities', 'activities')
+      .leftJoinAndSelect('bargingProblem.site', 'site')
+      .where('bargingProblem.deletedAt IS NULL');
+  }
+
+  private applyFilterExportData(
+    qb: SelectQueryBuilder<BargingProblem>,
+    query: ExportBargingProblemsQueryDto,
+  ): SelectQueryBuilder<BargingProblem> {
+    const search = query.search?.trim().toLowerCase();
+    const shift = query.shift?.toLowerCase();
+    const activitiesId = query.activities_id;
+    const siteId = query.site_id;
+    const bargeId = query.barge_id;
+    const sortOrder = query.sortOrder?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+    if (search) {
+      qb.andWhere(
+        '(bargingProblem.remark ILIKE :search OR barge.name ILIKE :search OR activities.name ILIKE :search OR site.name ILIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+    if (shift) {
+      qb.andWhere('bargingProblem.shift = :shift', { shift });
+    }
+
+    if (activitiesId) qb.andWhere('barging.activitiesId = :activitiesId', { activitiesId });
+    if (bargeId) qb.andWhere('barging.bargeId = :bargeId', { bargeId });
+    if (siteId) qb.andWhere('bargingProblem.siteId = :siteId', { siteId });
+
+    let startDate: Date | undefined;
+    let endDate: Date | undefined;
+
+    if (query.activity_date) {
+      startDate = moment(query.activity_date, 'YYYY-MM-DD').startOf('day').toDate();
+      endDate = moment(query.activity_date, 'YYYY-MM-DD').add(1, 'day').startOf('day').toDate();
+    } else if (query.start_date && query.end_date) {
+      startDate = moment(query.start_date, 'YYYY-MM-DD').startOf('day').toDate();
+      endDate = moment(query.end_date, 'YYYY-MM-DD').add(1, 'day').startOf('day').toDate();
+    } else if (query.start_date) {
+      startDate = moment(query.start_date, 'YYYY-MM-DD').startOf('day').toDate();
+    } else if (query.end_date) {
+      endDate = moment(query.end_date, 'YYYY-MM-DD').add(1, 'day').startOf('day').toDate();
+    }
+
+    if (startDate && endDate) {
+      qb.andWhere('bargingProblem.activityDate >= :startDate AND bargingProblem.activityDate < :endDate', {
+        startDate,
+        endDate,
+      });
+    } else if (startDate) {
+      qb.andWhere('bargingProblem.activityDate >= :startDate', { startDate });
+    } else if (endDate) {
+      qb.andWhere('bargingProblem.activityDate < :endDate', { endDate });
+    } else {
+      qb.take(10); // default limit
+    }
+
+    qb.orderBy('bargingProblem.bargeId', sortOrder);
+
+    return qb;
+  }
+
+  private mapExportDataToCsvRow(item: any, index: number) {
+    return {
+      No: index + 1,
+      Date: moment(item.activityDate).format('YYYY-MM-DD'),
+      Shift: item?.shift?.toUpperCase(),
+      'Barge Name': item.barge?.name || '-',
+      'Standby Factor': item.activities?.name || '' || '-',
+      Start: moment(item.start).format('YYYY-MM-DD HH:mm') || '-',
+      Finish: moment(item.finish).format('YYYY-MM-DD HH:mm') || '-',
+      Duration: item.duration || this.calculateDuration(item.start, item.finish),
+      Remark: item.remark,
+    };
+  }
+
+  async exportData(query: ExportBargingProblemsQueryDto, res: Response) {
+    try {
+      const qb = this.createQueryBuilder();
+
+      this.applyFilterExportData(qb, query);
+
+      const data = await qb.getMany();
+
+      if (!data.length) {
+        res.status(200).json(successResponse([], 'Data Not Found'));
+        return;
+      }
+      // // Set headers CSV
+      setCsvExportHeaders(res, `barging_problem_list_export_${Date.now()}.csv`);
+      // // Buat stream writer
+      const csvStream = format({ headers: true });
+      csvStream.pipe(res);
+      data.forEach((item, i) => {
+        csvStream.write(this.mapExportDataToCsvRow(item, i));
+      });
+      csvStream.end();
+    } catch (error) {
+      throw new InternalServerErrorException('Gagal export data');
+    }
   }
 }
