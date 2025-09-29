@@ -1,13 +1,34 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  UseGuards,
+  ParseIntPipe,
+  UseInterceptors,
+  UploadedFile,
+  Req,
+  StreamableFile,
+  InternalServerErrorException,
+  Res,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { BargingProblemService } from './barging-problem.service';
 import {
   CreateBargingProblemDto,
   UpdateBargingProblemDto,
-  BargingProblemResponseDto,
   GetBargingProblemsQueryDto,
+  ExportBargingProblemsQueryDto,
 } from './dto/barging-problem.dto';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { join } from 'path';
+import { createReadStream } from 'fs';
+import { Response } from 'express';
 
 @ApiTags('Barging Problem')
 @ApiBearerAuth('jwt')
@@ -15,6 +36,25 @@ import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 @Controller('barging-problem')
 export class BargingProblemController {
   constructor(private readonly bargingProblemService: BargingProblemService) {}
+
+  @Get('export')
+  async exportData(@Query() query: ExportBargingProblemsQueryDto, @Res({ passthrough: false }) res: Response) {
+    return await this.bargingProblemService.exportData(query, res);
+  }
+
+  @Get('import/template')
+  downloadTemplate(): StreamableFile {
+    try {
+      const file = join(process.cwd(), 'src/modules/barging-problem/template-barging-problem-import.csv');
+      const stream = createReadStream(file);
+      return new StreamableFile(stream, {
+        type: 'text/csv',
+        disposition: 'attachment; filename="template-barging-problem-import.csv"',
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to download CSV template');
+    }
+  }
 
   @Post()
   @ApiOperation({
@@ -530,5 +570,12 @@ export class BargingProblemController {
   })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.bargingProblemService.remove(id);
+  }
+
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  async importData(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    const userId = req.user?.id;
+    return await this.bargingProblemService.importData(file, userId);
   }
 }

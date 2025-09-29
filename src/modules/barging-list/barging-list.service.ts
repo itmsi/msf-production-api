@@ -428,7 +428,7 @@ export class BargingListService {
     if (!moment(row.activity_date, 'YYYY-MM-DD', true).isValid()) {
       return {
         isValid: false,
-        error: `start_date harus dalam format YYYY-MM-DD (row: ${row.start_date})`,
+        error: `activity_date harus dalam format YYYY-MM-DD (row: ${row.activity_date})`,
       };
     }
 
@@ -552,7 +552,7 @@ export class BargingListService {
     await queryRunner.startTransaction();
 
     try {
-      const bargeListEntities = payload.map((dto) => {
+      const bargingListEntities = payload.map((dto) => {
         const totalTonnage = dto.vessel * 40;
         return queryRunner.manager.create(BargingList, {
           activityDate: moment(dto.activity_date, 'YYYY-MM-DD', true).toDate(),
@@ -566,13 +566,13 @@ export class BargingListService {
         } as DeepPartial<BargingList>);
       });
 
-      await queryRunner.manager.save(BargingList, bargeListEntities);
+      await queryRunner.manager.save(BargingList, bargingListEntities);
 
       await queryRunner.commitTransaction();
       return;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throwError('Failed to import Barge List', 500);
+      throwError('Failed to import Barging List', 500);
     } finally {
       await queryRunner.release();
     }
@@ -593,12 +593,12 @@ export class BargingListService {
     const workingHour = ['year_month', 'total_working_hour_month', 'total_working_hour_day', 'total_mohh_per_month'];
     const activityKeys = [...dynamicKeys].filter((k) => !workingHour.includes(k));
 
-    const csvHeaders = [...workingHour, ...activityKeys, 'error_message  (Please delete this column before importing again)'];
+    const csvHeaders = [...workingHour, ...activityKeys, 'error_message (Please delete this column before importing again)'];
 
     const csvRows = failedRows.map((row) =>
       csvHeaders
         .map((header) => {
-          if (header === 'error_message') return `"${row.error || ''}"`;
+          if (header.startsWith('error_message')) return `"${row.error || ''}"`;
           return `"${row[header] ?? ''}"`;
         })
         .join(','),
@@ -619,9 +619,9 @@ export class BargingListService {
     try {
       const csvContent = this.createErrorCsvContent(failedRows);
       const csvBuffer = Buffer.from(csvContent, 'utf8');
-      const filename = `import-barge-errors-${Date.now()}.csv`;
+      const filename = `import-barging-errors-${Date.now()}.csv`;
 
-      const result = await this.s3Service.uploadErrorFile(filename, csvBuffer, 'barge_import_error');
+      const result = await this.s3Service.uploadErrorFile(filename, csvBuffer, 'barging_import_error');
 
       return {
         error_file: result
@@ -739,7 +739,7 @@ export class BargingListService {
         return;
       }
       // // Set headers CSV
-      setCsvExportHeaders(res, `parent_plan_working_hour_export_${Date.now()}.csv`);
+      setCsvExportHeaders(res, `barging_list_export_${Date.now()}.csv`);
       // // Buat stream writer
       const csvStream = format({ headers: true });
       csvStream.pipe(res);
