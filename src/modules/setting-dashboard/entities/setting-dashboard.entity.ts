@@ -1,12 +1,5 @@
 import { Exclude, Expose } from 'class-transformer';
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  DeleteDateColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, DeleteDateColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('m_setting_dashboard')
 export class SettingDashboard {

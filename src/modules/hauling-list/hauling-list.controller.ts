@@ -16,16 +16,7 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiQuery,
-  ApiBearerAuth,
-  ApiBody,
-  ApiConsumes,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { HaulingListService } from './hauling-list.service';
 import {
   CreateHaulingListDto,
@@ -52,13 +43,9 @@ export class HaulingListController {
   @Get('export')
   @ApiOperation({
     summary: 'Export data Hauling List dari CSV',
-    description:
-      'Mengexport data Hauling List dari database ke CSV setelah validasi',
+    description: 'Mengexport data Hauling List dari database ke CSV setelah validasi',
   })
-  async exportData(
-    @Query() query: QueryHaulingListDto,
-    @Res({ passthrough: false }) res: Response,
-  ) {
+  async exportData(@Query() query: QueryHaulingListDto, @Res({ passthrough: false }) res: Response) {
     return await this.haulingListService.exportData(query, res);
   }
 
@@ -69,8 +56,7 @@ export class HaulingListController {
     examples: {
       'hauling-list-ore': {
         summary: 'Contoh data hauling list untuk material ore',
-        description:
-          'Data lengkap untuk membuat hauling list dengan material ore',
+        description: 'Data lengkap untuk membuat hauling list dengan material ore',
         value: {
           activity_date: '2024-01-15T00:00:00Z',
           shift: 'ds',
@@ -86,8 +72,7 @@ export class HaulingListController {
       },
       'hauling-list-biomas': {
         summary: 'Contoh data hauling list untuk material biomas',
-        description:
-          'Data lengkap untuk membuat hauling list dengan material biomas',
+        description: 'Data lengkap untuk membuat hauling list dengan material biomas',
         value: {
           activity_date: '2024-01-16T00:00:00Z',
           shift: 'ns',
@@ -120,8 +105,7 @@ export class HaulingListController {
   })
   @ApiResponse({
     status: 400,
-    description:
-      'Bad Request - validasi error atau foreign key constraint violation',
+    description: 'Bad Request - validasi error atau foreign key constraint violation',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized - token tidak valid' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
@@ -223,8 +207,7 @@ export class HaulingListController {
 
   @Get('activities')
   @ApiOperation({
-    summary:
-      'Mengambil data activities (operation points) dengan pagination dan filter',
+    summary: 'Mengambil data activities (operation points) dengan pagination dan filter',
   })
   @ApiQuery({
     name: 'page',
@@ -391,8 +374,7 @@ export class HaulingListController {
       },
       'update-material-vessel': {
         summary: 'Update material dan vessel',
-        description:
-          'Contoh update material dan vessel (total_tonnage akan dihitung otomatis)',
+        description: 'Contoh update material dan vessel (total_tonnage akan dihitung otomatis)',
         value: {
           material: 'boulder',
           vessel: 8,
@@ -433,16 +415,14 @@ export class HaulingListController {
   })
   @ApiResponse({
     status: 400,
-    description:
-      'Bad Request - validasi error atau foreign key constraint violation',
+    description: 'Bad Request - validasi error atau foreign key constraint violation',
     schema: {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 400 },
         message: {
           type: 'string',
-          example:
-            'Foreign key constraint violation: Unit loading dengan ID 999 tidak ditemukan di tabel m_population',
+          example: 'Foreign key constraint violation: Unit loading dengan ID 999 tidak ditemukan di tabel m_population',
         },
         error: { type: 'string', example: 'Bad Request' },
       },
@@ -464,10 +444,7 @@ export class HaulingListController {
     },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateHaulingListDto: UpdateHaulingListDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateHaulingListDto: UpdateHaulingListDto) {
     return this.haulingListService.update(id, updateHaulingListDto);
   }
 
@@ -518,15 +495,11 @@ export class HaulingListController {
   @Get('import/template')
   @ApiOperation({
     summary: 'Download template CSV untuk import Fuel Consumption Data',
-    description:
-      'Mendownload template CSV yang berisi format kolom yang diperlukan',
+    description: 'Mendownload template CSV yang berisi format kolom yang diperlukan',
   })
   downloadTemplate(): StreamableFile {
     try {
-      const file = join(
-        process.cwd(),
-        'src/modules/hauling-list/template-hauling-list-import.csv',
-      );
+      const file = join(process.cwd(), 'src/modules/hauling-list/template-hauling-list-import.csv');
       const stream = createReadStream(file);
       return new StreamableFile(stream, {
         type: 'text/csv',
@@ -547,8 +520,7 @@ export class HaulingListController {
   })
   @ApiOperation({
     summary: 'Import data Hauling CCR  dari CSV',
-    description:
-      'Mengimport data Hauling CCR dari CSV ke database setelah validasi',
+    description: 'Mengimport data Hauling CCR dari CSV ke database setelah validasi',
   })
   importData(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
     const userId = req.user?.id;

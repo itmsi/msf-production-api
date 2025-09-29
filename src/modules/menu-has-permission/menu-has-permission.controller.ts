@@ -1,24 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  Put,
-  Delete,
-  UseGuards,
-  ParseIntPipe,
-  Request,
-  Query,
-} from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Param, Body, Put, Delete, UseGuards, ParseIntPipe, Request, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { MenuHasPermissionService } from './menu-has-permission.service';
 import {
   CreateMenuHasPermissionDto,
@@ -36,16 +17,13 @@ import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 @ApiBearerAuth('jwt')
 @Controller('menu-has-permissions')
 export class MenuHasPermissionController {
-  constructor(
-    private readonly menuHasPermissionService: MenuHasPermissionService,
-  ) {}
+  constructor(private readonly menuHasPermissionService: MenuHasPermissionService) {}
 
   @UseGuards(JwtAuthGuard)
   @Post()
   @ApiOperation({
     summary: 'Membuat menu has permission baru',
-    description:
-      'Memberikan permission kepada menu. Kombinasi menu_id dan permission_id harus unik.',
+    description: 'Memberikan permission kepada menu. Kombinasi menu_id dan permission_id harus unik.',
   })
   @ApiResponse({
     status: 201,
@@ -115,10 +93,7 @@ export class MenuHasPermissionController {
       },
     },
   })
-  create(
-    @Body() createMenuHasPermissionDto: CreateMenuHasPermissionDto,
-    @Request() req: any,
-  ) {
+  create(@Body() createMenuHasPermissionDto: CreateMenuHasPermissionDto, @Request() req: any) {
     if (!createMenuHasPermissionDto.createdBy) {
       createMenuHasPermissionDto.createdBy = req.user?.id;
     }
@@ -128,8 +103,7 @@ export class MenuHasPermissionController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary:
-      'Mendapatkan semua data menu has permissions dengan pagination, filtering, dan sorting',
+    summary: 'Mendapatkan semua data menu has permissions dengan pagination, filtering, dan sorting',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -246,8 +220,7 @@ export class MenuHasPermissionController {
   })
   @ApiResponse({
     status: 200,
-    description:
-      'Data menu has permissions berdasarkan menu ID berhasil diambil',
+    description: 'Data menu has permissions berdasarkan menu ID berhasil diambil',
     type: MenuByMenuListResponseDto,
     schema: {
       example: {
@@ -314,8 +287,7 @@ export class MenuHasPermissionController {
   })
   @ApiResponse({
     status: 200,
-    description:
-      'Data menu has permissions berdasarkan permission ID berhasil diambil',
+    description: 'Data menu has permissions berdasarkan permission ID berhasil diambil',
     type: [MenuHasPermissionResponseDto],
     schema: {
       example: {
@@ -352,9 +324,7 @@ export class MenuHasPermissionController {
     status: 500,
     description: 'Internal Server Error - Terjadi kesalahan pada server',
   })
-  findByPermissionId(
-    @Param('permissionId', ParseIntPipe) permissionId: number,
-  ) {
+  findByPermissionId(@Param('permissionId', ParseIntPipe) permissionId: number) {
     return this.menuHasPermissionService.findByPermissionId(permissionId);
   }
 
@@ -440,8 +410,7 @@ export class MenuHasPermissionController {
   @Get(':id')
   @ApiOperation({
     summary: 'Mendapatkan data menu has permission berdasarkan ID',
-    description:
-      'Mengambil data menu has permission berdasarkan ID yang diberikan',
+    description: 'Mengambil data menu has permission berdasarkan ID yang diberikan',
   })
   @ApiParam({
     name: 'id',
@@ -516,8 +485,7 @@ export class MenuHasPermissionController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data menu has permission berdasarkan ID',
-    description:
-      'Mengupdate data menu has permission dengan validasi duplikasi kombinasi menu_id dan permission_id',
+    description: 'Mengupdate data menu has permission dengan validasi duplikasi kombinasi menu_id dan permission_id',
   })
   @ApiParam({
     name: 'id',
@@ -565,11 +533,7 @@ export class MenuHasPermissionController {
     status: 500,
     description: 'Internal Server Error - Terjadi kesalahan pada server',
   })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateMenuHasPermissionDto: UpdateMenuHasPermissionDto,
-    @Request() req: any,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateMenuHasPermissionDto: UpdateMenuHasPermissionDto, @Request() req: any) {
     if (!updateMenuHasPermissionDto.updatedBy) {
       updateMenuHasPermissionDto.updatedBy = req.user?.id;
     }
@@ -580,8 +544,7 @@ export class MenuHasPermissionController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Menghapus data menu has permission berdasarkan ID',
-    description:
-      'Menghapus data menu has permission secara permanen dari database',
+    description: 'Menghapus data menu has permission secara permanen dari database',
   })
   @ApiParam({
     name: 'id',

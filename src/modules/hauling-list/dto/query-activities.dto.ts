@@ -74,7 +74,7 @@ export class QueryActivitiesDto {
   @IsOptional()
   @Transform(({ value }) => {
     if (typeof value === 'string') {
-      return value.split(',').map(s => s.trim());
+      return value.split(',').map((s) => s.trim());
     }
     return value;
   })

@@ -1,22 +1,9 @@
-import {
-  Injectable,
-  HttpException,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, HttpException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Permission } from './entities/permission.entity';
-import {
-  CreatePermissionDto,
-  UpdatePermissionDto,
-  GetPermissionsQueryDto,
-} from './dto/permission.dto';
-import {
-  ApiResponse,
-  successResponse,
-  throwError,
-  emptyDataResponse,
-} from '../../common/helpers/response.helper';
+import { CreatePermissionDto, UpdatePermissionDto, GetPermissionsQueryDto } from './dto/permission.dto';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 
 @Injectable()
@@ -26,9 +13,7 @@ export class PermissionService {
     private permissionRepository: Repository<Permission>,
   ) {}
 
-  async create(
-    createPermissionDto: CreatePermissionDto,
-  ): Promise<ApiResponse<Permission>> {
+  async create(createPermissionDto: CreatePermissionDto): Promise<ApiResponse<Permission>> {
     try {
       // Check if permission_code already exists
       const existingPermission = await this.permissionRepository.findOne({
@@ -49,9 +34,7 @@ export class PermissionService {
     }
   }
 
-  async findAll(
-    query?: GetPermissionsQueryDto,
-  ): Promise<ApiResponse<Permission[]>> {
+  async findAll(query?: GetPermissionsQueryDto): Promise<ApiResponse<Permission[]>> {
     try {
       if (!query) {
         // Fallback untuk kompatibilitas backward
@@ -80,36 +63,21 @@ export class PermissionService {
 
       // Search filter
       if (search) {
-        qb.andWhere(
-          '(permission.permission_name ILIKE :search OR permission.permission_code ILIKE :search)',
-          { search: `%${search}%` },
-        );
+        qb.andWhere('(permission.permission_name ILIKE :search OR permission.permission_code ILIKE :search)', {
+          search: `%${search}%`,
+        });
       }
 
       // Validate sortBy field to prevent SQL injection
-      const allowedSortFields = [
-        'id',
-        'permission_name',
-        'permission_code',
-        'createdAt',
-        'updatedAt',
-      ];
+      const allowedSortFields = ['id', 'permission_name', 'permission_code', 'createdAt', 'updatedAt'];
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
-      qb.orderBy(`permission.${validSortBy}`, validSortOrder)
-        .skip(skip)
-        .take(limit);
+      qb.orderBy(`permission.${validSortBy}`, validSortOrder).skip(skip).take(limit);
 
       const [result, total] = await qb.getManyAndCount();
 
-      return paginateResponse(
-        result,
-        total,
-        page,
-        limit,
-        'Get permissions successfully',
-      );
+      return paginateResponse(result, total, page, limit, 'Get permissions successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch permissions');
@@ -133,10 +101,7 @@ export class PermissionService {
     }
   }
 
-  async update(
-    id: number,
-    updatePermissionDto: UpdatePermissionDto,
-  ): Promise<ApiResponse<Permission | null>> {
+  async update(id: number, updatePermissionDto: UpdatePermissionDto): Promise<ApiResponse<Permission | null>> {
     try {
       const permission = await this.permissionRepository.findOne({
         where: { id, deletedAt: null as any },
@@ -147,10 +112,7 @@ export class PermissionService {
       }
 
       // Check if permission_code already exists (if being updated)
-      if (
-        updatePermissionDto.permission_code &&
-        updatePermissionDto.permission_code !== permission.permission_code
-      ) {
+      if (updatePermissionDto.permission_code && updatePermissionDto.permission_code !== permission.permission_code) {
         const existingPermission = await this.permissionRepository.findOne({
           where: {
             permission_code: updatePermissionDto.permission_code,

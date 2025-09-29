@@ -14,10 +14,7 @@ import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LossType, Shift } from '../entities/effective-working-hours.entity';
 
-function IsGreaterThan(
-  property: string,
-  validationOptions?: ValidationOptions,
-) {
+function IsGreaterThan(property: string, validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isGreaterThan',
@@ -249,8 +246,7 @@ export class QueryEffectiveWorkingHoursDto {
   lossType?: LossType;
 
   @ApiPropertyOptional({
-    description:
-      'Keyword pencarian untuk description, activity name, unit name, type name, atau model name',
+    description: 'Keyword pencarian untuk description, activity name, unit name, type name, atau model name',
     example: 'standby',
     type: 'string',
   })
@@ -492,8 +488,7 @@ export class QueryExportEffectiveWorkingHoursDto {
   lossType?: LossType;
 
   @ApiPropertyOptional({
-    description:
-      'Keyword pencarian untuk description, activity name, unit name, type name, atau model name',
+    description: 'Keyword pencarian untuk description, activity name, unit name, type name, atau model name',
     example: 'standby',
     type: 'string',
   })

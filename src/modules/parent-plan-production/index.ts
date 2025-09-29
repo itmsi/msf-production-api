@@ -11,4 +11,3 @@ export * from './__test__/parent-plan-production.controller.spec';
 export * from './__test__/generate-daily-data.spec';
 
 // Test scripts
-export * from './test-generate-daily.js';

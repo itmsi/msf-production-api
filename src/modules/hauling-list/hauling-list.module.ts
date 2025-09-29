@@ -11,16 +11,7 @@ import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { S3Module } from 'src/integrations/s3/s3.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      HaulingList,
-      Population,
-      Sites,
-      OperationPoints,
-      Barge,
-    ]),
-    S3Module,
-  ],
+  imports: [TypeOrmModule.forFeature([HaulingList, Population, Sites, OperationPoints, Barge]), S3Module],
   controllers: [HaulingListController],
   providers: [HaulingListService, JwtAuthGuard],
   exports: [HaulingListService],

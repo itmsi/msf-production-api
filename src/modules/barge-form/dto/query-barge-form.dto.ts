@@ -22,8 +22,7 @@ export class QueryBargeFormDto {
   end_date?: string;
 
   @ApiProperty({
-    description:
-      'Search keyword for barge name, site name, shipment, or remarks',
+    description: 'Search keyword for barge name, site name, shipment, or remarks',
     example: 'alpha',
     required: false,
   })
@@ -83,8 +82,7 @@ export class QueryExportBargeFormDto {
   end_date?: string;
 
   @ApiProperty({
-    description:
-      'Search keyword for barge name, site name, shipment, or remarks',
+    description: 'Search keyword for barge name, site name, shipment, or remarks',
     example: 'alpha',
     required: false,
   })

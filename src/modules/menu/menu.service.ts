@@ -1,19 +1,10 @@
-import {
-  Injectable,
-  HttpException,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, HttpException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, Not } from 'typeorm';
 import { Menu } from './entities/menu.entity';
 import { CreateMenuDto, UpdateMenuDto, GetMenusQueryDto } from './dto/menu.dto';
 import { MenuHasPermission } from '../menu-has-permission/entities/menu-has-permission.entity';
-import {
-  ApiResponse,
-  successResponse,
-  throwError,
-  emptyDataResponse,
-} from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import { MenuStatus, MenuModuleType } from './entities/menu.entity';
 
@@ -28,8 +19,6 @@ export class MenuService {
 
   async create(createMenuDto: CreateMenuDto): Promise<ApiResponse<Menu>> {
     try {
-      console.log('Creating menu with data:', createMenuDto);
-
       // Check if menu_code already exists
       const existingMenu = await this.menuRepository.findOne({
         where: { menu_code: createMenuDto.menu_code },
@@ -53,34 +42,17 @@ export class MenuService {
         createdBy: createMenuDto.createdBy ?? undefined,
       };
 
-      console.log('Processed menu data:', menuData);
-
       const menu = this.menuRepository.create(menuData);
       const savedMenu = await this.menuRepository.save(menu);
-
-      console.log('Menu saved successfully:', savedMenu);
-
       // Handle permissions if provided
-      if (
-        createMenuDto.permissionIds &&
-        createMenuDto.permissionIds.length > 0
-      ) {
-        console.log('Assigning permissions:', createMenuDto.permissionIds);
-        await this.assignPermissionsToMenu(
-          savedMenu.id,
-          createMenuDto.permissionIds,
-          createMenuDto.createdBy || 0,
-        );
-        console.log('Permissions assigned successfully');
+      if (createMenuDto.permissionIds && createMenuDto.permissionIds.length > 0) {
+        await this.assignPermissionsToMenu(savedMenu.id, createMenuDto.permissionIds, createMenuDto.createdBy || 0);
       }
 
       return successResponse(savedMenu, 'Menu created successfully', 201);
     } catch (error) {
-      console.error('Error creating menu:', error);
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        `Failed to create menu: ${error.message}`,
-      );
+      throw new InternalServerErrorException(`Failed to create menu: ${error.message}`);
     }
   }
 
@@ -106,10 +78,7 @@ export class MenuService {
 
       // Search filter
       if (search) {
-        qb.andWhere(
-          '(menu.menu_name ILIKE :search OR menu.menu_code ILIKE :search)',
-          { search: `%${search}%` },
-        );
+        qb.andWhere('(menu.menu_name ILIKE :search OR menu.menu_code ILIKE :search)', { search: `%${search}%` });
       }
 
       // Filter by module
@@ -133,30 +102,15 @@ export class MenuService {
       }
 
       // Validate sortBy field to prevent SQL injection
-      const allowedSortFields = [
-        'id',
-        'menu_name',
-        'menu_code',
-        'sort_order',
-        'createdAt',
-        'updatedAt',
-      ];
-      const validSortBy = allowedSortFields.includes(sortBy)
-        ? sortBy
-        : 'sort_order';
+      const allowedSortFields = ['id', 'menu_name', 'menu_code', 'sort_order', 'createdAt', 'updatedAt'];
+      const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'sort_order';
       const validSortOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
 
       qb.orderBy(`menu.${validSortBy}`, validSortOrder).skip(skip).take(limit);
 
       const [result, total] = await qb.getManyAndCount();
 
-      return paginateResponse(
-        result,
-        total,
-        page,
-        limit,
-        'Get menus successfully',
-      );
+      return paginateResponse(result, total, page, limit, 'Get menus successfully');
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch menus');
@@ -167,11 +121,7 @@ export class MenuService {
     try {
       const menu = await this.menuRepository.findOne({
         where: { id, deletedAt: null as any },
-        relations: [
-          'children',
-          'menuHasPermissions',
-          'menuHasPermissions.permission',
-        ],
+        relations: ['children', 'menuHasPermissions', 'menuHasPermissions.permission'],
       });
 
       if (!menu) {
@@ -185,10 +135,7 @@ export class MenuService {
     }
   }
 
-  async update(
-    id: number,
-    updateMenuDto: UpdateMenuDto,
-  ): Promise<ApiResponse<Menu | null>> {
+  async update(id: number, updateMenuDto: UpdateMenuDto): Promise<ApiResponse<Menu | null>> {
     try {
       const menu = await this.menuRepository.findOne({
         where: { id, deletedAt: null as any },
@@ -199,10 +146,7 @@ export class MenuService {
       }
 
       // Check if menu_code already exists (if being updated)
-      if (
-        updateMenuDto.menu_code &&
-        updateMenuDto.menu_code !== menu.menu_code
-      ) {
+      if (updateMenuDto.menu_code && updateMenuDto.menu_code !== menu.menu_code) {
         const existingMenu = await this.menuRepository.findOne({
           where: { menu_code: updateMenuDto.menu_code, deletedAt: null as any },
         });
@@ -217,11 +161,7 @@ export class MenuService {
 
       // Handle permissions if provided
       if (updateMenuDto.permissionIds) {
-        await this.updateMenuPermissions(
-          id,
-          updateMenuDto.permissionIds,
-          updateMenuDto.updatedBy || 0,
-        );
+        await this.updateMenuPermissions(id, updateMenuDto.permissionIds, updateMenuDto.updatedBy || 0);
       }
 
       return successResponse(updatedMenu, 'Menu updated successfully');
@@ -263,11 +203,7 @@ export class MenuService {
     try {
       const allMenus = await this.menuRepository.find({
         where: { deletedAt: null as any, parent_id: null as any },
-        relations: [
-          'children',
-          'menuHasPermissions',
-          'menuHasPermissions.permission',
-        ],
+        relations: ['children', 'menuHasPermissions', 'menuHasPermissions.permission'],
         order: { sort_order: 'ASC' },
       });
 
@@ -282,18 +218,11 @@ export class MenuService {
     try {
       const menus = await this.menuRepository.find({
         where: { module: module as any, deletedAt: null as any },
-        relations: [
-          'children',
-          'menuHasPermissions',
-          'menuHasPermissions.permission',
-        ],
+        relations: ['children', 'menuHasPermissions', 'menuHasPermissions.permission'],
         order: { sort_order: 'ASC', createdAt: 'ASC' },
       });
 
-      return successResponse(
-        menus,
-        `Get menus for module ${module} successfully`,
-      );
+      return successResponse(menus, `Get menus for module ${module} successfully`);
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Failed to fetch menus by module');
@@ -308,31 +237,18 @@ export class MenuService {
           deletedAt: null as any,
           parent_id: null as any,
         },
-        relations: [
-          'children',
-          'menuHasPermissions',
-          'menuHasPermissions.permission',
-        ],
+        relations: ['children', 'menuHasPermissions', 'menuHasPermissions.permission'],
         order: { sort_order: 'ASC' },
       });
 
-      return successResponse(
-        allMenus,
-        `Get menu tree for module ${module} successfully`,
-      );
+      return successResponse(allMenus, `Get menu tree for module ${module} successfully`);
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Failed to fetch menu tree by module',
-      );
+      throw new InternalServerErrorException('Failed to fetch menu tree by module');
     }
   }
 
-  private async assignPermissionsToMenu(
-    menuId: number,
-    permissionIds: number[],
-    createdBy: number,
-  ): Promise<void> {
+  private async assignPermissionsToMenu(menuId: number, permissionIds: number[], createdBy: number): Promise<void> {
     const menuHasPermissions = permissionIds.map((permissionId) => ({
       menu_id: menuId,
       permission_id: permissionId,
@@ -342,11 +258,7 @@ export class MenuService {
     await this.menuHasPermissionRepository.save(menuHasPermissions);
   }
 
-  private async updateMenuPermissions(
-    menuId: number,
-    permissionIds: number[],
-    updatedBy: number,
-  ): Promise<void> {
+  private async updateMenuPermissions(menuId: number, permissionIds: number[], updatedBy: number): Promise<void> {
     // Remove existing permissions
     await this.menuHasPermissionRepository.delete({ menu_id: menuId });
 

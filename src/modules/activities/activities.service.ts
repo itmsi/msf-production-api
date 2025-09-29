@@ -1,17 +1,8 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  HttpException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException, HttpException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Activities } from './entities/activities.entity';
 import { Repository, Not } from 'typeorm';
-import {
-  ApiResponse,
-  successResponse,
-  throwError,
-  emptyDataResponse,
-} from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import {
   CreateActivitiesDto,
@@ -28,9 +19,7 @@ export class ActivitiesService {
     private activitiesRepository: Repository<Activities>,
   ) {}
 
-  async findById(
-    id: number,
-  ): Promise<ApiResponse<ActivitiesResponseDto | null>> {
+  async findById(id: number): Promise<ApiResponse<ActivitiesResponseDto | null>> {
     try {
       const result = await this.activitiesRepository.findOne({
         where: { id },
@@ -49,12 +38,8 @@ export class ActivitiesService {
     }
   }
 
-  async findAll(
-    query: GetActivitiesQueryDto,
-  ): Promise<ApiResponse<ActivitiesResponseDto[]>> {
+  async findAll(query: GetActivitiesQueryDto): Promise<ApiResponse<ActivitiesResponseDto[]>> {
     try {
-      console.log('ActivitiesService.findAll - Query:', query);
-
       const page = parseInt(query.page ?? '1', 10);
       const limit = parseInt(query.limit ?? '10', 10);
       const skip = (page - 1) * limit;
@@ -65,35 +50,18 @@ export class ActivitiesService {
       const sortBy = query.sortBy ?? 'id';
       const sortOrder = query.sortOrder ?? 'DESC';
 
-      console.log('ActivitiesService.findAll - Parsed params:', {
-        page,
-        limit,
-        skip,
-        search,
-        name,
-        status,
-        statusMultiple,
-        sortBy,
-        sortOrder,
-      });
-
       // Validate limit
       if (limit > 100) {
         throwError('Limit tidak boleh lebih dari 100', 400);
       }
 
-      const qb = this.activitiesRepository
-        .createQueryBuilder('activities')
-        .where('activities.deletedAt IS NULL'); // Exclude soft deleted records
+      const qb = this.activitiesRepository.createQueryBuilder('activities').where('activities.deletedAt IS NULL'); // Exclude soft deleted records
 
       // Search filter (mencari di semua field yang relevan)
       if (search) {
-        qb.andWhere(
-          '(activities.name ILIKE :search OR activities.status = :search)',
-          {
-            search: `%${search}%`,
-          },
-        );
+        qb.andWhere('(activities.name ILIKE :search OR activities.status = :search)', {
+          search: `%${search}%`,
+        });
       }
 
       // Filter by name (exact match atau partial match)
@@ -105,10 +73,6 @@ export class ActivitiesService {
 
       // Filter by status
       if (status) {
-        console.log(
-          'ActivitiesService.findAll - Adding status filter:',
-          status,
-        );
         qb.andWhere('activities.status = :status', {
           status: status,
         });
@@ -116,50 +80,19 @@ export class ActivitiesService {
 
       // Filter by multiple status
       if (statusMultiple && statusMultiple.length > 0) {
-        console.log(
-          'ActivitiesService.findAll - Adding status_multiple filter:',
-          statusMultiple,
-        );
         qb.andWhere('activities.status IN (:...statusMultiple)', {
           statusMultiple: statusMultiple,
         });
       }
 
       // Validate sortBy field to prevent SQL injection
-      const allowedSortFields = [
-        'id',
-        'name',
-        'status',
-        'createdAt',
-        'updatedAt',
-      ];
+      const allowedSortFields = ['id', 'name', 'status', 'createdAt', 'updatedAt'];
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
-      qb.orderBy(`activities.${validSortBy}`, validSortOrder)
-        .skip(skip)
-        .take(limit);
-
-      console.log('ActivitiesService.findAll - Query builder:', qb.getQuery());
-      console.log(
-        'ActivitiesService.findAll - Query parameters:',
-        qb.getParameters(),
-      );
+      qb.orderBy(`activities.${validSortBy}`, validSortOrder).skip(skip).take(limit);
 
       const [result, total] = await qb.getManyAndCount();
-
-      console.log('ActivitiesService.findAll - Result count:', result.length);
-      console.log('ActivitiesService.findAll - Total count:', total);
-
-      // Log sample data untuk debugging
-      if (result.length > 0) {
-        console.log('ActivitiesService.findAll - Sample result:', {
-          id: result[0].id,
-          name: result[0].name,
-          status: result[0].status,
-          type: typeof result[0].status,
-        });
-      }
 
       // Transform result to DTO format without using plainToInstance
       const transformedResult = result.map((activity) => ({
@@ -170,22 +103,14 @@ export class ActivitiesService {
         updatedAt: activity.updatedAt,
       }));
 
-      return paginateResponse(
-        transformedResult,
-        total,
-        page,
-        limit,
-        'Data aktivitas berhasil diambil',
-      );
+      return paginateResponse(transformedResult, total, page, limit, 'Data aktivitas berhasil diambil');
     } catch (error) {
       if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException('Gagal mengambil data aktivitas');
     }
   }
 
-  async create(
-    data: CreateActivitiesDto,
-  ): Promise<ApiResponse<ActivitiesResponseDto>> {
+  async create(data: CreateActivitiesDto): Promise<ApiResponse<ActivitiesResponseDto>> {
     try {
       // Set default status if not provided
       if (!data.status) {
@@ -225,10 +150,7 @@ export class ActivitiesService {
     }
   }
 
-  async update(
-    id: number,
-    updateDto: UpdateActivitiesDto,
-  ): Promise<ApiResponse<ActivitiesResponseDto | null>> {
+  async update(id: number, updateDto: UpdateActivitiesDto): Promise<ApiResponse<ActivitiesResponseDto | null>> {
     try {
       const activity = await this.activitiesRepository.findOne({
         where: { id },
@@ -248,17 +170,11 @@ export class ActivitiesService {
         });
 
         if (existingActivity) {
-          throwError(
-            `Nama aktivitas ${updateDto.name} sudah digunakan oleh aktivitas lain`,
-            409,
-          );
+          throwError(`Nama aktivitas ${updateDto.name} sudah digunakan oleh aktivitas lain`, 409);
         }
       }
 
-      const updatedActivity = this.activitiesRepository.merge(
-        activity,
-        updateDto,
-      );
+      const updatedActivity = this.activitiesRepository.merge(activity, updateDto);
       const result = await this.activitiesRepository.save(updatedActivity);
 
       // Transform to DTO format

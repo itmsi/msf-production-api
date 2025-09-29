@@ -1,24 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  Put,
-  Delete,
-  UseGuards,
-  ParseIntPipe,
-  Request,
-  Query,
-} from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Param, Body, Put, Delete, UseGuards, ParseIntPipe, Request, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { PermissionService } from './permission.service';
 import {
   CreatePermissionDto,
@@ -40,8 +21,7 @@ export class PermissionController {
   @Post()
   @ApiOperation({
     summary: 'Membuat permission baru',
-    description:
-      'Membuat permission baru dengan nama dan kode yang unik. Permission code harus unik dalam sistem.',
+    description: 'Membuat permission baru dengan nama dan kode yang unik. Permission code harus unik dalam sistem.',
   })
   @ApiResponse({
     status: 201,
@@ -112,10 +92,7 @@ export class PermissionController {
       },
     },
   })
-  create(
-    @Body() createPermissionDto: CreatePermissionDto,
-    @Request() req: any,
-  ) {
+  create(@Body() createPermissionDto: CreatePermissionDto, @Request() req: any) {
     if (!createPermissionDto.createdBy) {
       createPermissionDto.createdBy = req.user?.id;
     }
@@ -125,8 +102,7 @@ export class PermissionController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary:
-      'Mendapatkan semua data permissions dengan pagination, filtering, dan sorting',
+    summary: 'Mendapatkan semua data permissions dengan pagination, filtering, dan sorting',
     description: `
       Endpoint ini mendukung:
       - Pagination dengan parameter page dan limit
@@ -284,8 +260,7 @@ export class PermissionController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data permission berdasarkan ID',
-    description:
-      'Mengupdate data permission dengan validasi duplikasi permission_code',
+    description: 'Mengupdate data permission dengan validasi duplikasi permission_code',
   })
   @ApiParam({
     name: 'id',
@@ -334,11 +309,7 @@ export class PermissionController {
     status: 500,
     description: 'Internal Server Error - Terjadi kesalahan pada server',
   })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updatePermissionDto: UpdatePermissionDto,
-    @Request() req: any,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() updatePermissionDto: UpdatePermissionDto, @Request() req: any) {
     if (!updatePermissionDto.updatedBy) {
       updatePermissionDto.updatedBy = req.user?.id;
     }
@@ -349,8 +320,7 @@ export class PermissionController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Menghapus data permission berdasarkan ID',
-    description:
-      'Soft delete permission (marks as deleted but keeps in database)',
+    description: 'Soft delete permission (marks as deleted but keeps in database)',
   })
   @ApiParam({
     name: 'id',

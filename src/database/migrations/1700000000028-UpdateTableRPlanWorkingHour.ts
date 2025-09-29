@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
 
-export class UpdateTableRPlanWorkingHour1700000000028
-  implements MigrationInterface
-{
+export class UpdateTableRPlanWorkingHour1700000000028 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Drop kolom yang tidak diperlukan
     await queryRunner.dropColumn('r_plan_working_hour', 'average_day_ewh');

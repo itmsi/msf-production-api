@@ -1,12 +1,6 @@
-import {
-  MigrationInterface,
-  QueryRunner,
-  TableColumn,
-} from 'typeorm';
+import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
 
-export class AddNewColumnsToRBaseDataPro1756355000000
-  implements MigrationInterface
-{
+export class AddNewColumnsToRBaseDataPro1756355000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Buat ENUM type untuk activity
     await queryRunner.query(`

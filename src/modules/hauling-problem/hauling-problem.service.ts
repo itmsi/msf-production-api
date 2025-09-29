@@ -1,22 +1,10 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  HttpException,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException, HttpException, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, Like, DataSource } from 'typeorm';
 import { HaulingProblem } from './entities/hauling-problem.entity';
 import { Activities } from '../activities/entities/activities.entity';
 import { Sites } from '../sites/entities/sites.entity';
-import {
-  ApiResponse,
-  successResponse,
-  throwError,
-  emptyDataResponse,
-} from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 import {
   combineDateTime,
   combineShiftDateTime,
@@ -26,19 +14,11 @@ import {
   paginateResponse,
   setCsvExportHeaders,
 } from '../../common/helpers/public.helper';
-import {
-  CreateHaulingProblemDto,
-  UpdateHaulingProblemDto,
-  HaulingProblemResponseDto,
-  GetHaulingProblemQueryDto,
-} from './dto';
+import { CreateHaulingProblemDto, UpdateHaulingProblemDto, HaulingProblemResponseDto, GetHaulingProblemQueryDto } from './dto';
 import { format } from '@fast-csv/format';
 import { Response } from 'express';
 import { S3Service } from 'src/integrations/s3/s3.service';
-import {
-  ImportHaulingProblemCsvRowDto,
-  ImportHaulingProblemItemDto,
-} from './dto/import-hauling-problem.dto';
+import { ImportHaulingProblemCsvRowDto, ImportHaulingProblemItemDto } from './dto/import-hauling-problem.dto';
 import { Readable } from 'stream';
 import csv from 'csv-parser';
 import moment from 'moment';
@@ -58,18 +38,14 @@ export class HaulingProblemService {
     private s3Service: S3Service,
   ) {}
 
-  async create(
-    data: CreateHaulingProblemDto,
-  ): Promise<ApiResponse<HaulingProblemResponseDto>> {
+  async create(data: CreateHaulingProblemDto): Promise<ApiResponse<HaulingProblemResponseDto>> {
     try {
       // Validasi activities_id exists
       const activity = await this.activitiesRepository.findOne({
         where: { id: data.activities_id },
       });
       if (!activity) {
-        throw new BadRequestException(
-          `Activities dengan ID ${data.activities_id} tidak ditemukan`,
-        );
+        throw new BadRequestException(`Activities dengan ID ${data.activities_id} tidak ditemukan`);
       }
 
       // Validasi site_id exists
@@ -77,18 +53,14 @@ export class HaulingProblemService {
         where: { id: data.site_id },
       });
       if (!site) {
-        throw new BadRequestException(
-          `Site dengan ID ${data.site_id} tidak ditemukan`,
-        );
+        throw new BadRequestException(`Site dengan ID ${data.site_id} tidak ditemukan`);
       }
 
       // Validasi start < finish
       const startDate = new Date(data.start);
       const finishDate = new Date(data.finish);
       if (startDate >= finishDate) {
-        throw new BadRequestException(
-          'Waktu start harus lebih awal dari waktu finish',
-        );
+        throw new BadRequestException('Waktu start harus lebih awal dari waktu finish');
       }
 
       // Hitung duration dalam jam
@@ -118,9 +90,7 @@ export class HaulingProblemService {
         .getOne();
 
       if (!result) {
-        throw new InternalServerErrorException(
-          'Gagal mengambil data yang baru dibuat',
-        );
+        throw new InternalServerErrorException('Gagal mengambil data yang baru dibuat');
       }
 
       const response: HaulingProblemResponseDto = {
@@ -131,9 +101,7 @@ export class HaulingProblemService {
         activities_name: result.activities?.name || '',
         start: result.start,
         finish: result.finish,
-        duration: result.duration
-          ? Number(result.duration.toFixed(2))
-          : result.duration,
+        duration: result.duration ? Number(result.duration.toFixed(2)) : result.duration,
         site_id: result.siteId,
         site_name: result.site?.name || '',
         remark: result.remark,
@@ -141,22 +109,14 @@ export class HaulingProblemService {
         updatedAt: result.updatedAt,
       };
 
-      return successResponse(
-        response,
-        'Data hauling problem berhasil dibuat',
-        201,
-      );
+      return successResponse(response, 'Data hauling problem berhasil dibuat', 201);
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Gagal membuat data hauling problem',
-      );
+      throw new InternalServerErrorException('Gagal membuat data hauling problem');
     }
   }
 
-  async findAll(
-    query: GetHaulingProblemQueryDto,
-  ): Promise<ApiResponse<HaulingProblemResponseDto[]>> {
+  async findAll(query: GetHaulingProblemQueryDto): Promise<ApiResponse<HaulingProblemResponseDto[]>> {
     try {
       const page = parseInt(query.page?.toString() ?? '1', 10);
       const limit = parseInt(query.limit?.toString() ?? '10', 10);
@@ -179,13 +139,10 @@ export class HaulingProblemService {
         const nextDay = new Date(activityDate);
         nextDay.setDate(nextDay.getDate() + 1);
 
-        qb.andWhere(
-          'hp.activityDate >= :startDate AND hp.activityDate < :endDate',
-          {
-            startDate: activityDate,
-            endDate: nextDay,
-          },
-        );
+        qb.andWhere('hp.activityDate >= :startDate AND hp.activityDate < :endDate', {
+          startDate: activityDate,
+          endDate: nextDay,
+        });
       }
 
       // Filter berdasarkan date range
@@ -194,13 +151,10 @@ export class HaulingProblemService {
         const endDate = new Date(query.end_date);
         endDate.setDate(endDate.getDate() + 1); // Include end date
 
-        qb.andWhere(
-          'hp.activityDate >= :startDate AND hp.activityDate < :endDate',
-          {
-            startDate: startDate,
-            endDate: endDate,
-          },
-        );
+        qb.andWhere('hp.activityDate >= :startDate AND hp.activityDate < :endDate', {
+          startDate: startDate,
+          endDate: endDate,
+        });
       } else if (query.start_date) {
         const startDate = new Date(query.start_date);
         qb.andWhere('hp.activityDate >= :startDate', {
@@ -234,71 +188,45 @@ export class HaulingProblemService {
       // Search filter
       if (query.search) {
         const searchTerm = `%${query.search.toLowerCase()}%`;
-        qb.andWhere(
-          '(LOWER(activities.name) LIKE :search OR LOWER(site.name) LIKE :search OR LOWER(hp.remark) LIKE :search)',
-          { search: searchTerm },
-        );
+        qb.andWhere('(LOWER(activities.name) LIKE :search OR LOWER(site.name) LIKE :search OR LOWER(hp.remark) LIKE :search)', {
+          search: searchTerm,
+        });
       }
 
       // Sorting
-      const allowedSortFields = [
-        'id',
-        'activityDate',
-        'shift',
-        'start',
-        'finish',
-        'duration',
-        'createdAt',
-        'updatedAt',
-      ];
-      const validSortBy = allowedSortFields.includes(query.sortBy || '')
-        ? query.sortBy || 'id'
-        : 'id';
+      const allowedSortFields = ['id', 'activityDate', 'shift', 'start', 'finish', 'duration', 'createdAt', 'updatedAt'];
+      const validSortBy = allowedSortFields.includes(query.sortBy || '') ? query.sortBy || 'id' : 'id';
       const validSortOrder = query.sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
-      qb.orderBy(`hp.${validSortBy}`, validSortOrder as 'ASC' | 'DESC');
+      qb.orderBy(`hp.${validSortBy}`, validSortOrder);
 
       const [result, total] = await qb.skip(skip).take(limit).getManyAndCount();
 
       // Transform result to DTO format
-      const transformedResult: HaulingProblemResponseDto[] = result.map(
-        (item) => ({
-          id: item.id,
-          activity_date: item.activityDate.toLocaleDateString('en-CA'), // Format YYYY-MM-DD dengan timezone lokal
-          shift: item.shift,
-          activities_id: item.activitiesId,
-          activities_name: item.activities?.name || '',
-          start: item.start,
-          finish: item.finish,
-          duration: item.duration
-            ? Number(item.duration.toFixed(2))
-            : item.duration,
-          site_id: item.siteId,
-          site_name: item.site?.name || '',
-          remark: item.remark,
-          createdAt: item.createdAt,
-          updatedAt: item.updatedAt,
-        }),
-      );
+      const transformedResult: HaulingProblemResponseDto[] = result.map((item) => ({
+        id: item.id,
+        activity_date: item.activityDate.toLocaleDateString('en-CA'), // Format YYYY-MM-DD dengan timezone lokal
+        shift: item.shift,
+        activities_id: item.activitiesId,
+        activities_name: item.activities?.name || '',
+        start: item.start,
+        finish: item.finish,
+        duration: item.duration ? Number(item.duration.toFixed(2)) : item.duration,
+        site_id: item.siteId,
+        site_name: item.site?.name || '',
+        remark: item.remark,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      }));
 
-      return paginateResponse(
-        transformedResult,
-        total,
-        page,
-        limit,
-        'Data hauling problem berhasil diambil',
-      );
+      return paginateResponse(transformedResult, total, page, limit, 'Data hauling problem berhasil diambil');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Gagal mengambil data hauling problem',
-      );
+      throw new InternalServerErrorException('Gagal mengambil data hauling problem');
     }
   }
 
-  async findById(
-    id: number,
-  ): Promise<ApiResponse<HaulingProblemResponseDto | null>> {
+  async findById(id: number): Promise<ApiResponse<HaulingProblemResponseDto | null>> {
     try {
       const result = await this.haulingProblemRepository
         .createQueryBuilder('hp')
@@ -320,9 +248,7 @@ export class HaulingProblemService {
         activities_name: result.activities?.name || '',
         start: result.start,
         finish: result.finish,
-        duration: result.duration
-          ? Number(result.duration.toFixed(2))
-          : result.duration,
+        duration: result.duration ? Number(result.duration.toFixed(2)) : result.duration,
         site_id: result.siteId,
         site_name: result.site?.name || '',
         remark: result.remark,
@@ -333,25 +259,18 @@ export class HaulingProblemService {
       return successResponse(response, 'Data hauling problem berhasil diambil');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Gagal mengambil data hauling problem',
-      );
+      throw new InternalServerErrorException('Gagal mengambil data hauling problem');
     }
   }
 
-  async update(
-    id: number,
-    data: UpdateHaulingProblemDto,
-  ): Promise<ApiResponse<HaulingProblemResponseDto>> {
+  async update(id: number, data: UpdateHaulingProblemDto): Promise<ApiResponse<HaulingProblemResponseDto>> {
     try {
       // Cek apakah data exists
       const existing = await this.haulingProblemRepository.findOne({
         where: { id },
       });
       if (!existing) {
-        throw new NotFoundException(
-          `Data hauling problem dengan ID ${id} tidak ditemukan`,
-        );
+        throw new NotFoundException(`Data hauling problem dengan ID ${id} tidak ditemukan`);
       }
 
       // Validasi activities_id exists jika diupdate
@@ -360,9 +279,7 @@ export class HaulingProblemService {
           where: { id: data.activities_id },
         });
         if (!activity) {
-          throw new BadRequestException(
-            `Activities dengan ID ${data.activities_id} tidak ditemukan`,
-          );
+          throw new BadRequestException(`Activities dengan ID ${data.activities_id} tidak ditemukan`);
         }
       }
 
@@ -372,9 +289,7 @@ export class HaulingProblemService {
           where: { id: data.site_id },
         });
         if (!site) {
-          throw new BadRequestException(
-            `Site dengan ID ${data.site_id} tidak ditemukan`,
-          );
+          throw new BadRequestException(`Site dengan ID ${data.site_id} tidak ditemukan`);
         }
       }
 
@@ -383,16 +298,13 @@ export class HaulingProblemService {
         const startDate = new Date(data.start);
         const finishDate = new Date(data.finish);
         if (startDate >= finishDate) {
-          throw new BadRequestException(
-            'Waktu start harus lebih awal dari waktu finish',
-          );
+          throw new BadRequestException('Waktu start harus lebih awal dari waktu finish');
         }
       }
 
       // Update data
       const updateData: any = {};
-      if (data.activity_date)
-        updateData.activityDate = new Date(data.activity_date);
+      if (data.activity_date) updateData.activityDate = new Date(data.activity_date);
       if (data.shift) updateData.shift = data.shift;
       if (data.activities_id) updateData.activitiesId = data.activities_id;
       if (data.start) updateData.start = new Date(data.start);
@@ -403,9 +315,7 @@ export class HaulingProblemService {
       // Hitung ulang duration jika start atau finish diupdate
       if (data.start || data.finish) {
         const startDate = data.start ? new Date(data.start) : existing.start;
-        const finishDate = data.finish
-          ? new Date(data.finish)
-          : existing.finish;
+        const finishDate = data.finish ? new Date(data.finish) : existing.finish;
         const durationMs = finishDate.getTime() - startDate.getTime();
         updateData.duration = durationMs / (1000 * 60 * 60);
       }
@@ -421,9 +331,7 @@ export class HaulingProblemService {
         .getOne();
 
       if (!result) {
-        throw new InternalServerErrorException(
-          'Gagal mengambil data yang sudah diupdate',
-        );
+        throw new InternalServerErrorException('Gagal mengambil data yang sudah diupdate');
       }
 
       const response: HaulingProblemResponseDto = {
@@ -434,9 +342,7 @@ export class HaulingProblemService {
         activities_name: result.activities?.name || '',
         start: result.start,
         finish: result.finish,
-        duration: result.duration
-          ? Number(result.duration.toFixed(2))
-          : result.duration,
+        duration: result.duration ? Number(result.duration.toFixed(2)) : result.duration,
         site_id: result.siteId,
         site_name: result.site?.name || '',
         remark: result.remark,
@@ -444,15 +350,10 @@ export class HaulingProblemService {
         updatedAt: result.updatedAt,
       };
 
-      return successResponse(
-        response,
-        'Data hauling problem berhasil diupdate',
-      );
+      return successResponse(response, 'Data hauling problem berhasil diupdate');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Gagal mengupdate data hauling problem',
-      );
+      throw new InternalServerErrorException('Gagal mengupdate data hauling problem');
     }
   }
 
@@ -463,9 +364,7 @@ export class HaulingProblemService {
         where: { id },
       });
       if (!existing) {
-        throw new NotFoundException(
-          `Data hauling problem dengan ID ${id} tidak ditemukan`,
-        );
+        throw new NotFoundException(`Data hauling problem dengan ID ${id} tidak ditemukan`);
       }
 
       // Soft delete
@@ -474,25 +373,17 @@ export class HaulingProblemService {
       return successResponse(null, 'Data hauling problem berhasil dihapus');
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(
-        'Gagal menghapus data hauling problem',
-      );
+      throw new InternalServerErrorException('Gagal menghapus data hauling problem');
     }
   }
 
-  async importData(
-    file: Express.Multer.File,
-    userId?: number | null,
-  ): Promise<ApiResponse<any>> {
+  async importData(file: Express.Multer.File, userId?: number | null): Promise<ApiResponse<any>> {
     try {
       if (!file) {
         throw new BadRequestException('File tidak ditemukan');
       }
 
-      if (
-        !file.mimetype.includes('csv') &&
-        !file.originalname.endsWith('.csv')
-      ) {
+      if (!file.mimetype.includes('csv') && !file.originalname.endsWith('.csv')) {
         throw new BadRequestException('File harus berupa CSV');
       }
 
@@ -555,9 +446,7 @@ export class HaulingProblemService {
       }
       // Jika ada error, buat file error dan return tanpa insert ke database
       if (errorRows.length > 0) {
-        this.logger.log(
-          `Found ${errorRows.length} rows with errors, generating error CSV...`,
-        );
+        this.logger.log(`Found ${errorRows.length} rows with errors, generating error CSV...`);
 
         try {
           const errorCsvBuffer = this.generateErrorCsv(errorRows);
@@ -581,21 +470,14 @@ export class HaulingProblemService {
               if (errorFileInfo) {
                 this.logger.log('Error file uploaded to MinIO successfully');
               } else {
-                this.logger.warn(
-                  'MinIO upload failed, using fallback response',
-                );
+                this.logger.warn('MinIO upload failed, using fallback response');
                 minioAvailable = false;
               }
             } else {
-              this.logger.warn(
-                'MinIO tidak tersedia, menggunakan fallback response',
-              );
+              this.logger.warn('MinIO tidak tersedia, menggunakan fallback response');
             }
           } catch (s3Error) {
-            this.logger.warn(
-              'MinIO error, menggunakan fallback response:',
-              s3Error.message,
-            );
+            this.logger.warn('MinIO error, menggunakan fallback response:', s3Error.message);
             minioAvailable = false;
           }
 
@@ -608,20 +490,15 @@ export class HaulingProblemService {
               errorFileInfo && minioAvailable
                 ? {
                     download_url: errorFileInfo.downloadUrl,
-                    message:
-                      'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
+                    message: 'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
                   }
                 : {
                     download_url: null,
-                    message:
-                      'File error gagal diupload ke cloud storage. Silakan periksa data error di response details.',
+                    message: 'File error gagal diupload ke cloud storage. Silakan periksa data error di response details.',
                   },
           };
 
-          return successResponse(
-            response,
-            'Import dibatalkan karena ada data yang tidak valid',
-          );
+          return successResponse(response, 'Import dibatalkan karena ada data yang tidak valid');
         } catch (error) {
           this.logger.error('Error generating error CSV:', error);
           this.logger.error('Error stack:', error.stack);
@@ -634,15 +511,11 @@ export class HaulingProblemService {
             details: importResults,
             error_file: {
               download_url: null,
-              message:
-                'Gagal generate file error. Silakan periksa data error di response details.',
+              message: 'Gagal generate file error. Silakan periksa data error di response details.',
             },
           };
 
-          return successResponse(
-            response,
-            'Import dibatalkan karena ada data yang tidak valid',
-          );
+          return successResponse(response, 'Import dibatalkan karena ada data yang tidak valid');
         }
       }
 
@@ -672,9 +545,7 @@ export class HaulingProblemService {
         if (error?.response && error?.response?.statusCode === 400) {
           throw error;
         }
-        throw new InternalServerErrorException(
-          `Gagal import data: ${error.message}`,
-        );
+        throw new InternalServerErrorException(`Gagal import data: ${error.message}`);
       } finally {
         await queryRunner.release();
       }
@@ -686,9 +557,7 @@ export class HaulingProblemService {
     }
   }
 
-  private async parseCsvFile(
-    buffer: Buffer,
-  ): Promise<ImportHaulingProblemCsvRowDto[]> {
+  private async parseCsvFile(buffer: Buffer): Promise<ImportHaulingProblemCsvRowDto[]> {
     return new Promise((resolve, reject) => {
       const results: ImportHaulingProblemCsvRowDto[] = [];
       const stream = Readable.from(buffer);
@@ -794,11 +663,7 @@ export class HaulingProblemService {
     }
 
     if (row.finish_time) {
-      const finish_time = combineShiftDateTime(
-        row.activity_date,
-        row.start_time,
-        row.finish_time,
-      );
+      const finish_time = combineShiftDateTime(row.activity_date, row.start_time, row.finish_time);
       if (finish_time.end === 'Invalid date') {
         errors.push({
           field: 'finish_time',
@@ -816,9 +681,7 @@ export class HaulingProblemService {
         const error = errors[0];
         message = `Field "${error.field}" tidak valid: ${error.message}`;
       } else {
-        const errorDetails = errors
-          .map((err) => `"${err.field}": ${err.message}`)
-          .join(', ');
+        const errorDetails = errors.map((err) => `"${err.field}": ${err.message}`).join(', ');
         message = `${errors.length} field(s) tidak valid: ${errorDetails}`;
       }
     }
@@ -870,9 +733,7 @@ export class HaulingProblemService {
         const rowData = errorRow.data;
         const errors = errorRow.errors;
         // Gabungkan semua error message
-        const errorMessages = errors
-          .map((err) => `${err.field}: ${err.message}`)
-          .join('; ');
+        const errorMessages = errors.map((err) => `${err.field}: ${err.message}`).join('; ');
 
         const csvRow = [
           errorRow.row,
@@ -896,10 +757,7 @@ export class HaulingProblemService {
     }
   }
 
-  private async importCsvRow(
-    row: ImportHaulingProblemCsvRowDto,
-    userId?: number | null,
-  ): Promise<void> {
+  private async importCsvRow(row: ImportHaulingProblemCsvRowDto, userId?: number | null): Promise<void> {
     const [activity_data, site_data] = await Promise.all([
       this.getActivityDataByName(row.standby_factor),
       this.getSiteDataByName(row.site_name),
@@ -909,11 +767,7 @@ export class HaulingProblemService {
       throw new BadRequestException('No Unit tidak ditemukan');
     }
 
-    const date = combineShiftDateTime(
-      row.activity_date,
-      row.start_time,
-      row.finish_time,
-    );
+    const date = combineShiftDateTime(row.activity_date, row.start_time, row.finish_time);
 
     const haulingListData: CreateHaulingProblemDto = {
       activity_date: row.activity_date,
@@ -971,13 +825,10 @@ export class HaulingProblemService {
         const nextDay = new Date(activityDate);
         nextDay.setDate(nextDay.getDate() + 1);
 
-        qb.andWhere(
-          'hp.activityDate >= :startDate AND hp.activityDate < :endDate',
-          {
-            startDate: activityDate,
-            endDate: nextDay,
-          },
-        );
+        qb.andWhere('hp.activityDate >= :startDate AND hp.activityDate < :endDate', {
+          startDate: activityDate,
+          endDate: nextDay,
+        });
       }
 
       // Filter berdasarkan date range
@@ -986,13 +837,10 @@ export class HaulingProblemService {
         const endDate = new Date(query.end_date);
         endDate.setDate(endDate.getDate() + 1); // Include end date
 
-        qb.andWhere(
-          'hp.activityDate >= :startDate AND hp.activityDate < :endDate',
-          {
-            startDate: startDate,
-            endDate: endDate,
-          },
-        );
+        qb.andWhere('hp.activityDate >= :startDate AND hp.activityDate < :endDate', {
+          startDate: startDate,
+          endDate: endDate,
+        });
       } else if (query.start_date) {
         const startDate = new Date(query.start_date);
         qb.andWhere('hp.activityDate >= :startDate', {
@@ -1026,26 +874,14 @@ export class HaulingProblemService {
       // Search filter
       if (query.search) {
         const searchTerm = `%${query.search.toLowerCase()}%`;
-        qb.andWhere(
-          '(LOWER(activities.name) LIKE :search OR LOWER(site.name) LIKE :search OR LOWER(hp.remark) LIKE :search)',
-          { search: searchTerm },
-        );
+        qb.andWhere('(LOWER(activities.name) LIKE :search OR LOWER(site.name) LIKE :search OR LOWER(hp.remark) LIKE :search)', {
+          search: searchTerm,
+        });
       }
 
       // Sorting
-      const allowedSortFields = [
-        'id',
-        'activityDate',
-        'shift',
-        'start',
-        'finish',
-        'duration',
-        'createdAt',
-        'updatedAt',
-      ];
-      const validSortBy = allowedSortFields.includes(query.sortBy || '')
-        ? query.sortBy || 'id'
-        : 'id';
+      const allowedSortFields = ['id', 'activityDate', 'shift', 'start', 'finish', 'duration', 'createdAt', 'updatedAt'];
+      const validSortBy = allowedSortFields.includes(query.sortBy || '') ? query.sortBy || 'id' : 'id';
       const validSortOrder = query.sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
       qb.orderBy(`hp.${validSortBy}`, validSortOrder);

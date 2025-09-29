@@ -1,10 +1,5 @@
 import { validate } from 'class-validator';
-import {
-  IsValidFloat,
-  IsFloatInRange,
-  IsNullableFloat,
-  IsNullableFloatInRange,
-} from '../number-validators';
+import { IsValidFloat, IsFloatInRange, IsNullableFloat, IsNullableFloatInRange } from '../number-validators';
 
 describe('Number Validators', () => {
   describe('IsValidFloat', () => {
@@ -35,9 +30,7 @@ describe('Number Validators', () => {
 
       const errors = await validate(dto);
       expect(errors).toHaveLength(1);
-      expect(errors[0].constraints?.isValidFloat).toBe(
-        'value harus berupa angka float yang valid',
-      );
+      expect(errors[0].constraints?.isValidFloat).toBe('value harus berupa angka float yang valid');
     });
 
     it('should fail for undefined', async () => {
@@ -101,9 +94,7 @@ describe('Number Validators', () => {
 
       const errors = await validate(dto);
       expect(errors).toHaveLength(1);
-      expect(errors[0].constraints?.isFloatInRange).toBe(
-        'value harus berupa angka float antara -180 sampai 180',
-      );
+      expect(errors[0].constraints?.isFloatInRange).toBe('value harus berupa angka float antara -180 sampai 180');
     });
 
     it('should fail for value above range', async () => {
@@ -151,9 +142,7 @@ describe('Number Validators', () => {
 
       const errors = await validate(dto);
       expect(errors).toHaveLength(1);
-      expect(errors[0].constraints?.isNullableFloat).toBe(
-        'value harus berupa angka float yang valid atau null',
-      );
+      expect(errors[0].constraints?.isNullableFloat).toBe('value harus berupa angka float yang valid atau null');
     });
 
     it('should fail for string', async () => {
@@ -201,9 +190,7 @@ describe('Number Validators', () => {
 
       const errors = await validate(dto);
       expect(errors).toHaveLength(1);
-      expect(errors[0].constraints?.isNullableFloatInRange).toBe(
-        'value harus berupa angka float antara -90 sampai 90 atau null',
-      );
+      expect(errors[0].constraints?.isNullableFloatInRange).toBe('value harus berupa angka float antara -90 sampai 90 atau null');
     });
 
     it('should fail for value above range', async () => {

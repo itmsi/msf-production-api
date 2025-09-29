@@ -1,34 +1,8 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  ParseIntPipe,
-  HttpCode,
-  HttpStatus,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiQuery,
-  ApiBearerAuth,
-  ApiExtraModels,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth, ApiExtraModels } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { DepartmentService } from './department.service';
-import {
-  CreateDepartmentDto,
-  UpdateDepartmentDto,
-  DepartmentResponseDto,
-  GetDepartmentsQueryDto,
-} from './dto';
+import { CreateDepartmentDto, UpdateDepartmentDto, DepartmentResponseDto, GetDepartmentsQueryDto } from './dto';
 
 @ApiTags('Department')
 @ApiBearerAuth('jwt')
@@ -290,10 +264,7 @@ export class DepartmentController {
     status: 500,
     description: 'Internal server error',
   })
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateDepartmentDto: UpdateDepartmentDto,
-  ) {
+  async update(@Param('id', ParseIntPipe) id: number, @Body() updateDepartmentDto: UpdateDepartmentDto) {
     return this.departmentService.update(id, updateDepartmentDto);
   }
 

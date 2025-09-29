@@ -1,13 +1,6 @@
-import {
-  MigrationInterface,
-  QueryRunner,
-  Table,
-  TableForeignKey,
-} from 'typeorm';
+import { MigrationInterface, QueryRunner, Table, TableForeignKey } from 'typeorm';
 
-export class CreateTableTB_R_CCR_Hauling_Problem1700000000017
-  implements MigrationInterface
-{
+export class CreateTableTB_R_CCR_Hauling_Problem1700000000017 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Buat tabel TB_R_CCR_Hauling_Problem
     await queryRunner.createTable(

@@ -4,8 +4,7 @@ export class OperationPointsSeeder {
   constructor(private dataSource: DataSource) {}
 
   async run(): Promise<void> {
-    const operationPointsRepository =
-      this.dataSource.getRepository('m_operation_points');
+    const operationPointsRepository = this.dataSource.getRepository('m_operation_points');
 
     const operationPointsData = [
       {

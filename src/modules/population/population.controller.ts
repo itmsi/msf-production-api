@@ -18,15 +18,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { PopulationService } from './population.service';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiOperation,
-  ApiResponse as SwaggerApiResponse,
-  ApiConsumes,
-  ApiBody,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse as SwaggerApiResponse, ApiConsumes, ApiBody, ApiParam } from '@nestjs/swagger';
 import {
   CreatePopulationDto,
   GetPopulationsQueryDto,
@@ -49,8 +41,7 @@ export class PopulationController {
   @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({
-    summary:
-      'Mendapatkan semua data population dengan pagination, filtering, dan sorting',
+    summary: 'Mendapatkan semua data population dengan pagination, filtering, dan sorting',
     description:
       'Endpoint ini mendukung pagination, pencarian, filtering berdasarkan status, unit_type_id, unit_type_name, is_dt, activities_id, site_id, engine_brand, tyre_type, dan range tanggal, serta sorting berdasarkan field tertentu',
   })
@@ -147,13 +138,6 @@ export class PopulationController {
     },
   })
   findAll(@Query() query: GetPopulationsQueryDto) {
-    // Log incoming query untuk debugging
-    console.log('Controller received query:', {
-      ...query,
-      is_dt: query.is_dt,
-      typeOfIsDt: typeof query.is_dt
-    });
-    
     return this.populationService.findAll(query);
   }
 
@@ -161,8 +145,7 @@ export class PopulationController {
   @Get(':id')
   @ApiOperation({
     summary: 'Mendapatkan data population berdasarkan ID',
-    description:
-      'Mengambil data population berdasarkan ID yang diberikan dengan relasi lengkap',
+    description: 'Mengambil data population berdasarkan ID yang diberikan dengan relasi lengkap',
   })
   @SwaggerApiResponse({
     status: 200,
@@ -269,8 +252,7 @@ export class PopulationController {
   @Post()
   @ApiOperation({
     summary: 'Membuat population baru',
-    description:
-      'Membuat population baru dengan validasi duplikasi VIN number, no_unit, dan no_unit_system',
+    description: 'Membuat population baru dengan validasi duplikasi VIN number, no_unit, dan no_unit_system',
   })
   @SwaggerApiResponse({
     status: 201,
@@ -377,8 +359,7 @@ export class PopulationController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data population berdasarkan ID',
-    description:
-      'Mengupdate data population dengan validasi duplikasi VIN number, no_unit, dan no_unit_system',
+    description: 'Mengupdate data population dengan validasi duplikasi VIN number, no_unit, dan no_unit_system',
   })
   @SwaggerApiResponse({
     status: 200,
@@ -467,8 +448,7 @@ export class PopulationController {
   })
   @SwaggerApiResponse({
     status: 409,
-    description:
-      'Population dengan data yang sama sudah digunakan oleh population lain',
+    description: 'Population dengan data yang sama sudah digunakan oleh population lain',
     schema: {
       example: {
         statusCode: 409,
@@ -490,10 +470,7 @@ export class PopulationController {
       },
     },
   })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdatePopulationDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePopulationDto) {
     return this.populationService.update(id, dto);
   }
 
@@ -501,8 +478,7 @@ export class PopulationController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Menghapus data population berdasarkan ID (soft delete)',
-    description:
-      'Melakukan soft delete pada population (data tidak benar-benar dihapus dari database)',
+    description: 'Melakukan soft delete pada population (data tidak benar-benar dihapus dari database)',
   })
   @SwaggerApiResponse({
     status: 200,
@@ -577,8 +553,7 @@ export class PopulationController {
   })
   @ApiOperation({
     summary: 'Preview import data population dari CSV',
-    description:
-      'Mengecek validitas data CSV sebelum import, memvalidasi unit_name, activities_name, dan site_id',
+    description: 'Mengecek validitas data CSV sebelum import, memvalidasi unit_name, activities_name, dan site_id',
   })
   @SwaggerApiResponse({
     status: 200,
@@ -666,8 +641,7 @@ export class PopulationController {
   })
   @ApiOperation({
     summary: 'Import data population dari CSV',
-    description:
-      'Mengimport data population dari CSV ke database setelah validasi',
+    description: 'Mengimport data population dari CSV ke database setelah validasi',
   })
   @SwaggerApiResponse({
     status: 201,
@@ -708,8 +682,7 @@ export class PopulationController {
           ],
           error_file: {
             download_url: 'https://minio.example.com/download/error_file.csv',
-            message:
-              'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
+            message: 'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
           },
         },
       },
@@ -759,21 +732,19 @@ export class PopulationController {
   @Get('import/template')
   @ApiOperation({
     summary: 'Download template CSV untuk import population',
-    description:
-      'Mendownload template CSV yang berisi format kolom yang diperlukan',
+    description: 'Mendownload template CSV yang berisi format kolom yang diperlukan',
   })
   @SwaggerApiResponse({
     status: 200,
     description: 'Template CSV berhasil didownload',
   })
-  async downloadTemplate(@Res() res: Response) {
+  downloadTemplate(@Res() res: Response) {
     try {
-      const buffer = await this.populationService.downloadTemplate();
+      const buffer = this.populationService.downloadTemplate();
 
       res.set({
         'Content-Type': 'text/csv',
-        'Content-Disposition':
-          'attachment; filename="template-population-import.csv"',
+        'Content-Disposition': 'attachment; filename="template-population-import.csv"',
         'Content-Length': buffer.length,
       });
 

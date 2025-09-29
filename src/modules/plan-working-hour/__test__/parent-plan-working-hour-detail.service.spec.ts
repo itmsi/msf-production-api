@@ -56,9 +56,7 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
       ],
     }).compile();
 
-    service = module.get<ParentPlanWorkingHourService>(
-      ParentPlanWorkingHourService,
-    );
+    service = module.get<ParentPlanWorkingHourService>(ParentPlanWorkingHourService);
     planWorkingHourRepository = module.get(getRepositoryToken(PlanWorkingHour));
     dataSource = module.get(DataSource);
   });
@@ -104,9 +102,7 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
         },
       ];
 
-      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(
-        mockQueryBuilder,
-      );
+      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       mockQueryBuilder.getCount.mockResolvedValue(1);
       mockQueryBuilder.getMany.mockResolvedValue(mockPlanWorkingHours);
 
@@ -148,9 +144,7 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
         },
       ];
 
-      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(
-        mockQueryBuilder,
-      );
+      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       mockQueryBuilder.getCount.mockResolvedValue(1);
       mockQueryBuilder.getMany.mockResolvedValue(mockPlanWorkingHours);
 
@@ -185,9 +179,7 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
         },
       ];
 
-      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(
-        mockQueryBuilder,
-      );
+      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       mockQueryBuilder.getCount.mockResolvedValue(1);
       mockQueryBuilder.getMany.mockResolvedValue(mockPlanWorkingHours);
 
@@ -219,9 +211,7 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
         },
       ];
 
-      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(
-        mockQueryBuilder,
-      );
+      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       mockQueryBuilder.getCount.mockResolvedValue(1);
       mockQueryBuilder.getCount.mockResolvedValue(1);
       mockQueryBuilder.getMany.mockResolvedValue(mockPlanWorkingHours);
@@ -238,9 +228,7 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
         month_year: '2025-08',
       };
 
-      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(
-        mockQueryBuilder,
-      );
+      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       mockQueryBuilder.getCount.mockResolvedValue(0);
       mockQueryBuilder.getMany.mockResolvedValue([]);
 
@@ -259,9 +247,7 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
         limit: '150',
       };
 
-      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(
-        mockQueryBuilder,
-      );
+      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       mockQueryBuilder.getCount.mockResolvedValue(0);
       mockQueryBuilder.getMany.mockResolvedValue([]);
 
@@ -307,9 +293,7 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
         },
       ];
 
-      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(
-        mockQueryBuilder,
-      );
+      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       mockQueryBuilder.getCount.mockResolvedValue(1);
       mockQueryBuilder.getMany.mockResolvedValue(mockPlanWorkingHours);
 
@@ -353,9 +337,7 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
         },
       ];
 
-      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(
-        mockQueryBuilder,
-      );
+      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       mockQueryBuilder.getCount.mockResolvedValue(1);
       mockQueryBuilder.getMany.mockResolvedValue(mockPlanWorkingHours);
 
@@ -412,9 +394,7 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
         ],
       };
 
-      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(
-        mockQueryBuilder,
-      );
+      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       mockQueryBuilder.leftJoinAndSelect.mockReturnValue(mockQueryBuilder);
       mockQueryBuilder.where.mockReturnValue(mockQueryBuilder);
       mockQueryBuilder.getOne.mockResolvedValue(mockPlanWorkingHour);
@@ -473,9 +453,7 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
         ],
       };
 
-      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(
-        mockQueryBuilder,
-      );
+      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       mockQueryBuilder.leftJoinAndSelect.mockReturnValue(mockQueryBuilder);
       mockQueryBuilder.where.mockReturnValue(mockQueryBuilder);
       mockQueryBuilder.getOne.mockResolvedValue(mockPlanWorkingHour);
@@ -497,16 +475,12 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
     it('should throw error when ID not found', async () => {
       const id = 999;
 
-      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(
-        mockQueryBuilder,
-      );
+      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       mockQueryBuilder.leftJoinAndSelect.mockReturnValue(mockQueryBuilder);
       mockQueryBuilder.where.mockReturnValue(mockQueryBuilder);
       mockQueryBuilder.getOne.mockResolvedValue(null);
 
-      await expect(service.getDetailById(id)).rejects.toThrow(
-        `Plan working hour dengan ID ${id} tidak ditemukan`,
-      );
+      await expect(service.getDetailById(id)).rejects.toThrow(`Plan working hour dengan ID ${id} tidak ditemukan`);
     });
 
     it('should set availability flags correctly based on plan_date', async () => {
@@ -557,9 +531,7 @@ describe('ParentPlanWorkingHourService - Detail Method', () => {
         },
       ];
 
-      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(
-        mockQueryBuilder,
-      );
+      mockPlanWorkingHourRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       mockQueryBuilder.getCount.mockResolvedValue(3);
       mockQueryBuilder.getMany.mockResolvedValue(mockPlanWorkingHours);
 

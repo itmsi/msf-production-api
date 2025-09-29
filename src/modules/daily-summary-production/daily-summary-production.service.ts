@@ -10,7 +10,7 @@ export class DailySummaryProductionService {
     try {
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
-      
+
       // Build dynamic query with filters
       let query = `
         SELECT 
@@ -25,7 +25,7 @@ export class DailySummaryProductionService {
         FROM get_summary_production_with_loss_time()
         WHERE 1=1
       `;
-      
+
       const params: any[] = [];
       let paramIndex = 1;
 
@@ -60,9 +60,9 @@ export class DailySummaryProductionService {
       query += ` ORDER BY date DESC, unit ASC`;
 
       const result = await queryRunner.query(query, params);
-      
+
       await queryRunner.release();
-      
+
       return {
         statusCode: 200,
         message: 'success',

@@ -137,8 +137,6 @@ describe('RolesService', () => {
   it('should handle and throw internal server error', async () => {
     mockRepository.findAndCount.mockRejectedValue(new Error('DB error'));
 
-    await expect(service.findAll({ page: '1', limit: '10' })).rejects.toThrow(
-      'Failed to fetch users',
-    );
+    await expect(service.findAll({ page: '1', limit: '10' })).rejects.toThrow('Failed to fetch users');
   });
 });

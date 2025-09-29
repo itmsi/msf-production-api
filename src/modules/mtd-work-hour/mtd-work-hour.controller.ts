@@ -224,7 +224,7 @@ export class MtdWorkHourController {
       },
     },
   })
-  async getProblemTypes() {
+  getProblemTypes() {
     return {
       statusCode: 200,
       message: 'Daftar jenis problem berhasil diambil',

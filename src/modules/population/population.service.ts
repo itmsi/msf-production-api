@@ -1,22 +1,11 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  HttpException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException, HttpException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Population } from './entities/population.entity';
 import { UnitType } from '../unit-type/entities/unit-type.entity';
 import { Activities } from '../activities/entities/activities.entity';
 import { Sites } from '../sites/entities/sites.entity';
 import { Repository, Not, Between, DataSource } from 'typeorm';
-import {
-  ApiResponse,
-  successResponse,
-  throwError,
-  emptyDataResponse,
-} from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError, emptyDataResponse } from '../../common/helpers/response.helper';
 import { paginateResponse } from '../../common/helpers/public.helper';
 import {
   CreatePopulationDto,
@@ -29,6 +18,8 @@ import {
 import csv from 'csv-parser';
 import { Readable } from 'stream';
 import { S3Service } from '../../integrations/s3/s3.service';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class PopulationService {
@@ -47,19 +38,11 @@ export class PopulationService {
     private s3Service: S3Service,
   ) {}
 
-  async findById(
-    id: number,
-  ): Promise<ApiResponse<PopulationResponseDto | null>> {
+  async findById(id: number): Promise<ApiResponse<PopulationResponseDto | null>> {
     try {
       const result = await this.populationRepository.findOne({
         where: { id },
-        relations: [
-          'unitType',
-          'unitType.brand',
-          'activities',
-          'site',
-          'department',
-        ],
+        relations: ['unitType', 'unitType.brand', 'activities', 'site', 'department'],
       });
 
       if (!result) {
@@ -128,37 +111,18 @@ export class PopulationService {
     }
   }
 
-  async findAll(
-    query: GetPopulationsQueryDto,
-  ): Promise<ApiResponse<PopulationResponseDto[]>> {
+  async findAll(query: GetPopulationsQueryDto): Promise<ApiResponse<PopulationResponseDto[]>> {
     try {
       const page = parseInt(query.page ?? '1', 10);
       const limit = parseInt(query.limit ?? '10', 10);
       const skip = (page - 1) * limit;
       const search = query.search?.toLowerCase() ?? '';
       const status = query.status;
-      const unitTypeId = query.unit_type_id
-        ? parseInt(query.unit_type_id, 10)
-        : undefined;
+      const unitTypeId = query.unit_type_id ? parseInt(query.unit_type_id, 10) : undefined;
       const unitTypeName = query.unit_type_name;
       const isDt = query.is_dt;
 
-      // Log query parameters untuk debugging
-      console.log('Query parameters received:', {
-        page,
-        limit,
-        search,
-        status,
-        unitTypeId,
-        unitTypeName,
-        isDt,
-        typeOfIsDt: typeof isDt,
-        activitiesId: query.activities_id,
-      });
-
-      const activitiesId = query.activities_id
-        ? parseInt(query.activities_id, 10)
-        : undefined;
+      const activitiesId = query.activities_id ? parseInt(query.activities_id, 10) : undefined;
       const siteId = query.site_id ? parseInt(query.site_id, 10) : undefined;
       const engineBrand = query.engine_brand;
       const tyreType = query.tyre_type;
@@ -201,49 +165,26 @@ export class PopulationService {
         });
       }
 
-      // Filter by is_dt (Dump Truck)
-      console.log('=== DEBUG is_dt FILTER ===');
-      console.log('Raw isDt value:', isDt);
-      console.log('Type of isDt:', typeof isDt);
-      console.log('isDt === true:', isDt === true);
-      console.log('isDt === false:', isDt === false);
-      console.log('isDt !== null:', isDt !== null);
-      console.log('isDt !== undefined:', isDt !== undefined);
-
       if (isDt !== null && isDt !== undefined) {
         try {
-          console.log('✅ Condition met: Applying is_dt filter');
-
           if (isDt === true) {
             // Jika is_dt = true, hanya ambil dump truck
-            console.log('🔍 Applying filter: is_dt = true (hanya dump truck)');
             qb.andWhere('LOWER(unitType.unit_name) = LOWER(:dumpTruckName)', {
               dumpTruckName: 'dump truck',
             });
-            console.log(
-              '✅ Filter applied: Hanya dump truck (case-insensitive)',
-            );
           } else if (isDt === false) {
             // Jika is_dt = false, hanya ambil excavator
-            console.log('🔍 Applying filter: is_dt = false (hanya excavator)');
+
             qb.andWhere('LOWER(unitType.unit_name) = LOWER(:excavatorName)', {
               excavatorName: 'excavator',
             });
-            console.log(
-              '✅ Filter applied: Hanya excavator (case-insensitive)',
-            );
           }
         } catch (error) {
           console.error('❌ Error applying is_dt filter:', error);
-          console.log('🔄 Fallback: Tidak ada filter is_dt');
         }
       } else {
         console.log('✅ No is_dt parameter provided: Getting all data');
-        console.log(
-          'Reason: isDt is null or undefined - showing all unit types',
-        );
       }
-      console.log('=== END DEBUG is_dt FILTER ===');
 
       // Filter by activities_id
       if (activitiesId) {
@@ -280,42 +221,21 @@ export class PopulationService {
       }
 
       // Validate sortBy field to prevent SQL injection
-      const allowedSortFields = [
-        'id',
-        'date_arrive',
-        'status',
-        'no_unit',
-        'vin_number',
-        'createdAt',
-        'updatedAt',
-      ];
+      const allowedSortFields = ['id', 'date_arrive', 'status', 'no_unit', 'vin_number', 'createdAt', 'updatedAt'];
       const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'id';
       const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
-      qb.orderBy(`population.${validSortBy}`, validSortOrder)
-        .skip(skip)
-        .take(limit);
+      qb.orderBy(`population.${validSortBy}`, validSortOrder).skip(skip).take(limit);
 
       // Log SQL query untuk debugging
       try {
         const sql = qb.getSql();
-        console.log('Generated SQL Query:', sql);
-        console.log('Query Parameters:', qb.getParameters());
       } catch (error) {
         console.error('Error getting SQL:', error);
       }
 
       const [result, total] = await qb.getManyAndCount();
 
-      // Log result untuk debugging
-      console.log('Query result:', {
-        totalRecords: total,
-        returnedRecords: result.length,
-        firstRecordUnitType: result[0]?.unitType?.unit_name || 'N/A',
-      });
-
-      // Transform result to DTO format
-      console.log(result[0]);
       const transformedResult = result.map((population) => ({
         id: population.id,
         date_arrive: population.date_arrive,
@@ -369,13 +289,7 @@ export class PopulationService {
           : undefined,
       }));
 
-      const response = paginateResponse(
-        transformedResult,
-        total,
-        page,
-        limit,
-        'Data population berhasil diambil',
-      );
+      const response = paginateResponse(transformedResult, total, page, limit, 'Data population berhasil diambil');
       return {
         statusCode: response.statusCode,
         message: response.message,
@@ -392,9 +306,7 @@ export class PopulationService {
     }
   }
 
-  async create(
-    data: CreatePopulationDto,
-  ): Promise<ApiResponse<PopulationResponseDto>> {
+  async create(data: CreatePopulationDto): Promise<ApiResponse<PopulationResponseDto>> {
     try {
       // Validate foreign key constraints
       const unitType = await this.unitTypeRepository.findOne({
@@ -513,10 +425,7 @@ export class PopulationService {
     }
   }
 
-  async update(
-    id: number,
-    updateDto: UpdatePopulationDto,
-  ): Promise<ApiResponse<PopulationResponseDto | null>> {
+  async update(id: number, updateDto: UpdatePopulationDto): Promise<ApiResponse<PopulationResponseDto | null>> {
     try {
       const population = await this.populationRepository.findOne({
         where: { id },
@@ -556,10 +465,7 @@ export class PopulationService {
       }
 
       // Check if VIN number already exists for other populations
-      if (
-        updateDto.vin_number &&
-        updateDto.vin_number !== population.vin_number
-      ) {
+      if (updateDto.vin_number && updateDto.vin_number !== population.vin_number) {
         const existingVin = await this.populationRepository.findOne({
           where: { vin_number: updateDto.vin_number, id: Not(id) },
         });
@@ -581,19 +487,13 @@ export class PopulationService {
       }
 
       // Check if no_unit_system already exists for other populations
-      if (
-        updateDto.no_unit_system &&
-        updateDto.no_unit_system !== population.no_unit_system
-      ) {
+      if (updateDto.no_unit_system && updateDto.no_unit_system !== population.no_unit_system) {
         const existingNoUnitSystem = await this.populationRepository.findOne({
           where: { no_unit_system: updateDto.no_unit_system, id: Not(id) },
         });
 
         if (existingNoUnitSystem) {
-          throwError(
-            'Nomor unit sistem sudah digunakan oleh population lain',
-            409,
-          );
+          throwError('Nomor unit sistem sudah digunakan oleh population lain', 409);
         }
       }
 
@@ -698,10 +598,7 @@ export class PopulationService {
         throw new BadRequestException('File tidak ditemukan');
       }
 
-      if (
-        !file.mimetype.includes('csv') &&
-        !file.originalname.endsWith('.csv')
-      ) {
+      if (!file.mimetype.includes('csv') && !file.originalname.endsWith('.csv')) {
         throw new BadRequestException('File harus berupa CSV');
       }
 
@@ -724,13 +621,9 @@ export class PopulationService {
       }
 
       // Tentukan status dan message berdasarkan hasil validasi
-      const hasErrors = validationResults.some(
-        (result) => result.status === 'error',
-      );
+      const hasErrors = validationResults.some((result) => result.status === 'error');
       const status = hasErrors ? 'error' : 'success';
-      const message = hasErrors
-        ? 'Terdapat data yang tidak valid'
-        : 'Semua data valid';
+      const message = hasErrors ? 'Terdapat data yang tidak valid' : 'Semua data valid';
 
       return {
         status,
@@ -751,10 +644,7 @@ export class PopulationService {
         throw new BadRequestException('File tidak ditemukan');
       }
 
-      if (
-        !file.mimetype.includes('csv') &&
-        !file.originalname.endsWith('.csv')
-      ) {
+      if (!file.mimetype.includes('csv') && !file.originalname.endsWith('.csv')) {
         throw new BadRequestException('File harus berupa CSV');
       }
 
@@ -818,15 +708,10 @@ export class PopulationService {
 
       // Jika ada error, buat file error dan return tanpa insert ke database
       if (errorRows.length > 0) {
-        this.logger.log(
-          `Found ${errorRows.length} rows with errors, generating error CSV...`,
-        );
+        this.logger.log(`Found ${errorRows.length} rows with errors, generating error CSV...`);
 
         try {
-          const errorCsvBuffer = await this.generateErrorCsv(
-            errorRows,
-            csvData,
-          );
+          const errorCsvBuffer = this.generateErrorCsv(errorRows, csvData);
           this.logger.log('Error CSV generated successfully');
 
           // Coba upload ke MinIO, jika gagal gunakan fallback
@@ -838,29 +723,19 @@ export class PopulationService {
             minioAvailable = await this.s3Service.testConnection();
 
             if (minioAvailable) {
-              errorFileInfo = await this.s3Service.uploadErrorFile(
-                `import_error_${Date.now()}.csv`,
-                errorCsvBuffer,
-              );
+              errorFileInfo = await this.s3Service.uploadErrorFile(`import_error_${Date.now()}.csv`, errorCsvBuffer);
 
               if (errorFileInfo) {
                 this.logger.log('Error file uploaded to MinIO successfully');
               } else {
-                this.logger.warn(
-                  'MinIO upload failed, using fallback response',
-                );
+                this.logger.warn('MinIO upload failed, using fallback response');
                 minioAvailable = false;
               }
             } else {
-              this.logger.warn(
-                'MinIO tidak tersedia, menggunakan fallback response',
-              );
+              this.logger.warn('MinIO tidak tersedia, menggunakan fallback response');
             }
           } catch (s3Error) {
-            this.logger.warn(
-              'MinIO error, menggunakan fallback response:',
-              s3Error.message,
-            );
+            this.logger.warn('MinIO error, menggunakan fallback response:', s3Error.message);
             minioAvailable = false;
           }
 
@@ -873,20 +748,15 @@ export class PopulationService {
               errorFileInfo && minioAvailable
                 ? {
                     download_url: errorFileInfo.downloadUrl,
-                    message:
-                      'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
+                    message: 'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
                   }
                 : {
                     download_url: null,
-                    message:
-                      'File error gagal diupload ke cloud storage. Silakan periksa data error di response details.',
+                    message: 'File error gagal diupload ke cloud storage. Silakan periksa data error di response details.',
                   },
           };
 
-          return successResponse(
-            response,
-            'Import dibatalkan karena ada data yang tidak valid',
-          );
+          return successResponse(response, 'Import dibatalkan karena ada data yang tidak valid');
         } catch (error) {
           this.logger.error('Error generating error CSV:', error);
           this.logger.error('Error stack:', error.stack);
@@ -899,15 +769,11 @@ export class PopulationService {
             details: importResults,
             error_file: {
               download_url: null,
-              message:
-                'Gagal generate file error. Silakan periksa data error di response details.',
+              message: 'Gagal generate file error. Silakan periksa data error di response details.',
             },
           };
 
-          return successResponse(
-            response,
-            'Import dibatalkan karena ada data yang tidak valid',
-          );
+          return successResponse(response, 'Import dibatalkan karena ada data yang tidak valid');
         }
       }
 
@@ -934,9 +800,7 @@ export class PopulationService {
         return successResponse(response, 'Data berhasil diimport');
       } catch (error) {
         await queryRunner.rollbackTransaction();
-        throw new InternalServerErrorException(
-          `Gagal import data: ${error.message}`,
-        );
+        throw new InternalServerErrorException(`Gagal import data: ${error.message}`);
       } finally {
         await queryRunner.release();
       }
@@ -948,25 +812,15 @@ export class PopulationService {
     }
   }
 
-  async downloadTemplate(): Promise<Buffer> {
+  downloadTemplate(): Buffer {
     try {
-      const fs = require('fs');
-      const path = require('path');
-
-      // Coba beberapa path yang mungkin
       const possiblePaths = [
         path.join(__dirname, 'template-population-import.csv'),
-        path.join(
-          process.cwd(),
-          'src/modules/population/template-population-import.csv',
-        ),
-        path.join(
-          process.cwd(),
-          'dist/modules/population/template-population-import.csv',
-        ),
+        path.join(process.cwd(), 'src/modules/population/template-population-import.csv'),
+        path.join(process.cwd(), 'dist/modules/population/template-population-import.csv'),
       ];
 
-      let templatePath = null;
+      let templatePath: string | null = null;
       for (const p of possiblePaths) {
         if (fs.existsSync(p)) {
           templatePath = p;
@@ -976,18 +830,13 @@ export class PopulationService {
 
       if (!templatePath) {
         console.error('Template paths tried:', possiblePaths);
-        throw new Error(
-          'Template CSV tidak ditemukan di semua lokasi yang mungkin',
-        );
+        throw new Error('Template CSV tidak ditemukan di semua lokasi yang mungkin');
       }
 
-      console.log('Template found at:', templatePath);
       return fs.readFileSync(templatePath);
     } catch (error) {
       console.error('Error downloading template:', error);
-      throw new InternalServerErrorException(
-        'Gagal download template CSV: ' + error.message,
-      );
+      throw new InternalServerErrorException('Gagal download template CSV: ' + error.message);
     }
   }
 
@@ -1000,9 +849,7 @@ export class PopulationService {
     }
   }
 
-  private async parseCsvFile(
-    buffer: Buffer,
-  ): Promise<ImportPopulationCsvRowDto[]> {
+  private async parseCsvFile(buffer: Buffer): Promise<ImportPopulationCsvRowDto[]> {
     return new Promise((resolve, reject) => {
       const results: ImportPopulationCsvRowDto[] = [];
       const stream = Readable.from(buffer);
@@ -1136,10 +983,7 @@ export class PopulationService {
     }
 
     // Validasi engine_brand
-    if (
-      row.engine_brand &&
-      !['cummins', 'weichai'].includes(row.engine_brand)
-    ) {
+    if (row.engine_brand && !['cummins', 'weichai'].includes(row.engine_brand)) {
       errors.push({
         field: 'engine_brand',
         message: 'Engine brand harus cummins atau weichai',
@@ -1241,9 +1085,7 @@ export class PopulationService {
         const error = errors[0];
         message = `Field "${error.field}" tidak valid: ${error.message}`;
       } else {
-        const errorDetails = errors
-          .map((err) => `"${err.field}": ${err.message}`)
-          .join(', ');
+        const errorDetails = errors.map((err) => `"${err.field}": ${err.message}`).join(', ');
         message = `${errors.length} field(s) tidak valid: ${errorDetails}`;
       }
     }
@@ -1306,17 +1148,10 @@ export class PopulationService {
 
   private isValidDate(dateString: string): boolean {
     const date = new Date(dateString);
-    return (
-      date instanceof Date &&
-      !isNaN(date.getTime()) &&
-      !!dateString.match(/^\d{4}-\d{2}-\d{2}$/)
-    );
+    return date instanceof Date && !isNaN(date.getTime()) && !!dateString.match(/^\d{4}-\d{2}-\d{2}$/);
   }
 
-  private async generateErrorCsv(
-    errorRows: any[],
-    originalData: ImportPopulationCsvRowDto[],
-  ): Promise<Buffer> {
+  private generateErrorCsv(errorRows: any[], originalData: ImportPopulationCsvRowDto[]): Buffer {
     try {
       // Header dengan kolom error
       const headers = [
@@ -1349,9 +1184,7 @@ export class PopulationService {
         const errors = errorRow.errors;
 
         // Gabungkan semua error message
-        const errorMessages = errors
-          .map((err) => `${err.field}: ${err.message}`)
-          .join('; ');
+        const errorMessages = errors.map((err) => `${err.field}: ${err.message}`).join('; ');
 
         const csvRow = [
           errorRow.row,

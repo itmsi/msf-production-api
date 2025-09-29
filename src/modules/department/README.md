@@ -26,9 +26,11 @@ Tabel `m_departments` memiliki field berikut:
 ## Endpoint API
 
 ### 1. GET /departments
+
 Mendapatkan semua data department dengan pagination, filtering, dan sorting.
 
 **Query Parameters:**
+
 - `page`: Nomor halaman (default: 1)
 - `limit`: Jumlah data per halaman (default: 10, max: 100)
 - `search`: Pencarian berdasarkan nama department
@@ -36,6 +38,7 @@ Mendapatkan semua data department dengan pagination, filtering, dan sorting.
 - `sortOrder`: Urutan sorting (ASC, DESC)
 
 **Response:**
+
 ```json
 {
   "statusCode": 200,
@@ -58,12 +61,15 @@ Mendapatkan semua data department dengan pagination, filtering, dan sorting.
 ```
 
 ### 2. GET /departments/:id
+
 Mendapatkan data department berdasarkan ID.
 
 **Path Parameters:**
+
 - `id`: ID department (number)
 
 **Response:**
+
 ```json
 {
   "statusCode": 200,
@@ -78,9 +84,11 @@ Mendapatkan data department berdasarkan ID.
 ```
 
 ### 3. POST /departments
+
 Membuat data department baru.
 
 **Request Body:**
+
 ```json
 {
   "name": "Human Resources"
@@ -88,6 +96,7 @@ Membuat data department baru.
 ```
 
 **Response:**
+
 ```json
 {
   "statusCode": 201,
@@ -102,12 +111,15 @@ Membuat data department baru.
 ```
 
 ### 4. PATCH /departments/:id
+
 Memperbarui data department yang sudah ada.
 
 **Path Parameters:**
+
 - `id`: ID department (number)
 
 **Request Body:**
+
 ```json
 {
   "name": "Human Resources Updated"
@@ -115,6 +127,7 @@ Memperbarui data department yang sudah ada.
 ```
 
 **Response:**
+
 ```json
 {
   "statusCode": 200,
@@ -129,12 +142,15 @@ Memperbarui data department yang sudah ada.
 ```
 
 ### 5. DELETE /departments/:id
+
 Menghapus data department (soft delete).
 
 **Path Parameters:**
+
 - `id`: ID department (number)
 
 **Response:**
+
 ```json
 {
   "statusCode": 200,
@@ -162,6 +178,7 @@ Menghapus data department (soft delete).
 ## Contoh Penggunaan
 
 ### Membuat Department Baru
+
 ```bash
 curl -X POST 'http://localhost:9526/api/departments' \
   -H 'Authorization: Bearer YOUR_TOKEN' \
@@ -170,18 +187,21 @@ curl -X POST 'http://localhost:9526/api/departments' \
 ```
 
 ### Mengambil Semua Department
+
 ```bash
 curl -X GET 'http://localhost:9526/api/departments?page=1&limit=10&search=IT' \
   -H 'Authorization: Bearer YOUR_TOKEN'
 ```
 
 ### Mengambil Department Berdasarkan ID
+
 ```bash
 curl -X GET 'http://localhost:9526/api/departments/1' \
   -H 'Authorization: Bearer YOUR_TOKEN'
 ```
 
 ### Memperbarui Department
+
 ```bash
 curl -X PATCH 'http://localhost:9526/api/departments/1' \
   -H 'Authorization: Bearer YOUR_TOKEN' \
@@ -190,6 +210,7 @@ curl -X PATCH 'http://localhost:9526/api/departments/1' \
 ```
 
 ### Menghapus Department
+
 ```bash
 curl -X DELETE 'http://localhost:9526/api/departments/1' \
   -H 'Authorization: Bearer YOUR_TOKEN'

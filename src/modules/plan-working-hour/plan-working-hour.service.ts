@@ -1,27 +1,12 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  Repository,
-  FindOptionsWhere,
-  IsNull,
-  Between,
-  MoreThanOrEqual,
-  LessThanOrEqual,
-} from 'typeorm';
+import { Repository, FindOptionsWhere, IsNull, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import { PlanWorkingHour } from './entities/plan-working-hour.entity';
 import { PlanWorkingHourDetail } from './entities/plan-working-hour-detail.entity';
 import { Activities } from '../activities/entities/activities.entity';
-import {
-  CreatePlanWorkingHourDto,
-  UpdatePlanWorkingHourDto,
-  QueryPlanWorkingHourDto,
-} from './dto/plan-working-hour.dto';
+import { CreatePlanWorkingHourDto, UpdatePlanWorkingHourDto, QueryPlanWorkingHourDto } from './dto/plan-working-hour.dto';
 import { paginateResponse } from '../../common/helpers/public.helper';
+import { ActivityStatus } from '../activities';
 
 @Injectable()
 export class PlanWorkingHourService {
@@ -48,9 +33,7 @@ export class PlanWorkingHourService {
             ? createDto.plan_date.toLocaleDateString('en-CA')
             : new Date(createDto.plan_date).toLocaleDateString('en-CA');
 
-        throw new BadRequestException(
-          `Data untuk tanggal ${planDateStr} sudah ada. Silakan gunakan tanggal yang berbeda.`,
-        );
+        throw new BadRequestException(`Data untuk tanggal ${planDateStr} sudah ada. Silakan gunakan tanggal yang berbeda.`);
       }
 
       const planDate = new Date(createDto.plan_date);
@@ -69,10 +52,8 @@ export class PlanWorkingHourService {
       };
 
       // Buat plan working hour
-      const planWorkingHour =
-        this.planWorkingHourRepository.create(planWorkingHourData);
-      const savedPlan =
-        await this.planWorkingHourRepository.save(planWorkingHour);
+      const planWorkingHour = this.planWorkingHourRepository.create(planWorkingHourData);
+      const savedPlan = await this.planWorkingHourRepository.save(planWorkingHour);
 
       // Buat detail records
       if (createDto.detail && createDto.detail.length > 0) {
@@ -93,9 +74,7 @@ export class PlanWorkingHourService {
         throw error;
       }
       console.error('Error in create plan working hour:', error);
-      throw new InternalServerErrorException(
-        `Gagal membuat plan working hour: ${error.message}`,
-      );
+      throw new InternalServerErrorException(`Gagal membuat plan working hour: ${error.message}`);
     }
   }
 
@@ -109,10 +88,7 @@ export class PlanWorkingHourService {
     // Date range filter
     if (queryDto.start_date || queryDto.end_date) {
       if (queryDto.start_date && queryDto.end_date) {
-        where.plan_date = Between(
-          new Date(queryDto.start_date),
-          new Date(queryDto.end_date),
-        );
+        where.plan_date = Between(new Date(queryDto.start_date), new Date(queryDto.end_date));
       } else if (queryDto.start_date) {
         where.plan_date = MoreThanOrEqual(new Date(queryDto.start_date));
       } else if (queryDto.end_date) {
@@ -189,47 +165,30 @@ export class PlanWorkingHourService {
 
       if (plan.details && plan.details.length > 0) {
         plan.details.forEach((detail) => {
-          if (detail.activities && detail.activities.status === 'delay') {
+          if (detail.activities && detail.activities.status === ActivityStatus.DELAY) {
             total_delay += detail.activities_hour || 0;
-          } else if (detail.activities && detail.activities.status === 'idle') {
+          } else if (detail.activities && detail.activities.status === ActivityStatus.IDLE) {
             total_idle += detail.activities_hour || 0;
-          } else if (
-            detail.activities &&
-            detail.activities.status === 'breakdown'
-          ) {
+          } else if (detail.activities && detail.activities.status === ActivityStatus.BREAKDOWN) {
             total_repair += detail.activities_hour || 0;
           }
         });
       }
 
       // Hitung EWH (Effective Working Hours)
-      const ewh =
-        Math.round(
-          (total_mohh - (total_delay + total_idle + total_repair)) * 100,
-        ) / 100;
+      const ewh = Math.round((total_mohh - (total_delay + total_idle + total_repair)) * 100) / 100;
 
       // Hitung PA (Production Availability)
-      const pa =
-        total_mohh > 0
-          ? Math.round(((ewh + total_delay + total_idle) / total_mohh) * 100) /
-            100
-          : 0;
+      const pa = total_mohh > 0 ? Math.round(((ewh + total_delay + total_idle) / total_mohh) * 100) / 100 : 0;
 
       // Hitung MA (Mechanical Availability)
-      const ma =
-        ewh + total_repair > 0
-          ? Math.round((ewh / (ewh + total_repair)) * 100) / 100
-          : 0;
+      const ma = ewh + total_repair > 0 ? Math.round((ewh / (ewh + total_repair)) * 100) / 100 : 0;
 
       // Hitung UA (Utilization Availability)
-      const ua =
-        ewh + total_delay + total_idle > 0
-          ? Math.round((ewh / (ewh + total_delay + total_idle)) * 100) / 100
-          : 0;
+      const ua = ewh + total_delay + total_idle > 0 ? Math.round((ewh / (ewh + total_delay + total_idle)) * 100) / 100 : 0;
 
       // Hitung EU (Equipment Utilization)
-      const eu =
-        total_mohh > 0 ? Math.round((ewh / total_mohh) * 100) / 100 : 0;
+      const eu = total_mohh > 0 ? Math.round((ewh / total_mohh) * 100) / 100 : 0;
 
       return {
         id: plan.id,
@@ -248,13 +207,7 @@ export class PlanWorkingHourService {
       };
     });
 
-    return paginateResponse(
-      processedData,
-      totalItems,
-      page,
-      limit,
-      'Plan working hours retrieved successfully',
-    );
+    return paginateResponse(processedData, totalItems, page, limit, 'Plan working hours retrieved successfully');
   }
 
   async findOne(id: number): Promise<any> {
@@ -284,16 +237,12 @@ export class PlanWorkingHourService {
     };
   }
 
-  async update(
-    id: number,
-    updateDto: UpdatePlanWorkingHourDto,
-  ): Promise<PlanWorkingHour> {
+  async update(id: number, updateDto: UpdatePlanWorkingHourDto): Promise<PlanWorkingHour> {
     const planWorkingHour = await this.findOne(id);
 
     // Update plan working hour
     Object.assign(planWorkingHour, updateDto);
-    const updatedPlan =
-      await this.planWorkingHourRepository.save(planWorkingHour);
+    const updatedPlan = await this.planWorkingHourRepository.save(planWorkingHour);
 
     // Update detail records jika ada
     if (updateDto.detail && updateDto.detail.length > 0) {
@@ -370,19 +319,13 @@ export class PlanWorkingHourService {
   }> {
     const plans = await this.findByDateRange(startDate, endDate);
 
-    const totalWorkingHours = plans.reduce(
-      (sum, plan) => sum + (plan.activities_hour || 0),
-      0,
-    );
+    const totalWorkingHours = plans.reduce((sum, plan) => sum + (plan.activities_hour || 0), 0);
 
-    const totalWorkingDays = plans.filter(
-      (plan) => plan.is_schedule_day && !plan.is_holiday_day,
-    ).length;
+    const totalWorkingDays = plans.filter((plan) => plan.is_schedule_day && !plan.is_holiday_day).length;
 
     const totalHolidayDays = plans.filter((plan) => plan.is_holiday_day).length;
 
-    const averageWorkingHoursPerDay =
-      totalWorkingDays > 0 ? totalWorkingHours / totalWorkingDays : 0;
+    const averageWorkingHoursPerDay = totalWorkingDays > 0 ? totalWorkingHours / totalWorkingDays : 0;
 
     return {
       totalWorkingHours,
@@ -438,13 +381,11 @@ export class PlanWorkingHourService {
 
     // Filter hanya status yang diinginkan: idle, delay, breakdown
     const allowedStatuses = ['idle', 'delay', 'breakdown'];
-    const filteredGroupedData = Object.entries(groupedData).filter(([status]) => 
-      allowedStatuses.includes(status.toLowerCase())
-    );
+    const filteredGroupedData = Object.entries(groupedData).filter(([status]) => allowedStatuses.includes(status.toLowerCase()));
 
     // Urutkan sesuai urutan yang diinginkan: idle, delay, breakdown
     const sortedGroupedData = filteredGroupedData.sort(([statusA], [statusB]) => {
-      const order = { 'idle': 0, 'delay': 1, 'breakdown': 2 };
+      const order = { idle: 0, delay: 1, breakdown: 2 };
       return order[statusA.toLowerCase()] - order[statusB.toLowerCase()];
     });
 

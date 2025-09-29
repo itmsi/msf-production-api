@@ -23,12 +23,8 @@ describe('ParentPlanWorkingHourController - Detail Endpoint', () => {
       ],
     }).compile();
 
-    controller = module.get<ParentPlanWorkingHourController>(
-      ParentPlanWorkingHourController,
-    );
-    service = module.get<ParentPlanWorkingHourService>(
-      ParentPlanWorkingHourService,
-    );
+    controller = module.get<ParentPlanWorkingHourController>(ParentPlanWorkingHourController);
+    service = module.get<ParentPlanWorkingHourService>(ParentPlanWorkingHourService);
   });
 
   it('should be defined', () => {
@@ -186,9 +182,7 @@ describe('ParentPlanWorkingHourController - Detail Endpoint', () => {
 
       expect(service.getDetailById).toHaveBeenCalledWith(id);
       expect(result.statusCode).toBe(200);
-      expect(result.message).toBe(
-        'Detail parent plan working hour berhasil diambil',
-      );
+      expect(result.message).toBe('Detail parent plan working hour berhasil diambil');
       expect(result.data).toEqual(mockResponse.data);
     });
   });

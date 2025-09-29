@@ -1,15 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsString,
-  IsNumber,
-  IsEnum,
-  IsOptional,
-  IsDateString,
-  MinLength,
-  MaxLength,
-  Min,
-  IsNumberString,
-} from 'class-validator';
+import { IsString, IsNumber, IsEnum, IsOptional, IsDateString, MinLength, MaxLength, Min, IsNumberString } from 'class-validator';
 
 export enum EmployeeStatus {
   ACTIVE = 'active',
@@ -295,17 +285,7 @@ export class GetEmployeesQueryDto {
 
   @ApiProperty({
     description: 'Field for sorting',
-    enum: [
-      'id',
-      'firstName',
-      'lastName',
-      'departmentId',
-      'position',
-      'nip',
-      'status',
-      'createdAt',
-      'updatedAt',
-    ],
+    enum: ['id', 'firstName', 'lastName', 'departmentId', 'position', 'nip', 'status', 'createdAt', 'updatedAt'],
     required: false,
     default: 'id',
   })

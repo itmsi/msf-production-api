@@ -10,16 +10,7 @@ import { Department } from '../department/entities/department.entity';
 import { S3Module } from '../../integrations/s3/s3.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      Population,
-      UnitType,
-      Activities,
-      Sites,
-      Department,
-    ]),
-    S3Module,
-  ],
+  imports: [TypeOrmModule.forFeature([Population, UnitType, Activities, Sites, Department]), S3Module],
   controllers: [PopulationController],
   providers: [PopulationService],
   exports: [PopulationService],

@@ -1,10 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  S3Client,
-  PutObjectCommand,
-  GetObjectCommand,
-} from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
@@ -13,39 +9,31 @@ export class S3Service {
   private readonly s3Client: S3Client;
   private readonly bucketName: string;
   private readonly region: string;
+  private readonly endpoint: string;
+  private readonly publicEndpoint: string;
 
   constructor(private configService: ConfigService) {
-    this.bucketName =
-      this.configService.get<string>('MINIO_BUCKET_NAME') || 'msf-production';
+    this.bucketName = this.configService.get<string>('MINIO_BUCKET_NAME') || 'msf-production';
     this.region = this.configService.get<string>('MINIO_REGION') || 'us-east-1';
-    const endpoint =
-      this.configService.get<string>('MINIO_ENDPOINT') ||
-      'http://localhost:9000';
-    const accessKey =
-      this.configService.get<string>('MINIO_ACCESS_KEY_ID') || 'minioadmin';
-    const secretKey =
-      this.configService.get<string>('MINIO_SECRET_ACCESS_KEY') || 'minioadmin';
+    this.endpoint = this.configService.get<string>('MINIO_ENDPOINT') || 'http://localhost:9000';
+    const accessKey = this.configService.get<string>('MINIO_ACCESS_KEY_ID') || 'minioadmin';
+    const secretKey = this.configService.get<string>('MINIO_SECRET_ACCESS_KEY') || 'minioadmin';
+    this.publicEndpoint = this.configService.get<string>('MINIO_PUBLIC_ENDPOINT') || '';
 
-    this.logger.log(
-      `Initializing S3Service with endpoint: ${endpoint}, bucket: ${this.bucketName}, region: ${this.region}`,
-    );
+    this.logger.log(`Initializing S3Service with endpoint: ${this.endpoint}, bucket: ${this.bucketName}, region: ${this.region}`);
 
     this.s3Client = new S3Client({
       region: this.region,
-      endpoint: endpoint,
+      endpoint: this.endpoint,
       credentials: {
         accessKeyId: accessKey,
         secretAccessKey: secretKey,
       },
-      forcePathStyle: true, // Required for MinIO
+      forcePathStyle: true,
     });
   }
 
-  async uploadFile(
-    key: string,
-    fileBuffer: Buffer,
-    contentType: string = 'text/csv',
-  ): Promise<string> {
+  async uploadFile(key: string, fileBuffer: Buffer, contentType: string = 'text/csv'): Promise<string> {
     try {
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
@@ -64,11 +52,15 @@ export class S3Service {
     }
   }
 
-  async generateDownloadUrl(
-    key: string,
-    expiresIn: number = 3600,
-  ): Promise<string> {
+  // Generate public URL langsung jika bucket public, fallback ke signed URL kalau private
+  async generateDownloadUrl(key: string, expiresIn: number = 3600): Promise<string> {
     try {
+      if (this.publicEndpoint) {
+        // bucket public → return public URL
+        return `${this.publicEndpoint}/${this.bucketName}/${key}`;
+      }
+
+      // bucket private → generate signed URL
       const command = new GetObjectCommand({
         Bucket: this.bucketName,
         Key: key,
@@ -98,14 +90,12 @@ export class S3Service {
       return { key, downloadUrl };
     } catch (error) {
       this.logger.error(`Failed to upload error file ${fileName}:`, error);
-      return null; // Return null instead of throwing error
+      return null;
     }
   }
 
-  // Method untuk test koneksi MinIO
   async testConnection(): Promise<boolean> {
     try {
-      // Coba list buckets untuk test koneksi
       const { ListBucketsCommand } = await import('@aws-sdk/client-s3');
       const command = new ListBucketsCommand({});
       await this.s3Client.send(command);

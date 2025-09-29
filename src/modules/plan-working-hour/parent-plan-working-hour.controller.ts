@@ -19,15 +19,7 @@ import {
   StreamableFile,
   InternalServerErrorException,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiBearerAuth,
-  ApiBody,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { ParentPlanWorkingHourService } from './parent-plan-working-hour.service';
 import {
   CreateParentPlanWorkingHourDto,
@@ -48,40 +40,29 @@ import { createReadStream } from 'fs';
 @Controller('parent-plan-working-hour')
 @UseGuards(JwtAuthGuard)
 export class ParentPlanWorkingHourController {
-  constructor(
-    private readonly parentPlanWorkingHourService: ParentPlanWorkingHourService,
-  ) {}
+  constructor(private readonly parentPlanWorkingHourService: ParentPlanWorkingHourService) {}
 
   @Get('export')
   @ApiOperation({
     summary: 'Export data Barge Form dari CSV',
-    description:
-      'Mengimport data Barge Form dari CSV ke database setelah validasi',
+    description: 'Mengimport data Barge Form dari CSV ke database setelah validasi',
   })
-  async exportData(
-    @Query() query: ExportParentPlanWorkingHourQueryDto,
-    @Res({ passthrough: false }) res: Response,
-  ) {
+  async exportData(@Query() query: ExportParentPlanWorkingHourQueryDto, @Res({ passthrough: false }) res: Response) {
     return await this.parentPlanWorkingHourService.exportData(query, res);
   }
 
   @Get('import/template')
   @ApiOperation({
     summary: 'Download template CSV untuk import Parent Plan Working Hour',
-    description:
-      'Mendownload template CSV yang berisi format kolom yang diperlukan',
+    description: 'Mendownload template CSV yang berisi format kolom yang diperlukan',
   })
   downloadTemplate(): StreamableFile {
     try {
-      const file = join(
-        process.cwd(),
-        'src/modules/plan-working-hour/template-parent-plan-working-hour.csv',
-      );
+      const file = join(process.cwd(), 'src/modules/plan-working-hour/template-parent-plan-working-hour.csv');
       const stream = createReadStream(file);
       return new StreamableFile(stream, {
         type: 'text/csv',
-        disposition:
-          'attachment; filename="template-parent-plan-working-hour.csv"',
+        disposition: 'attachment; filename="template-parent-plan-working-hour.csv"',
       });
     } catch (error) {
       throw new InternalServerErrorException('Failed to download CSV template');
@@ -193,11 +174,7 @@ export class ParentPlanWorkingHourController {
   })
   async create(@Body() createDto: CreateParentPlanWorkingHourDto) {
     const result = await this.parentPlanWorkingHourService.create(createDto);
-    return successResponse(
-      result,
-      'Parent plan working hour berhasil dibuat',
-      201,
-    );
+    return successResponse(result, 'Parent plan working hour berhasil dibuat', 201);
   }
 
   @Get()
@@ -278,8 +255,7 @@ export class ParentPlanWorkingHourController {
     },
   })
   async findAll(@Query() query: GetParentPlanWorkingHourQueryDto) {
-    const result =
-      await this.parentPlanWorkingHourService.findAllSummary(query);
+    const result = await this.parentPlanWorkingHourService.findAllSummary(query);
     return result;
   }
 
@@ -373,14 +349,10 @@ export class ParentPlanWorkingHourController {
   async getDetail(@Query() query: any) {
     // Manual validation untuk parameter optional
     if (query.start_date && isNaN(new Date(query.start_date).getTime())) {
-      throw new BadRequestException(
-        'start_date must be a valid date format (YYYY-MM-DD)',
-      );
+      throw new BadRequestException('start_date must be a valid date format (YYYY-MM-DD)');
     }
     if (query.end_date && isNaN(new Date(query.end_date).getTime())) {
-      throw new BadRequestException(
-        'end_date must be a valid date format (YYYY-MM-DD)',
-      );
+      throw new BadRequestException('end_date must be a valid date format (YYYY-MM-DD)');
     }
 
     const result = await this.parentPlanWorkingHourService.getDetail(query);
@@ -459,8 +431,7 @@ export class ParentPlanWorkingHourController {
   @Get('detail/:id')
   @ApiOperation({
     summary: 'Ambil Detail Parent Plan Working Hour by ID',
-    description:
-      'Mengambil detail data parent plan working hour berdasarkan ID dengan informasi lengkap activities dan metrics.',
+    description: 'Mengambil detail data parent plan working hour berdasarkan ID dengan informasi lengkap activities dan metrics.',
   })
   @ApiParam({
     name: 'id',
@@ -668,10 +639,7 @@ export class ParentPlanWorkingHourController {
   })
   async getDetailById(@Param('id', ParseIntPipe) id: number) {
     const result = await this.parentPlanWorkingHourService.getDetailById(id);
-    return successResponse(
-      result,
-      'Detail parent plan working hour berhasil diambil',
-    );
+    return successResponse(result, 'Detail parent plan working hour berhasil diambil');
   }
 
   @Get(':id')
@@ -822,25 +790,15 @@ export class ParentPlanWorkingHourController {
       },
     },
   })
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateDto: UpdateParentPlanWorkingHourSimpleDto,
-  ) {
-    const result = await this.parentPlanWorkingHourService.update(
-      id,
-      updateDto,
-    );
-    return successResponse(
-      result,
-      'Parent plan working hour berhasil diupdate',
-    );
+  async update(@Param('id', ParseIntPipe) id: number, @Body() updateDto: UpdateParentPlanWorkingHourSimpleDto) {
+    const result = await this.parentPlanWorkingHourService.update(id, updateDto);
+    return successResponse(result, 'Parent plan working hour berhasil diupdate');
   }
 
   @Patch('detail/:id')
   @ApiOperation({
     summary: 'Update Detail Parent Plan Working Hour',
-    description:
-      'Mengupdate data detail parent plan working hour berdasarkan ID (r_plan_working_hour dan r_plan_working_hour_detail)',
+    description: 'Mengupdate data detail parent plan working hour berdasarkan ID (r_plan_working_hour dan r_plan_working_hour_detail)',
   })
   @ApiParam({
     name: 'id',
@@ -924,26 +882,15 @@ export class ParentPlanWorkingHourController {
       },
     },
   })
-  async updateDetail(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateDto: Partial<UpdateDetailParentPlanWorkingHourDto>,
-  ) {
-    const result =
-      await this.parentPlanWorkingHourService.updateDetailByPlanWorkingHourId(
-        id,
-        updateDto,
-      );
-    return successResponse(
-      result,
-      'Detail parent plan working hour berhasil diupdate',
-    );
+  async updateDetail(@Param('id', ParseIntPipe) id: number, @Body() updateDto: Partial<UpdateDetailParentPlanWorkingHourDto>) {
+    const result = await this.parentPlanWorkingHourService.updateDetailByPlanWorkingHourId(id, updateDto);
+    return successResponse(result, 'Detail parent plan working hour berhasil diupdate');
   }
 
   @Delete(':id')
   @ApiOperation({
     summary: 'Hapus Parent Plan Working Hour',
-    description:
-      'Menghapus data parent plan working hour berdasarkan ID (soft delete)',
+    description: 'Menghapus data parent plan working hour berdasarkan ID (soft delete)',
   })
   @ApiParam({
     name: 'id',

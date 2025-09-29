@@ -1,11 +1,5 @@
 import { Body, Controller, Get, Post, Query, Req } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
 import {
   SpiderResponseDto,
@@ -33,10 +27,7 @@ import {
   HaulingSummaryResponseDto,
   TonnageResponseDto,
 } from './dto/ccr-dashboard.dto';
-import {
-  ApiResponse as ApiResponseDto,
-  successResponse,
-} from '../../common/helpers/response.helper';
+import { ApiResponse as ApiResponseDto, successResponse } from '../../common/helpers/response.helper';
 import { Request } from 'express';
 @ApiTags('Dashboard')
 @ApiBearerAuth('jwt')
@@ -47,8 +38,7 @@ export class DashboardController {
   @Get('spider')
   @ApiOperation({
     summary: 'Get spider chart data',
-    description:
-      'Retrieve data for spider chart with metrics CT, Prod, EWH, FR, and Speed',
+    description: 'Retrieve data for spider chart with metrics CT, Prod, EWH, FR, and Speed',
   })
   @ApiResponse({
     status: 200,
@@ -65,18 +55,14 @@ export class DashboardController {
     required: false,
     description: 'End date filter (YYYY-MM-DD)',
   })
-  async getSpiderData(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-  ) {
+  async getSpiderData(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
     return await this.dashboardService.getSpiderData(startDate, endDate);
   }
 
   @Get('mtd-achievment')
   @ApiOperation({
     summary: 'Get MTD achievement data',
-    description:
-      'Retrieve Month-to-Date achievement data for various activities',
+    description: 'Retrieve Month-to-Date achievement data for various activities',
   })
   @ApiResponse({
     status: 200,
@@ -95,18 +81,14 @@ export class DashboardController {
     description: 'End date for filtering (YYYY-MM-DD format)',
     example: '2025-01-31',
   })
-  async getMtdAchievement(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-  ) {
+  async getMtdAchievement(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
     return await this.dashboardService.getMtdAchievement(startDate, endDate);
   }
 
   @Get('hauling')
   @ApiOperation({
     summary: 'Get hauling data',
-    description:
-      'Retrieve daily hauling data with target, actual, and weather conditions',
+    description: 'Retrieve daily hauling data with target, actual, and weather conditions',
   })
   @ApiResponse({
     status: 200,
@@ -123,10 +105,7 @@ export class DashboardController {
     required: false,
     description: 'End date in YYYY-MM-DD format',
   })
-  async getHaulingData(
-    @Query('date_from') date_from?: string,
-    @Query('date_to') date_to?: string,
-  ) {
+  async getHaulingData(@Query('date_from') date_from?: string, @Query('date_to') date_to?: string) {
     return await this.dashboardService.getHaulingData(date_from, date_to);
   }
 
@@ -150,10 +129,7 @@ export class DashboardController {
     required: false,
     description: 'End date (YYYY-MM-DD)',
   })
-  async getBargeData(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-  ) {
+  async getBargeData(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
     const result = await this.dashboardService.getBargeData(startDate, endDate);
     return successResponse(result, 'Data barge berhasil diambil', 200);
   }
@@ -161,8 +137,7 @@ export class DashboardController {
   @Get('tmm')
   @ApiOperation({
     summary: 'Get TMM data',
-    description:
-      'Retrieve Total Material Movement (TMM) daily data based on analysis hauling barging table',
+    description: 'Retrieve Total Material Movement (TMM) daily data based on analysis hauling barging table',
   })
   @ApiQuery({
     name: 'startDate',
@@ -181,10 +156,7 @@ export class DashboardController {
     description: 'Successfully retrieved TMM data',
     type: TmmResponseDto,
   })
-  async getTmmData(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-  ) {
+  async getTmmData(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
     return await this.dashboardService.getTmmData(startDate, endDate);
   }
 
@@ -214,10 +186,7 @@ export class DashboardController {
     description: 'End date in YYYY-MM-DD format',
     example: '2024-01-31',
   })
-  async getLostTimeData(
-    @Query('date_from') date_from?: string,
-    @Query('date_to') date_to?: string,
-  ) {
+  async getLostTimeData(@Query('date_from') date_from?: string, @Query('date_to') date_to?: string) {
     return await this.dashboardService.getLostTimeData(date_from, date_to);
   }
 
@@ -244,21 +213,16 @@ export class DashboardController {
   @ApiQuery({
     name: 'selectedDate',
     required: false,
-    description:
-      'Selected date for filtering (YYYY-MM-DD format). Defaults to today if not provided.',
+    description: 'Selected date for filtering (YYYY-MM-DD format). Defaults to today if not provided.',
     example: '2025-09-15',
   })
   @ApiQuery({
     name: 'shift',
     required: false,
-    description:
-      'Shift filter (DS for Day Shift, NS for Night Shift). If not provided, returns data for both shifts.',
+    description: 'Shift filter (DS for Day Shift, NS for Night Shift). If not provided, returns data for both shifts.',
     example: 'DS',
   })
-  async getDailyAchievement(
-    @Query('selectedDate') selectedDate?: string,
-    @Query('shift') shift?: string,
-  ) {
+  async getDailyAchievement(@Query('selectedDate') selectedDate?: string, @Query('shift') shift?: string) {
     return await this.dashboardService.getDailyAchievement(selectedDate, shift);
   }
 
@@ -285,8 +249,7 @@ export class DashboardController {
   @Get('barge-status')
   @ApiOperation({
     summary: 'Get barge status data',
-    description:
-      'Retrieve barge status with barging ore, list, and gain lost data',
+    description: 'Retrieve barge status with barging ore, list, and gain lost data',
   })
   @ApiQuery({
     name: 'month',
@@ -306,8 +269,7 @@ export class DashboardController {
   @Get('monthly/status')
   @ApiOperation({
     summary: 'Get monthly status data',
-    description:
-      'Retrieve monthly status data for various activities with progress charts',
+    description: 'Retrieve monthly status data for various activities with progress charts',
   })
   @ApiQuery({
     name: 'month',
@@ -326,8 +288,7 @@ export class DashboardController {
   @Get('monthly/trend-hauling-barging')
   @ApiOperation({
     summary: 'Get monthly trend hauling barging data',
-    description:
-      'Retrieve monthly trend data for hauling and barging with weather conditions',
+    description: 'Retrieve monthly trend data for hauling and barging with weather conditions',
   })
   @ApiQuery({
     name: 'month',
@@ -346,8 +307,7 @@ export class DashboardController {
   @Get('monthly/trend-fuel-ratio')
   @ApiOperation({
     summary: 'Get monthly trend fuel ratio data',
-    description:
-      'Retrieve monthly trend data for fuel ratio (FR) and specific ratio (SR)',
+    description: 'Retrieve monthly trend data for fuel ratio (FR) and specific ratio (SR)',
   })
   @ApiQuery({
     name: 'month',
@@ -366,8 +326,7 @@ export class DashboardController {
   @Get('monthly/trend-performance-unit')
   @ApiOperation({
     summary: 'Get monthly trend performance unit data',
-    description:
-      'Retrieve monthly trend data for performance metrics (PA, MA, UA, EU)',
+    description: 'Retrieve monthly trend data for performance metrics (PA, MA, UA, EU)',
   })
   @ApiQuery({
     name: 'month',
@@ -394,52 +353,35 @@ export class DashboardController {
   @Get('hauling-summary')
   @ApiOperation({
     summary: 'Get hauling summary data',
-    description:
-      'Retrieve hauling summary data with attendance, chart summary, and working hours',
+    description: 'Retrieve hauling summary data with attendance, chart summary, and working hours',
   })
   @ApiResponse({
     status: 200,
     description: 'Successfully retrieved hauling summary data',
     type: HaulingSummaryResponseDto,
   })
-  async getHaulingSummary(
-    @Query('date') date?: string,
-    @Query('shift') shift?: string,
-  ): Promise<HaulingSummaryResponseDto> {
-    return await this.dashboardService.getHaulingSummary(
-      date,
-      shift?.toLowerCase(),
-    );
+  async getHaulingSummary(@Query('date') date?: string, @Query('shift') shift?: string): Promise<HaulingSummaryResponseDto> {
+    return await this.dashboardService.getHaulingSummary(date, shift?.toLowerCase());
   }
 
   @Get('ccr/fleet-status')
   @ApiOperation({
     summary: 'Get CCR fleet status data',
-    description:
-      'Retrieve CCR fleet status data with fleet information, loading points, and tonnage details',
+    description: 'Retrieve CCR fleet status data with fleet information, loading points, and tonnage details',
   })
   @ApiResponse({
     status: 200,
     description: 'Successfully retrieved CCR fleet status data',
     type: FleetStatusResponseDto,
   })
-  getFleetStatus(
-    @Query('type') type: string,
-    @Query('date') selectedDate?: string,
-    @Query('shift') shift?: string,
-  ) {
-    return this.dashboardService.getMockFleetStatus(
-      type,
-      selectedDate,
-      shift?.toLowerCase(),
-    );
+  getFleetStatus(@Query('type') type: string, @Query('date') selectedDate?: string, @Query('shift') shift?: string) {
+    return this.dashboardService.getMockFleetStatus(type, selectedDate, shift?.toLowerCase());
   }
 
   @Post('ccr/tonnage')
   @ApiOperation({
     summary: 'Get CCR tonnage data',
-    description:
-      'Retrieve CCR tonnage data with hourly chart and unit metadata',
+    description: 'Retrieve CCR tonnage data with hourly chart and unit metadata',
   })
   @ApiResponse({
     status: 200,
@@ -469,8 +411,7 @@ export class DashboardController {
   @Get('ccr/barging-summary')
   @ApiOperation({
     summary: 'Get CCR barging summary data',
-    description:
-      'Retrieve CCR barging summary data with unit running, tonnage, and vessel metrics',
+    description: 'Retrieve CCR barging summary data with unit running, tonnage, and vessel metrics',
   })
   @ApiResponse({
     status: 200,
@@ -478,9 +419,7 @@ export class DashboardController {
     type: BargingSummaryResponseDto,
   })
   @ApiQuery({ name: 'date', type: String, example: '2025-09-01' })
-  async getBargingSummary(
-    @Query('date') date: string,
-  ): Promise<BargingSummaryResponseDto> {
+  async getBargingSummary(@Query('date') date: string): Promise<BargingSummaryResponseDto> {
     return await this.dashboardService.getMockBargingSummary(date);
   }
 
@@ -501,8 +440,7 @@ export class DashboardController {
   @Get('lost-time-summary')
   @ApiOperation({
     summary: 'Get lost time summary data',
-    description:
-      'Retrieve lost time summary data with MOHH, lost time activities, and performance tables (PA, MA, UA, EU)',
+    description: 'Retrieve lost time summary data with MOHH, lost time activities, and performance tables (PA, MA, UA, EU)',
   })
   @ApiQuery({
     name: 'startDate',

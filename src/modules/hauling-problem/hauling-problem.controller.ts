@@ -15,24 +15,10 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-  ApiQuery,
-  ApiConsumes,
-  ApiBody,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
 import { HaulingProblemService } from './hauling-problem.service';
-import {
-  CreateHaulingProblemDto,
-  UpdateHaulingProblemDto,
-  HaulingProblemResponseDto,
-  GetHaulingProblemQueryDto,
-} from './dto';
+import { CreateHaulingProblemDto, UpdateHaulingProblemDto, HaulingProblemResponseDto, GetHaulingProblemQueryDto } from './dto';
 import { createReadStream } from 'fs';
 import { join } from 'path';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -49,21 +35,16 @@ export class HaulingProblemController {
   @Get('export')
   @ApiOperation({
     summary: 'Export data Fuel consumption dari CSV',
-    description:
-      'Mengimport data Fuel consumption dari CSV ke database setelah validasi',
+    description: 'Mengimport data Fuel consumption dari CSV ke database setelah validasi',
   })
-  async exportData(
-    @Query() query: GetHaulingProblemQueryDto,
-    @Res({ passthrough: false }) res: Response,
-  ) {
+  async exportData(@Query() query: GetHaulingProblemQueryDto, @Res({ passthrough: false }) res: Response) {
     return await this.haulingProblemService.exportData(query, res);
   }
 
   @Post()
   @ApiOperation({
     summary: 'Membuat data hauling problem baru',
-    description:
-      'Endpoint untuk membuat data hauling problem baru dengan validasi lengkap',
+    description: 'Endpoint untuk membuat data hauling problem baru dengan validasi lengkap',
   })
   @ApiResponse({
     status: 201,
@@ -110,8 +91,7 @@ export class HaulingProblemController {
   @Get()
   @ApiOperation({
     summary: 'Mengambil semua data hauling problem',
-    description:
-      'Endpoint untuk mengambil data hauling problem dengan pagination, filtering, dan sorting',
+    description: 'Endpoint untuk mengambil data hauling problem dengan pagination, filtering, dan sorting',
   })
   @ApiQuery({
     name: 'page',
@@ -134,15 +114,13 @@ export class HaulingProblemController {
   @ApiQuery({
     name: 'start_date',
     required: false,
-    description:
-      'Filter berdasarkan tanggal mulai aktivitas (format: YYYY-MM-DD)',
+    description: 'Filter berdasarkan tanggal mulai aktivitas (format: YYYY-MM-DD)',
     type: String,
   })
   @ApiQuery({
     name: 'end_date',
     required: false,
-    description:
-      'Filter berdasarkan tanggal akhir aktivitas (format: YYYY-MM-DD)',
+    description: 'Filter berdasarkan tanggal akhir aktivitas (format: YYYY-MM-DD)',
     type: String,
   })
   @ApiQuery({
@@ -172,8 +150,7 @@ export class HaulingProblemController {
   @ApiQuery({
     name: 'sortBy',
     required: false,
-    description:
-      'Field untuk sorting (id, activityDate, shift, start, finish, duration, createdAt, updatedAt)',
+    description: 'Field untuk sorting (id, activityDate, shift, start, finish, duration, createdAt, updatedAt)',
     type: String,
   })
   @ApiQuery({
@@ -234,8 +211,7 @@ export class HaulingProblemController {
   @Get(':id')
   @ApiOperation({
     summary: 'Mengambil data hauling problem berdasarkan ID',
-    description:
-      'Endpoint untuk mengambil data hauling problem berdasarkan ID tertentu',
+    description: 'Endpoint untuk mengambil data hauling problem berdasarkan ID tertentu',
   })
   @ApiParam({
     name: 'id',
@@ -299,8 +275,7 @@ export class HaulingProblemController {
   @Put(':id')
   @ApiOperation({
     summary: 'Mengupdate data hauling problem',
-    description:
-      'Endpoint untuk mengupdate data hauling problem berdasarkan ID',
+    description: 'Endpoint untuk mengupdate data hauling problem berdasarkan ID',
   })
   @ApiParam({
     name: 'id',
@@ -350,18 +325,14 @@ export class HaulingProblemController {
     status: 500,
     description: 'Internal Server Error',
   })
-  async update(
-    @Param('id') id: number,
-    @Body() updateDto: UpdateHaulingProblemDto,
-  ) {
+  async update(@Param('id') id: number, @Body() updateDto: UpdateHaulingProblemDto) {
     return this.haulingProblemService.update(id, updateDto);
   }
 
   @Delete(':id')
   @ApiOperation({
     summary: 'Menghapus data hauling problem',
-    description:
-      'Endpoint untuk menghapus data hauling problem berdasarkan ID (soft delete)',
+    description: 'Endpoint untuk menghapus data hauling problem berdasarkan ID (soft delete)',
   })
   @ApiParam({
     name: 'id',
@@ -404,20 +375,15 @@ export class HaulingProblemController {
   @Get('import/template')
   @ApiOperation({
     summary: 'Download template CSV untuk import Fuel Consumption Data',
-    description:
-      'Mendownload template CSV yang berisi format kolom yang diperlukan',
+    description: 'Mendownload template CSV yang berisi format kolom yang diperlukan',
   })
   downloadTemplate(): StreamableFile {
     try {
-      const file = join(
-        process.cwd(),
-        'src/modules/hauling-problem/template-hauling-problem-import.csv',
-      );
+      const file = join(process.cwd(), 'src/modules/hauling-problem/template-hauling-problem-import.csv');
       const stream = createReadStream(file);
       return new StreamableFile(stream, {
         type: 'text/csv',
-        disposition:
-          'attachment; filename="template-hauling-problem-import.csv"',
+        disposition: 'attachment; filename="template-hauling-problem-import.csv"',
       });
     } catch (error) {
       throw new InternalServerErrorException('Failed to download CSV template');
@@ -434,8 +400,7 @@ export class HaulingProblemController {
   })
   @ApiOperation({
     summary: 'Import data Hauling CCR  dari CSV',
-    description:
-      'Mengimport data Hauling CCR dari CSV ke database setelah validasi',
+    description: 'Mengimport data Hauling CCR dari CSV ke database setelah validasi',
   })
   importData(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
     const userId = req.user?.id;

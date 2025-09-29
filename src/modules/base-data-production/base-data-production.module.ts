@@ -11,18 +11,7 @@ import { Users } from '../users/entities/users.entity';
 import { S3Module } from 'src/integrations/s3/s3.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      ParentBaseDataPro,
-      BaseDataPro,
-      Population,
-      Employee,
-      Barge,
-      OperationPoints,
-      Users,
-    ]),
-    S3Module,
-  ],
+  imports: [TypeOrmModule.forFeature([ParentBaseDataPro, BaseDataPro, Population, Employee, Barge, OperationPoints, Users]), S3Module],
   controllers: [BaseDataProductionController],
   providers: [BaseDataProductionService],
   exports: [BaseDataProductionService],

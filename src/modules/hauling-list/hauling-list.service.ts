@@ -1,11 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  InternalServerErrorException,
-  HttpException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException, HttpException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, QueryFailedError, DataSource } from 'typeorm';
 import { HaulingList } from './entities/hauling-list.entity';
@@ -25,20 +18,13 @@ import {
   paginateResponse,
   setCsvExportHeaders,
 } from '../../common/helpers/public.helper';
-import {
-  ApiResponse,
-  successResponse,
-  throwError,
-} from '../../common/helpers/response.helper';
+import { ApiResponse, successResponse, throwError } from '../../common/helpers/response.helper';
 import { OperationPoints } from '../operation-points/entities/operation-points.entity';
 import { Sites } from '../sites/entities/sites.entity';
 import { calculateTimeRange } from '../../common/helpers/public.helper';
 import { S3Service } from 'src/integrations/s3/s3.service';
 import moment from 'moment';
-import {
-  ImportHaulingListCsvRowDto,
-  ImportHaulingListItemDto,
-} from './dto/import-hauling-list.dto';
+import { ImportHaulingListCsvRowDto, ImportHaulingListItemDto } from './dto/import-hauling-list.dto';
 import { Readable } from 'stream';
 import { ImportFuelConsumptionCsvRowDto } from '../fuel-consumption/dto/import-fuel-consumption.dto';
 import csv from 'csv-parser';
@@ -96,15 +82,10 @@ export class HaulingListService {
         totalTonnage,
       });
 
-      const savedHaulingList =
-        await this.haulingListRepository.save(haulingList);
+      const savedHaulingList = await this.haulingListRepository.save(haulingList);
       const responseData = this.mapToResponseDto(savedHaulingList);
 
-      return successResponse(
-        responseData,
-        'Data hauling list berhasil dibuat',
-        201,
-      );
+      return successResponse(responseData, 'Data hauling list berhasil dibuat', 201);
     } catch (error) {
       if (error instanceof QueryFailedError) {
         // Handle foreign key constraint violation
@@ -112,25 +93,13 @@ export class HaulingListService {
           // Cek constraint name dari error message
           let errorMessage = 'Foreign key constraint violation: ';
 
-          if (
-            error.message.includes('unit_loading_id') ||
-            error.message.includes('FK_051101fec7de6360d38ad097376')
-          ) {
+          if (error.message.includes('unit_loading_id') || error.message.includes('FK_051101fec7de6360d38ad097376')) {
             errorMessage += `Unit loading dengan ID ${createHaulingListDto.unit_loading_id} tidak ditemukan di tabel m_population`;
-          } else if (
-            error.message.includes('unit_hauler_id') ||
-            error.message.includes('FK_b304210148a3d9e3a3c368989a9')
-          ) {
+          } else if (error.message.includes('unit_hauler_id') || error.message.includes('FK_b304210148a3d9e3a3c368989a9')) {
             errorMessage += `Unit hauler dengan ID ${createHaulingListDto.unit_hauler_id} tidak ditemukan di tabel m_population`;
-          } else if (
-            error.message.includes('loading_point_id') ||
-            error.message.includes('FK_b2d534020f293f5784f7d2ae181')
-          ) {
+          } else if (error.message.includes('loading_point_id') || error.message.includes('FK_b2d534020f293f5784f7d2ae181')) {
             errorMessage += `Loading point dengan ID ${createHaulingListDto.loading_point_id} tidak ditemukan di tabel m_operation_points`;
-          } else if (
-            error.message.includes('dumping_point_op_id') ||
-            error.message.includes('fk_r_ccr_hauling_dumping_point_op_id')
-          ) {
+          } else if (error.message.includes('dumping_point_op_id') || error.message.includes('fk_r_ccr_hauling_dumping_point_op_id')) {
             errorMessage += `Dumping point operation dengan ID ${createHaulingListDto.dumping_point_op_id} tidak ditemukan di tabel m_operation_points`;
           } else if (
             error.message.includes('dumping_point_barge_id') ||
@@ -140,26 +109,13 @@ export class HaulingListService {
           } else {
             // Fallback: cek berdasarkan field yang dikirim
             const missingFields: string[] = [];
-            if (createHaulingListDto.unit_loading_id)
-              missingFields.push(
-                `unit_loading_id: ${createHaulingListDto.unit_loading_id}`,
-              );
-            if (createHaulingListDto.unit_hauler_id)
-              missingFields.push(
-                `unit_hauler_id: ${createHaulingListDto.unit_hauler_id}`,
-              );
-            if (createHaulingListDto.loading_point_id)
-              missingFields.push(
-                `loading_point_id: ${createHaulingListDto.loading_point_id}`,
-              );
+            if (createHaulingListDto.unit_loading_id) missingFields.push(`unit_loading_id: ${createHaulingListDto.unit_loading_id}`);
+            if (createHaulingListDto.unit_hauler_id) missingFields.push(`unit_hauler_id: ${createHaulingListDto.unit_hauler_id}`);
+            if (createHaulingListDto.loading_point_id) missingFields.push(`loading_point_id: ${createHaulingListDto.loading_point_id}`);
             if (createHaulingListDto.dumping_point_op_id)
-              missingFields.push(
-                `dumping_point_op_id: ${createHaulingListDto.dumping_point_op_id}`,
-              );
+              missingFields.push(`dumping_point_op_id: ${createHaulingListDto.dumping_point_op_id}`);
             if (createHaulingListDto.dumping_point_barge_id)
-              missingFields.push(
-                `dumping_point_barge_id: ${createHaulingListDto.dumping_point_barge_id}`,
-              );
+              missingFields.push(`dumping_point_barge_id: ${createHaulingListDto.dumping_point_barge_id}`);
 
             errorMessage += `Referensi data tidak valid. Field yang bermasalah: ${missingFields.join(', ')}. Silakan periksa ID yang dikirim`;
           }
@@ -169,9 +125,7 @@ export class HaulingListService {
 
         // Handle other database errors
         if (error.message.includes('duplicate key')) {
-          throw new BadRequestException(
-            'Data dengan informasi yang sama sudah ada',
-          );
+          throw new BadRequestException('Data dengan informasi yang sama sudah ada');
         }
 
         throw new BadRequestException(`Database error: ${error.message}`);
@@ -202,20 +156,14 @@ export class HaulingListService {
 
     // Apply date range filters
     if (filters.start_date && filters.end_date) {
-      queryBuilder.andWhere(
-        'CAST(hauling.activityDate AS DATE) BETWEEN :start_date AND :end_date',
-        {
-          start_date: filters.start_date,
-          end_date: filters.end_date,
-        },
-      );
+      queryBuilder.andWhere('CAST(hauling.activityDate AS DATE) BETWEEN :start_date AND :end_date', {
+        start_date: filters.start_date,
+        end_date: filters.end_date,
+      });
     } else if (filters.start_date) {
-      queryBuilder.andWhere(
-        'CAST(hauling.activityDate AS DATE) >= :start_date',
-        {
-          start_date: filters.start_date,
-        },
-      );
+      queryBuilder.andWhere('CAST(hauling.activityDate AS DATE) >= :start_date', {
+        start_date: filters.start_date,
+      });
     } else if (filters.end_date) {
       queryBuilder.andWhere('CAST(hauling.activityDate AS DATE) <= :end_date', {
         end_date: filters.end_date,
@@ -259,31 +207,17 @@ export class HaulingListService {
     // Map to response DTOs
     const mappedData = data.map((item) => this.mapToResponseDto(item));
 
-    return paginateResponse(
-      mappedData,
-      total,
-      page,
-      limit,
-      'Data hauling list berhasil diambil',
-    );
+    return paginateResponse(mappedData, total, page, limit, 'Data hauling list berhasil diambil');
   }
 
   async findOne(id: number): Promise<any> {
     const haulingList = await this.haulingListRepository.findOne({
       where: { id },
-      relations: [
-        'unitLoading',
-        'unitHauler',
-        'loadingPoint',
-        'dumpingPointOp',
-        'dumpingPointBarge',
-      ],
+      relations: ['unitLoading', 'unitHauler', 'loadingPoint', 'dumpingPointOp', 'dumpingPointBarge'],
     });
 
     if (!haulingList) {
-      throw new NotFoundException(
-        `Hauling list dengan ID ${id} tidak ditemukan`,
-      );
+      throw new NotFoundException(`Hauling list dengan ID ${id} tidak ditemukan`);
     }
 
     const responseData = this.mapToResponseDto(haulingList);
@@ -291,19 +225,14 @@ export class HaulingListService {
     return successResponse(responseData, 'Data hauling list berhasil diambil');
   }
 
-  async update(
-    id: number,
-    updateHaulingListDto: UpdateHaulingListDto,
-  ): Promise<any> {
+  async update(id: number, updateHaulingListDto: UpdateHaulingListDto): Promise<any> {
     try {
       const haulingList = await this.haulingListRepository.findOne({
         where: { id },
       });
 
       if (!haulingList) {
-        throw new NotFoundException(
-          `Hauling list dengan ID ${id} tidak ditemukan`,
-        );
+        throw new NotFoundException(`Hauling list dengan ID ${id} tidak ditemukan`);
       }
 
       // Mapping DTO ke entity dengan field yang benar
@@ -342,8 +271,7 @@ export class HaulingListService {
       }
 
       if (updateHaulingListDto.dumping_point_barge_id !== undefined) {
-        updateData.dumpingPointBargeId =
-          updateHaulingListDto.dumping_point_barge_id;
+        updateData.dumpingPointBargeId = updateHaulingListDto.dumping_point_barge_id;
       }
 
       if (updateHaulingListDto.vessel !== undefined) {
@@ -357,27 +285,16 @@ export class HaulingListService {
 
       const updatedHaulingList = await this.haulingListRepository.findOne({
         where: { id },
-        relations: [
-          'unitLoading',
-          'unitHauler',
-          'loadingPoint',
-          'dumpingPointOp',
-          'dumpingPointBarge',
-        ],
+        relations: ['unitLoading', 'unitHauler', 'loadingPoint', 'dumpingPointOp', 'dumpingPointBarge'],
       });
 
       if (!updatedHaulingList) {
-        throw new NotFoundException(
-          `Hauling list dengan ID ${id} tidak ditemukan setelah update`,
-        );
+        throw new NotFoundException(`Hauling list dengan ID ${id} tidak ditemukan setelah update`);
       }
 
       const responseData = this.mapToResponseDto(updatedHaulingList);
 
-      return successResponse(
-        responseData,
-        'Data hauling list berhasil diupdate',
-      );
+      return successResponse(responseData, 'Data hauling list berhasil diupdate');
     } catch (error) {
       if (error instanceof QueryFailedError) {
         // Handle foreign key constraint violation
@@ -385,25 +302,13 @@ export class HaulingListService {
           // Cek constraint name dari error message
           let errorMessage = 'Foreign key constraint violation: ';
 
-          if (
-            error.message.includes('unit_loading_id') ||
-            error.message.includes('FK_051101fec7de6360d38ad097376')
-          ) {
+          if (error.message.includes('unit_loading_id') || error.message.includes('FK_051101fec7de6360d38ad097376')) {
             errorMessage += `Unit loading dengan ID ${updateHaulingListDto.unit_loading_id} tidak ditemukan di tabel m_population`;
-          } else if (
-            error.message.includes('unit_hauler_id') ||
-            error.message.includes('FK_b304210148a3d9e3a3c368989a9')
-          ) {
+          } else if (error.message.includes('unit_hauler_id') || error.message.includes('FK_b304210148a3d9e3a3c368989a9')) {
             errorMessage += `Unit hauler dengan ID ${updateHaulingListDto.unit_hauler_id} tidak ditemukan di tabel m_population`;
-          } else if (
-            error.message.includes('loading_point_id') ||
-            error.message.includes('FK_b2d534020f293f5784f7d2ae181')
-          ) {
+          } else if (error.message.includes('loading_point_id') || error.message.includes('FK_b2d534020f293f5784f7d2ae181')) {
             errorMessage += `Loading point dengan ID ${updateHaulingListDto.loading_point_id} tidak ditemukan di tabel m_operation_points`;
-          } else if (
-            error.message.includes('dumping_point_op_id') ||
-            error.message.includes('fk_r_ccr_hauling_dumping_point_op_id')
-          ) {
+          } else if (error.message.includes('dumping_point_op_id') || error.message.includes('fk_r_ccr_hauling_dumping_point_op_id')) {
             errorMessage += `Dumping point operation dengan ID ${updateHaulingListDto.dumping_point_op_id} tidak ditemukan di tabel m_operation_points`;
           } else if (
             error.message.includes('dumping_point_barge_id') ||
@@ -413,26 +318,13 @@ export class HaulingListService {
           } else {
             // Fallback: cek berdasarkan field yang dikirim
             const missingFields: string[] = [];
-            if (updateHaulingListDto.unit_loading_id)
-              missingFields.push(
-                `unit_loading_id: ${updateHaulingListDto.unit_loading_id}`,
-              );
-            if (updateHaulingListDto.unit_hauler_id)
-              missingFields.push(
-                `unit_hauler_id: ${updateHaulingListDto.unit_hauler_id}`,
-              );
-            if (updateHaulingListDto.loading_point_id)
-              missingFields.push(
-                `loading_point_id: ${updateHaulingListDto.loading_point_id}`,
-              );
+            if (updateHaulingListDto.unit_loading_id) missingFields.push(`unit_loading_id: ${updateHaulingListDto.unit_loading_id}`);
+            if (updateHaulingListDto.unit_hauler_id) missingFields.push(`unit_hauler_id: ${updateHaulingListDto.unit_hauler_id}`);
+            if (updateHaulingListDto.loading_point_id) missingFields.push(`loading_point_id: ${updateHaulingListDto.loading_point_id}`);
             if (updateHaulingListDto.dumping_point_op_id)
-              missingFields.push(
-                `dumping_point_op_id: ${updateHaulingListDto.dumping_point_op_id}`,
-              );
+              missingFields.push(`dumping_point_op_id: ${updateHaulingListDto.dumping_point_op_id}`);
             if (updateHaulingListDto.dumping_point_barge_id)
-              missingFields.push(
-                `dumping_point_barge_id: ${updateHaulingListDto.dumping_point_barge_id}`,
-              );
+              missingFields.push(`dumping_point_barge_id: ${updateHaulingListDto.dumping_point_barge_id}`);
 
             errorMessage += `Referensi data tidak valid. Field yang bermasalah: ${missingFields.join(', ')}. Silakan periksa ID yang dikirim`;
           }
@@ -454,9 +346,7 @@ export class HaulingListService {
     });
 
     if (!haulingList) {
-      throw new NotFoundException(
-        `Hauling list dengan ID ${id} tidak ditemukan`,
-      );
+      throw new NotFoundException(`Hauling list dengan ID ${id} tidak ditemukan`);
     }
 
     await this.haulingListRepository.remove(haulingList);
@@ -465,15 +355,7 @@ export class HaulingListService {
   }
 
   async getActivities(queryDto: QueryActivitiesDto): Promise<any> {
-    const {
-      page = 1,
-      limit = 10,
-      name,
-      type,
-      site_name,
-      orderBy = 'id',
-      orderDirection = 'ASC',
-    } = queryDto;
+    const { page = 1, limit = 10, name, type, site_name, orderBy = 'id', orderDirection = 'ASC' } = queryDto;
 
     const queryBuilder = this.operationPointsRepository
       .createQueryBuilder('op')
@@ -530,13 +412,7 @@ export class HaulingListService {
       latitude: item.op_latitude,
     }));
 
-    return paginateResponse(
-      mappedData,
-      total,
-      page,
-      limit,
-      'Data activities berhasil diambil',
-    );
+    return paginateResponse(mappedData, total, page, limit, 'Data activities berhasil diambil');
   }
 
   private mapToResponseDto(haulingList: HaulingList): HaulingListResponseDto {
@@ -567,19 +443,13 @@ export class HaulingListService {
     };
   }
 
-  async importData(
-    file: Express.Multer.File,
-    userId?: number | null,
-  ): Promise<ApiResponse<any>> {
+  async importData(file: Express.Multer.File, userId?: number | null): Promise<ApiResponse<any>> {
     try {
       if (!file) {
         throw new BadRequestException('File tidak ditemukan');
       }
 
-      if (
-        !file.mimetype.includes('csv') &&
-        !file.originalname.endsWith('.csv')
-      ) {
+      if (!file.mimetype.includes('csv') && !file.originalname.endsWith('.csv')) {
         throw new BadRequestException('File harus berupa CSV');
       }
 
@@ -642,9 +512,7 @@ export class HaulingListService {
       }
       // Jika ada error, buat file error dan return tanpa insert ke database
       if (errorRows.length > 0) {
-        this.logger.log(
-          `Found ${errorRows.length} rows with errors, generating error CSV...`,
-        );
+        this.logger.log(`Found ${errorRows.length} rows with errors, generating error CSV...`);
 
         try {
           const errorCsvBuffer = this.generateErrorCsv(errorRows);
@@ -668,21 +536,14 @@ export class HaulingListService {
               if (errorFileInfo) {
                 this.logger.log('Error file uploaded to MinIO successfully');
               } else {
-                this.logger.warn(
-                  'MinIO upload failed, using fallback response',
-                );
+                this.logger.warn('MinIO upload failed, using fallback response');
                 minioAvailable = false;
               }
             } else {
-              this.logger.warn(
-                'MinIO tidak tersedia, menggunakan fallback response',
-              );
+              this.logger.warn('MinIO tidak tersedia, menggunakan fallback response');
             }
           } catch (s3Error) {
-            this.logger.warn(
-              'MinIO error, menggunakan fallback response:',
-              s3Error.message,
-            );
+            this.logger.warn('MinIO error, menggunakan fallback response:', s3Error.message);
             minioAvailable = false;
           }
 
@@ -695,20 +556,15 @@ export class HaulingListService {
               errorFileInfo && minioAvailable
                 ? {
                     download_url: errorFileInfo.downloadUrl,
-                    message:
-                      'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
+                    message: 'File error telah diupload ke cloud storage. Silakan download dan perbaiki data sebelum import ulang.',
                   }
                 : {
                     download_url: null,
-                    message:
-                      'File error gagal diupload ke cloud storage. Silakan periksa data error di response details.',
+                    message: 'File error gagal diupload ke cloud storage. Silakan periksa data error di response details.',
                   },
           };
 
-          return successResponse(
-            response,
-            'Import dibatalkan karena ada data yang tidak valid',
-          );
+          return successResponse(response, 'Import dibatalkan karena ada data yang tidak valid');
         } catch (error) {
           this.logger.error('Error generating error CSV:', error);
           this.logger.error('Error stack:', error.stack);
@@ -721,15 +577,11 @@ export class HaulingListService {
             details: importResults,
             error_file: {
               download_url: null,
-              message:
-                'Gagal generate file error. Silakan periksa data error di response details.',
+              message: 'Gagal generate file error. Silakan periksa data error di response details.',
             },
           };
 
-          return successResponse(
-            response,
-            'Import dibatalkan karena ada data yang tidak valid',
-          );
+          return successResponse(response, 'Import dibatalkan karena ada data yang tidak valid');
         }
       }
 
@@ -759,9 +611,7 @@ export class HaulingListService {
         if (error?.response && error?.response?.statusCode === 400) {
           throw error;
         }
-        throw new InternalServerErrorException(
-          `Gagal import data: ${error.message}`,
-        );
+        throw new InternalServerErrorException(`Gagal import data: ${error.message}`);
       } finally {
         await queryRunner.release();
       }
@@ -799,9 +649,7 @@ export class HaulingListService {
         const rowData = errorRow.data;
         const errors = errorRow.errors;
         // Gabungkan semua error message
-        const errorMessages = errors
-          .map((err) => `${err.field}: ${err.message}`)
-          .join('; ');
+        const errorMessages = errors.map((err) => `${err.field}: ${err.message}`).join('; ');
 
         const csvRow = [
           errorRow.row,
@@ -927,9 +775,7 @@ export class HaulingListService {
     }
 
     if (row.loading_point_name) {
-      const loadingData = await this.getOperationPointDataByName(
-        row.loading_point_name,
-      );
+      const loadingData = await this.getOperationPointDataByName(row.loading_point_name);
 
       if (!loadingData) {
         errors.push({
@@ -954,9 +800,7 @@ export class HaulingListService {
     }
 
     if (row.dumping_point_name && row.activity_type === 'hauling') {
-      const dumpingPoint = await this.getOperationPointDataByName(
-        row.dumping_point_name,
-      );
+      const dumpingPoint = await this.getOperationPointDataByName(row.dumping_point_name);
       if (!dumpingPoint) {
         errors.push({
           field: 'dumping_point_name',
@@ -993,9 +837,7 @@ export class HaulingListService {
         const error = errors[0];
         message = `Field "${error.field}" tidak valid: ${error.message}`;
       } else {
-        const errorDetails = errors
-          .map((err) => `"${err.field}": ${err.message}`)
-          .join(', ');
+        const errorDetails = errors.map((err) => `"${err.field}": ${err.message}`).join(', ');
         message = `${errors.length} field(s) tidak valid: ${errorDetails}`;
       }
     }
@@ -1003,9 +845,7 @@ export class HaulingListService {
     return { isValid, message, errors };
   }
 
-  private async parseCsvFile(
-    buffer: Buffer,
-  ): Promise<ImportHaulingListCsvRowDto[]> {
+  private async parseCsvFile(buffer: Buffer): Promise<ImportHaulingListCsvRowDto[]> {
     return new Promise((resolve, reject) => {
       const results: ImportHaulingListCsvRowDto[] = [];
       const stream = Readable.from(buffer);
@@ -1035,16 +875,8 @@ export class HaulingListService {
     });
   }
 
-  private async importCsvRow(
-    row: ImportHaulingListCsvRowDto,
-    userId?: number | null,
-  ): Promise<void> {
-    const [
-      population_loading,
-      population_hauler,
-      loading_point,
-      dumping_point,
-    ] = await Promise.all([
+  private async importCsvRow(row: ImportHaulingListCsvRowDto, userId?: number | null): Promise<void> {
+    const [population_loading, population_hauler, loading_point, dumping_point] = await Promise.all([
       this.getPopulationDataByNomorUnit(row.loading_unit),
 
       this.getPopulationDataByNomorUnit(row.hauler_unit),
@@ -1155,20 +987,14 @@ export class HaulingListService {
 
     // Apply date range filters
     if (filters.start_date && filters.end_date) {
-      queryBuilder.andWhere(
-        'CAST(hauling.activityDate AS DATE) BETWEEN :start_date AND :end_date',
-        {
-          start_date: filters.start_date,
-          end_date: filters.end_date,
-        },
-      );
+      queryBuilder.andWhere('CAST(hauling.activityDate AS DATE) BETWEEN :start_date AND :end_date', {
+        start_date: filters.start_date,
+        end_date: filters.end_date,
+      });
     } else if (filters.start_date) {
-      queryBuilder.andWhere(
-        'CAST(hauling.activityDate AS DATE) >= :start_date',
-        {
-          start_date: filters.start_date,
-        },
-      );
+      queryBuilder.andWhere('CAST(hauling.activityDate AS DATE) >= :start_date', {
+        start_date: filters.start_date,
+      });
     } else if (filters.end_date) {
       queryBuilder.andWhere('CAST(hauling.activityDate AS DATE) <= :end_date', {
         end_date: filters.end_date,
@@ -1237,18 +1063,13 @@ export class HaulingListService {
 
   private mapExportDataToCsvRow(item: HaulingList, index: number) {
     const timeRange = calculateTimeRange(item.time);
-    const dumpingPoint = !item.dumpingPointOp
-      ? item.dumpingPointBarge.name
-      : item.dumpingPointOp?.name;
+    const dumpingPoint = !item.dumpingPointOp ? item.dumpingPointBarge.name : item.dumpingPointOp?.name;
 
     return {
       No: index + 1,
       'Activity Date': moment(item.activityDate).format('YYYY/MM/DD'),
       Shift: item.shift.toUpperCase(),
-      Time:
-        item.time instanceof Date
-          ? moment(item.time).format('YYYY-MM-DD HH:mm')
-          : item.time || '',
+      Time: item.time instanceof Date ? moment(item.time).format('YYYY-MM-DD HH:mm') : item.time || '',
       'Time Range': timeRange,
       'Unit Loading Name': item.unitLoading?.no_unit ?? '',
       'Unit Hauler Name': item.unitHauler?.no_unit ?? '',

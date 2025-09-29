@@ -20,8 +20,6 @@ async function fixSuperAdmin() {
 
   try {
     await dataSource.initialize();
-    console.log('🔌 Database connection established');
-
     const fixSuperAdminSeeder = new FixSuperAdminSeeder(dataSource);
     await fixSuperAdminSeeder.run();
   } catch (error) {
@@ -30,7 +28,6 @@ async function fixSuperAdmin() {
   } finally {
     if (dataSource.isInitialized) {
       await dataSource.destroy();
-      console.log('🔌 Database connection closed');
     }
     process.exit(0);
   }

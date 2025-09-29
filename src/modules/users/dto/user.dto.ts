@@ -1,16 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsNumber,
-  IsString,
-  MinLength,
-  MaxLength,
-  IsOptional,
-  IsNumberString,
-  Matches,
-} from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumber, IsString, MinLength, MaxLength, IsOptional, IsNumberString, Matches } from 'class-validator';
 
 export class CreateUserDto {
   @ApiProperty({
@@ -23,8 +13,7 @@ export class CreateUserDto {
   @IsNotEmpty()
   @MinLength(3)
   @Matches(/^[a-zA-Z0-9]+$/, {
-    message:
-      'Username hanya boleh mengandung huruf dan angka, tanpa spasi atau simbol',
+    message: 'Username hanya boleh mengandung huruf dan angka, tanpa spasi atau simbol',
   })
   username: string;
 
