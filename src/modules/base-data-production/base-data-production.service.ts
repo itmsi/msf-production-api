@@ -904,7 +904,6 @@ export class BaseDataProductionService {
       if (!baseData) {
         throwError('Base data production not found', 404);
       }
-
       const result = {
         id: baseData?.parentBaseDataPro.id,
         population_id: baseData?.parentBaseDataPro.population.id,
@@ -925,7 +924,9 @@ export class BaseDataProductionService {
             hmAkhir: Number(baseData?.hmAkhir),
             totalHm: Number(baseData?.totalHm),
             loadingPointId: baseData?.loadingPointId,
+            loadingPointName: baseData?.loadingPoint?.name || '',
             dumpingPointId: baseData?.dumpingPointId,
+            dumpingPointName: baseData?.dumpingPoint?.name || '',
             dumpingPointOpId: baseData?.dumpingPointOpId,
             dumpingPointBargeId: baseData?.dumpingPointBargeId,
             activity: baseData?.activity,
