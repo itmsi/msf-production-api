@@ -564,7 +564,7 @@ export class BaseDataProductionService {
       activityDate: firstRow.activityDate,
       population_id: populationId, // Use resolved ID
       driverId: driverId, // Use resolved ID
-      shift: firstRow.shift,
+      shift: firstRow?.shift?.toLowerCase(),
       startShift: firstRow.startShift,
       endShift: firstRow.endShift,
       type: firstRow.type,
