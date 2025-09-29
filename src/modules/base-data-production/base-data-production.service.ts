@@ -361,9 +361,20 @@ export class BaseDataProductionService {
 
   private async getOperationPoint(point: string): Promise<number | undefined> {
     const operation = await this.operationPointsRepository.findOne({
-      where: { name: point },
+      where: { name: ILike(`%${point?.trim()}%`) },
     });
     return operation?.id;
+  }
+
+  private async getDumpingPoint(point: string, activity: string): Promise<number | undefined> {
+    if (['hauling', 'direct'].includes(activity?.toLowerCase())) {
+      const barge = await this.bargeRepository.findOne({
+        where: { name: ILike(`%${point?.trim()}%`) },
+      });
+      return barge?.id;
+    }
+    const operationId = await this.getOperationPoint(point);
+    return operationId;
   }
 
   private validateImportFile(file: Express.Multer.File): void {
@@ -462,10 +473,19 @@ export class BaseDataProductionService {
     populationId?: number;
     driverId?: number;
   }> {
+    if (!row.activity) {
+      return { isValid: false, error: 'actvity is required' };
+    }
+
+    const ACTIVITIES = ['hauling', 'direct', 'barging', 'support'];
+    if (!ACTIVITIES.includes(row.activity?.toLowerCase())) {
+      return { isValid: false, error: `actvity must be ${ACTIVITIES?.join(' ')}` };
+    }
+
     const unitId = await this.getPopulation(row.population_id);
     const driverId = await this.getUser(row.driverId);
     const loadingId = await this.getOperationPoint(row.loadingPointId);
-    const dumpingId = await this.getOperationPoint(row.dumpingPointId);
+    const dumpingId = await this.getDumpingPoint(row.dumpingPointId, row.activity);
 
     if (!unitId) {
       const message = row.population_id ? `Unit ${row.population_id} tidak ditemukan` : 'Unit tidak ditemukan';
@@ -957,7 +977,6 @@ export class BaseDataProductionService {
         throwError('Data referensi tidak ditemukan. Pastikan semua ID referensi valid.', 400);
       }
 
-      console.error('Unexpected error in importData:', error.stack);
       throwError('Terjadi kesalahan saat memproses file import. Silakan coba lagi atau hubungi administrator.', 400);
     }
   }

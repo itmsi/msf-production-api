@@ -640,7 +640,7 @@ export class BargingProblemService {
       };
     }
 
-    const parsedFinishTime = parseDateFile(row.start, 'YYYY-MM-DD HH:mm');
+    const parsedFinishTime = parseDateFile(row.finish, 'YYYY-MM-DD HH:mm');
     if (!parsedFinishTime) {
       return {
         isValid: false,
@@ -769,7 +769,6 @@ export class BargingProblemService {
       validateImportFile(file);
       const csvData = await CsvHelper.parseCsvFile(file.buffer);
       const validationResult = await this.processImportData(csvData);
-
       if (validationResult?.payload?.length && validationResult.successCount > 0) {
         await this.bulkCreate(validationResult.payload, userId);
       }
@@ -790,7 +789,6 @@ export class BargingProblemService {
         throwError('Data referensi tidak ditemukan. Pastikan semua ID referensi valid.', 400);
       }
 
-      console.error('Unexpected error in importData:', error.stack);
       throwError('Terjadi kesalahan saat memproses file import. Silakan coba lagi atau hubungi administrator.', 400);
     }
   }

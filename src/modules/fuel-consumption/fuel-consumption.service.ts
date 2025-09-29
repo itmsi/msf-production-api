@@ -3,7 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FuelConsumption } from './entities/fuel-consumption.entity';
 import { CreateFuelConsumptionDto, UpdateFuelConsumptionDto, FuelConsumptionResponseDto, QueryFuelConsumptionDto } from './dto';
 import { successResponse, emptyDataResponse, throwError, ApiResponse } from '../../common/helpers/response.helper';
-import { convertStringDateYYYYMMDD, normalizeString, paginateResponse, setCsvExportHeaders } from '../../common/helpers/public.helper';
+import {
+  convertStringDateYYYYMMDD,
+  CsvHelper,
+  normalizeString,
+  paginateResponse,
+  parseDateFile,
+  setCsvExportHeaders,
+} from '../../common/helpers/public.helper';
 import { ImportFuelConsumptionCsvRowDto, ImportFuelConsumptionItemDto } from './dto/import-fuel-consumption.dto';
 import { S3Service } from '../../integrations/s3/s3.service';
 import csv from 'csv-parser';
@@ -13,7 +20,8 @@ import { Users } from '../users/entities/users.entity';
 import { format } from '@fast-csv/format';
 import moment from 'moment';
 import { Response } from 'express';
-import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
+import { validateImportFile } from 'src/common/helpers/validation.helper';
 
 export enum Shift {
   DS = 'DS',
@@ -499,15 +507,8 @@ export class FuelConsumptionService {
 
   async importData(file: Express.Multer.File, userId?: number | null): Promise<ApiResponse<any>> {
     try {
-      if (!file) {
-        throw new BadRequestException('File tidak ditemukan');
-      }
-
-      if (!file.mimetype.includes('csv') && !file.originalname.endsWith('.csv')) {
-        throw new BadRequestException('File harus berupa CSV');
-      }
-
-      const csvData = await this.parseCsvFile(file.buffer);
+      validateImportFile(file);
+      const csvData = await CsvHelper.parseCsvFile(file.buffer);
       const importResults: ImportFuelConsumptionItemDto[] = [];
       let successCount = 0;
       let failedCount = 0;
@@ -779,28 +780,27 @@ export class FuelConsumptionService {
     }
 
     // Validasi format date
-    if (row.activity_date) {
-      const date = convertStringDateYYYYMMDD(row.activity_date);
-
-      if (date === 'Invalid date') {
-        errors.push({
-          field: 'activity_date',
-          message: 'Format tanggal tidak valid (yyyy-mm-dd)',
-        });
-      }
-    }
-
-    if (row.start_refueling_time && !this.isValidDateTime(row.start_refueling_time)) {
+    const parsedActivityDate = parseDateFile(row.activity_date);
+    if (!parsedActivityDate) {
       errors.push({
-        field: 'start_refueling_time',
-        message: 'Format start time tidak valid (yyyy-mm-dd HH:mm)',
+        field: 'activity_date',
+        message: 'Format tanggal tidak valid (DD/MM/YYYY or YYYY-MM-DD)',
       });
     }
 
-    if (row.end_refueling_time && !this.isValidDateTime(row.end_refueling_time)) {
+    const parsedStartTime = parseDateFile(row.start_refueling_time, 'YYYY-MM-DD HH:mm');
+    if (!parsedStartTime) {
+      errors.push({
+        field: 'start_refueling_time',
+        message: 'Format start time tidak valid (DD/MM/YYYY HH:mm or YYYY-MM-DD HH:mm)',
+      });
+    }
+
+    const parsedFinishTime = parseDateFile(row.end_refueling_time, 'YYYY-MM-DD HH:mm');
+    if (!parsedFinishTime) {
       errors.push({
         field: 'end_refueling_time',
-        message: 'Format stop time tidak valid (yyyy-mm-dd HH:mm)',
+        message: 'Format stop time tidak valid (DD/MM/YYYY HH:mm or YYYY-MM-DD HH:mm)',
       });
     }
 
