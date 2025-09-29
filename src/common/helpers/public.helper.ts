@@ -219,3 +219,21 @@ export function extractTime(datetime: string | Date, withSeconds = true): string
   const format = withSeconds ? 'HH:mm:ss' : 'HH:mm';
   return moment(datetime).format(format);
 }
+
+// HSL (0-360, 0-100, 0-100) → HEX (#rrggbb)
+export const hslToHex = (h: number, s = 70, l = 50) => {
+  s /= 100;
+  l /= 100;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const c = l - a * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1)));
+    return Math.round(255 * c)
+      .toString(16)
+      .padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+};
+
+// Palet N warna (golden angle)
+export const generatePaletteHex = (n: number, s = 70, l = 50) => Array.from({ length: n }, (_, i) => hslToHex((i * 137.508) % 360, s, l));
