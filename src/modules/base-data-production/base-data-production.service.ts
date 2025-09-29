@@ -349,19 +349,14 @@ export class BaseDataProductionService {
     return unit?.id;
   }
 
-  private async getEmployee(fullname: string): Promise<number | undefined> {
-    const parts = fullname.trim().split(' ');
-    const first_name = parts.shift() ?? '';
-    const last_name = parts.length > 0 ? parts.join(' ') : '';
-
-    const employee = await this.employeeRepository.findOne({
+  private async getUser(name: string): Promise<number | undefined> {
+    const user = await this.usersRepository.findOne({
       where: {
-        firstName: ILike(`%${first_name}%`),
-        lastName: ILike(`%${last_name}%`),
+        name: ILike(`%${name?.trim()}%`),
       },
     });
 
-    return employee?.id;
+    return user?.id;
   }
 
   private async getOperationPoint(point: string): Promise<number | undefined> {
@@ -468,7 +463,7 @@ export class BaseDataProductionService {
     driverId?: number;
   }> {
     const unitId = await this.getPopulation(row.population_id);
-    const driverId = await this.getEmployee(row.driverId);
+    const driverId = await this.getUser(row.driverId);
     const loadingId = await this.getOperationPoint(row.loadingPointId);
     const dumpingId = await this.getOperationPoint(row.dumpingPointId);
 
@@ -478,17 +473,17 @@ export class BaseDataProductionService {
     }
 
     if (!driverId) {
-      const message = row.driverId ? `Driver ${row.population_id} tidak ditemukan` : 'Driver tidak ditemukan';
+      const message = row.driverId ? `Driver ${row.driverId} tidak ditemukan` : 'Driver tidak ditemukan';
       return { isValid: false, error: message };
     }
 
     if (!loadingId) {
-      const message = row.loadingPointId ? `Loading Point ${row.population_id} tidak ditemukan` : 'Loading Point tidak ditemukan';
+      const message = row.loadingPointId ? `Loading Point ${row.loadingPointId} tidak ditemukan` : 'Loading Point tidak ditemukan';
       return { isValid: false, error: message };
     }
 
     if (!dumpingId) {
-      const message = row.dumpingPointId ? `Dumping Point ${row.population_id} tidak ditemukan` : 'Dumping Point tidak ditemukan';
+      const message = row.dumpingPointId ? `Dumping Point ${row.dumpingPointId} tidak ditemukan` : 'Dumping Point tidak ditemukan';
       return { isValid: false, error: message };
     }
 
