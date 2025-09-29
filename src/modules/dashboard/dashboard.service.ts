@@ -519,28 +519,70 @@ export class DashboardService {
       const start = startDate ? new Date(startDate) : defaultStartDate;
       const end = endDate ? new Date(endDate) : defaultEndDate;
 
-      const qb = this.activitiesRepo
-        .createQueryBuilder('ma')
-        .leftJoin(
-          EffectiveWorkingHours,
-          'rlt',
-          'rlt.activities_id = ma.id AND rlt.date_activity BETWEEN :start AND :end AND rlt.deletedAt IS NULL',
-          { start, end },
-        )
+      const subCount = this.dataSource
+        .createQueryBuilder()
+        .select('COUNT(DISTINCT rlt2.population_id)')
+        .from('r_loss_time', 'rlt2')
+        .leftJoin('m_activities', 'ma2', 'ma2.id = rlt2.activities_id')
+        .where('rlt2.date_activity BETWEEN :start AND :end')
+        .andWhere('ma2.status IN (:...status)')
+        .andWhere('rlt2."deletedAt" IS NULL');
+
+      const qb = this.dataSource
+        .createQueryBuilder()
         .select('ma.name', 'name')
-        .addSelect('ma.status', 'status')
-        .addSelect('COALESCE(SUM(rlt.duration) / 60, 0)', 'total_duration')
-        .where('ma.status IN (:...status)', { status })
-        .andWhere('ma.deletedAt IS NULL')
-        .groupBy('ma.name')
-        .addGroupBy('ma.status')
-        .orderBy('ma.name', 'ASC');
+        .addSelect(
+          `
+          COALESCE(
+            SUM(rlt.duration) / 60.0 / ( ${subCount.getQuery()} )
+          , 0)
+          `,
+          'total_duration_per_unit',
+        )
+        .addSelect(
+          `
+          SUM(
+            SUM(rlt.duration) / 60.0 / ( ${subCount.getQuery()} )
+          ) OVER ()
+          `,
+          'total_all_standby_duration',
+        )
+        .from('m_activities', 'ma')
+        .leftJoin('r_loss_time', 'rlt', 'rlt.activities_id = ma.id')
+        .where('ma.status IN (:...status)')
+        .andWhere('ma."deletedAt" IS NULL')
+        .groupBy('ma.name, rlt.loss_type')
+        .orderBy('total_duration_per_unit', 'DESC')
+        // gabungkan parameter untuk subquery (dipakai 2x)
+        .setParameters({
+          start,
+          end,
+          status,
+          ...subCount.getParameters(),
+        });
+
+      // const qb = this.activitiesRepo
+      //   .createQueryBuilder('ma')
+      //   .leftJoin(
+      //     EffectiveWorkingHours,
+      //     'rlt',
+      //     'rlt.activities_id = ma.id AND rlt.date_activity BETWEEN :start AND :end AND rlt.deletedAt IS NULL',
+      //     { start, end },
+      //   )
+      //   .select('ma.name', 'name')
+      //   .addSelect('ma.status', 'status')
+      //   .addSelect('COALESCE(SUM(rlt.duration) / 60, 0)', 'total_duration')
+      //   .where('ma.status IN (:...status)', { status })
+      //   .andWhere('ma.deletedAt IS NULL')
+      //   .groupBy('ma.name')
+      //   .addGroupBy('ma.status')
+      //   .orderBy('ma.name', 'ASC');
 
       const result = await qb.getRawMany();
 
       const data = result.map((row) => ({
         name: row.name,
-        value: Math.round(row.total_duration * 100) / 100, // Round to 2 decimal places
+        value: Math.round(row.total_duration_per_unit * 100) / 100, // Round to 2 decimal places
       }));
 
       return {
