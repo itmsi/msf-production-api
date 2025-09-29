@@ -472,11 +472,24 @@ export class BaseDataProductionService {
     const loadingId = await this.getOperationPoint(row.loadingPointId);
     const dumpingId = await this.getOperationPoint(row.dumpingPointId);
 
-    if (!unitId || !driverId || !loadingId || !dumpingId) {
-      return {
-        isValid: false,
-        error: 'Foreign key tidak ditemukan (population/driver/loading/dumping)',
-      };
+    if (!unitId) {
+      const message = row.population_id ? `Unit ${row.population_id} tidak ditemukan` : 'Unit tidak ditemukan';
+      return { isValid: false, error: message };
+    }
+
+    if (!driverId) {
+      const message = row.driverId ? `Driver ${row.population_id} tidak ditemukan` : 'Driver tidak ditemukan';
+      return { isValid: false, error: message };
+    }
+
+    if (!loadingId) {
+      const message = row.loadingPointId ? `Loading Point ${row.population_id} tidak ditemukan` : 'Loading Point tidak ditemukan';
+      return { isValid: false, error: message };
+    }
+
+    if (!dumpingId) {
+      const message = row.dumpingPointId ? `Dumping Point ${row.population_id} tidak ditemukan` : 'Dumping Point tidak ditemukan';
+      return { isValid: false, error: message };
     }
 
     const detail = {
