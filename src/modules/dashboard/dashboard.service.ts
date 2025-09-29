@@ -29,7 +29,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { OperationPoints } from '../operation-points/entities/operation-points.entity';
 import { HaulingList } from '../hauling-list';
 import { BargingList } from '../barging-list/entities/barging-list.entity';
-import { calculateTimeRange } from '../../common/helpers/public.helper';
+import { calculateTimeRange, generatePaletteHex } from '../../common/helpers/public.helper';
 import { BaseDataPro } from '../base-data-production';
 import moment from 'moment';
 import { Activities } from '../activities';
@@ -2390,48 +2390,78 @@ export class DashboardService {
     try {
       // Ambil data berdasarkan activities dengan status 'idle' dan 'delay'
       // dan r_loss_time dengan loss_type = 'STB'
+      // const lostTimeQuery = await this.dataSource.query(
+      //   `
+      //   SELECT
+      //     TRIM(a.name) as activity_name,
+      //     COALESCE(SUM(lt.duration), 0) as total_duration
+      //   FROM m_activities a
+      //   LEFT JOIN r_loss_time lt ON lt.activities_id = a.id
+      //   WHERE a.status IN ('idle', 'delay')
+      //     AND lt.loss_type = 'STB'
+      //     AND lt.date_activity BETWEEN $1 AND $2
+      //   GROUP BY a.id, TRIM(a.name)
+      //   ORDER BY total_duration DESC
+      // `,
+      //   [startDate, endDate],
+      // );
+
       const lostTimeQuery = await this.dataSource.query(
         `
-        SELECT 
-          TRIM(a.name) as activity_name,
-          COALESCE(SUM(lt.duration), 0) as total_duration
-        FROM m_activities a
-        LEFT JOIN r_loss_time lt ON lt.activities_id = a.id
-        WHERE a.status IN ('idle', 'delay')
-          AND lt.loss_type = 'STB'
-          AND lt.date_activity BETWEEN $1 AND $2
-        GROUP BY a.id, TRIM(a.name)
-        ORDER BY total_duration DESC
-      `,
+        select
+          ma.name,
+          sum(rlt.duration) as total_duration,
+          sum(sum(rlt.duration)) over() as total_all_standby_duration
+        from r_loss_time rlt
+        left join m_activities ma on ma.id = rlt.activities_id 
+        where rlt.date_activity::date BETWEEN $1 and $2
+        and rlt.loss_type = 'STB'
+        and rlt."deletedAt" is null
+        group by rlt.loss_type, ma.name
+        order by total_duration desc;
+        `,
         [startDate, endDate],
       );
 
+      console.log(lostTimeQuery);
+
       // Mapping nama aktivitas ke warna yang sesuai
-      const activityColors: { [key: string]: string } = {
-        Rain: '#1e3a8a',
-        Slippery: '#d1d5db',
-        MHR: '#34d399',
-        Internal: '#fbbf24',
-        External: '#60a5fa',
-      };
+      // const activityColors: { [key: string]: string } = {
+      //   Rain: '#1e3a8a',
+      //   Slippery: '#d1d5db',
+      //   MHR: '#34d399',
+      //   Internal: '#fbbf24',
+      //   External: '#60a5fa',
+      // };
 
-      const result = lostTimeQuery.map((item: any) => ({
-        name: item.activity_name,
-        value: Math.round(parseFloat(item.duration) * 10) / 10,
-        color: activityColors[item.activity_name] || '#6b7280',
-      }));
+      // const result = lostTimeQuery.map((item: any) => ({
+      //   name: item.name,
+      //   value: Math.round(parseFloat(item.total_duration) * 10) / 10,
+      //   color: activityColors[item.activity_name] || '#6b7280',
+      // }));
       // Pastikan semua aktivitas yang diharapkan ada dalam response
-      const expectedActivities = ['Rain', 'Slippery', 'MHR', 'Internal', 'External'];
-      const existingNames = result.map((item) => item.name);
+      // const expectedActivities = ['Rain', 'Slippery', 'MHR', 'Internal', 'External'];
+      // const existingNames = result.map((item) => item.name);
 
-      expectedActivities.forEach((activityName) => {
-        if (!existingNames.includes(activityName)) {
-          result.push({
-            name: activityName,
-            value: 0,
-            color: activityColors[activityName] || '#6b7280',
-          });
-        }
+      // expectedActivities.forEach((activityName) => {
+      //   if (!existingNames.includes(activityName)) {
+      //     result.push({
+      //       name: activityName,
+      //       value: 0,
+      //       color: activityColors[activityName] || '#6b7280',
+      //     });
+      //   }
+      // });
+      const colors = generatePaletteHex(lostTimeQuery.length ?? 0);
+
+      const result = lostTimeQuery.map((item, i) => {
+        const percentage = (item.total_duration / item.total_all_standby_duration) * 100;
+
+        return {
+          name: item.name,
+          value: percentage.toFixed(2) ?? '0',
+          color: colors[i],
+        };
       });
 
       return result;
