@@ -30,8 +30,6 @@ export class BaseDataProductionService {
     private baseDataProRepository: Repository<BaseDataPro>,
     @InjectRepository(Population)
     private populationRepository: Repository<Population>,
-    @InjectRepository(Employee)
-    private employeeRepository: Repository<Employee>,
     @InjectRepository(Barge)
     private bargeRepository: Repository<Barge>,
     @InjectRepository(OperationPoints)
@@ -216,11 +214,20 @@ export class BaseDataProductionService {
 
         // Validate Dumping Point ID if provided
         if (detail.dumpingPointId) {
-          const dumpingPoint = await this.operationPointsRepository.findOne({
-            where: { id: detail.dumpingPointId, deletedAt: IsNull() },
-          });
-          if (!dumpingPoint) {
-            throw new BadRequestException(`Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan di tabel m_operation_points`);
+          if (detail?.activity && ['direct', 'hauling'].includes(detail?.activity?.toLowerCase())) {
+            const dumpingPointBarge = await this.bargeRepository.findOne({
+              where: { id: detail.dumpingPointBargeId, deletedAt: IsNull() },
+            });
+            if (!dumpingPointBarge) {
+              throw new BadRequestException(`Dumping Point Barge dengan ID ${detail.dumpingPointBargeId} tidak ditemukan`);
+            }
+          } else {
+            const dumpingPoint = await this.operationPointsRepository.findOne({
+              where: { id: detail.dumpingPointId, deletedAt: IsNull() },
+            });
+            if (!dumpingPoint) {
+              throw new BadRequestException(`Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan di tabel m_operation_points`);
+            }
           }
         }
 
@@ -349,26 +356,32 @@ export class BaseDataProductionService {
     return unit?.id;
   }
 
-  private async getEmployee(fullname: string): Promise<number | undefined> {
-    const parts = fullname.trim().split(' ');
-    const first_name = parts.shift() ?? '';
-    const last_name = parts.length > 0 ? parts.join(' ') : '';
-
-    const employee = await this.employeeRepository.findOne({
+  private async getUser(name: string): Promise<number | undefined> {
+    const user = await this.usersRepository.findOne({
       where: {
-        firstName: ILike(`%${first_name}%`),
-        lastName: ILike(`%${last_name}%`),
+        name: ILike(`%${name?.trim()}%`),
       },
     });
 
-    return employee?.id;
+    return user?.id;
   }
 
   private async getOperationPoint(point: string): Promise<number | undefined> {
     const operation = await this.operationPointsRepository.findOne({
-      where: { name: point },
+      where: { name: ILike(`%${point?.trim()}%`), deletedAt: IsNull() },
     });
     return operation?.id;
+  }
+
+  private async getDumpingPoint(point: string, activity: string): Promise<number | undefined> {
+    if (['hauling', 'direct'].includes(activity?.toLowerCase())) {
+      const barge = await this.bargeRepository.findOne({
+        where: { name: ILike(`%${point?.trim()}%`) },
+      });
+      return barge?.id;
+    }
+    const operationId = await this.getOperationPoint(point);
+    return operationId;
   }
 
   private validateImportFile(file: Express.Multer.File): void {
@@ -467,16 +480,43 @@ export class BaseDataProductionService {
     populationId?: number;
     driverId?: number;
   }> {
-    const unitId = await this.getPopulation(row.population_id);
-    const driverId = await this.getEmployee(row.driverId);
-    const loadingId = await this.getOperationPoint(row.loadingPointId);
-    const dumpingId = await this.getOperationPoint(row.dumpingPointId);
+    if (!row.activity) {
+      return { isValid: false, error: 'actvity is required' };
+    }
 
-    if (!unitId || !driverId || !loadingId || !dumpingId) {
-      return {
-        isValid: false,
-        error: 'Foreign key tidak ditemukan (population/driver/loading/dumping)',
-      };
+    const ACTIVITIES = ['hauling', 'direct', 'barging', 'support'];
+    if (!ACTIVITIES.includes(row.activity?.toLowerCase())) {
+      return { isValid: false, error: `actvity must be ${ACTIVITIES?.join(' ')}` };
+    }
+
+    const unitId = await this.getPopulation(row.population_id);
+    const driverId = await this.getUser(row.driverId);
+    const loadingId = await this.getOperationPoint(row.loadingPointId);
+    const dumpingId = await this.getDumpingPoint(row.dumpingPointId, row.activity);
+
+    if (!unitId) {
+      const message = row.population_id ? `Unit ${row.population_id} tidak ditemukan` : 'Unit tidak ditemukan';
+      return { isValid: false, error: message };
+    }
+
+    if (!driverId) {
+      const message = row.driverId ? `Driver ${row.driverId} tidak ditemukan` : 'Driver tidak ditemukan';
+      return { isValid: false, error: message };
+    }
+
+    if (!loadingId) {
+      const message = row.loadingPointId ? `Loading Point ${row.loadingPointId} tidak ditemukan` : 'Loading Point tidak ditemukan';
+      return { isValid: false, error: message };
+    }
+
+    if (!dumpingId) {
+      const message = row.dumpingPointId ? `Dumping Point ${row.dumpingPointId} tidak ditemukan` : 'Dumping Point tidak ditemukan';
+      return { isValid: false, error: message };
+    }
+
+    let dumpingPointBargeId: null | number = null;
+    if (['hauling', 'direct'].includes(row.activity)) {
+      dumpingPointBargeId = dumpingId;
     }
 
     const detail = {
@@ -487,7 +527,7 @@ export class BaseDataProductionService {
       totalVessel: Number(row.totalVessel),
       distance: Number(row.distance),
       loadingPointId: loadingId,
-      dumpingPointId: dumpingId,
+      dumpingPointBargeId: dumpingId,
       activity: row.activity,
       material: row.material,
     };
@@ -524,7 +564,7 @@ export class BaseDataProductionService {
       activityDate: firstRow.activityDate,
       population_id: populationId, // Use resolved ID
       driverId: driverId, // Use resolved ID
-      shift: firstRow.shift,
+      shift: firstRow?.shift?.toLowerCase(),
       startShift: firstRow.startShift,
       endShift: firstRow.endShift,
       type: firstRow.type,
@@ -949,7 +989,6 @@ export class BaseDataProductionService {
         throwError('Data referensi tidak ditemukan. Pastikan semua ID referensi valid.', 400);
       }
 
-      console.error('Unexpected error in importData:', error.stack);
       throwError('Terjadi kesalahan saat memproses file import. Silakan coba lagi atau hubungi administrator.', 400);
     }
   }
