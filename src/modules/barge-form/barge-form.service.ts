@@ -4,7 +4,7 @@ import { Repository, SelectQueryBuilder, ILike, DataSource, DeepPartial } from '
 import { BargeForm } from './entities/barge-form.entity';
 import { CreateBargeFormDto, UpdateBargeFormDto, BargeFormResponseDto, QueryBargeFormDto, QueryExportBargeFormDto } from './dto';
 import { successResponse, emptyDataResponse, throwError } from '../../common/helpers/response.helper';
-import { CsvHelper, setCsvExportHeaders } from '../../common/helpers/public.helper';
+import { CsvHelper, parseDateFile, setCsvExportHeaders } from '../../common/helpers/public.helper';
 import { Response } from 'express';
 import { format } from '@fast-csv/format';
 import moment from 'moment';
@@ -127,18 +127,19 @@ export class BargeFormService {
         error: 'start_date is required',
       };
     }
-
-    if (!moment(row.start_date, 'YYYY-MM-DD', true).isValid()) {
+    const parsedStartDate = parseDateFile(row.start_date);
+    if (!parsedStartDate) {
       return {
         isValid: false,
-        error: `start_date harus dalam format YYYY-MM-DD (row: ${row.start_date})`,
+        error: `start_date harus dalam format DD/MM/YYYY or YYYY-MM-DD (row: ${row.start_date})`,
       };
     }
 
-    if (row.finish_date && !moment(row.finish_date, 'YYYY-MM-DD', true).isValid()) {
+    const parsedFinishDate = parseDateFile(row.finish_date);
+    if (row.finish_date && !parsedFinishDate) {
       return {
         isValid: false,
-        error: `finish_date harus dalam format YYYY-MM-DD (row: ${row.finish_date})`,
+        error: `finish_date harus dalam format DD/MM/YYYY or YYYY-MM-DD (row: ${row.finish_date})`,
       };
     }
 
