@@ -24,7 +24,7 @@ import {
   TrendPerformanceUnitDataDto,
 } from './dto/dashboard.dto';
 import { Barge } from '../barge/entities/barge.entity';
-import { ApiResponse, successResponse } from 'src/common';
+import { ApiResponse, successResponse, throwError } from 'src/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { OperationPoints } from '../operation-points/entities/operation-points.entity';
 import { HaulingList } from '../hauling-list';
@@ -519,28 +519,70 @@ export class DashboardService {
       const start = startDate ? new Date(startDate) : defaultStartDate;
       const end = endDate ? new Date(endDate) : defaultEndDate;
 
-      const qb = this.activitiesRepo
-        .createQueryBuilder('ma')
-        .leftJoin(
-          EffectiveWorkingHours,
-          'rlt',
-          'rlt.activities_id = ma.id AND rlt.date_activity BETWEEN :start AND :end AND rlt.deletedAt IS NULL',
-          { start, end },
-        )
+      const subCount = this.dataSource
+        .createQueryBuilder()
+        .select('COUNT(DISTINCT rlt2.population_id)')
+        .from('r_loss_time', 'rlt2')
+        .leftJoin('m_activities', 'ma2', 'ma2.id = rlt2.activities_id')
+        .where('rlt2.date_activity BETWEEN :start AND :end')
+        .andWhere('ma2.status IN (:...status)')
+        .andWhere('rlt2."deletedAt" IS NULL');
+
+      const qb = this.dataSource
+        .createQueryBuilder()
         .select('ma.name', 'name')
-        .addSelect('ma.status', 'status')
-        .addSelect('COALESCE(SUM(rlt.duration) / 60, 0)', 'total_duration')
-        .where('ma.status IN (:...status)', { status })
-        .andWhere('ma.deletedAt IS NULL')
-        .groupBy('ma.name')
-        .addGroupBy('ma.status')
-        .orderBy('ma.name', 'ASC');
+        .addSelect(
+          `
+          COALESCE(
+            SUM(rlt.duration) / 60.0 / ( ${subCount.getQuery()} )
+          , 0)
+          `,
+          'total_duration_per_unit',
+        )
+        .addSelect(
+          `
+          SUM(
+            SUM(rlt.duration) / 60.0 / ( ${subCount.getQuery()} )
+          ) OVER ()
+          `,
+          'total_all_standby_duration',
+        )
+        .from('m_activities', 'ma')
+        .leftJoin('r_loss_time', 'rlt', 'rlt.activities_id = ma.id')
+        .where('ma.status IN (:...status)')
+        .andWhere('ma."deletedAt" IS NULL')
+        .groupBy('ma.name, rlt.loss_type')
+        .orderBy('total_duration_per_unit', 'DESC')
+        // gabungkan parameter untuk subquery (dipakai 2x)
+        .setParameters({
+          start,
+          end,
+          status,
+          ...subCount.getParameters(),
+        });
+
+      // const qb = this.activitiesRepo
+      //   .createQueryBuilder('ma')
+      //   .leftJoin(
+      //     EffectiveWorkingHours,
+      //     'rlt',
+      //     'rlt.activities_id = ma.id AND rlt.date_activity BETWEEN :start AND :end AND rlt.deletedAt IS NULL',
+      //     { start, end },
+      //   )
+      //   .select('ma.name', 'name')
+      //   .addSelect('ma.status', 'status')
+      //   .addSelect('COALESCE(SUM(rlt.duration) / 60, 0)', 'total_duration')
+      //   .where('ma.status IN (:...status)', { status })
+      //   .andWhere('ma.deletedAt IS NULL')
+      //   .groupBy('ma.name')
+      //   .addGroupBy('ma.status')
+      //   .orderBy('ma.name', 'ASC');
 
       const result = await qb.getRawMany();
 
       const data = result.map((row) => ({
         name: row.name,
-        value: Math.round(row.total_duration * 100) / 100, // Round to 2 decimal places
+        value: Math.round(row.total_duration_per_unit * 100) / 100, // Round to 2 decimal places
       }));
 
       return {
@@ -2306,61 +2348,69 @@ export class DashboardService {
         [selectedStartDate, selectedEndDate],
       );
 
-      const standbyQuery = await this.dataSource.query(
-        `select 
-              rlt.loss_type,
-              coalesce(
-                sum(rlt.duration) / 60 / (
-                  select count(distinct rlt2.population_id)
-                  from r_loss_time rlt2
-                  where rlt2.date_activity::date BETWEEN $1 and $2
-                    and rlt2.loss_type = rlt.loss_type
-                    and rlt2."deletedAt" is null
-                ), 0
-              ) as total_duration
-          from r_loss_time rlt
-          left join m_population mp on mp.id = rlt.population_id
-          where rlt.date_activity::date BETWEEN $1 and $2
-            and rlt.loss_type = 'STB' 
-            and rlt."deletedAt" is null
-          group by rlt.loss_type;
-          `,
-        [selectedStartDate, selectedEndDate],
-      );
+      // const standbyQuery = await this.dataSource.query(
+      //   `select
+      //         rlt.loss_type,
+      //         coalesce(
+      //           sum(rlt.duration) / 60 / (
+      //             select count(distinct rlt2.population_id)
+      //             from r_loss_time rlt2
+      //             where rlt2.date_activity::date BETWEEN $1 and $2
+      //               and rlt2.loss_type = rlt.loss_type
+      //               and rlt2."deletedAt" is null
+      //           ), 0
+      //         ) as total_duration
+      //     from r_loss_time rlt
+      //     left join m_population mp on mp.id = rlt.population_id
+      //     where rlt.date_activity::date BETWEEN $1 and $2
+      //       and rlt.loss_type = 'STB'
+      //       and rlt."deletedAt" is null
+      //     group by rlt.loss_type;
+      //     `,
+      //   [selectedStartDate, selectedEndDate],
+      // );
 
-      const breakdownQuery = await this.dataSource.query(
-        `select 
-              rlt.loss_type,
-              coalesce(
-                sum(rlt.duration) / 60 / (
-                  select count(distinct rlt2.population_id)
-                  from r_loss_time rlt2
-                  where rlt2.date_activity::date BETWEEN $1 and $2
-                    and rlt2.loss_type = rlt.loss_type
-                    and rlt2."deletedAt" is null
-                ), 0
-              ) as total_duration
-          from r_loss_time rlt
-          left join m_population mp on mp.id = rlt.population_id
-          where rlt.date_activity::date BETWEEN $1 and $2
-            and rlt.loss_type = 'BD' 
-            and rlt."deletedAt" is null
-          group by rlt.loss_type;
-          `,
-        [selectedStartDate, selectedEndDate],
-      );
+      // const breakdownQuery = await this.dataSource.query(
+      //   `select
+      //         rlt.loss_type,
+      //         coalesce(
+      //           sum(rlt.duration) / 60 / (
+      //             select count(distinct rlt2.population_id)
+      //             from r_loss_time rlt2
+      //             where rlt2.date_activity::date BETWEEN $1 and $2
+      //               and rlt2.loss_type = rlt.loss_type
+      //               and rlt2."deletedAt" is null
+      //           ), 0
+      //         ) as total_duration
+      //     from r_loss_time rlt
+      //     left join m_population mp on mp.id = rlt.population_id
+      //     where rlt.date_activity::date BETWEEN $1 and $2
+      //       and rlt.loss_type = 'BD'
+      //       and rlt."deletedAt" is null
+      //     group by rlt.loss_type;
+      //     `,
+      //   [selectedStartDate, selectedEndDate],
+      // );
+
+      const [standbyQuery, breakdownQuery] = await Promise.all([
+        this.calculatedLostTimeAllUnit(selectedStartDate, selectedEndDate, 'STB'),
+        this.calculatedLostTimeAllUnit(selectedStartDate, selectedEndDate, 'BD'),
+      ]);
 
       const totalMohh = parseFloat(mohhQuery[0]?.total_mohh || '0');
       // const totalEwh = parseFloat(ewhQuery[0]?.total_ewh || '0');
       const totalBreakdown = parseFloat(breakdownQuery[0]?.total_duration || '0');
       const totalStandby = parseFloat(standbyQuery[0]?.total_duration || '0');
 
-      // Hitung STB = MOHH - EWH - Breakdown Time
-      // const standbyTime = Math.max(0, totalMohh - totalEwh - totalBreakdown);
       // Hitung EWH = MOHH - Standby Time - Breakdown Time
       const totalEwh = totalMohh - totalStandby - totalBreakdown;
 
       return [
+        {
+          name: 'MOHH',
+          value: Math.round(totalMohh * 10) / 10,
+          color: '#1e3a8a',
+        },
         {
           name: 'STB',
           value: Math.round(totalStandby * 10) / 10,
@@ -2406,22 +2456,22 @@ export class DashboardService {
       //   [startDate, endDate],
       // );
 
-      const lostTimeQuery = await this.dataSource.query(
-        `
-        select
-          ma.name,
-          sum(rlt.duration) as total_duration,
-          sum(sum(rlt.duration)) over() as total_all_standby_duration
-        from r_loss_time rlt
-        left join m_activities ma on ma.id = rlt.activities_id 
-        where rlt.date_activity::date BETWEEN $1 and $2
-        and rlt.loss_type = 'STB'
-        and rlt."deletedAt" is null
-        group by rlt.loss_type, ma.name
-        order by total_duration desc;
-        `,
-        [startDate, endDate],
-      );
+      // const lostTimeQuery = await this.dataSource.query(
+      //   `
+      //   select
+      //     ma.name,
+      //     sum(rlt.duration) as total_duration,
+      //     sum(sum(rlt.duration)) over() as total_all_standby_duration
+      //   from r_loss_time rlt
+      //   left join m_activities ma on ma.id = rlt.activities_id
+      //   where rlt.date_activity::date BETWEEN $1 and $2
+      //   and rlt.loss_type = 'STB'
+      //   and rlt."deletedAt" is null
+      //   group by rlt.loss_type, ma.name
+      //   order by total_duration desc;
+      //   `,
+      //   [startDate, endDate],
+      // );
 
       // Mapping nama aktivitas ke warna yang sesuai
       // const activityColors: { [key: string]: string } = {
@@ -2450,10 +2500,13 @@ export class DashboardService {
       //     });
       //   }
       // });
-      const colors = generatePaletteHex(lostTimeQuery.length ?? 0);
 
-      const result = lostTimeQuery.map((item, i) => {
-        const percentage = (item.total_duration / item.total_all_standby_duration) * 100;
+      const lostTimeStandbyAllUnit = await this.calculatedLostTimeAllUnitSpecificActivities(startDate, endDate, 'STB');
+
+      const colors = generatePaletteHex(lostTimeStandbyAllUnit.length ?? 0);
+
+      const result = lostTimeStandbyAllUnit.map((item, i) => {
+        const percentage = (item.total_duration_per_unit / item.total_all_standby_duration) * 100;
 
         return {
           name: item.name,
@@ -2461,9 +2514,6 @@ export class DashboardService {
           color: colors[i],
         };
       });
-
-      console.log(result);
-
       return result;
     } catch (error) {
       console.error('Error calculating lost time data:', error);
@@ -2475,6 +2525,75 @@ export class DashboardService {
         { name: 'External', value: 0, color: '#60a5fa' },
       ];
     }
+  }
+
+  private async calculatedLostTimeAllUnit(start_date: string, end_date: string, loss_type: string) {
+    const lostTimeQuery = await this.dataSource.query(
+      `select
+              rlt.loss_type,
+              coalesce(
+                sum(rlt.duration) / 60 / (
+                  select count(distinct rlt2.population_id)
+                  from r_loss_time rlt2
+                  where rlt2.date_activity::date BETWEEN $1 and $2
+                    and rlt2.loss_type = rlt.loss_type
+                    and rlt2."deletedAt" is null
+                ), 0
+              ) as total_duration
+          from r_loss_time rlt
+          left join m_population mp on mp.id = rlt.population_id
+          where rlt.date_activity::date BETWEEN $1 and $2
+            and rlt.loss_type = $3
+            and rlt."deletedAt" is null
+          group by rlt.loss_type;
+          `,
+      [start_date, end_date, loss_type],
+    );
+    if (!lostTimeQuery) {
+      throwError('Data tidak ditemukan', 500);
+    }
+
+    return lostTimeQuery;
+  }
+
+  private async calculatedLostTimeAllUnitSpecificActivities(start_date: string, end_date: string, loss_type: string) {
+    const lostTimeQuery = await this.dataSource.query(
+      `
+      select
+        ma.name,
+        coalesce(
+            sum(rlt.duration) / 60 / (
+              select count(distinct rlt2.population_id)
+              from r_loss_time rlt2
+              where rlt2.date_activity BETWEEN $1 and $2
+                and rlt2.loss_type = rlt.loss_type
+                and rlt2."deletedAt" is null
+            ), 0
+          ) as total_duration_per_unit,
+        sum(sum(rlt.duration) / 60 / (
+        select count(distinct rlt2.population_id)
+              from r_loss_time rlt2
+              where rlt2.date_activity BETWEEN $1 and $2
+                and rlt2.loss_type = rlt.loss_type
+                and rlt2."deletedAt" is null
+        )) over() as total_all_standby_duration
+      from r_loss_time rlt
+      left join m_activities ma on ma.id = rlt.activities_id
+      left join m_population mp on mp.id = rlt.population_id
+      where rlt.date_activity::date BETWEEN $1 and $2
+      and rlt.loss_type = $3
+      and rlt."deletedAt" is null
+      group by rlt.loss_type, ma.name
+      order by total_duration_per_unit desc;
+      `,
+      [start_date, end_date, loss_type],
+    );
+
+    if (!lostTimeQuery) {
+      throwError('Data tidak ditemukan', 500);
+    }
+
+    return lostTimeQuery;
   }
 
   private async calculateTablesData(startDate: string, endDate: string) {
