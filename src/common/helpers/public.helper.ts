@@ -11,6 +11,18 @@ export interface Pagination {
   lastPage: number;
 }
 
+export const ACCEPTED_DATE_FORMATS: string[] = [
+  'DD/MM/YYYY',
+  'D/M/YYYY',
+  'YYYY-MM-DD',
+  'MM-DD-YYYY',
+  'YYYY/MM/DD',
+  'D/M/YYYY HH:mm',
+  'DD/MM/YYYY HH:mm',
+  'YYYY-MM-DD HH:mm',
+  'YYYY/MM/DD HH:mm',
+];
+
 export function paginateResponse<T>(
   data: T[],
   total: number,
@@ -218,4 +230,24 @@ export function combineShiftDateTime(date: string, startTime: string, endTime: s
 export function extractTime(datetime: string | Date, withSeconds = true): string {
   const format = withSeconds ? 'HH:mm:ss' : 'HH:mm';
   return moment(datetime).format(format);
+}
+
+/**
+ * Parse date dengan beberapa format yang diperbolehkan
+ * @param value - string date dari file
+ * @param returnFormat - jika diisi, hasil akan diformat ke string dengan format ini
+ * @param formats - list format yang diijinkan
+ * @returns string (jika returnFormat diset) atau null jika invalid
+ */
+export function parseDateFile(
+  value: string,
+  returnFormat: string = 'YYYY-MM-DD',
+  formats: string[] = ACCEPTED_DATE_FORMATS,
+): string | null {
+  if (!value) return null;
+
+  const parsed = moment(value, formats, true);
+  if (!parsed.isValid()) return null;
+
+  return parsed.format(returnFormat);
 }
