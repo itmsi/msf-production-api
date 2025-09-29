@@ -4,7 +4,6 @@ import { Repository, IsNull, ILike, SelectQueryBuilder } from 'typeorm';
 
 import { ParentBaseDataPro, BaseDataPro } from './entities';
 import { Population } from '../population/entities/population.entity';
-import { Employee } from '../employee/entities/employee.entity';
 import { Barge } from '../barge/entities/barge.entity';
 import { OperationPoints } from '../operation-points/entities/operation-points.entity';
 import { Users } from '../users/entities/users.entity';
@@ -286,11 +285,20 @@ export class BaseDataProductionService {
 
       // Validate Dumping Point ID if provided
       if (detail.dumpingPointId) {
-        const dumpingPoint = await this.operationPointsRepository.findOne({
-          where: { id: detail.dumpingPointId, deletedAt: IsNull() },
-        });
-        if (!dumpingPoint) {
-          throw new BadRequestException(`Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan di tabel m_operation_points`);
+        if (detail?.activity && ['direct', 'barging'].includes(detail?.activity?.toLowerCase())) {
+          const dumpingPointBarge = await this.bargeRepository.findOne({
+            where: { id: detail.dumpingPointBargeId, deletedAt: IsNull() },
+          });
+          if (!dumpingPointBarge) {
+            throw new BadRequestException(`Dumping Point Barge dengan ID ${detail.dumpingPointBargeId} tidak ditemukan`);
+          }
+        } else {
+          const dumpingPoint = await this.operationPointsRepository.findOne({
+            where: { id: detail.dumpingPointId, deletedAt: IsNull() },
+          });
+          if (!dumpingPoint) {
+            throw new BadRequestException(`Dumping Point dengan ID ${detail.dumpingPointId} tidak ditemukan di tabel m_operation_points`);
+          }
         }
       }
 
@@ -374,9 +382,9 @@ export class BaseDataProductionService {
   }
 
   private async getDumpingPoint(point: string, activity: string): Promise<number | undefined> {
-    if (['hauling', 'direct'].includes(activity?.toLowerCase())) {
+    if (['barging', 'direct'].includes(activity?.toLowerCase())) {
       const barge = await this.bargeRepository.findOne({
-        where: { name: ILike(`%${point?.trim()}%`) },
+        where: { name: ILike(`%${point?.trim()}%`), deletedAt: IsNull() },
       });
       return barge?.id;
     }
@@ -512,11 +520,6 @@ export class BaseDataProductionService {
     if (!dumpingId) {
       const message = row.dumpingPointId ? `Dumping Point ${row.dumpingPointId} tidak ditemukan` : 'Dumping Point tidak ditemukan';
       return { isValid: false, error: message };
-    }
-
-    let dumpingPointBargeId: null | number = null;
-    if (['hauling', 'direct'].includes(row.activity)) {
-      dumpingPointBargeId = dumpingId;
     }
 
     const detail = {
