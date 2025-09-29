@@ -1,0 +1,5 @@
+activity_date,shift,standby_factor,start_time,finish_time,site_name,remark,
+01/01/2026,ds,Rain,13:00,14:00,KFM,Hujan segment 1
+01/01/2026,ds,Slippery,14:00,15:00,KFM,Hujan segment 2
+01/01/2026,ns,Rain,15:00,15:30,KFM,Hujan segment 3
+01/01/2026,ns,Rain,15:00,02:30,KFM,Hujan segment 3

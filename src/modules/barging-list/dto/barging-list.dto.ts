@@ -1,5 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsPositive, Min } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsPositive,
+  Min,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 export enum ShiftType {
@@ -13,7 +21,10 @@ export class CreateBargingListDto {
     example: '2025-01-15',
   })
   @IsNotEmpty({ message: 'Activity date tidak boleh kosong' })
-  @IsDateString({}, { message: 'Activity date harus berupa tanggal yang valid' })
+  @IsDateString(
+    {},
+    { message: 'Activity date harus berupa tanggal yang valid' },
+  )
   activity_date: string;
 
   @ApiProperty({
@@ -70,7 +81,10 @@ export class UpdateBargingListDto {
     example: '2025-01-15',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Activity date harus berupa tanggal yang valid' })
+  @IsDateString(
+    {},
+    { message: 'Activity date harus berupa tanggal yang valid' },
+  )
   activity_date?: string;
 
   @ApiPropertyOptional({
@@ -278,6 +292,65 @@ export class GetBargingListQueryDto {
   })
   @IsOptional()
   sortBy?: string = 'id';
+
+  @ApiPropertyOptional({
+    description: 'Sort order',
+    example: 'DESC',
+  })
+  @IsOptional()
+  sortOrder?: 'ASC' | 'DESC' = 'DESC';
+}
+
+export class ExportBargingListQueryDto {
+  @ApiPropertyOptional({
+    description: 'Pencarian berdasarkan unit hauler name atau barge name',
+    example: 'DT-001',
+  })
+  @IsOptional()
+  search?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter berdasarkan shift',
+    enum: ShiftType,
+    example: 'ds',
+  })
+  @IsOptional()
+  @IsEnum(ShiftType, { message: 'Shift harus berupa ds atau ns' })
+  shift?: ShiftType;
+
+  @ApiPropertyOptional({
+    description: 'Filter berdasarkan unit hauler ID',
+    example: 1,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'Unit hauler ID harus berupa angka' })
+  unit_hauler_id?: number;
+
+  @ApiPropertyOptional({
+    description: 'Filter berdasarkan barge ID',
+    example: 1,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'Barge ID harus berupa angka' })
+  barge_id?: number;
+
+  @ApiPropertyOptional({
+    description: 'Filter berdasarkan tanggal dari',
+    example: '2025-01-01',
+  })
+  @IsOptional()
+  @IsDateString({}, { message: 'Date from harus berupa tanggal yang valid' })
+  date_from?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter berdasarkan tanggal sampai',
+    example: '2025-01-31',
+  })
+  @IsOptional()
+  @IsDateString({}, { message: 'Date to harus berupa tanggal yang valid' })
+  date_to?: string;
 
   @ApiPropertyOptional({
     description: 'Sort order',

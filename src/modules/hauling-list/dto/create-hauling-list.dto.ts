@@ -1,4 +1,11 @@
-import { IsDateString, IsString, IsNumber, IsOptional, IsNotEmpty, IsEnum } from 'class-validator';
+import {
+  IsDateString,
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsNotEmpty,
+  IsEnum,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateHaulingListDto {
@@ -41,7 +48,10 @@ export class CreateHaulingListDto {
   @IsNotEmpty()
   loading_point_id: number;
 
-  @ApiPropertyOptional({ description: 'ID dumping point operation', example: 1 })
+  @ApiPropertyOptional({
+    description: 'ID dumping point operation',
+    example: 1,
+  })
   @IsNumber()
   @IsOptional()
   dumping_point_op_id?: number;

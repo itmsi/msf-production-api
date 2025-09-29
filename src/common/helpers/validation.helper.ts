@@ -297,3 +297,41 @@ export const validateImportFile = (file: Express.Multer.File): void => {
     throw new BadRequestException('File harus berupa CSV');
   }
 };
+
+export const validateFileNumber = (
+  row: Record<string, any>, // tambahin row sebagai parameter
+  field: string,
+  label: string,
+  max?: number,
+): { ok: boolean; error?: string } => {
+  const value = row[field];
+
+  if (value === undefined || value === null || value === '') {
+    return { ok: false, error: `${label} is required` };
+  }
+
+  const num = Number(value);
+
+  if (isNaN(num)) {
+    return {
+      ok: false,
+      error: `${label} harus berupa angka (row value: "${value}")`,
+    };
+  }
+
+  if (num < 1) {
+    return {
+      ok: false,
+      error: `${label} tidak boleh kurang dari 1 (row value: "${value}")`,
+    };
+  }
+
+  if (max !== undefined && num > max) {
+    return {
+      ok: false,
+      error: `${label} tidak boleh lebih dari ${max} (row value: "${value}")`,
+    };
+  }
+
+  return { ok: true };
+};

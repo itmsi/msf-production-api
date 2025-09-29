@@ -2252,58 +2252,118 @@ export class DashboardService {
 
       // Hitung MOHH = duration dari start_date and end_date
       // Menggunakan data dari r_parent_base_data_pro dengan durasi yang lebih akurat
-      const mohhQuery = await this.dataSource.query(
-        `
-        SELECT 
-          COALESCE(SUM(
-            CASE 
-              WHEN rpbdp.activity_date BETWEEN $1 AND $2 
-                AND rpbdp.start_shift IS NOT NULL 
-                AND rpbdp.end_shift IS NOT NULL
-              THEN EXTRACT(EPOCH FROM (rpbdp.end_shift - rpbdp.start_shift)) / 3600
-              ELSE 0 
-            END
-          ), 0) as total_mohh
-        FROM r_parent_base_data_pro rpbdp
-        WHERE rpbdp.activity_date BETWEEN $1 AND $2
-      `,
-        [startDate, endDate],
-      );
+      // const mohhQuery = await this.dataSource.query(
+      //   `
+      //   SELECT
+      //     COALESCE(SUM(
+      //       CASE
+      //         WHEN rpbdp.activity_date BETWEEN $1 AND $2
+      //           AND rpbdp.start_shift IS NOT NULL
+      //           AND rpbdp.end_shift IS NOT NULL
+      //         THEN EXTRACT(EPOCH FROM (rpbdp.end_shift - rpbdp.start_shift)) / 3600
+      //         ELSE 0
+      //       END
+      //     ), 0) as total_mohh
+      //   FROM r_parent_base_data_pro rpbdp
+      //   WHERE rpbdp.activity_date BETWEEN $1 AND $2
+      // `,
+      //   [startDate, endDate],
+      // );
 
       // Hitung EWH = SUM(r_base_data_pro.totalHM) all unit
-      const ewhQuery = await this.dataSource.query(
-        `
-        SELECT COALESCE(SUM(rbdp.total_hm), 0) as total_ewh
-        FROM r_parent_base_data_pro rpbdp
-        LEFT JOIN r_base_data_pro rbdp ON rbdp.parent_base_data_pro_id = rpbdp.id
-        WHERE rpbdp.activity_date BETWEEN $1 AND $2
-      `,
-        [startDate, endDate],
-      );
+      // const ewhQuery = await this.dataSource.query(
+      //   `
+      //   SELECT COALESCE(SUM(rbdp.total_hm), 0) as total_ewh
+      //   FROM r_parent_base_data_pro rpbdp
+      //   LEFT JOIN r_base_data_pro rbdp ON rbdp.parent_base_data_pro_id = rpbdp.id
+      //   WHERE rpbdp.activity_date BETWEEN $1 AND $2
+      // `,
+      //   [startDate, endDate],
+      // );
 
       // Hitung BD = SUM(r_loss_time.duration) WHERE loss_type = 'BD'
+      // const breakdownQuery = await this.dataSource.query(
+      //   `
+      //   SELECT COALESCE(SUM(duration), 0) as total_breakdown
+      //   FROM r_loss_time
+      //   WHERE loss_type = 'BD'
+      //     AND date_activity BETWEEN $1 AND $2
+      //     AND "deletedAt" is null
+      // `,
+      //   [startDate, endDate],
+      // );
+
+      const selectedStartDate = moment(startDate).format('YYYY-MM-DD');
+      const selectedEndDate = moment(endDate).format('YYYY-MM-DD');
+
+      const mohhQuery = await this.dataSource.query(
+        `select 
+          coalesce(sum(rpwh.mohh_per_month),0) as total_mohh 
+        from r_plan_working_hour rpwh 
+        where rpwh.plan_date::date between $1 and $2
+        and rpwh."deletedAt" is null;
+        `,
+        [selectedStartDate, selectedEndDate],
+      );
+
+      const standbyQuery = await this.dataSource.query(
+        `select 
+              rlt.loss_type,
+              coalesce(
+                sum(rlt.duration) / 60 / (
+                  select count(distinct rlt2.population_id)
+                  from r_loss_time rlt2
+                  where rlt2.date_activity::date BETWEEN $1 and $2
+                    and rlt2.loss_type = rlt.loss_type
+                    and rlt2."deletedAt" is null
+                ), 0
+              ) as total_duration
+          from r_loss_time rlt
+          left join m_population mp on mp.id = rlt.population_id
+          where rlt.date_activity::date BETWEEN $1 and $2
+            and rlt.loss_type = 'STB' 
+            and rlt."deletedAt" is null
+          group by rlt.loss_type;
+          `,
+        [selectedStartDate, selectedEndDate],
+      );
+
       const breakdownQuery = await this.dataSource.query(
-        `
-        SELECT COALESCE(SUM(duration), 0) as total_breakdown
-        FROM r_loss_time 
-        WHERE loss_type = 'BD' 
-          AND date_activity BETWEEN $1 AND $2
-          AND "deletedAt" is null
-      `,
-        [startDate, endDate],
+        `select 
+              rlt.loss_type,
+              coalesce(
+                sum(rlt.duration) / 60 / (
+                  select count(distinct rlt2.population_id)
+                  from r_loss_time rlt2
+                  where rlt2.date_activity::date BETWEEN $1 and $2
+                    and rlt2.loss_type = rlt.loss_type
+                    and rlt2."deletedAt" is null
+                ), 0
+              ) as total_duration
+          from r_loss_time rlt
+          left join m_population mp on mp.id = rlt.population_id
+          where rlt.date_activity::date BETWEEN $1 and $2
+            and rlt.loss_type = 'BD' 
+            and rlt."deletedAt" is null
+          group by rlt.loss_type;
+          `,
+        [selectedStartDate, selectedEndDate],
       );
 
       const totalMohh = parseFloat(mohhQuery[0]?.total_mohh || '0');
-      const totalEwh = parseFloat(ewhQuery[0]?.total_ewh || '0');
+      // const totalEwh = parseFloat(ewhQuery[0]?.total_ewh || '0');
       const totalBreakdown = parseFloat(breakdownQuery[0]?.total_breakdown || '0');
+      const totalStandby = parseFloat(standbyQuery[0]?.total_duration || '0');
 
       // Hitung STB = MOHH - EWH - Breakdown Time
-      const standbyTime = Math.max(0, totalMohh - totalEwh - totalBreakdown);
+      // const standbyTime = Math.max(0, totalMohh - totalEwh - totalBreakdown);
+      // Hitung EWH = MOHH - Standby Time - Breakdown Time
+      const totalEwh = totalMohh - totalStandby - totalBreakdown;
 
       return [
         {
           name: 'STB',
-          value: Math.round(standbyTime * 10) / 10,
+          value: Math.round(totalStandby * 10) / 10,
           color: '#34d399',
         },
         {

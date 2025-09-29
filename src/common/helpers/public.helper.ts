@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { Readable } from 'stream';
 import csv from 'csv-parser';
 import { Buffer } from 'buffer';
+import moment from 'moment';
 
 export interface Pagination {
   total: number;
@@ -173,4 +174,48 @@ export function setCsvExportHeaders(res: Response, filename: string) {
 
   // Security: cegah browser men-"sniff" MIME type
   res.setHeader('X-Content-Type-Options', 'nosniff');
+}
+
+export function isValidDate(dateString: string): boolean {
+  const date = new Date(dateString);
+  return date instanceof Date && !isNaN(date.getTime()) && !!dateString.match(/^\d{4}-\d{2}-\d{2}$/);
+}
+
+export function isValidDateTime(dateTimeStr: string): boolean {
+  // format: yyyy-mm-dd HH:mm
+  const regex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/;
+  if (!regex.test(dateTimeStr)) return false;
+
+  const date = new Date(dateTimeStr.replace(' ', 'T'));
+  return !isNaN(date.getTime());
+}
+
+export function convertStringDateYYYYMMDD(input: string) {
+  const date = moment(input).format('YYYY-MM-DD');
+  return date;
+}
+
+export function combineDateTime(date: string, time: string): string {
+  const dateFormat = convertStringDateYYYYMMDD(date);
+  return moment(`${dateFormat} ${time}`, 'YYYY-MM-DD HH:mm').format('YYYY-MM-DD HH:mm:ss.SSS');
+}
+
+export function combineShiftDateTime(date: string, startTime: string, endTime: string) {
+  const dateFormat = convertStringDateYYYYMMDD(date);
+  const start = moment(`${dateFormat} ${startTime.replace('.', ':')}`, 'YYYY-MM-DD HH:mm');
+  let end = moment(`${dateFormat} ${endTime.replace('.', ':')}`, 'YYYY-MM-DD HH:mm');
+
+  if (end.isSameOrBefore(start)) {
+    end = end.add(1, 'day');
+  }
+
+  return {
+    start: start.format('YYYY-MM-DD HH:mm:ss.SSS'),
+    end: end.format('YYYY-MM-DD HH:mm:ss.SSS'),
+  };
+}
+
+export function extractTime(datetime: string | Date, withSeconds = true): string {
+  const format = withSeconds ? 'HH:mm:ss' : 'HH:mm';
+  return moment(datetime).format(format);
 }

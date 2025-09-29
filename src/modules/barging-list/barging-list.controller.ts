@@ -1,13 +1,55 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  ParseIntPipe,
+  UseInterceptors,
+  UploadedFile,
+  Req,
+  UseGuards,
+  StreamableFile,
+  InternalServerErrorException,
+  Res,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { BargingListService } from './barging-list.service';
-import { CreateBargingListDto, UpdateBargingListDto, BargingListResponseDto, GetBargingListQueryDto } from './dto';
+import { CreateBargingListDto, UpdateBargingListDto, GetBargingListQueryDto, ExportBargingListQueryDto } from './dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard } from 'src/common';
+import { join } from 'path';
+import { createReadStream } from 'fs';
+import { Response } from 'express';
 
 @ApiTags('Barging List')
 @ApiBearerAuth('jwt')
+@UseGuards(JwtAuthGuard)
 @Controller('barging-list')
 export class BargingListController {
   constructor(private readonly bargingListService: BargingListService) {}
+
+  @Get('export')
+  async exportData(@Query() query: ExportBargingListQueryDto, @Res({ passthrough: false }) res: Response) {
+    return await this.bargingListService.exportData(query, res);
+  }
+
+  @Get('import/template')
+  downloadTemplate(): StreamableFile {
+    try {
+      const file = join(process.cwd(), 'src/modules/barging-list/template-barging-list-import.csv');
+      const stream = createReadStream(file);
+      return new StreamableFile(stream, {
+        type: 'text/csv',
+        disposition: 'attachment; filename="template-barging-list-import.csv"',
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to download CSV template');
+    }
+  }
 
   @Get('test/data')
   @ApiOperation({
@@ -518,5 +560,12 @@ export class BargingListController {
   })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.bargingListService.remove(id);
+  }
+
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  async importData(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    const userId = req.user?.id;
+    return await this.bargingListService.importData(file, userId);
   }
 }

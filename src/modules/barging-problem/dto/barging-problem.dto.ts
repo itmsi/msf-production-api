@@ -382,3 +382,103 @@ export class GetBargingProblemsQueryDto {
   @IsEnum(['ASC', 'DESC'], { message: 'sortOrder harus berupa ASC atau DESC' })
   sortOrder?: 'ASC' | 'DESC';
 }
+
+export class ExportBargingProblemsQueryDto {
+  @ApiProperty({
+    description: 'Pencarian umum di semua field',
+    example: 'excavator',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiProperty({
+    description: 'Filter berdasarkan tanggal aktivitas',
+    example: '2024-01-01',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'activity_date harus berupa string' })
+  activity_date?: string;
+
+  @ApiProperty({
+    description: 'Filter berdasarkan tanggal mulai aktivitas (YYYY-MM-DD)',
+    example: '2024-01-01',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'start_date harus berupa string' })
+  start_date?: string;
+
+  @ApiProperty({
+    description: 'Filter berdasarkan tanggal akhir aktivitas (YYYY-MM-DD)',
+    example: '2024-01-31',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'end_date harus berupa string' })
+  end_date?: string;
+
+  @ApiProperty({
+    description: 'Filter berdasarkan shift',
+    example: 'ds',
+    enum: ['ds', 'ns'],
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(['ds', 'ns'], { message: 'shift harus berupa ds atau ns' })
+  shift?: string;
+
+  @ApiProperty({
+    description: 'Filter berdasarkan ID barge',
+    example: 1,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber({}, { message: 'barge_id harus berupa angka' })
+  @Min(1, { message: 'barge_id harus lebih dari 0' })
+  barge_id?: number;
+
+  @ApiProperty({
+    description: 'Filter berdasarkan ID aktivitas',
+    example: 1,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber({}, { message: 'activities_id harus berupa angka' })
+  @Min(1, { message: 'activities_id harus lebih dari 0' })
+  activities_id?: number;
+
+  @ApiProperty({
+    description: 'Filter berdasarkan ID site',
+    example: 1,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber({}, { message: 'site_id harus berupa angka' })
+  @Min(1, { message: 'site_id harus lebih dari 0' })
+  site_id?: number;
+
+  @ApiProperty({
+    description: 'Field untuk sorting',
+    example: 'id',
+    enum: ['id', 'activity_date', 'shift', 'barge_id', 'activities_id', 'site_id', 'start', 'finish', 'duration', 'createdAt', 'updatedAt'],
+    default: 'id',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  sortBy?: string;
+
+  @ApiProperty({
+    description: 'Urutan sorting',
+    example: 'DESC',
+    enum: ['ASC', 'DESC'],
+    default: 'DESC',
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(['ASC', 'DESC'], { message: 'sortOrder harus berupa ASC atau DESC' })
+  sortOrder?: 'ASC' | 'DESC';
+}

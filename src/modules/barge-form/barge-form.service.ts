@@ -11,6 +11,7 @@ import moment from 'moment';
 import { S3Service } from 'src/integrations/s3/s3.service';
 import { Sites } from '../sites';
 import { Barge } from '../barge/entities/barge.entity';
+import { validateImportFile } from 'src/common/helpers/validation.helper';
 
 @Injectable()
 export class BargeFormService {
@@ -259,15 +260,6 @@ export class BargeFormService {
     };
   }
 
-  private validateImportFile(file: Express.Multer.File): void {
-    if (!file) {
-      throw new BadRequestException('File tidak ditemukan');
-    }
-    if (!file.mimetype.includes('csv') && !file.originalname.endsWith('.csv')) {
-      throw new BadRequestException('File harus berupa CSV');
-    }
-  }
-
   private buildImportResponse(
     total: number,
     successCount: number,
@@ -349,7 +341,7 @@ export class BargeFormService {
 
   async importData(file: Express.Multer.File, userId: number) {
     try {
-      this.validateImportFile(file);
+      validateImportFile(file);
       const csvData = await CsvHelper.parseCsvFile(file.buffer);
       const validationResult = await this.processImportData(csvData);
       if (validationResult?.payload.length && validationResult.successCount > 0) {

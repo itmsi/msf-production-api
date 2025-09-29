@@ -14,7 +14,7 @@ import {
 } from './dto/parent-plan-working-hour.dto';
 import { CsvHelper, paginateResponse, setCsvExportHeaders } from '../../common/helpers/public.helper';
 import { Activities } from '../activities/entities/activities.entity';
-import { validateImportFile } from 'src/common/helpers/validation.helper';
+import { validateFileNumber, validateImportFile } from 'src/common/helpers/validation.helper';
 import moment from 'moment';
 import { successResponse, throwError } from 'src/common';
 import { S3Service } from 'src/integrations/s3/s3.service';
@@ -1627,39 +1627,13 @@ export class ParentPlanWorkingHourService {
       };
     }
 
-    const validateNumber = (field: string, label: string, max?: number): { ok: boolean; error?: string } => {
-      if (row[field] === undefined || row[field] === null || row[field] === '') {
-        return { ok: false, error: `${label} is required` };
-      }
-      const val = Number(row[field]);
-      if (isNaN(val)) {
-        return {
-          ok: false,
-          error: `${label} harus berupa number (row: ${row[field]})`,
-        };
-      }
-      if (val < 1) {
-        return {
-          ok: false,
-          error: `${label} tidak boleh kurang dari 1 (row: ${row[field]})`,
-        };
-      }
-      if (max !== undefined && val > max) {
-        return {
-          ok: false,
-          error: `${label} tidak boleh lebih dari ${max} (row: ${row[field]})`,
-        };
-      }
-      return { ok: true };
-    };
-
-    let res = validateNumber('total_working_hour_month', 'total_working_hour_month');
+    let res = validateFileNumber(row, 'total_working_hour_month', 'total_working_hour_month');
     if (!res.ok) return { isValid: false, error: res.error };
 
-    res = validateNumber('total_working_hour_day', 'total_working_hour_day', 24);
+    res = validateFileNumber(row, 'total_working_hour_day', 'total_working_hour_day', 24);
     if (!res.ok) return { isValid: false, error: res.error };
 
-    res = validateNumber('total_mohh_per_month', 'total_mohh_per_month', 744);
+    res = validateFileNumber(row, 'total_mohh_per_month', 'total_mohh_per_month', 744);
     if (!res.ok) return { isValid: false, error: res.error };
 
     const workingHour = ['year_month', 'total_working_hour_month', 'total_working_hour_day', 'total_mohh_per_month'];

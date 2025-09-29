@@ -8,9 +8,10 @@ import { Sites } from '../sites/entities/sites.entity';
 import { OperationPoints } from '../operation-points/entities/operation-points.entity';
 import { Barge } from '../barge/entities/barge.entity';
 import { JwtAuthGuard } from '../../common/guard/jwt-auth.guard';
+import { S3Module } from 'src/integrations/s3/s3.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([HaulingList, Population, Sites, OperationPoints, Barge])],
+  imports: [TypeOrmModule.forFeature([HaulingList, Population, Sites, OperationPoints, Barge]), S3Module],
   controllers: [HaulingListController],
   providers: [HaulingListService, JwtAuthGuard],
   exports: [HaulingListService],
