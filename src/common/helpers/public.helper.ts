@@ -178,11 +178,7 @@ export function setCsvExportHeaders(res: Response, filename: string) {
 
 export function isValidDate(dateString: string): boolean {
   const date = new Date(dateString);
-  return (
-    date instanceof Date &&
-    !isNaN(date.getTime()) &&
-    !!dateString.match(/^\d{4}-\d{2}-\d{2}$/)
-  );
+  return date instanceof Date && !isNaN(date.getTime()) && !!dateString.match(/^\d{4}-\d{2}-\d{2}$/);
 }
 
 export function isValidDateTime(dateTimeStr: string): boolean {
@@ -201,25 +197,13 @@ export function convertStringDateYYYYMMDD(input: string) {
 
 export function combineDateTime(date: string, time: string): string {
   const dateFormat = convertStringDateYYYYMMDD(date);
-  return moment(`${dateFormat} ${time}`, 'YYYY-MM-DD HH:mm').format(
-    'YYYY-MM-DD HH:mm:ss.SSS',
-  );
+  return moment(`${dateFormat} ${time}`, 'YYYY-MM-DD HH:mm').format('YYYY-MM-DD HH:mm:ss.SSS');
 }
 
-export function combineShiftDateTime(
-  date: string,
-  startTime: string,
-  endTime: string,
-) {
+export function combineShiftDateTime(date: string, startTime: string, endTime: string) {
   const dateFormat = convertStringDateYYYYMMDD(date);
-  const start = moment(
-    `${dateFormat} ${startTime.replace('.', ':')}`,
-    'YYYY-MM-DD HH:mm',
-  );
-  let end = moment(
-    `${dateFormat} ${endTime.replace('.', ':')}`,
-    'YYYY-MM-DD HH:mm',
-  );
+  const start = moment(`${dateFormat} ${startTime.replace('.', ':')}`, 'YYYY-MM-DD HH:mm');
+  let end = moment(`${dateFormat} ${endTime.replace('.', ':')}`, 'YYYY-MM-DD HH:mm');
 
   if (end.isSameOrBefore(start)) {
     end = end.add(1, 'day');
@@ -231,10 +215,7 @@ export function combineShiftDateTime(
   };
 }
 
-export function extractTime(
-  datetime: string | Date,
-  withSeconds = true,
-): string {
+export function extractTime(datetime: string | Date, withSeconds = true): string {
   const format = withSeconds ? 'HH:mm:ss' : 'HH:mm';
   return moment(datetime).format(format);
 }
