@@ -51,8 +51,9 @@ async function bootstrap() {
       showRequestHeaders: true,
     },
   }); // http://localhost:3000/docs
+  const corsOrigin = process.env.CORS_SITES_ALLOW === '*' ? '*' : process.env.CORS_SITES_ALLOW?.split(',').map((o) => o.trim());
   app.enableCors({
-    origin: ['*', 'http://localhost:3000', 'https://tid-dev.motorsightsinternational.com'],
+    origin: corsOrigin || '*',
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
     exposedHeaders: ['Content-Disposition'],
