@@ -54,9 +54,10 @@ async function bootstrap() {
   const corsOrigin = process.env.CORS_SITES_ALLOW === '*' ? '*' : process.env.CORS_SITES_ALLOW?.split(',').map((o) => o.trim());
   app.enableCors({
     origin: corsOrigin || '*',
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    // methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    methods: 'GET,POST,PUT,DELETE,OPTIONS,PATCH',
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
-    exposedHeaders: ['Content-Disposition'],
+    // exposedHeaders: ['Content-Disposition'],
     credentials: true,
     // preflightContinue: false,
     // optionsSuccessStatus: 204,
