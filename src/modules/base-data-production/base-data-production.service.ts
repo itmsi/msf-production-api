@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, HttpException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull, ILike, SelectQueryBuilder } from 'typeorm';
+import { Repository, IsNull, ILike, SelectQueryBuilder, DataSource } from 'typeorm';
 
 import { ParentBaseDataPro, BaseDataPro } from './entities';
 import { Population } from '../population/entities/population.entity';
@@ -36,6 +36,7 @@ export class BaseDataProductionService {
     @InjectRepository(Users)
     private usersRepository: Repository<Users>,
     private s3Service: S3Service,
+    private dataSource: DataSource,
   ) {}
 
   async create(createDto: CreateBaseDataProductionDto, userId: number) {
@@ -403,20 +404,16 @@ export class BaseDataProductionService {
 
   private async processImportData(csvData: any[]): Promise<{
     results: any[];
-    details: any[];
     failedRows: any[];
     successCount: number;
     failedCount: number;
-    populationId?: number;
-    driverId?: number;
+    payload: CreateBaseDataProductionDto[];
   }> {
     const results: any[] = [];
-    const details: any[] = [];
     const failedRows: any[] = [];
     let successCount = 0;
     let failedCount = 0;
-    let populationId: number | undefined;
-    let driverId: number | undefined;
+    const payload: CreateBaseDataProductionDto[] = [];
 
     const validations = await Promise.all(
       csvData.map(async (row: any, idx: number) => {
@@ -439,16 +436,8 @@ export class BaseDataProductionService {
             };
           }
 
-          details.push(validationResult.detail);
-          // Store the first valid IDs
-          if (!populationId && validationResult.populationId) {
-            populationId = validationResult.populationId;
-          }
-          if (!driverId && validationResult.driverId) {
-            driverId = validationResult.driverId;
-          }
           successCount++;
-
+          if (validationResult.payload) payload.push(validationResult.payload);
           return {
             row: rowNumber,
             status: 'success',
@@ -467,17 +456,14 @@ export class BaseDataProductionService {
         }
       }),
     );
-
     results.push(...validations);
 
     return {
       results,
-      details,
       failedRows,
       successCount,
       failedCount,
-      populationId,
-      driverId,
+      payload,
     };
   }
 
@@ -487,11 +473,11 @@ export class BaseDataProductionService {
     detail?: any;
     populationId?: number;
     driverId?: number;
+    payload?: any;
   }> {
     if (!row.activity) {
       return { isValid: false, error: 'actvity is required' };
     }
-
     const ACTIVITIES = ['hauling', 'direct', 'barging', 'support'];
     if (!ACTIVITIES.includes(row.activity?.toLowerCase())) {
       return { isValid: false, error: `actvity must be ${ACTIVITIES?.join(' ')}` };
@@ -501,7 +487,6 @@ export class BaseDataProductionService {
     const driverId = await this.getUser(row.driverId);
     const loadingId = await this.getOperationPoint(row.loadingPointId);
     const dumpingId = await this.getDumpingPoint(row.dumpingPointId, row.activity);
-
     if (!unitId) {
       const message = row.population_id ? `Unit ${row.population_id} tidak ditemukan` : 'Unit tidak ditemukan';
       return { isValid: false, error: message };
@@ -530,59 +515,27 @@ export class BaseDataProductionService {
       totalVessel: Number(row.totalVessel),
       distance: Number(row.distance),
       loadingPointId: loadingId,
-      dumpingPointBargeId: dumpingId,
+      dumpingPointId: dumpingId,
       activity: row.activity,
       material: row.material,
     };
 
+    const payload = {
+      activityDate: row.activityDate,
+      population_id: unitId, // Use resolved ID
+      driverId: driverId, // Use resolved ID
+      shift: row?.shift?.toLowerCase(),
+      startShift: moment(row.startShift, 'YYYY-MM-DD HH:mm', true).toDate(),
+      endShift: moment(row.endShift, 'YYYY-MM-DD HH:mm', true).toDate(),
+      type: row.type,
+      detail: [detail],
+    };
     return {
       isValid: true,
       detail,
       populationId: unitId,
       driverId: driverId,
-    };
-  }
-
-  private buildImportPayload(csvData: any[], details: any[], populationId?: number, driverId?: number): any {
-    if (
-      !csvData ||
-      csvData.length === 0 ||
-      !details ||
-      details.length === 0 ||
-      !populationId ||
-      !driverId ||
-      populationId <= 0 ||
-      driverId <= 0
-    ) {
-      return null;
-    }
-
-    const firstRow = csvData[0];
-
-    if (!firstRow || !firstRow.activityDate) {
-      return null;
-    }
-
-    return {
-      activityDate: firstRow.activityDate,
-      population_id: populationId, // Use resolved ID
-      driverId: driverId, // Use resolved ID
-      shift: firstRow?.shift?.toLowerCase(),
-      startShift: firstRow.startShift,
-      endShift: firstRow.endShift,
-      type: firstRow.type,
-      detail: details.map((d) => ({
-        hmAwal: d.hmAwal,
-        hmAkhir: d.hmAkhir,
-        kmAwal: d.kmAwal,
-        kmAkhir: d.kmAkhir,
-        totalVessel: d.totalVessel,
-        distance: d.distance,
-        loadingPointId: d.loadingPointId,
-        dumpingPointId: d.dumpingPointId,
-        activity: d.activity,
-        material: d.material,
-      })),
+      payload,
     };
   }
 
@@ -966,15 +919,83 @@ export class BaseDataProductionService {
     return successResponse(null, 'Base data production berhasil dihapus');
   }
 
+  async bulkCreate(payload: CreateBaseDataProductionDto[], userId: number): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      for (const createDto of payload) {
+        // Cek parent
+        let parent = await queryRunner.manager.findOne(ParentBaseDataPro, {
+          where: {
+            populationId: createDto.population_id,
+            activityDate: new Date(createDto.activityDate),
+            shift: createDto.shift,
+            driverId: createDto.driverId,
+          },
+        });
+
+        // Kalau belum ada parent, buat baru
+        if (!parent) {
+          const newParent = queryRunner.manager.create(ParentBaseDataPro, {
+            populationId: createDto.population_id,
+            activityDate: new Date(createDto.activityDate),
+            shift: createDto.shift,
+            driverId: createDto.driverId,
+            startShift: createDto.startShift ? new Date(createDto.startShift) : null,
+            endShift: createDto.endShift ? new Date(createDto.endShift) : null,
+            createdBy: userId,
+            updatedBy: userId,
+          });
+
+          parent = await queryRunner.manager.save(newParent);
+        }
+
+        // Buat detail
+        const baseDataProDetails = createDto.detail.map((detail) =>
+          queryRunner.manager.create(BaseDataPro, {
+            parentBaseDataProId: parent.id,
+            kmAwal: detail.kmAwal,
+            kmAkhir: detail.kmAkhir,
+            totalKm: detail.totalKm ?? (detail.kmAkhir && detail.kmAwal ? detail.kmAkhir - detail.kmAwal : 0),
+            hmAwal: detail.hmAwal,
+            hmAkhir: detail.hmAkhir,
+            totalHm: detail.totalHm ?? (detail.hmAkhir && detail.hmAwal ? detail.hmAkhir - detail.hmAwal : 0),
+            loadingPointId: detail.loadingPointId,
+            dumpingPointId: detail.dumpingPointId,
+            dumpingPointOpId: detail.dumpingPointOpId,
+            dumpingPointBargeId: detail.dumpingPointBargeId,
+            activity: detail.activity,
+            mroundDistance: detail.distance,
+            distance: detail.distance,
+            totalVessel: detail.totalVessel,
+            material: detail.material,
+            createdBy: userId,
+            updatedBy: userId,
+          }),
+        );
+
+        await queryRunner.manager.save(BaseDataPro, baseDataProDetails);
+      }
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw new Error(`Failed to import base data production: ${error.message}`);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
   async importData(file: Express.Multer.File, userId: number) {
     try {
       this.validateImportFile(file);
       const csvData = await CsvHelper.parseCsvFile(file.buffer);
       const validationResult = await this.processImportData(csvData);
-      const payload = this.buildImportPayload(csvData, validationResult.details, validationResult.populationId, validationResult.driverId);
 
-      if (payload && validationResult.successCount > 0) {
-        await this.create(payload, userId);
+      if (validationResult.payload?.length > 0 && validationResult.successCount > 0) {
+        await this.bulkCreate(validationResult.payload, userId);
       }
 
       const errorFileInfo = await this.generateErrorCsv(validationResult.failedRows);

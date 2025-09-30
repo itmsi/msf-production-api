@@ -871,6 +871,9 @@ export class DashboardService {
       // Get gain/lost data
       const gainLostData = await this.getGainLostData(startDateStr, endDateStr);
 
+      const tonnagePercentage =
+        tonnageData.targetTonnage > 0 ? Math.round((tonnageData.actualTonnage / tonnageData.targetTonnage) * 100) : 0;
+
       return {
         statusCode: 200,
         message: 'success',
@@ -899,10 +902,7 @@ export class DashboardService {
               target: tonnageData.targetTonnage,
               actual: tonnageData.actualTonnage,
               dev: tonnageData.targetTonnage - tonnageData.actualTonnage,
-              percent:
-                tonnageData.actualTonnage > 0 && tonnageData.targetTonnage > 0
-                  ? Math.min(Math.round((tonnageData.actualTonnage / tonnageData.targetTonnage) * 100), 100)
-                  : 0,
+              percent: tonnagePercentage,
             },
           ],
           gain_lost: gainLostData,
