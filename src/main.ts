@@ -52,15 +52,14 @@ async function bootstrap() {
     },
   }); // http://localhost:3000/docs
   const corsOrigin = process.env.CORS_SITES_ALLOW === '*' ? '*' : process.env.CORS_SITES_ALLOW?.split(',').map((o) => o.trim());
-
   app.enableCors({
     origin: corsOrigin || '*',
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
-    exposedHeaders: ['Content-Disposition'],
+    // exposedHeaders: ['Content-Disposition'],
     credentials: true,
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
+    // preflightContinue: false,
+    // optionsSuccessStatus: 204,
   });
   app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalInterceptors(new LoggerInterceptor());

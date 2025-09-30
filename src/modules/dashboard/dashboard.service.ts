@@ -1988,7 +1988,7 @@ export class DashboardService {
 
         result.map((row) => {
           const fleetStatus = new FleetStatusItemDto();
-          fleetStatus.fleet_id = row.unit_id;
+          fleetStatus.fleet_id = row.unit_hauler_id;
           fleetStatus.fleet = row.no_unit;
           fleetStatus.start_loading = row.start_time ? moment(row.start_time).format('HH:mm') : '';
           fleetStatus.finish_loading = row.end_time ? moment(row.end_time).format('HH:mm') : '';
@@ -2409,17 +2409,17 @@ export class DashboardService {
         {
           name: 'MOHH',
           value: Math.round(totalMohh * 10) / 10,
-          color: '#1e3a8a',
+          color: '#10b981',
         },
         {
           name: 'STB',
           value: Math.round(totalStandby * 10) / 10,
-          color: '#34d399',
+          color: '#c9c312',
         },
         {
           name: 'BD',
           value: Math.round(totalBreakdown * 10) / 10,
-          color: '#d1d5db',
+          color: '#eb4034',
         },
         {
           name: 'EWH',
@@ -2910,7 +2910,7 @@ export class DashboardService {
         JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
         JOIN m_population mp ON rpbdp.population_id = mp.id
         WHERE rbdp.material = 'ore'
-          AND rbdp.activity = 'hauling'
+          AND rbdp.activity in ('hauling','direct')
           AND rpbdp.activity_date BETWEEN $1 AND $2
           AND rbdp."deletedAt" IS NULL
       `,
