@@ -58,8 +58,8 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
     exposedHeaders: ['Content-Disposition'],
     credentials: true,
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
+    // preflightContinue: false,
+    // optionsSuccessStatus: 204,
   });
   app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalInterceptors(new LoggerInterceptor());
