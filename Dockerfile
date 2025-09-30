@@ -13,4 +13,4 @@ RUN npm run build
 
 # Jalankan aplikasi
 CMD ["node", "dist/main.js"]
-EXPOSE 3001
+EXPOSE 3003
