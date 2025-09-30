@@ -215,9 +215,8 @@ export class DashboardService {
           SUM(tonnage) as total_tonnage,
           SUM(slippery) as total_slippery,
           SUM(hujan) as total_rain
-        FROM get_summary_production_with_loss_time()
-        WHERE date BETWEEN $1 AND $2
-          AND material_type = 'ore hauling'
+        FROM get_summary_production_with_loss_time_v2($1,$2)
+        WHERE material_type = 'ore hauling'
         GROUP BY date
         ORDER BY date ASC
       `;
