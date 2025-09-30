@@ -1988,7 +1988,7 @@ export class DashboardService {
 
         result.map((row) => {
           const fleetStatus = new FleetStatusItemDto();
-          fleetStatus.fleet_id = row.unit_id;
+          fleetStatus.fleet_id = row.unit_hauler_id;
           fleetStatus.fleet = row.no_unit;
           fleetStatus.start_loading = row.start_time ? moment(row.start_time).format('HH:mm') : '';
           fleetStatus.finish_loading = row.end_time ? moment(row.end_time).format('HH:mm') : '';
