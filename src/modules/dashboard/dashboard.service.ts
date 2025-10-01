@@ -215,9 +215,8 @@ export class DashboardService {
           SUM(tonnage) as total_tonnage,
           SUM(slippery) as total_slippery,
           SUM(hujan) as total_rain
-        FROM get_summary_production_with_loss_time()
-        WHERE date BETWEEN $1 AND $2
-          AND material_type = 'ore hauling'
+        FROM get_summary_production_with_loss_time_v2($1,$2)
+        WHERE material_type = 'ore hauling'
         GROUP BY date
         ORDER BY date ASC
       `;
@@ -528,13 +527,15 @@ export class DashboardService {
         .andWhere('ma2.status IN (:...status)')
         .andWhere('rlt2."deletedAt" IS NULL');
 
+      const denominator = `NULLIF( (${subCount.getQuery()}), 0 )`;
+
       const qb = this.dataSource
         .createQueryBuilder()
         .select('ma.name', 'name')
         .addSelect(
           `
           COALESCE(
-            SUM(rlt.duration) / 60.0 / ( ${subCount.getQuery()} )
+            SUM(rlt.duration) / 60.0 / ${denominator}
           , 0)
           `,
           'total_duration_per_unit',
@@ -542,7 +543,7 @@ export class DashboardService {
         .addSelect(
           `
           SUM(
-            SUM(rlt.duration) / 60.0 / ( ${subCount.getQuery()} )
+            SUM(rlt.duration) / 60.0 / ${denominator}
           ) OVER ()
           `,
           'total_all_standby_duration',
@@ -560,23 +561,6 @@ export class DashboardService {
           status,
           ...subCount.getParameters(),
         });
-
-      // const qb = this.activitiesRepo
-      //   .createQueryBuilder('ma')
-      //   .leftJoin(
-      //     EffectiveWorkingHours,
-      //     'rlt',
-      //     'rlt.activities_id = ma.id AND rlt.date_activity BETWEEN :start AND :end AND rlt.deletedAt IS NULL',
-      //     { start, end },
-      //   )
-      //   .select('ma.name', 'name')
-      //   .addSelect('ma.status', 'status')
-      //   .addSelect('COALESCE(SUM(rlt.duration) / 60, 0)', 'total_duration')
-      //   .where('ma.status IN (:...status)', { status })
-      //   .andWhere('ma.deletedAt IS NULL')
-      //   .groupBy('ma.name')
-      //   .addGroupBy('ma.status')
-      //   .orderBy('ma.name', 'ASC');
 
       const result = await qb.getRawMany();
 
