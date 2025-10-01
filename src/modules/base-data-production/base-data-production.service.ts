@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, HttpException, Inte
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, ILike, SelectQueryBuilder, DataSource } from 'typeorm';
 
-import { ParentBaseDataPro, BaseDataPro } from './entities';
+import { ParentBaseDataPro, BaseDataPro, ActivityType } from './entities';
 import { Population } from '../population/entities/population.entity';
 import { Barge } from '../barge/entities/barge.entity';
 import { OperationPoints } from '../operation-points/entities/operation-points.entity';
@@ -72,8 +72,18 @@ export class BaseDataProductionService {
       // Create parent base data pro
       const parent = checkParent ?? savedParent;
       // Create base data pro details
-      const baseDataProDetails = createDto.detail.map((detail) =>
-        this.baseDataProRepository.create({
+      const baseDataProDetails = createDto.detail.map((detail) => {
+        const isBarge = detail.activity && ['barging', 'direct'].includes(detail.activity?.toLowerCase());
+        if (isBarge && detail.dumpingPointId) {
+          detail.dumpingPointBargeId = detail.dumpingPointId;
+        }
+
+        if (detail.activity && !isBarge && detail.dumpingPointId) {
+          detail.dumpingPointOpId = detail.dumpingPointId;
+        }
+        detail.dumpingPointId = null;
+
+        return this.baseDataProRepository.create({
           parentBaseDataProId: parent.id,
           kmAwal: detail.kmAwal,
           kmAkhir: detail.kmAkhir,
@@ -92,8 +102,8 @@ export class BaseDataProductionService {
           material: detail.material,
           createdBy: userId,
           updatedBy: userId,
-        }),
-      );
+        });
+      });
 
       await this.baseDataProRepository.save(baseDataProDetails);
 
@@ -684,7 +694,15 @@ export class BaseDataProductionService {
       // Update existing details or create new ones
       for (let i = 0; i < updateDto.detail.length; i++) {
         const detailDto = updateDto.detail[i];
+        const isBarge = detailDto.activity && ['barging', 'direct'].includes(detailDto.activity?.toLowerCase());
+        if (isBarge && detailDto.dumpingPointId) {
+          detailDto.dumpingPointBargeId = detailDto.dumpingPointId;
+        }
 
+        if (detailDto.activity && !isBarge && detailDto.dumpingPointId) {
+          detailDto.dumpingPointOpId = detailDto.dumpingPointId;
+        }
+        detailDto.dumpingPointId = null;
         if (i < existingDetails.length) {
           // Update existing detail
           const existingDetail = existingDetails[i];
@@ -818,9 +836,9 @@ export class BaseDataProductionService {
       if (rawResult.length == 0) {
         emptyDataResponse('Batch Inbound not found');
       }
-
       const result = rawResult.map((item) => ({
         ...item,
+        dumping_point: item.dumping_point || item.dumping_point_op || item.dumping_point_barge,
         km_awal: item.km_awal ? parseFloat(Number(item.km_awal).toFixed(2)) : 0,
         km_akhir: item.km_akhir ? parseFloat(Number(item.km_akhir).toFixed(2)) : 0,
         hm_awal: item.hm_awal ? parseFloat(Number(item.hm_awal).toFixed(2)) : 0,
@@ -878,8 +896,8 @@ export class BaseDataProductionService {
             totalHm: Number(baseData?.totalHm),
             loadingPointId: baseData?.loadingPointId,
             loadingPointName: baseData?.loadingPoint?.name || '',
-            dumpingPointId: baseData?.dumpingPointId,
-            dumpingPointName: baseData?.dumpingPoint?.name || '',
+            dumpingPointId: baseData?.dumpingPointId || baseData?.dumpingPointOpId || baseData?.dumpingPointBargeId,
+            dumpingPointName: baseData?.dumpingPoint?.name || baseData?.dumpingPointOp?.name || baseData?.dumpingPointBarge?.name || '',
             dumpingPointOpId: baseData?.dumpingPointOpId,
             dumpingPointBargeId: baseData?.dumpingPointBargeId,
             activity: baseData?.activity,
@@ -953,8 +971,18 @@ export class BaseDataProductionService {
         }
 
         // Buat detail
-        const baseDataProDetails = createDto.detail.map((detail) =>
-          queryRunner.manager.create(BaseDataPro, {
+        const baseDataProDetails = createDto.detail.map((detail) => {
+          const isBarge = detail.activity && ['barging', 'direct'].includes(detail.activity?.toLowerCase());
+          if (isBarge && detail.dumpingPointId) {
+            detail.dumpingPointBargeId = detail.dumpingPointId;
+          }
+
+          if (detail.activity && !isBarge && detail.dumpingPointId) {
+            detail.dumpingPointOpId = detail.dumpingPointId;
+          }
+          detail.dumpingPointId = null;
+
+          return queryRunner.manager.create(BaseDataPro, {
             parentBaseDataProId: parent.id,
             kmAwal: detail.kmAwal,
             kmAkhir: detail.kmAkhir,
@@ -973,8 +1001,8 @@ export class BaseDataProductionService {
             material: detail.material,
             createdBy: userId,
             updatedBy: userId,
-          }),
-        );
+          });
+        });
 
         await queryRunner.manager.save(BaseDataPro, baseDataProDetails);
       }
@@ -1098,7 +1126,7 @@ export class BaseDataProductionService {
       'HM End': item.hm_akhir ? parseFloat(Number(item.hm_akhir).toFixed(2)) : 0,
       'HM Total': item.total_hm ? parseFloat(Number(item.total_hm).toFixed(2)) : 0,
       'Loading Point': item?.loading_point || '-',
-      'Dumping Point': item?.dumping_point || '-',
+      'Dumping Point': item?.dumping_point || item?.dumping_point_op || item?.dumping_point_barge || '-',
       'M Round Distance (m)': item.mround_distance ? Number(item.mround_distance) : 0,
       'Distance (m)': item.distance ? Number(item.distance) : 0,
       Vessel: item.total_vessel ? Number(item.total_vessel) : 0,
