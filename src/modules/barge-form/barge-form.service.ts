@@ -549,7 +549,7 @@ export class BargeFormService {
           // Recalculate achievement using new formula: vol_by_survey / capacity
           let recalculatedAchievement: number | null = null;
           if (item.vol_by_survey && capacity) {
-            recalculatedAchievement = Number((item.vol_by_survey / capacity).toFixed(2));
+            recalculatedAchievement = Number(((item.vol_by_survey / capacity) * 100).toFixed(2));
           }
 
           const result = {
