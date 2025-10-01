@@ -188,13 +188,13 @@ export class HaulingProblemResponseDto {
     description: 'Waktu mulai',
     example: '2024-01-01T08:00:00.000Z',
   })
-  start: Date;
+  start: Date | string;
 
   @ApiProperty({
     description: 'Waktu selesai',
     example: '2024-01-01T16:00:00.000Z',
   })
-  finish: Date;
+  finish: Date | string;
 
   @ApiProperty({
     description: 'Durasi dalam jam',
