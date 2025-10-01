@@ -166,7 +166,7 @@ export class BargingProblemService {
       // Transform result to DTO format
       const transformedResult: BargingProblemResponseDto[] = result.map((item) => ({
         id: item.id,
-        activity_date: item.activityDate.toLocaleDateString('en-CA'), // Format YYYY-MM-DD dengan timezone lokal
+        activity_date: moment(item.activityDate).format('YYYY-MM-DD'),
         shift: item.shift,
         barge_id: item.bargeId,
         barge_name: item.barge?.name || '',
@@ -174,8 +174,8 @@ export class BargingProblemService {
         activities_name: item.activities?.name || '',
         site_id: item.siteId,
         site_name: item.site?.name || null,
-        start: item.start.toISOString(),
-        finish: item.finish.toISOString(),
+        start: moment(item.start).format('HH:mm'),
+        finish: moment(item.finish).format('HH:mm'),
         duration: item.duration || this.calculateDuration(item.start, item.finish),
         remark: item.remark,
         createdAt: item.createdAt,

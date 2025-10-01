@@ -205,12 +205,12 @@ export class HaulingProblemService {
       // Transform result to DTO format
       const transformedResult: HaulingProblemResponseDto[] = result.map((item) => ({
         id: item.id,
-        activity_date: item.activityDate.toLocaleDateString('en-CA'), // Format YYYY-MM-DD dengan timezone lokal
+        activity_date: moment(item.activityDate).format('YYYY-MM-DD'),
         shift: item.shift,
         activities_id: item.activitiesId,
         activities_name: item.activities?.name || '',
-        start: item.start,
-        finish: item.finish,
+        start: moment(item.start).format('HH:mm'),
+        finish: moment(item.finish).format('HH:mm'),
         duration: item.duration ? Number(item.duration.toFixed(2)) : item.duration,
         site_id: item.siteId,
         site_name: item.site?.name || '',
