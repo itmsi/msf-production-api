@@ -69,7 +69,7 @@ export class BargingListService {
         ? bargingList.activityDate.toLocaleDateString('en-CA')
         : new Date(bargingList.activityDate).toLocaleDateString('en-CA');
 
-    const time = bargingList.time instanceof Date ? bargingList.time.toISOString() : new Date(bargingList.time).toISOString();
+    const time = moment(bargingList.time).format('HH:mm');
 
     // Hitung time range dari time
     const timeRange = calculateTimeRange(bargingList.time);

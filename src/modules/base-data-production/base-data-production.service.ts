@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, HttpException, Inte
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, ILike, SelectQueryBuilder, DataSource } from 'typeorm';
 
-import { ParentBaseDataPro, BaseDataPro } from './entities';
+import { ParentBaseDataPro, BaseDataPro, ActivityType, MaterialType } from './entities';
 import { Population } from '../population/entities/population.entity';
 import { Barge } from '../barge/entities/barge.entity';
 import { OperationPoints } from '../operation-points/entities/operation-points.entity';
@@ -14,7 +14,14 @@ import {
   QueryExportBaseDataProductionDto,
 } from './dto';
 import { successResponse, emptyDataResponse, throwError } from '../../common/helpers/response.helper';
-import { CsvHelper, paginateResponse, setCsvExportHeaders } from '../../common/helpers/public.helper';
+import {
+  ACCEPTED_DATE_FORMATS,
+  ACCEPTED_DATE_TIME_FORMATS,
+  CsvHelper,
+  paginateResponse,
+  parseDateFile,
+  setCsvExportHeaders,
+} from '../../common/helpers/public.helper';
 import { S3Service } from 'src/integrations/s3/s3.service';
 import { Response } from 'express';
 import { format } from '@fast-csv/format';
@@ -72,8 +79,18 @@ export class BaseDataProductionService {
       // Create parent base data pro
       const parent = checkParent ?? savedParent;
       // Create base data pro details
-      const baseDataProDetails = createDto.detail.map((detail) =>
-        this.baseDataProRepository.create({
+      const baseDataProDetails = createDto.detail.map((detail) => {
+        const isBarge = detail.activity && ['barging', 'direct'].includes(detail.activity?.toLowerCase());
+        if (isBarge && detail.dumpingPointId) {
+          detail.dumpingPointBargeId = detail.dumpingPointId;
+        }
+
+        if (detail.activity && !isBarge && detail.dumpingPointId) {
+          detail.dumpingPointOpId = detail.dumpingPointId;
+        }
+        detail.dumpingPointId = null;
+
+        return this.baseDataProRepository.create({
           parentBaseDataProId: parent.id,
           kmAwal: detail.kmAwal,
           kmAkhir: detail.kmAkhir,
@@ -92,8 +109,8 @@ export class BaseDataProductionService {
           material: detail.material,
           createdBy: userId,
           updatedBy: userId,
-        }),
-      );
+        });
+      });
 
       await this.baseDataProRepository.save(baseDataProDetails);
 
@@ -470,73 +487,131 @@ export class BaseDataProductionService {
   private async validateRowData(row: any): Promise<{
     isValid: boolean;
     error?: string;
-    detail?: any;
-    populationId?: number;
-    driverId?: number;
     payload?: any;
   }> {
-    if (!row.activity) {
-      return { isValid: false, error: 'actvity is required' };
+    const required = (field: string, name: string) => {
+      if (!row[field]) return `${name} is required`;
+      return null;
+    };
+
+    const mustBeNumber = (field: string, name: string) => {
+      if (row[field] !== undefined && row[field] !== null) {
+        if (isNaN(Number(row[field]))) return `${name} harus berupa number (row: ${row[field]})`;
+      }
+      return null;
+    };
+
+    const mustBeDate = (field: string, displayFormats: string[], name: string) => {
+      const parsed = parseDateFile(row[field]);
+      if (!parsed) return `${name} harus dalam format ${displayFormats.join(' or ')} (row: ${row[field]})`;
+      return null;
+    };
+
+    const basicErrors = [
+      required('activityDate', 'activityDate'),
+      required('population_id', 'population_id'),
+      required('type', 'type'),
+      required('driverId', 'driverId'),
+      required('shift', 'shift'),
+      required('startShift', 'startShift'),
+      required('endShift', 'endShift'),
+      required('hmAwal', 'hmAwal'),
+      required('hmAkhir', 'hmAkhir'),
+    ].filter(Boolean);
+
+    if (basicErrors.length) return { isValid: false, error: basicErrors[0] ?? undefined };
+
+    const type = row.type.toUpperCase();
+    if (!['HE', 'DT'].includes(type)) {
+      return { isValid: false, error: 'type must be HE or DT' };
     }
-    const ACTIVITIES = ['hauling', 'direct', 'barging', 'support'];
-    if (!ACTIVITIES.includes(row.activity?.toLowerCase())) {
-      return { isValid: false, error: `actvity must be ${ACTIVITIES?.join(' ')}` };
+
+    const dateErrors = [
+      mustBeDate('activityDate', ACCEPTED_DATE_FORMATS, 'activityDate'),
+      mustBeDate('startShift', ACCEPTED_DATE_TIME_FORMATS, 'startShift'),
+      mustBeDate('endShift', ACCEPTED_DATE_TIME_FORMATS, 'endShift'),
+    ].filter(Boolean);
+
+    if (dateErrors.length) return { isValid: false, error: dateErrors[0] ?? undefined };
+
+    if (type === 'DT') {
+      const dtErrors = [
+        required('activity', 'activity'),
+        required('material', 'material'),
+        required('dumpingPointId', 'dumpingPointId'),
+        required('totalVessel', 'totalVessel'),
+        required('distance', 'distance'),
+        required('loadingPointId', 'loadingPointId'),
+        required('kmAwal', 'kmAwal'),
+        required('kmAkhir', 'kmAkhir'),
+      ].filter(Boolean);
+
+      if (dtErrors.length) return { isValid: false, error: dtErrors[0] ?? undefined };
+    }
+
+    const numericErrors = [
+      mustBeNumber('hmAwal', 'hmAwal'),
+      mustBeNumber('hmAkhir', 'hmAkhir'),
+      mustBeNumber('kmAwal', 'kmAwal'),
+      mustBeNumber('kmAkhir', 'kmAkhir'),
+      mustBeNumber('distance', 'distance'),
+      mustBeNumber('totalVessel', 'totalVessel'),
+    ].filter(Boolean);
+
+    if (numericErrors.length) return { isValid: false, error: numericErrors[0] ?? undefined };
+
+    const ACTIVITIES = Object.values(ActivityType);
+    if (row.activity && !ACTIVITIES.includes(row.activity.toLowerCase())) {
+      return { isValid: false, error: `activity must be ${ACTIVITIES.join(' ')}` };
+    }
+
+    const MATERIALS = Object.values(MaterialType);
+    if (row.material && !MATERIALS.includes(row.material.toLowerCase())) {
+      return { isValid: false, error: `material must be one of: ${MATERIALS.join(', ')}` };
     }
 
     const unitId = await this.getPopulation(row.population_id);
+    if (!unitId) return { isValid: false, error: `Unit ${row.population_id || ''} tidak ditemukan` };
+
     const driverId = await this.getUser(row.driverId);
+    if (!driverId) return { isValid: false, error: `Driver ${row.driverId || ''} tidak ditemukan` };
+
     const loadingId = await this.getOperationPoint(row.loadingPointId);
-    const dumpingId = await this.getDumpingPoint(row.dumpingPointId, row.activity);
-    if (!unitId) {
-      const message = row.population_id ? `Unit ${row.population_id} tidak ditemukan` : 'Unit tidak ditemukan';
-      return { isValid: false, error: message };
-    }
+    if (!loadingId) return { isValid: false, error: `Loading Point ${row.loadingPointId || ''} tidak ditemukan` };
 
-    if (!driverId) {
-      const message = row.driverId ? `Driver ${row.driverId} tidak ditemukan` : 'Driver tidak ditemukan';
-      return { isValid: false, error: message };
-    }
-
-    if (!loadingId) {
-      const message = row.loadingPointId ? `Loading Point ${row.loadingPointId} tidak ditemukan` : 'Loading Point tidak ditemukan';
-      return { isValid: false, error: message };
-    }
-
-    if (!dumpingId) {
-      const message = row.dumpingPointId ? `Dumping Point ${row.dumpingPointId} tidak ditemukan` : 'Dumping Point tidak ditemukan';
-      return { isValid: false, error: message };
+    let dumpingId: number | undefined;
+    if (row.activity && row.dumpingPointId) {
+      dumpingId = await this.getDumpingPoint(row.dumpingPointId, row.activity);
+      if (!dumpingId) {
+        return { isValid: false, error: `Dumping Point ${row.dumpingPointId || ''} tidak ditemukan` };
+      }
     }
 
     const detail = {
       hmAwal: Number(row.hmAwal),
       hmAkhir: Number(row.hmAkhir),
-      kmAwal: Number(row.kmAwal),
-      kmAkhir: Number(row.kmAkhir),
-      totalVessel: Number(row.totalVessel),
-      distance: Number(row.distance),
+      kmAwal: row.kmAwal ? Number(row.kmAwal) : 0,
+      kmAkhir: row.kmAkhir ? Number(row.kmAkhir) : 0,
+      totalVessel: row.totalVessel ? Number(row.totalVessel) : 0,
+      distance: row.distance ? Number(row.distance) : 0,
       loadingPointId: loadingId,
-      dumpingPointId: dumpingId,
-      activity: row.activity,
-      material: row.material,
+      dumpingPointId: dumpingId || null,
+      activity: row.activity?.toLowerCase() || null,
+      material: row?.material?.toLowerCase() || null,
     };
 
     const payload = {
       activityDate: row.activityDate,
-      population_id: unitId, // Use resolved ID
-      driverId: driverId, // Use resolved ID
-      shift: row?.shift?.toLowerCase(),
-      startShift: moment(row.startShift, 'YYYY-MM-DD HH:mm', true).toDate(),
-      endShift: moment(row.endShift, 'YYYY-MM-DD HH:mm', true).toDate(),
-      type: row.type,
+      population_id: unitId,
+      driverId: driverId,
+      shift: row.shift.toLowerCase(),
+      startShift: moment(row.startShift, 'YYYY-MM-DD HH:mm').toDate(),
+      endShift: moment(row.endShift, 'YYYY-MM-DD HH:mm').toDate(),
+      type: type,
       detail: [detail],
     };
-    return {
-      isValid: true,
-      detail,
-      populationId: unitId,
-      driverId: driverId,
-      payload,
-    };
+
+    return { isValid: true, payload };
   }
 
   private async generateErrorCsv(failedRows: any[]): Promise<{
@@ -573,7 +648,6 @@ export class BaseDataProductionService {
 
   private createErrorCsvContent(failedRows: any[]): string {
     const csvHeaders = [
-      'rowNumber',
       'population_id',
       'driverId',
       'activityDate',
@@ -595,7 +669,6 @@ export class BaseDataProductionService {
     ];
 
     const csvRows = failedRows.map((row) => [
-      row.rowNumber,
       row.population_id || '',
       row.driverId || '',
       row.activityDate || '',
@@ -684,7 +757,15 @@ export class BaseDataProductionService {
       // Update existing details or create new ones
       for (let i = 0; i < updateDto.detail.length; i++) {
         const detailDto = updateDto.detail[i];
+        const isBarge = detailDto.activity && ['barging', 'direct'].includes(detailDto.activity?.toLowerCase());
+        if (isBarge && detailDto.dumpingPointId) {
+          detailDto.dumpingPointBargeId = detailDto.dumpingPointId;
+        }
 
+        if (detailDto.activity && !isBarge && detailDto.dumpingPointId) {
+          detailDto.dumpingPointOpId = detailDto.dumpingPointId;
+        }
+        detailDto.dumpingPointId = null;
         if (i < existingDetails.length) {
           // Update existing detail
           const existingDetail = existingDetails[i];
@@ -818,9 +899,9 @@ export class BaseDataProductionService {
       if (rawResult.length == 0) {
         emptyDataResponse('Batch Inbound not found');
       }
-
       const result = rawResult.map((item) => ({
         ...item,
+        dumping_point: item.dumping_point || item.dumping_point_op || item.dumping_point_barge,
         km_awal: item.km_awal ? parseFloat(Number(item.km_awal).toFixed(2)) : 0,
         km_akhir: item.km_akhir ? parseFloat(Number(item.km_akhir).toFixed(2)) : 0,
         hm_awal: item.hm_awal ? parseFloat(Number(item.hm_awal).toFixed(2)) : 0,
@@ -878,8 +959,8 @@ export class BaseDataProductionService {
             totalHm: Number(baseData?.totalHm),
             loadingPointId: baseData?.loadingPointId,
             loadingPointName: baseData?.loadingPoint?.name || '',
-            dumpingPointId: baseData?.dumpingPointId,
-            dumpingPointName: baseData?.dumpingPoint?.name || '',
+            dumpingPointId: baseData?.dumpingPointId || baseData?.dumpingPointOpId || baseData?.dumpingPointBargeId,
+            dumpingPointName: baseData?.dumpingPoint?.name || baseData?.dumpingPointOp?.name || baseData?.dumpingPointBarge?.name || '',
             dumpingPointOpId: baseData?.dumpingPointOpId,
             dumpingPointBargeId: baseData?.dumpingPointBargeId,
             activity: baseData?.activity,
@@ -935,7 +1016,6 @@ export class BaseDataProductionService {
             driverId: createDto.driverId,
           },
         });
-
         // Kalau belum ada parent, buat baru
         if (!parent) {
           const newParent = queryRunner.manager.create(ParentBaseDataPro, {
@@ -943,8 +1023,8 @@ export class BaseDataProductionService {
             activityDate: new Date(createDto.activityDate),
             shift: createDto.shift,
             driverId: createDto.driverId,
-            startShift: createDto.startShift ? new Date(createDto.startShift) : null,
-            endShift: createDto.endShift ? new Date(createDto.endShift) : null,
+            startShift: createDto.startShift || null,
+            endShift: createDto.endShift || null,
             createdBy: userId,
             updatedBy: userId,
           });
@@ -953,8 +1033,18 @@ export class BaseDataProductionService {
         }
 
         // Buat detail
-        const baseDataProDetails = createDto.detail.map((detail) =>
-          queryRunner.manager.create(BaseDataPro, {
+        const baseDataProDetails = createDto.detail.map((detail) => {
+          const isBarge = detail.activity && ['barging', 'direct'].includes(detail.activity?.toLowerCase());
+          if (isBarge && detail.dumpingPointId) {
+            detail.dumpingPointBargeId = detail.dumpingPointId;
+          }
+
+          if (detail.activity && !isBarge && detail.dumpingPointId) {
+            detail.dumpingPointOpId = detail.dumpingPointId;
+          }
+          detail.dumpingPointId = null;
+
+          return queryRunner.manager.create(BaseDataPro, {
             parentBaseDataProId: parent.id,
             kmAwal: detail.kmAwal,
             kmAkhir: detail.kmAkhir,
@@ -973,8 +1063,8 @@ export class BaseDataProductionService {
             material: detail.material,
             createdBy: userId,
             updatedBy: userId,
-          }),
-        );
+          });
+        });
 
         await queryRunner.manager.save(BaseDataPro, baseDataProDetails);
       }
@@ -993,7 +1083,6 @@ export class BaseDataProductionService {
       this.validateImportFile(file);
       const csvData = await CsvHelper.parseCsvFile(file.buffer);
       const validationResult = await this.processImportData(csvData);
-
       if (validationResult.payload?.length > 0 && validationResult.successCount > 0) {
         await this.bulkCreate(validationResult.payload, userId);
       }
@@ -1098,7 +1187,7 @@ export class BaseDataProductionService {
       'HM End': item.hm_akhir ? parseFloat(Number(item.hm_akhir).toFixed(2)) : 0,
       'HM Total': item.total_hm ? parseFloat(Number(item.total_hm).toFixed(2)) : 0,
       'Loading Point': item?.loading_point || '-',
-      'Dumping Point': item?.dumping_point || '-',
+      'Dumping Point': item?.dumping_point || item?.dumping_point_op || item?.dumping_point_barge || '-',
       'M Round Distance (m)': item.mround_distance ? Number(item.mround_distance) : 0,
       'Distance (m)': item.distance ? Number(item.distance) : 0,
       Vessel: item.total_vessel ? Number(item.total_vessel) : 0,

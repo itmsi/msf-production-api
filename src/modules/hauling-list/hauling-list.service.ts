@@ -420,7 +420,7 @@ export class HaulingListService {
       id: haulingList.id,
       activity_date: haulingList.activityDate.toLocaleDateString('en-CA'), // Format YYYY-MM-DD dengan timezone lokal
       shift: haulingList.shift,
-      time: haulingList.time.toISOString(),
+      time: moment(haulingList.time).format('HH:mm'),
       time_range: timeRange,
       unit_loading_id: haulingList.unitLoadingId,
       unit_loading_name: haulingList.unitLoading?.no_unit || '',
