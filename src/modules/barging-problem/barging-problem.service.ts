@@ -648,8 +648,21 @@ export class BargingProblemService {
       };
     }
 
+    const activityMoment = moment(parsedActivityDate, 'YYYY-MM-DD', true);
     const startMoment = moment(parsedStartTime, 'YYYY-MM-DD HH:mm', true);
     const finishMoment = moment(parsedFinishTime, 'YYYY-MM-DD HH:mm', true);
+    if (startMoment.isBefore(activityMoment, 'day')) {
+      return {
+        isValid: false,
+        error: `start tidak boleh lebih kecil dari activity_date (start: ${row.start}, activity_date: ${row.activity_date})`,
+      };
+    }
+    if (finishMoment.isBefore(activityMoment, 'day')) {
+      return {
+        isValid: false,
+        error: `finish tidak boleh lebih kecil dari activity_date (finish: ${row.finish}, activity_date: ${row.activity_date})`,
+      };
+    }
     if (startMoment.isAfter(finishMoment)) {
       return {
         isValid: false,

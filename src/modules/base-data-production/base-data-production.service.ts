@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, HttpException, Inte
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, ILike, SelectQueryBuilder, DataSource } from 'typeorm';
 
-import { ParentBaseDataPro, BaseDataPro, ActivityType } from './entities';
+import { ParentBaseDataPro, BaseDataPro, ActivityType, MaterialType } from './entities';
 import { Population } from '../population/entities/population.entity';
 import { Barge } from '../barge/entities/barge.entity';
 import { OperationPoints } from '../operation-points/entities/operation-points.entity';
@@ -487,9 +487,6 @@ export class BaseDataProductionService {
   private async validateRowData(row: any): Promise<{
     isValid: boolean;
     error?: string;
-    detail?: any;
-    populationId?: number;
-    driverId?: number;
     payload?: any;
   }> {
     const required = (field: string, name: string) => {
@@ -504,8 +501,8 @@ export class BaseDataProductionService {
       return null;
     };
 
-    const mustBeDate = (field: string, formats: string[], displayFormats: string[], name: string) => {
-      const parsed = parseDateFile(row[field], ...formats);
+    const mustBeDate = (field: string, displayFormats: string[], name: string) => {
+      const parsed = parseDateFile(row[field]);
       if (!parsed) return `${name} harus dalam format ${displayFormats.join(' or ')} (row: ${row[field]})`;
       return null;
     };
@@ -530,9 +527,9 @@ export class BaseDataProductionService {
     }
 
     const dateErrors = [
-      mustBeDate('activityDate', ['YYYY-MM-DD'], ACCEPTED_DATE_FORMATS, 'activityDate'),
-      mustBeDate('startShift', ['YYYY-MM-DD HH:mm'], ACCEPTED_DATE_TIME_FORMATS, 'startShift'),
-      mustBeDate('endShift', ['YYYY-MM-DD HH:mm'], ACCEPTED_DATE_TIME_FORMATS, 'endShift'),
+      mustBeDate('activityDate', ACCEPTED_DATE_FORMATS, 'activityDate'),
+      mustBeDate('startShift', ACCEPTED_DATE_TIME_FORMATS, 'startShift'),
+      mustBeDate('endShift', ACCEPTED_DATE_TIME_FORMATS, 'endShift'),
     ].filter(Boolean);
 
     if (dateErrors.length) return { isValid: false, error: dateErrors[0] ?? undefined };
@@ -563,9 +560,14 @@ export class BaseDataProductionService {
 
     if (numericErrors.length) return { isValid: false, error: numericErrors[0] ?? undefined };
 
-    const ACTIVITIES = ['hauling', 'direct', 'barging', 'support'];
+    const ACTIVITIES = Object.values(ActivityType);
     if (row.activity && !ACTIVITIES.includes(row.activity.toLowerCase())) {
       return { isValid: false, error: `activity must be ${ACTIVITIES.join(' ')}` };
+    }
+
+    const MATERIALS = Object.values(MaterialType);
+    if (row.material && !MATERIALS.includes(row.material.toLowerCase())) {
+      return { isValid: false, error: `material must be one of: ${MATERIALS.join(', ')}` };
     }
 
     const unitId = await this.getPopulation(row.population_id);
@@ -594,8 +596,8 @@ export class BaseDataProductionService {
       distance: row.distance ? Number(row.distance) : 0,
       loadingPointId: loadingId,
       dumpingPointId: dumpingId || null,
-      activity: row.activity || null,
-      material: row.material || null,
+      activity: row.activity?.toLowerCase() || null,
+      material: row?.material?.toLowerCase() || null,
     };
 
     const payload = {
@@ -603,13 +605,13 @@ export class BaseDataProductionService {
       population_id: unitId,
       driverId: driverId,
       shift: row.shift.toLowerCase(),
-      startShift: moment(row.startShift, 'YYYY-MM-DD HH:mm', true).toDate(),
-      endShift: moment(row.endShift, 'YYYY-MM-DD HH:mm', true).toDate(),
+      startShift: moment(row.startShift, 'YYYY-MM-DD HH:mm').toDate(),
+      endShift: moment(row.endShift, 'YYYY-MM-DD HH:mm').toDate(),
       type: type,
       detail: [detail],
     };
 
-    return { isValid: true, detail, populationId: unitId, driverId, payload };
+    return { isValid: true, payload };
   }
 
   private async generateErrorCsv(failedRows: any[]): Promise<{
@@ -1014,7 +1016,6 @@ export class BaseDataProductionService {
             driverId: createDto.driverId,
           },
         });
-
         // Kalau belum ada parent, buat baru
         if (!parent) {
           const newParent = queryRunner.manager.create(ParentBaseDataPro, {
@@ -1022,8 +1023,8 @@ export class BaseDataProductionService {
             activityDate: new Date(createDto.activityDate),
             shift: createDto.shift,
             driverId: createDto.driverId,
-            startShift: createDto.startShift ? new Date(createDto.startShift) : null,
-            endShift: createDto.endShift ? new Date(createDto.endShift) : null,
+            startShift: createDto.startShift || null,
+            endShift: createDto.endShift || null,
             createdBy: userId,
             updatedBy: userId,
           });
@@ -1090,7 +1091,6 @@ export class BaseDataProductionService {
 
       return this.buildImportResponse(csvData.length, validationResult.successCount, validationResult.failedCount, errorFileInfo);
     } catch (error) {
-      console.log(error, '<<<Errr');
       if (error instanceof BadRequestException) {
         throwError(error, 400);
       }
