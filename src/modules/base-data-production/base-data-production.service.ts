@@ -588,14 +588,14 @@ export class BaseDataProductionService {
     const detail = {
       hmAwal: Number(row.hmAwal),
       hmAkhir: Number(row.hmAkhir),
-      kmAwal: Number(row.kmAwal),
-      kmAkhir: Number(row.kmAkhir),
-      totalVessel: Number(row.totalVessel),
-      distance: Number(row.distance),
+      kmAwal: row.kmAwal ? Number(row.kmAwal) : 0,
+      kmAkhir: row.kmAkhir ? Number(row.kmAkhir) : 0,
+      totalVessel: row.totalVessel ? Number(row.totalVessel) : 0,
+      distance: row.distance ? Number(row.distance) : 0,
       loadingPointId: loadingId,
-      dumpingPointId: dumpingId,
-      activity: row.activity,
-      material: row.material,
+      dumpingPointId: dumpingId || null,
+      activity: row.activity || null,
+      material: row.material || null,
     };
 
     const payload = {
