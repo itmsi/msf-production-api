@@ -4,7 +4,7 @@ import { Repository, SelectQueryBuilder, ILike, DataSource, DeepPartial } from '
 import { BargeForm } from './entities/barge-form.entity';
 import { CreateBargeFormDto, UpdateBargeFormDto, BargeFormResponseDto, QueryBargeFormDto, QueryExportBargeFormDto } from './dto';
 import { successResponse, emptyDataResponse, throwError } from '../../common/helpers/response.helper';
-import { CsvHelper, parseDateFile, setCsvExportHeaders } from '../../common/helpers/public.helper';
+import { ACCEPTED_DATE_FORMATS, CsvHelper, parseDateFile, setCsvExportHeaders } from '../../common/helpers/public.helper';
 import { Response } from 'express';
 import { format } from '@fast-csv/format';
 import moment from 'moment';
@@ -131,7 +131,7 @@ export class BargeFormService {
     if (!parsedStartDate) {
       return {
         isValid: false,
-        error: `start_date harus dalam format DD/MM/YYYY or YYYY-MM-DD (row: ${row.start_date})`,
+        error: `start_date harus dalam format ${ACCEPTED_DATE_FORMATS.join(' or ')} (row: ${row.start_date})`,
       };
     }
 
@@ -139,7 +139,7 @@ export class BargeFormService {
     if (row.finish_date && !parsedFinishDate) {
       return {
         isValid: false,
-        error: `finish_date harus dalam format DD/MM/YYYY or YYYY-MM-DD (row: ${row.finish_date})`,
+        error: `finish_date harus dalam format ${ACCEPTED_DATE_FORMATS.join(' or ')} (row: ${row.finish_date})`,
       };
     }
 

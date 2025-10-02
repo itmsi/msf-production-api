@@ -14,7 +14,14 @@ import {
   QueryExportBaseDataProductionDto,
 } from './dto';
 import { successResponse, emptyDataResponse, throwError } from '../../common/helpers/response.helper';
-import { CsvHelper, paginateResponse, setCsvExportHeaders } from '../../common/helpers/public.helper';
+import {
+  ACCEPTED_DATE_FORMATS,
+  ACCEPTED_DATE_TIME_FORMATS,
+  CsvHelper,
+  paginateResponse,
+  parseDateFile,
+  setCsvExportHeaders,
+} from '../../common/helpers/public.helper';
 import { S3Service } from 'src/integrations/s3/s3.service';
 import { Response } from 'express';
 import { format } from '@fast-csv/format';
@@ -485,36 +492,97 @@ export class BaseDataProductionService {
     driverId?: number;
     payload?: any;
   }> {
-    if (!row.activity) {
-      return { isValid: false, error: 'actvity is required' };
+    const required = (field: string, name: string) => {
+      if (!row[field]) return `${name} is required`;
+      return null;
+    };
+
+    const mustBeNumber = (field: string, name: string) => {
+      if (row[field] !== undefined && row[field] !== null) {
+        if (isNaN(Number(row[field]))) return `${name} harus berupa number (row: ${row[field]})`;
+      }
+      return null;
+    };
+
+    const mustBeDate = (field: string, formats: string[], displayFormats: string[], name: string) => {
+      const parsed = parseDateFile(row[field], ...formats);
+      if (!parsed) return `${name} harus dalam format ${displayFormats.join(' or ')} (row: ${row[field]})`;
+      return null;
+    };
+
+    const basicErrors = [
+      required('activityDate', 'activityDate'),
+      required('population_id', 'population_id'),
+      required('type', 'type'),
+      required('driverId', 'driverId'),
+      required('shift', 'shift'),
+      required('startShift', 'startShift'),
+      required('endShift', 'endShift'),
+      required('hmAwal', 'hmAwal'),
+      required('hmAkhir', 'hmAkhir'),
+    ].filter(Boolean);
+
+    if (basicErrors.length) return { isValid: false, error: basicErrors[0] ?? undefined };
+
+    const type = row.type.toUpperCase();
+    if (!['HE', 'DT'].includes(type)) {
+      return { isValid: false, error: 'type must be HE or DT' };
     }
+
+    const dateErrors = [
+      mustBeDate('activityDate', ['YYYY-MM-DD'], ACCEPTED_DATE_FORMATS, 'activityDate'),
+      mustBeDate('startShift', ['YYYY-MM-DD HH:mm'], ACCEPTED_DATE_TIME_FORMATS, 'startShift'),
+      mustBeDate('endShift', ['YYYY-MM-DD HH:mm'], ACCEPTED_DATE_TIME_FORMATS, 'endShift'),
+    ].filter(Boolean);
+
+    if (dateErrors.length) return { isValid: false, error: dateErrors[0] ?? undefined };
+
+    if (type === 'DT') {
+      const dtErrors = [
+        required('activity', 'activity'),
+        required('material', 'material'),
+        required('dumpingPointId', 'dumpingPointId'),
+        required('totalVessel', 'totalVessel'),
+        required('distance', 'distance'),
+        required('loadingPointId', 'loadingPointId'),
+        required('kmAwal', 'kmAwal'),
+        required('kmAkhir', 'kmAkhir'),
+      ].filter(Boolean);
+
+      if (dtErrors.length) return { isValid: false, error: dtErrors[0] ?? undefined };
+    }
+
+    const numericErrors = [
+      mustBeNumber('hmAwal', 'hmAwal'),
+      mustBeNumber('hmAkhir', 'hmAkhir'),
+      mustBeNumber('kmAwal', 'kmAwal'),
+      mustBeNumber('kmAkhir', 'kmAkhir'),
+      mustBeNumber('distance', 'distance'),
+      mustBeNumber('totalVessel', 'totalVessel'),
+    ].filter(Boolean);
+
+    if (numericErrors.length) return { isValid: false, error: numericErrors[0] ?? undefined };
+
     const ACTIVITIES = ['hauling', 'direct', 'barging', 'support'];
-    if (!ACTIVITIES.includes(row.activity?.toLowerCase())) {
-      return { isValid: false, error: `actvity must be ${ACTIVITIES?.join(' ')}` };
+    if (row.activity && !ACTIVITIES.includes(row.activity.toLowerCase())) {
+      return { isValid: false, error: `activity must be ${ACTIVITIES.join(' ')}` };
     }
 
     const unitId = await this.getPopulation(row.population_id);
+    if (!unitId) return { isValid: false, error: `Unit ${row.population_id || ''} tidak ditemukan` };
+
     const driverId = await this.getUser(row.driverId);
+    if (!driverId) return { isValid: false, error: `Driver ${row.driverId || ''} tidak ditemukan` };
+
     const loadingId = await this.getOperationPoint(row.loadingPointId);
-    const dumpingId = await this.getDumpingPoint(row.dumpingPointId, row.activity);
-    if (!unitId) {
-      const message = row.population_id ? `Unit ${row.population_id} tidak ditemukan` : 'Unit tidak ditemukan';
-      return { isValid: false, error: message };
-    }
+    if (!loadingId) return { isValid: false, error: `Loading Point ${row.loadingPointId || ''} tidak ditemukan` };
 
-    if (!driverId) {
-      const message = row.driverId ? `Driver ${row.driverId} tidak ditemukan` : 'Driver tidak ditemukan';
-      return { isValid: false, error: message };
-    }
-
-    if (!loadingId) {
-      const message = row.loadingPointId ? `Loading Point ${row.loadingPointId} tidak ditemukan` : 'Loading Point tidak ditemukan';
-      return { isValid: false, error: message };
-    }
-
-    if (!dumpingId) {
-      const message = row.dumpingPointId ? `Dumping Point ${row.dumpingPointId} tidak ditemukan` : 'Dumping Point tidak ditemukan';
-      return { isValid: false, error: message };
+    let dumpingId: number | undefined;
+    if (row.activity && row.dumpingPointId) {
+      dumpingId = await this.getDumpingPoint(row.dumpingPointId, row.activity);
+      if (!dumpingId) {
+        return { isValid: false, error: `Dumping Point ${row.dumpingPointId || ''} tidak ditemukan` };
+      }
     }
 
     const detail = {
@@ -532,21 +600,16 @@ export class BaseDataProductionService {
 
     const payload = {
       activityDate: row.activityDate,
-      population_id: unitId, // Use resolved ID
-      driverId: driverId, // Use resolved ID
-      shift: row?.shift?.toLowerCase(),
+      population_id: unitId,
+      driverId: driverId,
+      shift: row.shift.toLowerCase(),
       startShift: moment(row.startShift, 'YYYY-MM-DD HH:mm', true).toDate(),
       endShift: moment(row.endShift, 'YYYY-MM-DD HH:mm', true).toDate(),
-      type: row.type,
+      type: type,
       detail: [detail],
     };
-    return {
-      isValid: true,
-      detail,
-      populationId: unitId,
-      driverId: driverId,
-      payload,
-    };
+
+    return { isValid: true, detail, populationId: unitId, driverId, payload };
   }
 
   private async generateErrorCsv(failedRows: any[]): Promise<{
@@ -583,7 +646,6 @@ export class BaseDataProductionService {
 
   private createErrorCsvContent(failedRows: any[]): string {
     const csvHeaders = [
-      'rowNumber',
       'population_id',
       'driverId',
       'activityDate',
@@ -605,7 +667,6 @@ export class BaseDataProductionService {
     ];
 
     const csvRows = failedRows.map((row) => [
-      row.rowNumber,
       row.population_id || '',
       row.driverId || '',
       row.activityDate || '',
@@ -1021,7 +1082,7 @@ export class BaseDataProductionService {
       this.validateImportFile(file);
       const csvData = await CsvHelper.parseCsvFile(file.buffer);
       const validationResult = await this.processImportData(csvData);
-
+      console.log(validationResult, '<<<<<valida');
       if (validationResult.payload?.length > 0 && validationResult.successCount > 0) {
         await this.bulkCreate(validationResult.payload, userId);
       }
@@ -1030,6 +1091,7 @@ export class BaseDataProductionService {
 
       return this.buildImportResponse(csvData.length, validationResult.successCount, validationResult.failedCount, errorFileInfo);
     } catch (error) {
+      console.log(error, '<<<Errr');
       if (error instanceof BadRequestException) {
         throwError(error, 400);
       }
