@@ -143,6 +143,15 @@ export class BargeFormService {
       };
     }
 
+    const startMoment = moment(parsedStartDate, 'YYYY-MM-DD', true);
+    const finishMoment = moment(parsedFinishDate, 'YYYY-MM-DD', true);
+    if (startMoment.isAfter(finishMoment)) {
+      return {
+        isValid: false,
+        error: `start_date tidak boleh lebih dari finish_date (start_date: ${row.start_date}, finish_date: ${row.finish_date})`,
+      };
+    }
+
     if (row.total_vessel !== undefined && row.total_vessel !== null) {
       const totalVessel = Number(row.total_vessel);
       if (isNaN(totalVessel)) {
