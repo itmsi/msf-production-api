@@ -3,14 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FuelConsumption } from './entities/fuel-consumption.entity';
 import { CreateFuelConsumptionDto, UpdateFuelConsumptionDto, FuelConsumptionResponseDto, QueryFuelConsumptionDto } from './dto';
 import { successResponse, emptyDataResponse, throwError, ApiResponse } from '../../common/helpers/response.helper';
-import {
-  convertStringDateYYYYMMDD,
-  CsvHelper,
-  normalizeString,
-  paginateResponse,
-  parseDateFile,
-  setCsvExportHeaders,
-} from '../../common/helpers/public.helper';
+import { CsvHelper, normalizeString, paginateResponse, parseDateFile, setCsvExportHeaders } from '../../common/helpers/public.helper';
 import { ImportFuelConsumptionCsvRowDto, ImportFuelConsumptionItemDto } from './dto/import-fuel-consumption.dto';
 import { S3Service } from '../../integrations/s3/s3.service';
 import csv from 'csv-parser';
@@ -43,9 +36,18 @@ export class FuelConsumptionService {
     private s3Service: S3Service,
   ) {}
 
-  private isValidDate(dateString: string): boolean {
-    const date = new Date(dateString);
-    return date instanceof Date && !isNaN(date.getTime()) && !!dateString.match(/^\d{4}-\d{2}-\d{2}$/);
+  private formatOperatorName(operator?: any): string {
+    if (!operator) return '';
+
+    const firstName = operator.employees?.firstName || '';
+    const lastName = operator.employees?.lastName || '';
+    const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
+
+    if (fullName) {
+      return `${fullName} (${operator.name})`;
+    }
+
+    return operator.name || '';
   }
 
   private isValidDateTime(dateTimeStr: string): boolean {
@@ -304,9 +306,7 @@ export class FuelConsumptionService {
         no_unit: item.unit?.no_unit || '',
         type_unit: item.unit?.unitType?.unit_name || '',
         serial_number: item.unit?.vin_number || '',
-        operator_name: item.operator?.employees
-          ? `${item.operator.employees.firstName || ''} ${item.operator.employees.lastName || ''}`.trim()
-          : '',
+        operator_name: this.formatOperatorName(item.operator),
         last_refueling_hm: this.formatNumber(item.last_refueling_hm),
         now_refueling_hm: this.formatNumber(item.now_refueling_hm),
         running_refueling_hm: this.formatNumber(item.running_refueling_hm),
@@ -338,6 +338,7 @@ export class FuelConsumptionService {
 
       return paginateResponse(formattedData, total, page, limit, 'Fuel consumption data retrieved successfully');
     } catch (error) {
+      console.log(error, '<<Err');
       throwError('Failed to retrieve fuel consumption data', 500);
     }
   }
@@ -995,7 +996,7 @@ export class FuelConsumptionService {
       'No Unit': item?.unit?.no_unit ?? '',
       'Type Unit': item.unit?.unitType?.unit_name || '',
       Site: item.unit?.site?.name ?? '',
-      Operator: item?.operator?.name ?? '',
+      Operator: this.formatOperatorName(item.operator),
       'Serial Number': item?.unit?.vin_number ?? '',
       'Last Refueling (HM)': item.last_refueling_hm ?? 0,
       'Now Refueling (HM)': item.now_refueling_hm ?? 0,
