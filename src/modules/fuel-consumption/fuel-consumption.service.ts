@@ -364,9 +364,7 @@ export class FuelConsumptionService {
         no_unit: fuelConsumption.unit?.no_unit || '',
         type_unit: fuelConsumption.unit?.unitType?.unit_name || '',
         serial_number: fuelConsumption.unit?.vin_number || '',
-        operator_name: fuelConsumption.operator?.employees
-          ? `${fuelConsumption.operator.employees.firstName || ''} ${fuelConsumption.operator.employees.lastName || ''}`.trim()
-          : '',
+        operator_name: this.formatOperatorName(fuelConsumption.operator),
         last_refueling_hm: this.formatNumber(fuelConsumption.last_refueling_hm),
         now_refueling_hm: this.formatNumber(fuelConsumption.now_refueling_hm),
         running_refueling_hm: this.formatNumber(fuelConsumption.running_refueling_hm),
