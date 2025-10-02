@@ -1082,7 +1082,6 @@ export class BaseDataProductionService {
       this.validateImportFile(file);
       const csvData = await CsvHelper.parseCsvFile(file.buffer);
       const validationResult = await this.processImportData(csvData);
-      console.log(validationResult, '<<<<<valida');
       if (validationResult.payload?.length > 0 && validationResult.successCount > 0) {
         await this.bulkCreate(validationResult.payload, userId);
       }
