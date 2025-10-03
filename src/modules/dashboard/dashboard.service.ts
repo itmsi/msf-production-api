@@ -33,7 +33,7 @@ import { calculateTimeRange, generatePaletteHex } from '../../common/helpers/pub
 import { BaseDataPro } from '../base-data-production';
 import moment from 'moment';
 import { Activities } from '../activities';
-import { EffectiveWorkingHours } from '../effective-working-hours';
+// import { EffectiveWorkingHours } from '../effective-working-hours';
 import { BargeForm } from '../barge-form';
 
 @Injectable()
@@ -215,7 +215,7 @@ export class DashboardService {
           SUM(tonnage) as total_tonnage,
           SUM(slippery) as total_slippery,
           SUM(hujan) as total_rain
-        FROM get_summary_production_with_loss_time()
+        FROM get_summary_production_with_loss_time_v2($1, $2)
         WHERE date BETWEEN $1 AND $2
           AND material_type = 'ore hauling'
         GROUP BY date
@@ -1129,143 +1129,107 @@ export class DashboardService {
 
   async getTrendHaulingBarging(month: string) {
     try {
-      // Parse month parameter (format: YYYY-MM)
-      const [year, monthNum] = month.split('-').map(Number);
-      const startDate = new Date(year, monthNum - 1, 1);
-      const endDate = new Date(year, monthNum, 0); // Last day of the month
+      const yearNum = parseInt(month, 10);
+      if (isNaN(yearNum)) {
+        return {
+          statusCode: 400,
+          message: 'Invalid year format provided.',
+          data: [],
+        };
+      }
 
-      // Get number of days in the month
-      const daysInMonth = endDate.getDate();
+      // yyyy-01-01 00:00:00
+      const startDate = new Date(yearNum, 0, 1);
+      // (yyyy+1)-01-01 00:00:00
+      const endDate = new Date(yearNum + 1, 0, 1);
 
-      // Initialize result array
-      const result: Array<{
-        date: string;
-        ore_barging: number;
-        ore_hauling: number;
-        slippery: number;
-        rain: number;
-      }> = [];
-
-      // Get ore barging data from TB_R_Base_Data_Pro
-      const oreBargingQuery = `
-        SELECT 
-          DATE(rpbdp.activity_date) as activity_date,
-          SUM(rbdp.total_vessel * 
-            CASE 
+      // One query to get all data at once
+      const singleQuery = `
+        WITH months AS (
+          -- Generate a series of numbers 1-12 for months
+          SELECT generate_series(1, 12) AS month_num
+        ),
+        barging_data AS (
+          -- Calculate ore_barging
+          SELECT 
+            EXTRACT(MONTH FROM rpbdp.activity_date) as month,
+            SUM(rbdp.total_vessel * CASE 
               WHEN mp.tyre_type = '6x4' THEN 16.6
               WHEN mp.tyre_type = '8x4' THEN 18.26
               ELSE 0
-            END
-          ) as ore_barging_tonnage
-        FROM r_parent_base_data_pro rpbdp
-        JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
-        JOIN m_population mp ON rpbdp.population_id = mp.id
-        WHERE rbdp.material = 'ore-barge'
-          AND rbdp.activity = 'barging'
-          AND DATE(rpbdp.activity_date) BETWEEN $1 AND $2
-        GROUP BY DATE(rpbdp.activity_date)
-        ORDER BY DATE(rpbdp.activity_date)
-      `;
-
-      // Get ore hauling data from TB_R_Base_Data_Pro
-      const oreHaulingQuery = `
-        SELECT 
-          DATE(rpbdp.activity_date) as activity_date,
-          SUM(rbdp.total_vessel * 
-            CASE 
+            END) as ore_barging
+          FROM r_parent_base_data_pro rpbdp
+          JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+          JOIN m_population mp ON rpbdp.population_id = mp.id
+          WHERE 
+            rbdp.material = 'ore-barge' AND rbdp.activity = 'barging'
+            AND rpbdp.activity_date >= $1 AND rpbdp.activity_date < $2
+          GROUP BY 1
+        ),
+        hauling_data AS (
+          -- Calculate ore_hauling
+          SELECT 
+            EXTRACT(MONTH FROM rpbdp.activity_date) as month,
+            SUM(rbdp.total_vessel * CASE 
               WHEN mp.tyre_type = '6x4' THEN 26.56
               WHEN mp.tyre_type = '8x4' THEN 29.56
               ELSE 0
-            END
-          ) as ore_hauling_tonnage
-        FROM r_parent_base_data_pro rpbdp
-        JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
-        JOIN m_population mp ON rpbdp.population_id = mp.id
-        WHERE rbdp.material = 'ore'
-          AND rbdp.activity = 'hauling'
-          AND DATE(rpbdp.activity_date) BETWEEN $1 AND $2
-        GROUP BY DATE(rpbdp.activity_date)
-        ORDER BY DATE(rpbdp.activity_date)
-      `;
-
-      // Get slippery data from TB_R_Loss_Time
-      const slipperyQuery = `
+            END) as ore_hauling
+          FROM r_parent_base_data_pro rpbdp
+          JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
+          JOIN m_population mp ON rpbdp.population_id = mp.id
+          WHERE 
+            rbdp.material = 'ore' AND rbdp.activity = 'hauling'
+            AND rpbdp.activity_date >= $1 AND rpbdp.activity_date < $2
+          GROUP BY 1
+        ),
+        loss_time_data AS (
+          -- Calculate slippery and rain at the same time
+          SELECT 
+            EXTRACT(MONTH FROM rlt.date_activity) as month,
+            SUM(CASE WHEN LOWER(ma.name) LIKE '%slippery%' THEN rlt.duration ELSE 0 END) as slippery,
+            SUM(CASE WHEN LOWER(ma.name) LIKE '%rain%' THEN rlt.duration ELSE 0 END) as rain
+          FROM r_loss_time rlt
+          JOIN m_activities ma ON rlt.activities_id = ma.id
+          WHERE 
+            rlt.loss_type = 'STB'
+            AND rlt.date_activity >= $1 AND rlt.date_activity < $2
+          GROUP BY 1
+        )
+        -- Combine all results with month series
         SELECT 
-          DATE(rlt.date_activity) as activity_date,
-          SUM(rlt.duration) as slippery_duration
-        FROM r_loss_time rlt
-        JOIN m_activities ma ON rlt.activities_id = ma.id
-        WHERE rlt.loss_type = 'STB'
-          AND LOWER(ma.name) LIKE '%slippery%'
-          AND DATE(rlt.date_activity) BETWEEN $1 AND $2
-        GROUP BY DATE(rlt.date_activity)
-        ORDER BY DATE(rlt.date_activity)
+          m.month_num,
+          TO_CHAR(TO_DATE(m.month_num::text, 'MM'), 'Month') as month_name,
+          COALESCE(b.ore_barging, 0) as ore_barging,
+          COALESCE(h.ore_hauling, 0) as ore_hauling,
+          COALESCE(l.slippery, 0) as slippery,
+          COALESCE(l.rain, 0) as rain
+        FROM months m
+        LEFT JOIN barging_data b ON m.month_num = b.month
+        LEFT JOIN hauling_data h ON m.month_num = h.month
+        LEFT JOIN loss_time_data l ON m.month_num = l.month
+        ORDER BY m.month_num;
       `;
 
-      // Get rain data from TB_R_Loss_Time
-      const rainQuery = `
-        SELECT 
-          DATE(rlt.date_activity) as activity_date,
-          SUM(rlt.duration) as rain_duration
-        FROM r_loss_time rlt
-        JOIN m_activities ma ON rlt.activities_id = ma.id
-        WHERE rlt.loss_type = 'STB'
-          AND LOWER(ma.name) LIKE '%rain%'
-          AND DATE(rlt.date_activity) BETWEEN $1 AND $2
-        GROUP BY DATE(rlt.date_activity)
-        ORDER BY DATE(rlt.date_activity)
-      `;
+      const queryResult = await this.dataSource.query(singleQuery, [startDate, endDate]);
 
-      // Execute queries
-      const [oreBargingData, oreHaulingData, slipperyData, rainData] = await Promise.all([
-        this.dataSource.query(oreBargingQuery, [startDate, endDate]),
-        this.dataSource.query(oreHaulingQuery, [startDate, endDate]),
-        this.dataSource.query(slipperyQuery, [startDate, endDate]),
-        this.dataSource.query(rainQuery, [startDate, endDate]),
-      ]);
+      const finalResult = queryResult.map(
+        (item: { month_num: number; month_name: string; ore_barging: string; ore_hauling: string; slippery: string; rain: string }) => {
+          const monthString = String(item.month_num).padStart(2, '0');
 
-      // Create maps for quick lookup
-      const oreBargingMap = new Map();
-      const oreHaulingMap = new Map();
-      const slipperyMap = new Map();
-      const rainMap = new Map();
-
-      oreBargingData.forEach((item) => {
-        oreBargingMap.set(item.activity_date.toISOString().split('T')[0], item.ore_barging_tonnage);
+          return {
+            date: `${monthString}/${yearNum}`,
+            ore_barging: Number(item.ore_barging),
+            ore_hauling: Number(item.ore_hauling),
+            slippery: Number(item.slippery),
+            rain: Number(item.rain),
+          };
       });
-
-      oreHaulingData.forEach((item) => {
-        oreHaulingMap.set(item.activity_date.toISOString().split('T')[0], item.ore_hauling_tonnage);
-      });
-
-      slipperyData.forEach((item) => {
-        slipperyMap.set(item.activity_date.toISOString().split('T')[0], item.slippery_duration);
-      });
-
-      rainData.forEach((item) => {
-        rainMap.set(item.activity_date.toISOString().split('T')[0], item.rain_duration);
-      });
-
-      // Generate data for each day of the month
-      for (let day = 1; day <= daysInMonth; day++) {
-        const currentDate = new Date(year, monthNum - 1, day);
-        const dateKey = currentDate.toISOString().split('T')[0];
-        const dayStr = day.toString().padStart(2, '0');
-        const monthStr = monthNum.toString().padStart(2, '0');
-
-        result.push({
-          date: `${dayStr}/${monthStr}`,
-          ore_barging: oreBargingMap.get(dateKey) || 0,
-          ore_hauling: oreHaulingMap.get(dateKey) || 0,
-          slippery: slipperyMap.get(dateKey) || 0,
-          rain: rainMap.get(dateKey) || 0,
-        });
-      }
 
       return {
         statusCode: 200,
         message: 'success',
-        data: result,
+        data: finalResult,
       };
     } catch (error) {
       console.error('Error in getTrendHaulingBarging:', error);
