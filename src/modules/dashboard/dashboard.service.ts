@@ -215,9 +215,14 @@ export class DashboardService {
           SUM(tonnage) as total_tonnage,
           SUM(slippery) as total_slippery,
           SUM(hujan) as total_rain
+<<<<<<< HEAD
         FROM get_summary_production_with_loss_time_v2($1, $2)
         WHERE date BETWEEN $1 AND $2
           AND material_type = 'ore hauling'
+=======
+        FROM get_summary_production_with_loss_time_v2($1,$2)
+        WHERE material_type = 'ore hauling'
+>>>>>>> 325a92719ff958f49d25731086e69b30acfc11b4
         GROUP BY date
         ORDER BY date ASC
       `;
@@ -528,13 +533,15 @@ export class DashboardService {
         .andWhere('ma2.status IN (:...status)')
         .andWhere('rlt2."deletedAt" IS NULL');
 
+      const denominator = `NULLIF( (${subCount.getQuery()}), 0 )`;
+
       const qb = this.dataSource
         .createQueryBuilder()
         .select('ma.name', 'name')
         .addSelect(
           `
           COALESCE(
-            SUM(rlt.duration) / 60.0 / ( ${subCount.getQuery()} )
+            SUM(rlt.duration) / 60.0 / ${denominator}
           , 0)
           `,
           'total_duration_per_unit',
@@ -542,7 +549,7 @@ export class DashboardService {
         .addSelect(
           `
           SUM(
-            SUM(rlt.duration) / 60.0 / ( ${subCount.getQuery()} )
+            SUM(rlt.duration) / 60.0 / ${denominator}
           ) OVER ()
           `,
           'total_all_standby_duration',
@@ -560,23 +567,6 @@ export class DashboardService {
           status,
           ...subCount.getParameters(),
         });
-
-      // const qb = this.activitiesRepo
-      //   .createQueryBuilder('ma')
-      //   .leftJoin(
-      //     EffectiveWorkingHours,
-      //     'rlt',
-      //     'rlt.activities_id = ma.id AND rlt.date_activity BETWEEN :start AND :end AND rlt.deletedAt IS NULL',
-      //     { start, end },
-      //   )
-      //   .select('ma.name', 'name')
-      //   .addSelect('ma.status', 'status')
-      //   .addSelect('COALESCE(SUM(rlt.duration) / 60, 0)', 'total_duration')
-      //   .where('ma.status IN (:...status)', { status })
-      //   .andWhere('ma.deletedAt IS NULL')
-      //   .groupBy('ma.name')
-      //   .addGroupBy('ma.status')
-      //   .orderBy('ma.name', 'ASC');
 
       const result = await qb.getRawMany();
 
@@ -1952,7 +1942,7 @@ export class DashboardService {
 
         result.map((row) => {
           const fleetStatus = new FleetStatusItemDto();
-          fleetStatus.fleet_id = row.unit_id;
+          fleetStatus.fleet_id = row.unit_hauler_id;
           fleetStatus.fleet = row.no_unit;
           fleetStatus.start_loading = row.start_time ? moment(row.start_time).format('HH:mm') : '';
           fleetStatus.finish_loading = row.end_time ? moment(row.end_time).format('HH:mm') : '';
@@ -2373,17 +2363,17 @@ export class DashboardService {
         {
           name: 'MOHH',
           value: Math.round(totalMohh * 10) / 10,
-          color: '#1e3a8a',
+          color: '#10b981',
         },
         {
           name: 'STB',
           value: Math.round(totalStandby * 10) / 10,
-          color: '#34d399',
+          color: '#c9c312',
         },
         {
           name: 'BD',
           value: Math.round(totalBreakdown * 10) / 10,
-          color: '#d1d5db',
+          color: '#eb4034',
         },
         {
           name: 'EWH',
@@ -2874,7 +2864,7 @@ export class DashboardService {
         JOIN r_base_data_pro rbdp ON rpbdp.id = rbdp.parent_base_data_pro_id
         JOIN m_population mp ON rpbdp.population_id = mp.id
         WHERE rbdp.material = 'ore'
-          AND rbdp.activity = 'hauling'
+          AND rbdp.activity in ('hauling','direct')
           AND rpbdp.activity_date BETWEEN $1 AND $2
           AND rbdp."deletedAt" IS NULL
       `,

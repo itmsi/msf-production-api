@@ -11,17 +11,8 @@ export interface Pagination {
   lastPage: number;
 }
 
-export const ACCEPTED_DATE_FORMATS: string[] = [
-  'DD/MM/YYYY',
-  'D/M/YYYY',
-  'YYYY-MM-DD',
-  'MM-DD-YYYY',
-  'YYYY/MM/DD',
-  'D/M/YYYY HH:mm',
-  'DD/MM/YYYY HH:mm',
-  'YYYY-MM-DD HH:mm',
-  'YYYY/MM/DD HH:mm',
-];
+export const ACCEPTED_DATE_FORMATS: string[] = ['DD/MM/YYYY', 'D/M/YYYY', 'YYYY-MM-DD', 'MM-DD-YYYY'];
+export const ACCEPTED_DATE_TIME_FORMATS: string[] = ['D/M/YYYY HH:mm', 'DD/MM/YYYY HH:mm', 'YYYY-MM-DD HH:mm', 'YYYY/MM/DD HH:mm'];
 
 export function paginateResponse<T>(
   data: T[],
@@ -260,7 +251,7 @@ export const generatePaletteHex = (n: number, s = 70, l = 50) => Array.from({ le
 export function parseDateFile(
   value: string,
   returnFormat: string = 'YYYY-MM-DD',
-  formats: string[] = ACCEPTED_DATE_FORMATS,
+  formats: string[] = [...ACCEPTED_DATE_FORMATS, ...ACCEPTED_DATE_TIME_FORMATS],
 ): string | null {
   if (!value) return null;
 
