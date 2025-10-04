@@ -22,7 +22,7 @@ export class DailySummaryProductionService {
             tonnage,
             hujan,
             slippery
-        FROM get_summary_production_with_loss_time()
+        FROM get_summary_production_with_loss_time_v2($1, $2)
         WHERE 1=1
       `;
 
