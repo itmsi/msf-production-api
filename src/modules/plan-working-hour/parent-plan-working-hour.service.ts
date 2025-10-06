@@ -1932,7 +1932,7 @@ export class ParentPlanWorkingHourService {
     const csvRows = failedRows.map((row) =>
       csvHeaders
         .map((header) => {
-          if (header === 'error_message') return `"${row.error || ''}"`;
+          if (header.startsWith('error_message')) return `"${row.error || ''}"`;
           return `"${row[header] ?? ''}"`;
         })
         .join(','),
@@ -2019,7 +2019,6 @@ export class ParentPlanWorkingHourService {
         throwError('Data referensi tidak ditemukan. Pastikan semua ID referensi valid.', 400);
       }
 
-      console.error('Unexpected error in importData:', error.stack);
       throwError('Terjadi kesalahan saat memproses file import. Silakan coba lagi atau hubungi administrator.', 400);
     }
   }
