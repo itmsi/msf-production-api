@@ -507,9 +507,6 @@ export class DashboardService {
 
   async getLostTimeData(startDate?: string, endDate?: string, status: string[] = ['idle', 'delay']) {
     try {
-      const queryRunner = this.dataSource.createQueryRunner();
-      await queryRunner.connect();
-
       // Set default date range if not provided (last 30 days)
       const defaultEndDate = new Date();
       const defaultStartDate = new Date();
@@ -518,48 +515,42 @@ export class DashboardService {
       const start = startDate ? new Date(startDate) : defaultStartDate;
       const end = endDate ? new Date(endDate) : defaultEndDate;
 
-      const subCount = this.dataSource
-        .createQueryBuilder()
-        .select('COUNT(DISTINCT rlt2.population_id)')
-        .from('r_loss_time', 'rlt2')
-        .leftJoin('m_activities', 'ma2', 'ma2.id = rlt2.activities_id')
-        .where('rlt2.date_activity BETWEEN :start AND :end')
-        .andWhere('ma2.status IN (:...status)')
-        .andWhere('rlt2."deletedAt" IS NULL');
+      // Subquery to calculate denominator dynamically
+      const denominatorSubQuery = `
+        (SELECT COUNT(DISTINCT rlt2.population_id)
+        FROM r_loss_time rlt2
+        LEFT JOIN m_activities ma2 ON ma2.id = rlt2.activities_id
+        WHERE rlt2.date_activity BETWEEN :start AND :end
+          AND ma2.status IN (:...status)
+          AND rlt2.loss_type = rlt.loss_type  -- Ini korelasi yang penting
+          AND rlt2."deletedAt" IS NULL)
+      `;
 
-      const denominator = `NULLIF( (${subCount.getQuery()}), 0 )`;
+      const denominator = `NULLIF(${denominatorSubQuery}, 0)`;
 
       const qb = this.dataSource
         .createQueryBuilder()
         .select('ma.name', 'name')
         .addSelect(
-          `
-          COALESCE(
-            SUM(rlt.duration) / 60.0 / ${denominator}
-          , 0)
-          `,
+          `COALESCE(SUM(rlt.duration) / 60.0 / ${denominator}, 0)`,
           'total_duration_per_unit',
         )
         .addSelect(
-          `
-          SUM(
-            SUM(rlt.duration) / 60.0 / ${denominator}
-          ) OVER ()
-          `,
+          'SUM(SUM(rlt.duration) / 60.0) OVER ()',
           'total_all_standby_duration',
         )
-        .from('m_activities', 'ma')
-        .leftJoin('r_loss_time', 'rlt', 'rlt.activities_id = ma.id')
+        .from('r_loss_time', 'rlt')
+        .leftJoin('m_activities', 'ma', 'ma.id = rlt.activities_id')
         .where('ma.status IN (:...status)')
+        .andWhere('rlt.date_activity BETWEEN :start AND :end')
+        .andWhere('rlt."deletedAt" IS NULL')
         .andWhere('ma."deletedAt" IS NULL')
         .groupBy('ma.name, rlt.loss_type')
         .orderBy('total_duration_per_unit', 'DESC')
-        // gabungkan parameter untuk subquery (dipakai 2x)
         .setParameters({
           start,
           end,
           status,
-          ...subCount.getParameters(),
         });
 
       const result = await qb.getRawMany();
